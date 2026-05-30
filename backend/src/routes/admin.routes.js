@@ -6,8 +6,11 @@ const {
   deleteMovie,
   createTheater,
   updateTheater,
+  deleteTheater,
   listTheaters,
   createRoom,
+  updateRoom,
+  deleteRoom,
   listRooms,
   createConcession,
   updateConcession,
@@ -34,12 +37,17 @@ router.route('/movies/:id')
 router.route('/theaters')
   .get(listTheaters)
   .post(createTheater);
-router.put('/theaters/:id', updateTheater);
+router.route('/theaters/:id')
+  .put(updateTheater)
+  .delete(deleteTheater);
 
 // Rooms
 router.route('/rooms')
   .get(listRooms)
   .post(createRoom);
+router.route('/rooms/:id')
+  .put(updateRoom)
+  .delete(deleteRoom);
 
 // Concessions
 router.route('/concessions')

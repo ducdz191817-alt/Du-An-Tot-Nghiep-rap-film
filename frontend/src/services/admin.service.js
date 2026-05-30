@@ -16,7 +16,6 @@ const deleteMovie = async (id) => {
   return response.data;
 };
 
-// Theater & Room Management
 const getTheaters = async () => {
   const response = await api.get('/admin/theaters');
   return response.data;
@@ -24,6 +23,16 @@ const getTheaters = async () => {
 
 const createTheater = async (theaterData) => {
   const response = await api.post('/admin/theaters', theaterData);
+  return response.data;
+};
+
+const updateTheater = async (id, theaterData) => {
+  const response = await api.put(`/admin/theaters/${id}`, theaterData);
+  return response.data;
+};
+
+const deleteTheater = async (id) => {
+  const response = await api.delete(`/admin/theaters/${id}`);
   return response.data;
 };
 
@@ -36,6 +45,16 @@ const getRooms = async (theaterId = '') => {
 
 const createRoom = async (roomData) => {
   const response = await api.post('/admin/rooms', roomData);
+  return response.data;
+};
+
+const updateRoom = async (id, roomData) => {
+  const response = await api.put(`/admin/rooms/${id}`, roomData);
+  return response.data;
+};
+
+const deleteRoom = async (id) => {
+  const response = await api.delete(`/admin/rooms/${id}`);
   return response.data;
 };
 
@@ -88,8 +107,12 @@ const adminService = {
   deleteMovie,
   getTheaters,
   createTheater,
+  updateTheater,
+  deleteTheater,
   getRooms,
   createRoom,
+  updateRoom,
+  deleteRoom,
   createShowtime,
   updateShowtime,
   deleteShowtime,

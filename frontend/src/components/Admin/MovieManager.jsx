@@ -33,7 +33,7 @@ export const MovieManager = () => {
   const fetchMoviesList = async () => {
     setLoading(true);
     try {
-      const result = await movieService.getMovies({ status: '' }); // Fetch all status
+      const result = await movieService.getMovies({ status: 'all' }); // Fetch all status
       setMovies(result);
     } catch (err) {
       console.error(err);

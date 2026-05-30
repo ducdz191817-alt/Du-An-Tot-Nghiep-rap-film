@@ -124,6 +124,81 @@ const listRooms = async (req, res, next) => {
   }
 };
 
+const deleteTheater = async (req, res, next) => {
+  try {
+    const theaterId = req.params.id;
+    const theater = await Theater.findById(theaterId);
+    if (!theater) {
+      res.status(404);
+      throw new Error('Theater not found');
+    }
+
+    // Cascading delete
+    const rooms = await Room.find({ theater: theaterId });
+    const roomIds = rooms.map((r) => r._id);
+
+    await Seat.deleteMany({ room: { $in: roomIds } });
+
+    const showtimes = await Showtime.find({ theater: theaterId });
+    const showtimeIds = showtimes.map((s) => s._id);
+
+    await Booking.deleteMany({ showtime: { $in: showtimeIds } });
+    await Showtime.deleteMany({ theater: theaterId });
+    await Room.deleteMany({ theater: theaterId });
+    await Theater.findByIdAndDelete(theaterId);
+
+    res.json({ success: true, message: 'Theater and all associated rooms, seats, showtimes, and bookings deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateRoom = async (req, res, next) => {
+  try {
+    const roomId = req.params.id;
+    const { name, type } = req.body;
+
+    const room = await Room.findByIdAndUpdate(
+      roomId,
+      { name, type },
+      { new: true, runValidators: true }
+    );
+
+    if (!room) {
+      res.status(404);
+      throw new Error('Room not found');
+    }
+
+    res.json({ success: true, data: room });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteRoom = async (req, res, next) => {
+  try {
+    const roomId = req.params.id;
+    const room = await Room.findById(roomId);
+    if (!room) {
+      res.status(404);
+      throw new Error('Room not found');
+    }
+
+    await Seat.deleteMany({ room: roomId });
+
+    const showtimes = await Showtime.find({ room: roomId });
+    const showtimeIds = showtimes.map((s) => s._id);
+
+    await Booking.deleteMany({ showtime: { $in: showtimeIds } });
+    await Showtime.deleteMany({ room: roomId });
+    await Room.findByIdAndDelete(roomId);
+
+    res.json({ success: true, message: 'Room and all associated seats, showtimes, and bookings deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const createConcession = async (req, res, next) => {
   try {
     const concession = await Concession.create(req.body);
@@ -336,8 +411,11 @@ module.exports = {
   deleteMovie,
   createTheater,
   updateTheater,
+  deleteTheater,
   listTheaters,
   createRoom,
+  updateRoom,
+  deleteRoom,
   listRooms,
   createConcession,
   updateConcession,
