@@ -35,35 +35,36 @@ export const HomePage = () => {
     <div className="space-y-12 pb-16">
       {/* 1. Cinematic Hero Banner Showcase */}
       {featured && (
-        <div className="relative w-full aspect-[21/9] min-h-[300px] md:min-h-[450px] rounded-3xl overflow-hidden shadow-2xl bg-zinc-950 border border-dark-border">
+        <div className="relative w-full aspect-[21/9] min-h-[350px] md:min-h-[500px] rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-zinc-950 border border-dark-border/50 group">
           <img
             src={featured.posterUrl}
             alt={featured.title}
-            className="w-full h-full object-cover opacity-35"
+            className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000 ease-out"
           />
           {/* Gradients */}
-          <div className="absolute inset-0 bg-gradient-to-t from-dark-deep via-dark-deep/40 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-dark-deep via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-dark-deep via-dark-deep/50 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-dark-deep via-dark-deep/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-tr from-brand/10 to-transparent opacity-50 mix-blend-overlay" />
 
           {/* Banner Content overlay */}
-          <div className="absolute inset-0 flex flex-col justify-center px-6 sm:px-12 md:px-16 max-w-2xl space-y-4">
-            <span className="text-[10px] font-black bg-brand px-3 py-1 rounded text-white tracking-widest uppercase w-max select-none shadow-md">
+          <div className="absolute inset-0 flex flex-col justify-end md:justify-center px-6 sm:px-12 md:px-20 py-10 max-w-3xl space-y-5">
+            <span className="text-[10px] sm:text-xs font-black bg-gradient-to-r from-brand to-brand/80 px-4 py-1.5 rounded-full text-white tracking-widest uppercase w-max select-none shadow-[0_0_15px_rgba(239,68,68,0.5)] border border-white/10 backdrop-blur-md">
               Featured Release
             </span>
-            <h1 className="text-3xl sm:text-5xl font-black text-white leading-tight tracking-tight drop-shadow">
+            <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-white leading-tight tracking-tighter drop-shadow-2xl">
               {featured.title}
             </h1>
-            <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed font-semibold line-clamp-3 drop-shadow">
+            <p className="text-sm sm:text-base text-zinc-300 leading-relaxed font-medium line-clamp-3 md:line-clamp-4 drop-shadow-md max-w-2xl">
               {featured.description}
             </p>
-            <div className="flex items-center gap-4 pt-2">
+            <div className="flex flex-wrap items-center gap-4 pt-4">
               <Link to={`/movies/${featured._id}`}>
-                <Button variant="primary" className="py-2.5 px-6 font-bold text-sm shadow-glass-brand">
+                <Button variant="primary" className="py-3 px-8 font-black text-sm shadow-[0_0_20px_rgba(239,68,68,0.4)] hover:shadow-[0_0_30px_rgba(239,68,68,0.6)] hover:-translate-y-1 transition-all rounded-xl">
                   Book Now
                 </Button>
               </Link>
               <Link to={`/movies/${featured._id}`}>
-                <Button variant="glass" className="py-2.5 px-6 font-bold text-sm">
+                <Button variant="glass" className="py-3 px-8 font-bold text-sm hover:-translate-y-1 transition-all rounded-xl bg-white/5 border-white/10 hover:bg-white/10 backdrop-blur-md">
                   Watch Trailer
                 </Button>
               </Link>
