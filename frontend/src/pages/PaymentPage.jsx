@@ -37,10 +37,10 @@ export const PaymentPage = () => {
     setLoading(true);
     try {
       await submitBooking(paymentMethod);
-      alert('Congratulations! Your tickets are successfully reserved. An invoice copy has been sent to your email.');
+      alert('Chúc mừng! Vé của bạn đã được đặt thành công. Một bản sao hóa đơn đã được gửi đến email của bạn.');
       navigate('/history');
     } catch (err) {
-      alert(`Booking Failed: ${err.message}`);
+      alert(`Đặt vé thất bại: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -53,7 +53,7 @@ export const PaymentPage = () => {
         onClick={() => navigate(-1)}
         className="inline-flex items-center text-zinc-400 hover:text-white text-xs font-extrabold uppercase tracking-wider gap-1.5 transition-colors"
       >
-        <ChevronLeft size={16} /> Edit seats or snacks
+        <ChevronLeft size={16} /> Chỉnh sửa ghế hoặc bắp nước
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">

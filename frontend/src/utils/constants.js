@@ -23,24 +23,24 @@ export const CONTENT_RATINGS = {
 
 export const SEAT_TYPES = {
   standard: {
-    label: 'Standard',
-    color: 'bg-zinc-700 hover:bg-zinc-600 text-white',
-    selectedColor: 'bg-brand text-white',
-    bookedColor: 'bg-zinc-900 cursor-not-allowed opacity-40 text-zinc-500',
+    label: 'Trống',
+    color: 'bg-[#2a2a35]/60 hover:bg-zinc-600/60 border border-zinc-700/50 text-zinc-400',
+    selectedColor: 'bg-brand border border-brand/50 text-white shadow-[0_0_12px_rgba(168,85,247,0.5)]',
+    bookedColor: 'bg-[#b91c1c]/20 border border-red-800/40 text-red-500/50 cursor-not-allowed',
     extraPrice: 0,
   },
   vip: {
-    label: 'VIP Accent',
-    color: 'bg-amber-600 hover:bg-amber-500 text-white border border-amber-400',
-    selectedColor: 'bg-brand text-white border-none',
-    bookedColor: 'bg-zinc-900 cursor-not-allowed opacity-40 text-zinc-500',
+    label: 'Ghế VIP',
+    color: 'bg-[#6366f1]/20 hover:bg-[#6366f1]/40 border border-[#6366f1]/30 text-[#818cf8]',
+    selectedColor: 'bg-brand border border-brand/50 text-white shadow-[0_0_12px_rgba(168,85,247,0.5)]',
+    bookedColor: 'bg-[#b91c1c]/20 border border-red-800/40 text-red-500/50 cursor-not-allowed',
     extraPrice: 20000,
   },
   couple: {
-    label: 'Sweetbox (Couple)',
-    color: 'bg-pink-600 hover:bg-pink-500 text-white border border-pink-400',
-    selectedColor: 'bg-brand text-white border-none',
-    bookedColor: 'bg-zinc-900 cursor-not-allowed opacity-40 text-zinc-500',
+    label: 'Sweetbox',
+    color: 'bg-[#ec4899]/20 hover:bg-[#ec4899]/40 border border-[#ec4899]/30 text-[#f472b6]',
+    selectedColor: 'bg-brand border border-brand/50 text-white shadow-[0_0_12px_rgba(168,85,247,0.5)]',
+    bookedColor: 'bg-[#b91c1c]/20 border border-red-800/40 text-red-500/50 cursor-not-allowed',
     extraPrice: 40000,
   },
 };

@@ -5,7 +5,7 @@ export const ConcessionList = ({ concessions = [], selectedConcessions = {}, onQ
   if (concessions.length === 0) {
     return (
       <div className="py-6 text-center text-zinc-500 font-medium text-sm">
-        No concession combos available right now.
+        Hiện tại không có dịch vụ bắp nước nào khả dụng.
       </div>
     );
   }
@@ -14,7 +14,7 @@ export const ConcessionList = ({ concessions = [], selectedConcessions = {}, onQ
     <div className="space-y-6">
       <div className="flex items-center gap-2 border-b border-dark-border pb-3">
         <Popcorn className="text-brand" size={20} />
-        <h3 className="text-lg font-black text-zinc-200">Select Snacks & Soft Drinks</h3>
+        <h3 className="text-lg font-black text-zinc-200">Chọn bắp nước & đồ uống</h3>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -41,7 +41,7 @@ export const ConcessionList = ({ concessions = [], selectedConcessions = {}, onQ
                     {item.description}
                   </p>
                   <span className="text-xs font-black text-brand block mt-1">
-                    {item.price.toLocaleString()} VND
+                    {item.price.toLocaleString()}đ
                   </span>
                 </div>
               </div>

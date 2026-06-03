@@ -8,9 +8,9 @@ export default {
     extend: {
       colors: {
         brand: {
-          light: '#f05151',
-          DEFAULT: '#e50914',
-          dark: '#b80710',
+          light: '#c084fc',
+          DEFAULT: '#a855f7',
+          dark: '#7e22ce',
         },
         dark: {
           deep: '#0a0a0c',
@@ -24,7 +24,7 @@ export default {
       },
       boxShadow: {
         'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
-        'glass-brand': '0 8px 32px 0 rgba(229, 9, 20, 0.2)',
+        'glass-brand': '0 8px 32px 0 rgba(168, 85, 247, 0.2)',
       }
     },
   },

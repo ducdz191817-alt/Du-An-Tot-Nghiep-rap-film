@@ -84,18 +84,18 @@ export const BookingPage = () => {
         onClick={handleBackStep}
         className="inline-flex items-center text-zinc-400 hover:text-white text-xs font-extrabold uppercase tracking-wider gap-1.5 transition-colors"
       >
-        <ChevronLeft size={16} /> Back to Movie details
+        <ChevronLeft size={16} /> Quay lại chi tiết phim
       </button>
 
       {/* Progress timeline bar indicator */}
       <div className="flex items-center justify-center space-x-4 select-none max-w-md mx-auto py-2">
         <span className={`text-xs font-extrabold px-3 py-1 rounded-full border ${
           activeStep === 1 ? 'bg-brand text-white border-brand shadow' : 'bg-zinc-900 border-zinc-800 text-zinc-500'
-        }`}>1. Seats Map</span>
+        }`}>1. Chọn ghế</span>
         <span className="h-0.5 w-12 bg-zinc-800" />
         <span className={`text-xs font-extrabold px-3 py-1 rounded-full border ${
           activeStep === 2 ? 'bg-brand text-white border-brand shadow' : 'bg-zinc-900 border-zinc-800 text-zinc-500'
-        }`}>2. Concessions</span>
+        }`}>2. Bắp nước</span>
       </div>
 
       {/* Layout grid */}
@@ -106,7 +106,7 @@ export const BookingPage = () => {
             <div className="space-y-6">
               <div className="flex items-center gap-2 border-b border-dark-border pb-3">
                 <Armchair className="text-brand" size={20} />
-                <h3 className="text-lg font-black text-zinc-200">Select Seating Positions</h3>
+                <h3 className="text-lg font-black text-zinc-200">Chọn vị trí ghế ngồi</h3>
               </div>
 
               <SeatMap
@@ -136,7 +136,8 @@ export const BookingPage = () => {
             concessionsList={concessionsList}
             pricing={pricing}
             onProceed={handleProceed}
-            proceedText={activeStep === 1 ? 'Confirm Seats' : 'Proceed to Checkout'}
+            proceedText={activeStep === 1 ? 'Xác nhận chọn ghế' : 'Tiến hành thanh toán'}
+            onRemoveConcession={(id) => changeConcessionQty(id, 0)}
             disabled={selectedSeats.length === 0}
           />
         </div>

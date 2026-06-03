@@ -16,38 +16,38 @@ export const Footer = () => {
             </span>
           </div>
           <p className="text-xs leading-relaxed text-zinc-500">
-            Enjoy premium movie ticket reservation experiences. Select hot seats, delicious concessions, and proceed secure checkouts in clicks.
+            Trải nghiệm đặt vé xem phim cao cấp. Chọn ghế VIP, bắp nước ngon lành và thanh toán nhanh chóng chỉ trong vài lượt nhấp chuột.
           </p>
         </div>
 
         {/* Quick links */}
         <div>
-          <h4 className="text-zinc-200 font-bold mb-4 uppercase tracking-wider text-xs">Explore</h4>
+          <h4 className="text-zinc-200 font-bold mb-4 uppercase tracking-wider text-xs">Khám phá</h4>
           <ul className="space-y-2 text-xs">
-            <li><a href="#" className="hover:text-zinc-300 transition-colors">Now Showing</a></li>
-            <li><a href="#" className="hover:text-zinc-300 transition-colors">Coming Soon</a></li>
-            <li><a href="#" className="hover:text-zinc-300 transition-colors">Theaters</a></li>
-            <li><a href="#" className="hover:text-zinc-300 transition-colors">Promotions</a></li>
+            <li><a href="/movies" className="hover:text-zinc-300 transition-colors">Phim đang chiếu</a></li>
+            <li><a href="/movies" className="hover:text-zinc-300 transition-colors">Phim sắp chiếu</a></li>
+            <li><a href="#" className="hover:text-zinc-300 transition-colors">Hệ thống rạp</a></li>
+            <li><a href="#" className="hover:text-zinc-300 transition-colors">Khuyến mãi</a></li>
           </ul>
         </div>
 
         {/* Policies */}
         <div>
-          <h4 className="text-zinc-200 font-bold mb-4 uppercase tracking-wider text-xs">Support & Legal</h4>
+          <h4 className="text-zinc-200 font-bold mb-4 uppercase tracking-wider text-xs">Hỗ trợ & Chính sách</h4>
           <ul className="space-y-2 text-xs">
-            <li><a href="#" className="hover:text-zinc-300 transition-colors">Terms of Use</a></li>
-            <li><a href="#" className="hover:text-zinc-300 transition-colors">Refund Policies</a></li>
-            <li><a href="#" className="hover:text-zinc-300 transition-colors">FAQ</a></li>
-            <li><a href="#" className="hover:text-zinc-300 transition-colors">Privacy Guard</a></li>
+            <li><a href="#" className="hover:text-zinc-300 transition-colors">Điều khoản sử dụng</a></li>
+            <li><a href="#" className="hover:text-zinc-300 transition-colors">Chính sách hoàn tiền</a></li>
+            <li><a href="#" className="hover:text-zinc-300 transition-colors">Câu hỏi thường gặp</a></li>
+            <li><a href="#" className="hover:text-zinc-300 transition-colors">Chính sách bảo mật</a></li>
           </ul>
         </div>
 
         {/* Contact info */}
         <div className="space-y-3 text-xs">
-          <h4 className="text-zinc-200 font-bold mb-4 uppercase tracking-wider text-xs">Contact Us</h4>
+          <h4 className="text-zinc-200 font-bold mb-4 uppercase tracking-wider text-xs">Liên hệ</h4>
           <p className="flex items-start gap-2">
             <MapPin size={14} className="text-brand shrink-0" />
-            <span>Landmark 81, B1 Floor, Binh Thanh District, HCMC</span>
+            <span>Tầng B1, Landmark 81, Quận Bình Thạnh, TP. HCM</span>
           </p>
           <p className="flex items-center gap-2">
             <Phone size={14} className="text-brand shrink-0" />
@@ -57,7 +57,7 @@ export const Footer = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-6 border-t border-dark-border flex flex-col sm:flex-row items-center justify-between text-xs gap-4">
-        <p>&copy; {new Date().getFullYear()} Nova Cinematic Inc. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} Nova Cinematic. Bảo lưu mọi quyền.</p>
         <div className="flex space-x-6 text-zinc-600">
           <a href="#" className="hover:text-zinc-400 transition-colors"><Github size={16} /></a>
           <a href="#" className="hover:text-zinc-400 transition-colors"><Shield size={16} /></a>

@@ -16,9 +16,9 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], onSe
     <div className="space-y-12 overflow-x-auto py-6">
       {/* 1. Curved Screen Indicator */}
       <div className="w-full max-w-xl mx-auto flex flex-col items-center select-none">
-        <div className="h-2 w-full bg-brand rounded-full shadow-[0_0_20px_rgba(229,9,20,0.8)]" />
-        <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.25em] mt-3">
-          Cinematic Screen
+        <div className="h-1.5 w-full bg-brand rounded-full shadow-[0_4px_30px_rgba(168,85,247,0.9)]" />
+        <span className="text-[10px] text-zinc-500 font-extrabold uppercase tracking-[0.25em] mt-3">
+          MÀN HÌNH / SCREEN
         </span>
       </div>
 
@@ -59,12 +59,12 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], onSe
                       key={seat._id}
                       disabled={isBooked}
                       onClick={() => onSeatClick(seatCode)}
-                      className={`h-8 rounded-md font-bold text-[10px] transition-all flex items-center justify-center transform active:scale-90 ${
-                        isCouple ? 'w-16' : 'w-8'
+                      className={`h-8 rounded-lg font-bold text-[9px] transition-all flex items-center justify-center transform active:scale-90 ${
+                        isCouple ? 'w-[72px]' : 'w-8'
                       } ${activeBg}`}
                       title={`${seatCode} - ${seat.type.toUpperCase()}`}
                     >
-                      {seatCode}
+                      {isCouple ? `${seatCode} Couple` : seatCode}
                     </button>
                   );
                 })}
