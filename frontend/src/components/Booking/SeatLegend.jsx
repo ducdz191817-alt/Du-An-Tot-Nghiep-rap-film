@@ -7,31 +7,31 @@ export const SeatLegend = () => {
       {/* 1. Standard */}
       <div className="flex items-center space-x-2">
         <span className="w-5 h-5 rounded bg-zinc-700 border border-zinc-600 block" />
-        <span>Standard Seat</span>
+        <span>Ghế thường</span>
       </div>
 
       {/* 2. VIP */}
       <div className="flex items-center space-x-2">
         <span className="w-5 h-5 rounded bg-amber-600 border border-amber-400 block" />
-        <span>VIP Accent (+20k)</span>
+        <span>Ghế VIP (+20k)</span>
       </div>
 
       {/* 3. Couple */}
       <div className="flex items-center space-x-2">
         <span className="w-9 h-5 rounded bg-pink-600 border border-pink-400 block" />
-        <span>Sweetbox Couple (+40k)</span>
+        <span>Ghế Đôi Sweetbox (+40k)</span>
       </div>
 
       {/* 4. Selected */}
       <div className="flex items-center space-x-2">
         <span className="w-5 h-5 rounded bg-brand block shadow-md" />
-        <span>Selected</span>
+        <span>Đang chọn</span>
       </div>
 
       {/* 5. Sold / Booked */}
       <div className="flex items-center space-x-2">
         <span className="w-5 h-5 rounded bg-zinc-900 border border-zinc-800 opacity-40 block" />
-        <span>Sold / Reserved</span>
+        <span>Đã bán / Đã đặt</span>
       </div>
     </div>
   );

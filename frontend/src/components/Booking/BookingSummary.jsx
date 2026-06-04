@@ -56,15 +56,15 @@ export const BookingSummary = ({
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5 text-zinc-300">
               <Ticket size={14} className="text-brand" />
-              <span>Seats: {selectedSeats.join(', ')}</span>
+              <span>Ghế: {selectedSeats.join(', ')}</span>
             </div>
             <div className="flex justify-between pl-5 text-zinc-500">
-              <span>{selectedSeats.length} Ticket(s)</span>
+              <span>{selectedSeats.length} Vé</span>
               <span className="text-zinc-300 font-bold">{pricing.seatsTotal.toLocaleString()} VND</span>
             </div>
           </div>
         ) : (
-          <p className="text-zinc-500 italic">No seats selected yet.</p>
+          <p className="text-zinc-500 italic">Chưa chọn ghế nào.</p>
         )}
 
         {/* Bắp nước */}
@@ -72,7 +72,7 @@ export const BookingSummary = ({
           <div className="space-y-1.5 border-t border-zinc-900 pt-3">
             <div className="flex items-center gap-1.5 text-zinc-300">
               <Popcorn size={14} className="text-brand" />
-              <span>Concessions selected</span>
+              <span>Đồ ăn uống đã chọn</span>
             </div>
             <div className="space-y-1 pl-5">
               {Object.keys(selectedConcessions).map((id) => {
@@ -89,7 +89,7 @@ export const BookingSummary = ({
                 );
               })}
               <div className="flex justify-between pl-0 pt-1 text-zinc-500 border-t border-zinc-900/40">
-                <span>Snacks Total</span>
+                <span>Tổng cộng đồ ăn uống</span>
                 <span className="text-zinc-300 font-bold">{pricing.concessionsTotal.toLocaleString()} VND</span>
               </div>
             </div>
@@ -99,7 +99,7 @@ export const BookingSummary = ({
 
       {/* Tổng cộng */}
       <div className="border-t-2 border-dashed border-dark-border pt-4 flex items-center justify-between">
-        <span className="text-sm font-black text-zinc-300">Amount Payable</span>
+        <span className="text-sm font-black text-zinc-300">Tổng tiền thanh toán</span>
         <span className="text-xl font-black text-brand tracking-tight">
           {pricing.grandTotal.toLocaleString()} VND
         </span>

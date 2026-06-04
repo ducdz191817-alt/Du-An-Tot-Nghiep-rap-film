@@ -15,7 +15,7 @@ export const Loading = ({ fullPage = false, size = 'md' }) => {
         {/* Inner static aesthetic ring */}
         <div className={`absolute top-0 left-0 rounded-full border-zinc-800 opacity-20 ${sizeStyles[size]}`} />
       </div>
-      <p className="text-zinc-400 text-sm font-medium animate-pulse">Loading experience...</p>
+      <p className="text-zinc-400 text-sm font-medium animate-pulse">Đang tải trải nghiệm...</p>
     </div>
   );
 

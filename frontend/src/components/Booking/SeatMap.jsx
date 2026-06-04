@@ -18,7 +18,7 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], onSe
       <div className="w-full max-w-xl mx-auto flex flex-col items-center select-none">
         <div className="h-2 w-full bg-brand rounded-full shadow-[0_0_20px_rgba(229,9,20,0.8)]" />
         <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.25em] mt-3">
-          Cinematic Screen
+          Màn hình chiếu phim
         </span>
       </div>
 
@@ -64,7 +64,7 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], onSe
                       } ${activeBg}`}
                       title={`${seatCode} - ${seat.type.toUpperCase()}`}
                     >
-                      {isCouple ? `${seatCode} Couple` : seatCode}
+                      {isCouple ? `${seatCode} Đôi` : seatCode}
                     </button>
                   );
                 })}
