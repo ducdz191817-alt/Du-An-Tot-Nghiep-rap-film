@@ -10,14 +10,14 @@ export const MovieDetail = ({ movie }) => {
   const [selectedDate, setSelectedDate] = useState('');
   const [loadingShowtimes, setLoadingShowtimes] = useState(false);
 
-  // Generate date tabs (Today + 3 upcoming days)
+  // Tạo các tab ngày (Hôm nay + 3 ngày tiếp theo)
   const dateTabs = Array.from({ length: 4 }).map((_, i) => {
     const d = new Date();
     d.setDate(d.getDate() + i);
     return {
       isoString: d.toISOString().split('T')[0],
-      dayName: i === 0 ? 'Today' : d.toLocaleDateString('en-US', { weekday: 'short' }),
-      dateLabel: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      dayName: i === 0 ? 'Hôm nay' : d.toLocaleDateString('vi-VN', { weekday: 'short' }),
+      dateLabel: d.toLocaleDateString('vi-VN', { month: 'short', day: 'numeric' }),
     };
   });
 
@@ -27,7 +27,7 @@ export const MovieDetail = ({ movie }) => {
     }
   }, []);
 
-  // Fetch showtimes when movie or date changes
+  // Lấy lịch chiếu khi phim hoặc ngày thay đổi
   useEffect(() => {
     const fetchMovieShowtimes = async () => {
       if (!movie?._id || !selectedDate) return;
@@ -48,9 +48,9 @@ export const MovieDetail = ({ movie }) => {
     navigate(`/booking/${showtimeId}`);
   };
 
-  // Group showtimes by Theater
+  // Nhóm lịch chiếu theo Rạp
   const groupedShowtimes = showtimes.reduce((acc, showtime) => {
-    const theaterName = showtime.theater?.name || 'Unknown Theater';
+    const theaterName = showtime.theater?.name || 'Rạp không xác định';
     if (!acc[theaterName]) {
       acc[theaterName] = [];
     }
@@ -60,9 +60,9 @@ export const MovieDetail = ({ movie }) => {
 
   return (
     <div className="space-y-12">
-      {/* 1. Backdrop Banner & Details Grid */}
+      {/* 1. Banner nền & Lưới chi tiết */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Left: Poster */}
+        {/* Trái: Poster */}
         <div className="aspect-[2/3] w-full rounded-2xl overflow-hidden bg-zinc-900 border border-dark-border shadow-2xl">
           <img
             src={movie.posterUrl}
@@ -71,7 +71,7 @@ export const MovieDetail = ({ movie }) => {
           />
         </div>
 
-        {/* Right: Text Information */}
+        {/* Phải: Thông tin văn bản */}
         <div className="md:col-span-2 space-y-6 flex flex-col justify-center">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-3">
@@ -79,10 +79,10 @@ export const MovieDetail = ({ movie }) => {
                 {movie.rating}
               </span>
               <span className="text-zinc-400 font-medium text-sm flex items-center gap-1">
-                <Clock size={15} /> {movie.duration} minutes
+                <Clock size={15} /> {movie.duration} phút
               </span>
               <span className="text-zinc-400 font-medium text-sm flex items-center gap-1">
-                <Calendar size={15} /> {new Date(movie.releaseDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                <Calendar size={15} /> {new Date(movie.releaseDate).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })}
               </span>
             </div>
             <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight">
@@ -103,32 +103,32 @@ export const MovieDetail = ({ movie }) => {
             </p>
             <div className="grid grid-cols-2 gap-4 text-sm pt-2">
               <p className="text-zinc-500">
-                <strong className="text-zinc-300">Director:</strong> {movie.director || 'N/A'}
+                <strong className="text-zinc-300">Đạo diễn:</strong> {movie.director || 'Đang cập nhật'}
               </p>
               <p className="text-zinc-500">
-                <strong className="text-zinc-300">Language:</strong> {movie.language}
+                <strong className="text-zinc-300">Ngôn ngữ:</strong> {movie.language}
               </p>
             </div>
             {movie.cast && movie.cast.length > 0 && (
               <p className="text-sm text-zinc-500">
-                <strong className="text-zinc-300">Cast:</strong> {movie.cast.join(', ')}
+                <strong className="text-zinc-300">Diễn viên:</strong> {movie.cast.join(', ')}
               </p>
             )}
           </div>
         </div>
       </div>
 
-      {/* 2. Youtube Trailer Video Player */}
+      {/* 2. Trình phát video Youtube Trailer */}
       {movie.trailerUrl && (
         <div className="space-y-4">
           <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-2">
-            <Play size={20} className="text-brand" /> Cinematic Trailer
+            <Play size={20} className="text-brand" /> Trailer Phim
           </h2>
           <div className="relative aspect-video w-full max-w-4xl mx-auto rounded-2xl overflow-hidden border border-dark-border shadow-2xl bg-black">
             <iframe
               className="absolute inset-0 w-full h-full"
               src={movie.trailerUrl}
-              title={`${movie.title} Official Trailer`}
+              title={`Trailer chính thức của ${movie.title}`}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />
@@ -136,15 +136,15 @@ export const MovieDetail = ({ movie }) => {
         </div>
       )}
 
-      {/* 3. Showtime Booking Panel */}
+      {/* 3. Bảng đặt vé theo lịch chiếu */}
       {movie.status === 'now-showing' && (
         <div className="space-y-6 bg-dark-card border border-dark-border p-6 md:p-8 rounded-3xl shadow-xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-dark-border pb-5">
             <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-2">
-              <Ticket size={22} className="text-brand" /> Book Showtimes
+              <Ticket size={22} className="text-brand" /> Đặt Vé
             </h2>
 
-            {/* Date selection tabs */}
+            {/* Các tab chọn ngày */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
               {dateTabs.map((tab) => {
                 const isSelected = selectedDate === tab.isoString;
@@ -166,14 +166,14 @@ export const MovieDetail = ({ movie }) => {
             </div>
           </div>
 
-          {/* Showtimes lists grouped by Theater */}
+          {/* Danh sách lịch chiếu được nhóm theo rạp */}
           {loadingShowtimes ? (
             <div className="py-12 flex justify-center text-zinc-400 animate-pulse font-semibold">
-              Loading available slots...
+              Đang tải lịch chiếu...
             </div>
           ) : Object.keys(groupedShowtimes).length === 0 ? (
             <div className="py-12 text-center text-zinc-500 font-medium">
-              No showtimes registered on this day. Please check another date!
+              Không có suất chiếu nào trong ngày này. Vui lòng chọn ngày khác!
             </div>
           ) : (
             <div className="divide-y divide-dark-border">
@@ -185,7 +185,7 @@ export const MovieDetail = ({ movie }) => {
 
                   <div className="flex-1 flex flex-wrap gap-3">
                     {groupedShowtimes[theaterName].map((showtime) => {
-                      const startTimeString = new Date(showtime.startTime).toLocaleTimeString('en-US', {
+                      const startTimeString = new Date(showtime.startTime).toLocaleTimeString('vi-VN', {
                         hour: '2-digit',
                         minute: '2-digit',
                         hour12: false,
@@ -201,7 +201,7 @@ export const MovieDetail = ({ movie }) => {
                               {startTimeString}
                             </span>
                             <span className="text-[10px] text-zinc-500 font-semibold block uppercase">
-                              {showtime.room?.name || 'Screen'} ({showtime.format})
+                              {showtime.room?.name || 'Phòng chiếu'} ({showtime.format})
                             </span>
                           </div>
                           <ChevronRight size={14} className="text-zinc-600 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />

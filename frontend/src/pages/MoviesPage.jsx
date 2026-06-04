@@ -27,9 +27,9 @@ export const MoviesPage = () => {
     <div className="space-y-8 pb-16">
       <div>
         <h1 className="text-2xl md:text-4xl font-black text-white flex items-center gap-2">
-          <Compass className="text-brand" size={28} /> Movie Catalog
+          <Compass className="text-brand" size={28} /> Danh mục phim
         </h1>
-        <p className="text-xs text-zinc-500 mt-1">Browse now-showing projection lists or preview upcoming movies.</p>
+        <p className="text-xs text-zinc-500 mt-1">Duyệt danh sách phim đang chiếu hoặc xem trước các phim sắp ra mắt.</p>
       </div>
 
       <MovieFilter filters={filters} onChange={handleFilterChange} />
@@ -39,7 +39,7 @@ export const MoviesPage = () => {
           <Loading />
         ) : error ? (
           <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-2xl text-center font-medium">
-            Error: {error}
+            Lỗi: {error}
           </div>
         ) : (
           <MovieList movies={movies} />

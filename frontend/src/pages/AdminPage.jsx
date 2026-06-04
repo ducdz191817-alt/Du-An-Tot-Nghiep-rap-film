@@ -14,11 +14,11 @@ export const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
 
   useEffect(() => {
-    // Lock page access behind admin authentication check
+    // Kiểm tra xác thực quản trị viên trước khi cho phép truy cập trang
     if (!isAuthenticated) {
       navigate('/login?redirect=' + encodeURIComponent('/admin'));
     } else if (!isAdmin) {
-      alert('Access Denied: You do not have administration privileges.');
+      alert('Từ chối truy cập: Bạn không có đặc quyền quản trị.');
       navigate('/');
     }
   }, [isAuthenticated, isAdmin, navigate]);
@@ -45,10 +45,10 @@ export const AdminPage = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex flex-col md:flex-row bg-dark-deep rounded-3xl overflow-hidden border border-dark-border min-h-[75vh] shadow-2xl">
-        {/* Sidebar */}
+        {/* Thanh điều hướng bên */}
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-        {/* Console view panels */}
+        {/* Khung hiển thị nội dung */}
         <main className="flex-1 p-6 md:p-8 bg-[#0c0c0e] overflow-y-auto">
           {renderActiveTab()}
         </main>

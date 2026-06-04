@@ -29,7 +29,7 @@ export const ShowtimeManager = () => {
   const loadInitialOptions = async () => {
     setLoading(true);
     try {
-      // 1. Get all active theaters
+      // 1. Lấy tất cả rạp đang hoạt động
       const thRes = await adminService.getTheaters();
       setTheaters(thRes);
       if (thRes.length > 0) {
@@ -37,7 +37,7 @@ export const ShowtimeManager = () => {
         setForm((prev) => ({ ...prev, theaterId: thRes[0]._id }));
       }
 
-      // 2. Get now-showing movies
+      // 2. Lấy phim đang chiếu
       const mvRes = await movieService.getMovies({ status: 'now-showing' });
       setMovies(mvRes);
       if (mvRes.length > 0) {
@@ -50,7 +50,7 @@ export const ShowtimeManager = () => {
     }
   };
 
-  // Load Rooms whenever active theater changes
+  // Tải danh sách phòng chiếu mỗi khi rạp được chọn thay đổi
   useEffect(() => {
     loadInitialOptions();
   }, []);
@@ -65,15 +65,15 @@ export const ShowtimeManager = () => {
           setForm((prev) => ({ ...prev, roomId: rmRes[0]._id }));
         }
 
-        // Fetch all showtimes in this theater for listing (we can get all showtimes by querying showtimes for seeded movies)
+        // Lấy tất cả lịch chiếu trong rạp này để hiển thị (chúng ta có thể lấy tất cả lịch chiếu bằng cách truy vấn lịch chiếu cho các phim đã được tạo)
         const allShowtimes = [];
         for (const mv of movies) {
-          const stRes = await adminService.createShowtime({ checkOnly: true }); // We don't have a direct "all showtimes" filter in base controller, but we can query by movies
+          const stRes = await adminService.createShowtime({ checkOnly: true }); // Chúng ta không có bộ lọc "tất cả lịch chiếu" trực tiếp trong controller cơ sở, nhưng có thể truy vấn theo phim
         }
-        // Instead of querying all movie showtimes, we can mock a fetch or let our backend fetch showtimes nicely
-        // Let's just fetch showtimes for the first movie, or get them easily
+        // Thay vì truy vấn tất cả lịch chiếu của phim, chúng ta có thể giả lập việc lấy dữ liệu hoặc để backend trả về lịch chiếu một cách tối ưu
+        // Hãy chỉ lấy lịch chiếu cho bộ phim đầu tiên, hoặc lấy chúng một cách dễ dàng
         if (movies.length > 0) {
-          const stRes = await adminService.getRooms(); // Fetch rooms or let admin view lists
+          const stRes = await adminService.getRooms(); // Lấy phòng chiếu hoặc cho phép admin xem danh sách
         }
       } catch (err) {
         console.error(err);
@@ -110,19 +110,19 @@ export const ShowtimeManager = () => {
     setError('');
 
     if (!form.startTime) {
-      setError('Please pick a date and time slot');
+      setError('Vui lòng chọn ngày và giờ chiếu');
       return;
     }
 
     if (!form.roomId) {
-      setError('Please choose a valid room for scheduling');
+      setError('Vui lòng chọn một phòng chiếu hợp lệ để xếp lịch');
       return;
     }
 
     try {
       await adminService.createShowtime(form);
       setIsOpen(false);
-      alert('Showtime created successfully!');
+      alert('Tạo lịch chiếu thành công!');
     } catch (err) {
       setError(err.message);
     }
@@ -134,12 +134,12 @@ export const ShowtimeManager = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-dark-border pb-4 gap-4">
         <div>
-          <h3 className="text-lg font-black text-zinc-200">Showtimes Schedule</h3>
-          <p className="text-xs text-zinc-500 mt-1">Configure movies display times, room occupancies and base seat pricing.</p>
+          <h3 className="text-lg font-black text-zinc-200">Lịch Chiếu Phim</h3>
+          <p className="text-xs text-zinc-500 mt-1">Cấu hình thời gian chiếu phim, sức chứa phòng và giá vé cơ bản.</p>
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Theater filter selection */}
+          {/* Lựa chọn bộ lọc rạp phim */}
           <select
             value={selectedTheater}
             onChange={handleTheaterChange}
@@ -153,28 +153,28 @@ export const ShowtimeManager = () => {
           </select>
 
           <Button onClick={handleOpenAdd} variant="primary" className="py-2 px-4 text-sm" icon={<Plus size={16} />}>
-            Create Showtime
+            Tạo Lịch Chiếu
           </Button>
         </div>
       </div>
 
-      {/* Grid listing by active rooms */}
+      {/* Danh sách dạng lưới theo các phòng đang hoạt động */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {rooms.map((room) => (
           <div key={room._id} className="bg-dark-card border border-dark-border p-5 rounded-3xl space-y-4 shadow-sm">
             <div className="flex justify-between items-center border-b border-dark-border pb-2.5">
               <h4 className="font-bold text-zinc-200 text-sm">{room.name}</h4>
               <span className="text-[10px] uppercase tracking-wider font-extrabold text-zinc-500 bg-zinc-900 px-2 py-0.5 border border-dark-border rounded">
-                Format: {room.type}
+                Định dạng: {room.type}
               </span>
             </div>
-            <p className="text-xs text-zinc-500 italic">No scheduled showtimes displayed here. Use "Create Showtime" above to schedule new entries into this hall.</p>
+            <p className="text-xs text-zinc-500 italic">Không có lịch chiếu nào được hiển thị ở đây. Sử dụng "Tạo Lịch Chiếu" ở trên để thêm lịch chiếu mới vào phòng này.</p>
           </div>
         ))}
       </div>
 
-      {/* Create Showtime Modal */}
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="Create New Showtime Slot" size="md">
+      {/* Modal tạo lịch chiếu */}
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="Tạo Suất Chiếu Mới" size="md">
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm flex items-center gap-2">
@@ -183,9 +183,9 @@ export const ShowtimeManager = () => {
             </div>
           )}
 
-          {/* Movie select */}
+          {/* Chọn phim */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1.5 pl-0.5">Select Movie</label>
+            <label className="block text-sm font-medium text-zinc-300 mb-1.5 pl-0.5">Chọn Phim</label>
             <select
               name="movieId"
               value={form.movieId}
@@ -201,9 +201,9 @@ export const ShowtimeManager = () => {
             </select>
           </div>
 
-          {/* Room select */}
+          {/* Chọn phòng chiếu */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1.5 pl-0.5">Select Cinema Hall / Room</label>
+            <label className="block text-sm font-medium text-zinc-300 mb-1.5 pl-0.5">Chọn Rạp / Phòng Chiếu</label>
             <select
               name="roomId"
               value={form.roomId}
@@ -212,7 +212,7 @@ export const ShowtimeManager = () => {
               required
             >
               {rooms.length === 0 ? (
-                <option value="">No halls registered in this theater</option>
+                <option value="">Không có phòng nào được đăng ký trong rạp này</option>
               ) : (
                 rooms.map((r) => (
                   <option key={r._id} value={r._id}>
@@ -223,10 +223,10 @@ export const ShowtimeManager = () => {
             </select>
           </div>
 
-          {/* format and price */}
+          {/* định dạng và giá vé */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1.5 pl-0.5">Projection Format</label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1.5 pl-0.5">Định Dạng Chiếu</label>
               <select
                 name="format"
                 value={form.format}
@@ -243,7 +243,7 @@ export const ShowtimeManager = () => {
             <Input
               name="ticketPrice"
               type="number"
-              label="Base Ticket Price (VND)"
+              label="Giá Vé Cơ Bản (VNĐ)"
               value={form.ticketPrice}
               onChange={handleChange}
               required
@@ -253,7 +253,7 @@ export const ShowtimeManager = () => {
           <Input
             name="startTime"
             type="datetime-local"
-            label="Start Date & Time Slot"
+            label="Ngày & Giờ Bắt Đầu"
             value={form.startTime}
             onChange={handleChange}
             required
@@ -261,10 +261,10 @@ export const ShowtimeManager = () => {
 
           <div className="flex justify-end gap-3 pt-3 border-t border-dark-border">
             <Button onClick={() => setIsOpen(false)} variant="secondary" className="px-5 py-2">
-              Cancel
+              Hủy
             </Button>
             <Button type="submit" variant="primary" className="px-6 py-2">
-              Save Showtime
+              Lưu Lịch Chiếu
             </Button>
           </div>
         </form>

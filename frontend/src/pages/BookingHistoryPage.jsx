@@ -28,18 +28,18 @@ export const BookingHistoryPage = () => {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-8 pb-16">
       <div>
         <h1 className="text-2xl md:text-4xl font-black text-white flex items-center gap-2">
-          <Receipt className="text-brand" size={28} /> Booking History
+          <Receipt className="text-brand" size={28} /> Lịch sử đặt vé
         </h1>
-        <p className="text-xs text-zinc-500 mt-1">Review your ticket reservations, popcorn orders, and claim invoice QR codes.</p>
+        <p className="text-xs text-zinc-500 mt-1">Xem lại vé đã đặt, đơn bắp nước và mã QR hóa đơn của bạn.</p>
       </div>
 
       {bookings.length === 0 ? (
         <div className="text-center py-16 bg-dark-card border border-dashed border-dark-border rounded-3xl space-y-4">
           <Ticket size={48} className="text-zinc-700 mx-auto" />
-          <p className="text-zinc-400 font-semibold text-sm">You haven't reserved any tickets yet.</p>
+          <p className="text-zinc-400 font-semibold text-sm">Bạn chưa đặt vé nào.</p>
           <a href="/" className="inline-block">
             <Button variant="primary" className="py-2.5 px-6 font-bold text-xs" icon={<Compass size={14} />}>
-              Find Movies
+              Tìm phim
             </Button>
           </a>
         </div>
@@ -51,14 +51,14 @@ export const BookingHistoryPage = () => {
             const theater = showtime.theater || {};
             const room = showtime.room || {};
 
-            const dateString = new Date(showtime.startTime).toLocaleDateString('en-US', {
+            const dateString = new Date(showtime.startTime).toLocaleDateString('vi-VN', {
               weekday: 'long',
               year: 'numeric',
               month: 'long',
               day: 'numeric',
             });
 
-            const timeString = new Date(showtime.startTime).toLocaleTimeString('en-US', {
+            const timeString = new Date(showtime.startTime).toLocaleTimeString('vi-VN', {
               hour: '2-digit',
               minute: '2-digit',
             });
@@ -98,15 +98,15 @@ export const BookingHistoryPage = () => {
                 {/* Right: Booking codes and invoice sums */}
                 <div className="w-full md:w-auto flex md:flex-col justify-between items-center md:items-end gap-3 pt-4 md:pt-0 border-t md:border-t-0 border-dark-border/40 shrink-0">
                   <div className="text-left md:text-right space-y-1">
-                    <span className="text-[9px] text-zinc-500 font-bold block uppercase tracking-wider">Seats Booked</span>
+                    <span className="text-[9px] text-zinc-500 font-bold block uppercase tracking-wider">Ghế đã đặt</span>
                     <span className="text-xs font-black text-zinc-200 bg-zinc-900 px-2 py-1 rounded border border-dark-border">
                       {booking.seats.join(', ')}
                     </span>
                   </div>
 
                   <div className="text-right space-y-0.5">
-                    <span className="text-[9px] text-zinc-500 font-bold block uppercase tracking-wider">Paid Amount</span>
-                    <span className="text-sm font-black text-brand">{booking.totalPrice.toLocaleString()} VND</span>
+                    <span className="text-[9px] text-zinc-500 font-bold block uppercase tracking-wider">Số tiền đã thanh toán</span>
+                    <span className="text-sm font-black text-brand">{booking.totalPrice.toLocaleString('vi-VN')} VNĐ</span>
                   </div>
                 </div>
               </div>

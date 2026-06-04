@@ -14,7 +14,7 @@ export const PaymentPage = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Safety redirect: If user directly navigates to payment without choosing seats
+    // Chuyển hướng an toàn: Nếu người dùng truy cập trực tiếp vào trang thanh toán mà chưa chọn ghế
     if (!selectedShowtime || selectedSeats.length === 0) {
       navigate('/');
       return;
@@ -37,7 +37,7 @@ export const PaymentPage = () => {
     setLoading(true);
     try {
       await submitBooking(paymentMethod);
-      alert('Chúc mừng! Vé của bạn đã được đặt thành công. Một bản sao hóa đơn đã được gửi đến email của bạn.');
+      alert('Congratulations! Your tickets are successfully reserved. An invoice copy has been sent to your email.');
       navigate('/history');
     } catch (err) {
       alert(`Đặt vé thất bại: ${err.message}`);
@@ -48,21 +48,21 @@ export const PaymentPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Return button */}
+      {/* Nút quay lại */}
       <button
         onClick={() => navigate(-1)}
         className="inline-flex items-center text-zinc-400 hover:text-white text-xs font-extrabold uppercase tracking-wider gap-1.5 transition-colors"
       >
-        <ChevronLeft size={16} /> Chỉnh sửa ghế hoặc bắp nước
+        <ChevronLeft size={16} /> Edit seats or snacks
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* Left checkout forms */}
+        {/* Form thanh toán bên trái */}
         <div className="lg:col-span-2">
           <PaymentForm onSubmit={handlePaymentSubmit} loading={loading} pricing={pricing} />
         </div>
 
-        {/* Right invoice details drawer */}
+        {/* Chi tiết hóa đơn bên phải */}
         <div>
           <BookingSummary
             showtime={selectedShowtime}
@@ -70,7 +70,7 @@ export const PaymentPage = () => {
             selectedConcessions={selectedConcessions}
             concessionsList={concessionsList}
             pricing={pricing}
-            onProceed={null} // Read only mode
+            onProceed={null} // Chế độ chỉ đọc
           />
         </div>
       </div>

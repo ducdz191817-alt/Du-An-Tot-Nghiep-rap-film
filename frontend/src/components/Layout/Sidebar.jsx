@@ -10,17 +10,17 @@ import {
 
 export const Sidebar = ({ activeTab, setActiveTab }) => {
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
-    { id: 'movies', label: 'Movie Manager', icon: <Film size={18} /> },
-    { id: 'showtimes', label: 'Showtimes', icon: <CalendarDays size={18} /> },
-    { id: 'rooms', label: 'Room Manager', icon: <DoorOpen size={18} /> },
-    { id: 'revenue', label: 'Revenue Report', icon: <TrendingUp size={18} /> },
+    { id: 'dashboard', label: 'Bảng điều khiển', icon: <LayoutDashboard size={18} /> },
+    { id: 'movies', label: 'Quản lý phim', icon: <Film size={18} /> },
+    { id: 'showtimes', label: 'Lịch chiếu', icon: <CalendarDays size={18} /> },
+    { id: 'rooms', label: 'Quản lý phòng', icon: <DoorOpen size={18} /> },
+    { id: 'revenue', label: 'Báo cáo doanh thu', icon: <TrendingUp size={18} /> },
   ];
 
   return (
     <aside className="w-full md:w-64 bg-dark-card border-r border-dark-border py-8 px-4 shrink-0 flex flex-col gap-6">
       <div className="px-4">
-        <h2 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Admin Control</h2>
+        <h2 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Quản trị hệ thống</h2>
       </div>
 
       <nav className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-none">

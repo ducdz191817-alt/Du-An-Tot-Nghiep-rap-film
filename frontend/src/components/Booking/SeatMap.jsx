@@ -2,7 +2,7 @@ import React from 'react';
 import { SEAT_TYPES } from '../../utils/constants';
 
 export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], onSeatClick }) => {
-  // Group seats by Row letter
+  // Nhóm ghế theo hàng (chữ cái)
   const groupedSeats = seats.reduce((acc, seat) => {
     const row = seat.row;
     if (!acc[row]) {
@@ -14,28 +14,28 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], onSe
 
   return (
     <div className="space-y-12 overflow-x-auto py-6">
-      {/* 1. Curved Screen Indicator */}
+      {/* 1. Chỉ báo màn hình cong */}
       <div className="w-full max-w-xl mx-auto flex flex-col items-center select-none">
-        <div className="h-1.5 w-full bg-brand rounded-full shadow-[0_4px_30px_rgba(168,85,247,0.9)]" />
-        <span className="text-[10px] text-zinc-500 font-extrabold uppercase tracking-[0.25em] mt-3">
-          MÀN HÌNH / SCREEN
+        <div className="h-2 w-full bg-brand rounded-full shadow-[0_0_20px_rgba(229,9,20,0.8)]" />
+        <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.25em] mt-3">
+          Cinematic Screen
         </span>
       </div>
 
-      {/* 2. Grid Seats Layout */}
+      {/* 2. Bố cục lưới ghế */}
       <div className="min-w-[600px] flex flex-col items-center justify-center space-y-3">
         {Object.keys(groupedSeats).map((rowLetter) => {
-          // Sort row seats by seat number ascending
+          // Sắp xếp ghế trong hàng theo số thứ tự tăng dần
           const rowSeats = [...groupedSeats[rowLetter]].sort((a, b) => a.number - b.number);
 
           return (
             <div key={rowLetter} className="flex items-center space-x-3">
-              {/* Row Label (left) */}
+              {/* Nhãn hàng (trái) */}
               <span className="w-6 text-zinc-500 font-black text-sm text-center select-none uppercase">
                 {rowLetter}
               </span>
 
-              {/* Seats inside row */}
+              {/* Các ghế trong hàng */}
               <div className="flex items-center gap-2">
                 {rowSeats.map((seat) => {
                   const seatCode = `${seat.row}${seat.number}`;
@@ -51,7 +51,7 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], onSe
                     activeBg = seatStyle.selectedColor;
                   }
 
-                  // Couple seats visual width (twice standard)
+                  // Chiều rộng hiển thị của ghế đôi (gấp đôi ghế thường)
                   const isCouple = seat.type === 'couple';
 
                   return (
@@ -70,7 +70,7 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], onSe
                 })}
               </div>
 
-              {/* Row Label (right) */}
+              {/* Nhãn hàng (phải) */}
               <span className="w-6 text-zinc-500 font-black text-sm text-center select-none uppercase">
                 {rowLetter}
               </span>

@@ -10,14 +10,14 @@ export const RoomManager = () => {
   const [theaters, setTheaters] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('rooms'); // 'rooms' or 'theaters'
+  const [activeTab, setActiveTab] = useState('rooms'); // 'rooms' hoặc 'theaters'
   
-  // Modals status
+  // Trạng thái của các Modal
   const [isThOpen, setIsThOpen] = useState(false);
   const [isRmOpen, setIsRmOpen] = useState(false);
 
-  // Forms states
-  const [thForm, setThForm] = useState({ name: '', address: '', city: 'Ho Chi Minh', phone: '' });
+  // Trạng thái của các Form
+  const [thForm, setThForm] = useState({ name: '', address: '', city: 'Hồ Chí Minh', phone: '' });
   const [rmForm, setRmForm] = useState({
     name: '',
     theaterId: '',
@@ -63,7 +63,7 @@ export const RoomManager = () => {
     try {
       await adminService.createTheater(thForm);
       setIsThOpen(false);
-      setThForm({ name: '', address: '', city: 'Ho Chi Minh', phone: '' });
+      setThForm({ name: '', address: '', city: 'Hồ Chí Minh', phone: '' });
       loadData();
     } catch (err) {
       setError(err.message);
@@ -112,16 +112,16 @@ export const RoomManager = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-dark-border pb-4 gap-4">
         <div>
-          <h3 className="text-lg font-black text-zinc-200">Theaters & Halls</h3>
-          <p className="text-xs text-zinc-500 mt-1">Configure cinema complexes and generate physical seating charts.</p>
+          <h3 className="text-lg font-black text-zinc-200">Rạp & Phòng Chiếu</h3>
+          <p className="text-xs text-zinc-500 mt-1">Cấu hình cụm rạp và tạo sơ đồ ghế ngồi vật lý.</p>
         </div>
 
         <div className="flex items-center gap-3">
           <Button onClick={() => setIsThOpen(true)} variant="secondary" className="py-2 px-4 text-sm" icon={<Home size={15} />}>
-            Add Complex
+            Thêm Cụm Rạp
           </Button>
           <Button onClick={() => setIsRmOpen(true)} variant="primary" className="py-2 px-4 text-sm" icon={<Plus size={16} />}>
-            Add Hall / Room
+            Thêm Phòng Chiếu
           </Button>
         </div>
       </div>
@@ -134,7 +134,7 @@ export const RoomManager = () => {
             activeTab === 'rooms' ? 'border-brand text-brand' : 'border-transparent text-zinc-500 hover:text-zinc-300'
           }`}
         >
-          Seated Halls ({rooms.length})
+          Phòng Chiếu ({rooms.length})
         </button>
         <button
           onClick={() => setActiveTab('theaters')}
@@ -142,11 +142,11 @@ export const RoomManager = () => {
             activeTab === 'theaters' ? 'border-brand text-brand' : 'border-transparent text-zinc-500 hover:text-zinc-300'
           }`}
         >
-          Theater Complexes ({theaters.length})
+          Cụm Rạp ({theaters.length})
         </button>
       </div>
 
-      {/* Halls Grid listing */}
+      {/* Danh sách lưới Phòng chiếu */}
       {activeTab === 'rooms' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {rooms.map((rm) => (
@@ -163,15 +163,15 @@ export const RoomManager = () => {
                 </span>
               </div>
               <div className="text-xs font-semibold text-zinc-500 border-t border-dark-border/40 pt-2 flex justify-between">
-                <span>Capacity Layout</span>
-                <span className="text-zinc-300">{rm.capacity} Seats generated</span>
+                <span>Sức chứa</span>
+                <span className="text-zinc-300">Đã tạo {rm.capacity} ghế</span>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Theater listing */}
+      {/* Danh sách Cụm rạp */}
       {activeTab === 'theaters' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {theaters.map((th) => (
@@ -179,15 +179,15 @@ export const RoomManager = () => {
               <div>
                 <h4 className="font-bold text-zinc-200 text-sm">{th.name}</h4>
                 <p className="text-xs text-zinc-400 mt-1">{th.address}, {th.city}</p>
-                <p className="text-[10px] text-zinc-500 font-bold mt-0.5">Phone: {th.phone}</p>
+                <p className="text-[10px] text-zinc-500 font-bold mt-0.5">Điện thoại: {th.phone}</p>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Add Complex Modal */}
-      <Modal isOpen={isThOpen} onClose={() => setIsThOpen(false)} title="Register Cinema Complex" size="md">
+      {/* Modal Thêm Cụm rạp */}
+      <Modal isOpen={isThOpen} onClose={() => setIsThOpen(false)} title="Đăng Ký Cụm Rạp" size="md">
         <form onSubmit={handleCreateTheater} className="space-y-4">
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm flex items-center gap-2">
@@ -196,27 +196,27 @@ export const RoomManager = () => {
             </div>
           )}
 
-          <Input name="name" label="Complex Name" placeholder="Nova Cinema Landmark 81" value={thForm.name} onChange={handleThChange} required />
-          <Input name="address" label="Street Address" placeholder="Landmark 81, B1 Floor" value={thForm.address} onChange={handleThChange} required />
+          <Input name="name" label="Tên Cụm Rạp" placeholder="Nova Cinema Landmark 81" value={thForm.name} onChange={handleThChange} required />
+          <Input name="address" label="Địa Chỉ" placeholder="Tầng B1, Landmark 81" value={thForm.address} onChange={handleThChange} required />
 
           <div className="grid grid-cols-2 gap-4">
-            <Input name="city" label="City" value={thForm.city} onChange={handleThChange} required />
-            <Input name="phone" label="Phone Hotline" placeholder="028 3822 3111" value={thForm.phone} onChange={handleThChange} required />
+            <Input name="city" label="Thành Phố" value={thForm.city} onChange={handleThChange} required />
+            <Input name="phone" label="Hotline" placeholder="028 3822 3111" value={thForm.phone} onChange={handleThChange} required />
           </div>
 
           <div className="flex justify-end gap-3 pt-3 border-t border-dark-border">
             <Button onClick={() => setIsThOpen(false)} variant="secondary" className="px-5 py-2">
-              Cancel
+              Hủy
             </Button>
             <Button type="submit" variant="primary" className="px-6 py-2">
-              Register
+              Đăng Ký
             </Button>
           </div>
         </form>
       </Modal>
 
-      {/* Add Hall Modal */}
-      <Modal isOpen={isRmOpen} onClose={() => setIsRmOpen(false)} title="Register Hall & Generate Seat Map" size="lg">
+      {/* Modal Thêm Phòng chiếu */}
+      <Modal isOpen={isRmOpen} onClose={() => setIsRmOpen(false)} title="Đăng Ký Phòng Chiếu & Tạo Sơ Đồ Ghế" size="lg">
         <form onSubmit={handleCreateRoom} className="space-y-4">
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm flex items-center gap-2">
@@ -226,11 +226,11 @@ export const RoomManager = () => {
           )}
 
           <div className="grid grid-cols-2 gap-4">
-            <Input name="name" label="Hall Name" placeholder="Hall 1 (IMAX)" value={rmForm.name} onChange={handleRmChange} required />
+            <Input name="name" label="Tên Phòng Chiếu" placeholder="Phòng 1 (IMAX)" value={rmForm.name} onChange={handleRmChange} required />
             
-            {/* Theater Select */}
+            {/* Lựa chọn Cụm rạp */}
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1.5 pl-0.5">Theater Complex</label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1.5 pl-0.5">Cụm Rạp</label>
               <select
                 name="theaterId"
                 value={rmForm.theaterId}
@@ -248,9 +248,9 @@ export const RoomManager = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            {/* Projection Format */}
+            {/* Định dạng chiếu */}
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1.5 pl-0.5">Projection Format</label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1.5 pl-0.5">Định Dạng Chiếu</label>
               <select
                 name="type"
                 value={rmForm.type}
@@ -264,26 +264,26 @@ export const RoomManager = () => {
               </select>
             </div>
 
-            <Input name="seatsPerRow" type="number" label="Seats per Row" placeholder="10" value={rmForm.seatsPerRow} onChange={handleRmChange} required />
+            <Input name="seatsPerRow" type="number" label="Số Ghế Mỗi Hàng" placeholder="10" value={rmForm.seatsPerRow} onChange={handleRmChange} required />
           </div>
 
           <div className="grid grid-cols-3 gap-4 border-t border-dark-border/40 pt-4">
-            <Input name="standardRows" type="number" label="Standard Seat Rows" placeholder="5" value={rmForm.standardRows} onChange={handleRmChange} required />
-            <Input name="vipRows" type="number" label="VIP Seat Rows" placeholder="3" value={rmForm.vipRows} onChange={handleRmChange} required />
-            <Input name="coupleRows" type="number" label="Couple Seat Rows" placeholder="1" value={rmForm.coupleRows} onChange={handleRmChange} required />
+            <Input name="standardRows" type="number" label="Số Hàng Ghế Thường" placeholder="5" value={rmForm.standardRows} onChange={handleRmChange} required />
+            <Input name="vipRows" type="number" label="Số Hàng Ghế VIP" placeholder="3" value={rmForm.vipRows} onChange={handleRmChange} required />
+            <Input name="coupleRows" type="number" label="Số Hàng Ghế Đôi" placeholder="1" value={rmForm.coupleRows} onChange={handleRmChange} required />
           </div>
 
           <p className="text-[10px] text-zinc-500 font-bold bg-zinc-900/60 p-3 rounded-lg border border-dark-border flex items-center gap-2">
             <RefreshCw size={12} className="animate-spin text-brand shrink-0" />
-            <span>Seats will be automatically populated inside database using rows mapping alphabet letters (A-Z) and standard prices offsets.</span>
+            <span>Ghế sẽ được tự động tạo trong cơ sở dữ liệu sử dụng các chữ cái (A-Z) để đánh dấu hàng và tính toán dựa trên giá tiêu chuẩn.</span>
           </p>
 
           <div className="flex justify-end gap-3 pt-3 border-t border-dark-border">
             <Button onClick={() => setIsRmOpen(false)} variant="secondary" className="px-5 py-2">
-              Cancel
+              Hủy
             </Button>
             <Button type="submit" variant="primary" className="px-6 py-2">
-              Save & Generate Chart
+              Lưu & Tạo Sơ Đồ
             </Button>
           </div>
         </form>

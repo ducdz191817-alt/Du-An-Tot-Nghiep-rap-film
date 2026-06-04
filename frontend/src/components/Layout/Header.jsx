@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Film, User, LogOut, LayoutDashboard, History } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
+import myLogo from '../../assets/images/logo.png';
 
 export const Header = () => {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
@@ -21,17 +22,19 @@ export const Header = () => {
     <header className="sticky top-0 z-40 w-full bg-dark-deep/80 backdrop-blur-md border-b border-dark-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center space-x-2 group">
-          <div className="bg-brand p-1.5 rounded-lg shadow-[0_0_15px_rgba(229,9,20,0.5)] group-hover:scale-105 transition-transform">
-            <Film className="text-white" size={20} />
-          </div>
-          <span className="text-xl font-black text-white tracking-wider uppercase">
-            Nova <span className="text-brand">Cinematic</span>
-          </span>
-        </Link>
+        <Link to="/" className="flex items-center group">
+        <img 
+          src={myLogo} 
+          alt="Nova Cinematic Logo" 
+          className="h-16 w-auto object-contain group-hover:scale-105 transition-transform" 
+        />
+      </Link>
 
         {/* Navigation */}
         <nav className="hidden md:flex items-center space-x-8 text-sm font-semibold">
+          <Link to="/" className={`${isActive('/')} transition-colors`}>
+            Home
+          </Link>
           <Link to="/movies" className={`${isActive('/movies')} transition-colors`}>
             Phim
           </Link>

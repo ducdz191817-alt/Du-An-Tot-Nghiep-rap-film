@@ -7,7 +7,7 @@ export const MovieCard = ({ movie }) => {
 
   return (
     <div className="group relative bg-dark-card border border-dark-border rounded-2xl overflow-hidden hover:border-brand/40 hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
-      {/* Image Wrap */}
+      {/* Vùng chứa hình ảnh */}
       <div className="relative aspect-[2/3] w-full overflow-hidden bg-zinc-900">
         <img
           src={movie.posterUrl}
@@ -16,10 +16,10 @@ export const MovieCard = ({ movie }) => {
           loading="lazy"
         />
 
-        {/* Backdrop Glow & Overlay */}
+        {/* Hiệu ứng nền & Lớp phủ */}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
 
-        {/* Hover play trailer action trigger */}
+        {/* Nút phát trailer khi di chuột (hover) */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <Link
             to={`/movies/${movie._id}`}
@@ -29,13 +29,13 @@ export const MovieCard = ({ movie }) => {
           </Link>
         </div>
 
-        {/* Rating Label Badge (top-left) */}
+        {/* Nhãn Đánh giá phim (góc trên bên trái) */}
         <span className="absolute top-3 left-3 text-xs font-black bg-brand px-2.5 py-1 rounded-md text-white tracking-wide shadow-md uppercase">
           {movie.rating}
         </span>
       </div>
 
-      {/* Detail Description Text */}
+      {/* Phần văn bản chi tiết */}
       <div className="p-4 space-y-2">
         <div className="flex flex-wrap gap-1">
           {movie.genre.slice(0, 2).map((g) => (
@@ -54,7 +54,7 @@ export const MovieCard = ({ movie }) => {
             <Calendar size={13} />
             {new Date(movie.releaseDate).getFullYear()}
           </span>
-          <span className="text-zinc-400 font-bold">{movie.duration}m</span>
+          <span className="text-zinc-400 font-bold">{movie.duration} phút</span>
         </div>
       </div>
     </div>
