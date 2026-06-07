@@ -38,15 +38,15 @@ export const Header = () => {
           <Link to="/movies" className={`${isActive('/movies')} transition-colors`}>
             Phim
           </Link>
-          <a href="#" className="text-zinc-300 hover:text-white transition-colors">
+          <Link to="/promotions" className={`${isActive('/promotions')} transition-colors`}>
             Khuyến mãi
-          </a>
-          <a href="#" className="text-zinc-300 hover:text-white transition-colors">
+          </Link>
+          <Link to="/theaters" className={`${isActive('/theaters')} transition-colors`}>
             Rạp
-          </a>
-          <a href="#" className="text-zinc-300 hover:text-white transition-colors">
+          </Link>
+          <Link to="/about" className={`${isActive('/about')} transition-colors`}>
             Về chúng tôi
-          </a>
+          </Link>
           {isAuthenticated && (
             <Link to="/history" className={`${isActive('/history')} flex items-center gap-1.5 transition-colors`}>
               <History size={16} /> Vé của tôi

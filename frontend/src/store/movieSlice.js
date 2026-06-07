@@ -58,7 +58,10 @@ const movieSlice = createSlice({
       })
       .addCase(fetchMovies.fulfilled, (state, action) => {
         state.loading = false;
-        state.movies = action.payload;
+        // Backend returns { success, count, data: [...] }
+        state.movies = Array.isArray(action.payload)
+          ? action.payload
+          : action.payload?.data ?? [];
       })
       .addCase(fetchMovies.rejected, (state, action) => {
         state.loading = false;
@@ -71,7 +74,8 @@ const movieSlice = createSlice({
       })
       .addCase(fetchMovieDetail.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentMovie = action.payload;
+        // Backend returns { success, data: {...} }
+        state.currentMovie = action.payload?.data ?? action.payload;
       })
       .addCase(fetchMovieDetail.rejected, (state, action) => {
         state.loading = false;

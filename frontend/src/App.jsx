@@ -15,6 +15,9 @@ import BookingHistoryPage from './pages/BookingHistoryPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AdminPage from './pages/AdminPage';
+import PromotionsPage from './pages/PromotionsPage';
+import TheatersPage from './pages/TheatersPage';
+import AboutPage from './pages/AboutPage';
 
 function App() {
   return (
@@ -34,6 +37,9 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/admin" element={<AdminPage />} />
+              <Route path="/promotions" element={<PromotionsPage />} />
+              <Route path="/theaters" element={<TheatersPage />} />
+              <Route path="/about" element={<AboutPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>
