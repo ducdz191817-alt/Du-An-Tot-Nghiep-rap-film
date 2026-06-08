@@ -24,6 +24,11 @@ const ConcessionSchema = new mongoose.Schema(
       enum: ['food', 'drink', 'combo'],
       default: 'food',
     },
+    theater: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Theater',
+      required: [true, 'Please provide a theater complex'],
+    },
     active: {
       type: Boolean,
       default: true,

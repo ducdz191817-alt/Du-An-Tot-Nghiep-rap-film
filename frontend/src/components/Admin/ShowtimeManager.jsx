@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, AlertCircle, Calendar } from 'lucide-react';
+import { Plus, Trash2, AlertCircle, Calendar, Edit2 } from 'lucide-react';
 import movieService from '../../services/movie.service';
 import adminService from '../../services/admin.service';
+import bookingService from '../../services/booking.service';
 import Input from '../common/Input';
 import Button from '../common/Button';
 import Loading from '../common/Loading';
@@ -14,6 +15,7 @@ export const ShowtimeManager = () => {
   const [showtimes, setShowtimes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
+  const [editingShowtime, setEditingShowtime] = useState(null);
 
   const [selectedTheater, setSelectedTheater] = useState('');
   const [form, setForm] = useState({
@@ -65,16 +67,9 @@ export const ShowtimeManager = () => {
           setForm((prev) => ({ ...prev, roomId: rmRes[0]._id }));
         }
 
-        // Lấy tất cả lịch chiếu trong rạp này để hiển thị (chúng ta có thể lấy tất cả lịch chiếu bằng cách truy vấn lịch chiếu cho các phim đã được tạo)
-        const allShowtimes = [];
-        for (const mv of movies) {
-          const stRes = await adminService.createShowtime({ checkOnly: true }); // Chúng ta không có bộ lọc "tất cả lịch chiếu" trực tiếp trong controller cơ sở, nhưng có thể truy vấn theo phim
-        }
-        // Thay vì truy vấn tất cả lịch chiếu của phim, chúng ta có thể giả lập việc lấy dữ liệu hoặc để backend trả về lịch chiếu một cách tối ưu
-        // Hãy chỉ lấy lịch chiếu cho bộ phim đầu tiên, hoặc lấy chúng một cách dễ dàng
-        if (movies.length > 0) {
-          const stRes = await adminService.getRooms(); // Lấy phòng chiếu hoặc cho phép admin xem danh sách
-        }
+        // Lấy tất cả lịch chiếu trong rạp này để hiển thị
+        const stRes = await bookingService.getShowtimes({ theaterId: selectedTheater });
+        setShowtimes(stRes);
       } catch (err) {
         console.error(err);
       }
@@ -93,6 +88,7 @@ export const ShowtimeManager = () => {
   };
 
   const handleOpenAdd = () => {
+    setEditingShowtime(null);
     setError('');
     setForm({
       movieId: movies[0]?._id || '',
@@ -103,6 +99,40 @@ export const ShowtimeManager = () => {
       format: '2D',
     });
     setIsOpen(true);
+  };
+
+  const handleOpenEditShowtime = (st) => {
+    setEditingShowtime(st);
+    setError('');
+    
+    // Convert to local datetime string (YYYY-MM-DDThh:mm)
+    const date = new Date(st.startTime);
+    const tzOffset = date.getTimezoneOffset() * 60000;
+    const localTimeFormatted = new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
+
+    setForm({
+      movieId: st.movie?._id || st.movie,
+      theaterId: st.theater?._id || st.theater,
+      roomId: st.room?._id || st.room,
+      startTime: localTimeFormatted,
+      ticketPrice: st.ticketPrice,
+      format: st.format,
+    });
+    setIsOpen(true);
+  };
+
+  const handleDeleteShowtime = async (id) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa lịch chiếu này không? Tất cả các vé đã đặt cho lịch chiếu này cũng sẽ bị xóa.')) return;
+    try {
+      await adminService.deleteShowtime(id);
+      if (selectedTheater) {
+        const stRes = await bookingService.getShowtimes({ theaterId: selectedTheater });
+        setShowtimes(stRes);
+      }
+      alert('Xóa lịch chiếu thành công!');
+    } catch (err) {
+      alert(err.message);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -120,9 +150,17 @@ export const ShowtimeManager = () => {
     }
 
     try {
-      await adminService.createShowtime(form);
+      if (editingShowtime) {
+        await adminService.updateShowtime(editingShowtime._id, form);
+      } else {
+        await adminService.createShowtime(form);
+      }
       setIsOpen(false);
-      alert('Tạo lịch chiếu thành công!');
+      setEditingShowtime(null);
+      alert(editingShowtime ? 'Cập nhật lịch chiếu thành công!' : 'Tạo lịch chiếu thành công!');
+      // Reload showtimes
+      const stRes = await bookingService.getShowtimes({ theaterId: selectedTheater });
+      setShowtimes(stRes);
     } catch (err) {
       setError(err.message);
     }
@@ -168,13 +206,71 @@ export const ShowtimeManager = () => {
                 Định dạng: {room.type}
               </span>
             </div>
-            <p className="text-xs text-zinc-500 italic">Không có lịch chiếu nào được hiển thị ở đây. Sử dụng "Tạo Lịch Chiếu" ở trên để thêm lịch chiếu mới vào phòng này.</p>
+            
+            {/* Danh sách lịch chiếu của phòng */}
+            {(() => {
+              const roomShowtimes = showtimes.filter((s) => s.room?._id === room._id || s.room === room._id);
+              if (roomShowtimes.length === 0) {
+                return (
+                  <p className="text-xs text-zinc-500 italic">
+                    Không có lịch chiếu nào được hiển thị ở đây. Sử dụng "Tạo Lịch Chiếu" ở trên để thêm lịch chiếu mới vào phòng này.
+                  </p>
+                );
+              }
+              return (
+                <div className="space-y-2.5">
+                  {roomShowtimes.map((st) => {
+                    const startTimeFormatted = new Date(st.startTime).toLocaleString('vi-VN', {
+                      weekday: 'short',
+                      month: 'numeric',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    });
+                    return (
+                      <div key={st._id} className="flex items-center justify-between bg-zinc-900/60 border border-dark-border/40 p-3 rounded-2xl gap-3">
+                        <div className="min-w-0 flex-grow">
+                          <div className="font-bold text-zinc-200 text-xs truncate">
+                            {st.movie?.title || 'Phim đã bị xóa'}
+                          </div>
+                          <div className="text-[10px] text-zinc-500 flex items-center gap-1.5 mt-0.5">
+                            <Calendar size={10} className="text-brand" />
+                            <span>{startTimeFormatted}</span>
+                            <span>&bull;</span>
+                            <span className="text-zinc-400 font-extrabold">{st.format}</span>
+                          </div>
+                          <div className="text-[10px] text-brand font-black mt-0.5">
+                            {st.ticketPrice.toLocaleString()} VND
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            onClick={() => handleOpenEditShowtime(st)}
+                            className="p-1.5 bg-zinc-950 border border-dark-border hover:border-brand/40 text-zinc-500 hover:text-brand rounded-lg transition-all"
+                            title="Chỉnh sửa lịch chiếu"
+                          >
+                            <Edit2 size={12} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteShowtime(st._id)}
+                            className="p-1.5 bg-zinc-950 border border-dark-border hover:border-red-500/40 text-zinc-500 hover:text-red-400 rounded-lg transition-all"
+                            title="Xóa lịch chiếu"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
         ))}
       </div>
 
-      {/* Modal tạo lịch chiếu */}
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="Tạo Suất Chiếu Mới" size="md">
+      {/* Modal tạo / chỉnh sửa lịch chiếu */}
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title={editingShowtime ? "Chỉnh Sửa Lịch Chiếu" : "Tạo Suất Chiếu Mới"} size="md">
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm flex items-center gap-2">
@@ -264,7 +360,7 @@ export const ShowtimeManager = () => {
               Hủy
             </Button>
             <Button type="submit" variant="primary" className="px-6 py-2">
-              Lưu Lịch Chiếu
+              {editingShowtime ? "Cập Nhật" : "Lưu Lịch Chiếu"}
             </Button>
           </div>
         </form>

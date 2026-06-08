@@ -226,8 +226,25 @@ const updateConcession = async (req, res, next) => {
 
 const listConcessions = async (req, res, next) => {
   try {
-    const concessions = await Concession.find();
+    const query = {};
+    if (req.query.theaterId) {
+      query.theater = req.query.theaterId;
+    }
+    const concessions = await Concession.find(query).populate('theater');
     res.json({ success: true, count: concessions.length, data: concessions });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteConcession = async (req, res, next) => {
+  try {
+    const concession = await Concession.findByIdAndDelete(req.params.id);
+    if (!concession) {
+      res.status(404);
+      throw new Error('Concession not found');
+    }
+    res.json({ success: true, data: {} });
   } catch (error) {
     next(error);
   }
@@ -405,6 +422,64 @@ const getRevenueReport = async (req, res, next) => {
   }
 };
 
+const listBookings = async (req, res, next) => {
+  try {
+    const bookings = await Booking.find()
+      .populate('user', 'username email phone')
+      .populate({
+        path: 'showtime',
+        populate: [
+          { path: 'movie', select: 'title' },
+          { path: 'theater', select: 'name' },
+          { path: 'room', select: 'name' },
+        ],
+      })
+      .populate({
+        path: 'concessions.concession',
+      })
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: bookings.length,
+      data: bookings,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteBooking = async (req, res, next) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      res.status(404);
+      throw new Error('Booking not found');
+    }
+
+    // 1. Release the booked seats in the Showtime document
+    if (booking.seats && booking.seats.length > 0 && booking.showtime) {
+      await Showtime.findByIdAndUpdate(booking.showtime, {
+        $pull: { bookedSeats: { $in: booking.seats } },
+      });
+    }
+
+    // 2. Delete related payment transactions
+    const Payment = require('../models/Payment.model');
+    await Payment.deleteMany({ booking: booking._id });
+
+    // 3. Delete the booking itself
+    await booking.deleteOne();
+
+    res.json({
+      success: true,
+      message: 'Đặt vé đã được xóa và giải phóng ghế thành công',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createMovie,
   updateMovie,
@@ -419,10 +494,13 @@ module.exports = {
   listRooms,
   createConcession,
   updateConcession,
+  deleteConcession,
   listConcessions,
   createShowtime,
   updateShowtime,
   deleteShowtime,
   getDashboardStats,
   getRevenueReport,
+  listBookings,
+  deleteBooking,
 };

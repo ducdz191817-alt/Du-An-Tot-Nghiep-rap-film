@@ -51,17 +51,25 @@ export const BookingHistoryPage = () => {
             const theater = showtime.theater || {};
             const room = showtime.room || {};
 
-            const dateString = new Date(showtime.startTime).toLocaleDateString('vi-VN', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            });
+            const dateString = showtime.startTime
+              ? new Date(showtime.startTime).toLocaleDateString('vi-VN', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })
+              : 'Thời gian chưa xác định';
 
-            const timeString = new Date(showtime.startTime).toLocaleTimeString('vi-VN', {
-              hour: '2-digit',
-              minute: '2-digit',
-            });
+            const timeString = showtime.startTime
+              ? new Date(showtime.startTime).toLocaleTimeString('vi-VN', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : '--:--';
+
+            const seatsList = (booking.seats || []).join(', ') || 'Chưa chọn ghế';
+            const priceFormatted = (booking.totalPrice || 0).toLocaleString('vi-VN');
+            const posterImage = movie.posterUrl || 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?q=80&w=200';
 
             return (
               <div
@@ -74,19 +82,19 @@ export const BookingHistoryPage = () => {
                 {/* Left: Film description summary */}
                 <div className="flex gap-4 items-center">
                   <div className="w-16 h-24 rounded-xl overflow-hidden bg-zinc-950 border border-dark-border shrink-0 hidden sm:block">
-                    <img src={movie.posterUrl} alt={movie.title} className="w-full h-full object-cover" />
+                    <img src={posterImage} alt={movie.title || 'Movie'} className="w-full h-full object-cover" />
                   </div>
                   
                   <div className="space-y-1.5 pl-2 sm:pl-0">
                     <span className="text-[9px] font-black bg-brand px-2 py-0.5 rounded text-white uppercase tracking-wider">
-                      {movie.rating}
+                      {movie.rating || 'N/A'}
                     </span>
                     <h3 className="text-lg font-black text-zinc-100 group-hover:text-brand transition-colors">
-                      {movie.title}
+                      {movie.title || 'Phim đã bị xóa hoặc không còn tồn tại'}
                     </h3>
                     <p className="text-xs text-zinc-400 font-bold flex items-center gap-1.5">
                       <MapPin size={13} className="text-brand shrink-0" />
-                      {theater.name} &bull; {room.name} ({showtime.format})
+                      {theater.name || 'Không rõ rạp'} &bull; {room.name || 'Không rõ phòng'} ({showtime.format || 'N/A'})
                     </p>
                     <p className="text-[11px] text-zinc-500 font-semibold flex items-center gap-1.5">
                       <Calendar size={13} />
@@ -100,13 +108,13 @@ export const BookingHistoryPage = () => {
                   <div className="text-left md:text-right space-y-1">
                     <span className="text-[9px] text-zinc-500 font-bold block uppercase tracking-wider">Ghế đã đặt</span>
                     <span className="text-xs font-black text-zinc-200 bg-zinc-900 px-2 py-1 rounded border border-dark-border">
-                      {booking.seats.join(', ')}
+                      {seatsList}
                     </span>
                   </div>
 
                   <div className="text-right space-y-0.5">
                     <span className="text-[9px] text-zinc-500 font-bold block uppercase tracking-wider">Số tiền đã thanh toán</span>
-                    <span className="text-sm font-black text-brand">{booking.totalPrice.toLocaleString('vi-VN')} VNĐ</span>
+                    <span className="text-sm font-black text-brand">{priceFormatted} VNĐ</span>
                   </div>
                 </div>
               </div>

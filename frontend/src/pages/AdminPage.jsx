@@ -6,6 +6,8 @@ import Dashboard from '../components/Admin/Dashboard';
 import MovieManager from '../components/Admin/MovieManager';
 import ShowtimeManager from '../components/Admin/ShowtimeManager';
 import RoomManager from '../components/Admin/RoomManager';
+import ConcessionManager from '../components/Admin/ConcessionManager';
+import BookingManager from '../components/Admin/BookingManager';
 import RevenueReport from '../components/Admin/RevenueReport';
 
 export const AdminPage = () => {
@@ -33,6 +35,10 @@ export const AdminPage = () => {
         return <ShowtimeManager />;
       case 'rooms':
         return <RoomManager />;
+      case 'concessions':
+        return <ConcessionManager />;
+      case 'bookings':
+        return <BookingManager />;
       case 'revenue':
         return <RevenueReport />;
       default:
