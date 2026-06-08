@@ -7,9 +7,11 @@ import MovieFilter from '../components/Movie/MovieFilter';
 import Loading from '../components/common/Loading';
 import Button from '../components/common/Button';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 
 export const HomePage = () => {
   const dispatch = useDispatch();
+  const { t } = useLanguage();
   const { movies, loading, error } = useSelector((state) => state.movie);
   const [filters, setFilters] = useState({
     status: 'now-showing',
@@ -49,7 +51,7 @@ export const HomePage = () => {
           {/* Banner Content overlay */}
           <div className="absolute inset-0 flex flex-col justify-center px-6 sm:px-12 md:px-16 max-w-2xl space-y-4">
             <span className="text-[10px] font-black bg-brand px-3 py-1 rounded text-white tracking-widest uppercase w-max select-none shadow-md">
-              Phim Nổi Bật
+              {t('home.featured')}
             </span>
             <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-white leading-tight tracking-tighter drop-shadow-2xl">
               {featured.title}
@@ -79,7 +81,7 @@ export const HomePage = () => {
                     <line x1="13" x2="13" y1="5" y2="9" />
                     <line x1="13" x2="13" y1="15" y2="19" />
                   </svg>
-                  <span>Đặt Vé Ngay</span>
+                  <span>{t('home.bookNow')}</span>
                 </Button>
               </Link>
 
@@ -102,7 +104,7 @@ export const HomePage = () => {
                     <circle cx="12" cy="12" r="10" />
                     <polygon points="10 8 16 12 10 16 10 8" fill="currentColor" />
                   </svg>
-                  <span>Xem Trailer</span>
+                  <span>{t('home.watchTrailer')}</span>
                 </Button>
               </Link>
             </div>
@@ -114,7 +116,7 @@ export const HomePage = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between border-b border-dark-border pb-4">
           <h2 className="text-xl md:text-3xl font-black text-white flex items-center gap-2 tracking-tight">
-            <Compass className="text-brand" size={24} /> Khám Phá Phim
+            <Compass className="text-brand" size={24} /> {t('home.discover')}
           </h2>
         </div>
 
@@ -127,7 +129,7 @@ export const HomePage = () => {
           <Loading />
         ) : error ? (
           <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-2xl text-center font-medium">
-            Lỗi khi tải danh sách phim: {error}
+            {t('home.loadingError')}: {error}
           </div>
         ) : (
           <MovieList movies={movies} />
