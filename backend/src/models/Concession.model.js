@@ -27,7 +27,8 @@ const ConcessionSchema = new mongoose.Schema(
     theater: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Theater',
-      required: [true, 'Please provide a theater complex'],
+      required: false,
+      default: null,
     },
     active: {
       type: Boolean,

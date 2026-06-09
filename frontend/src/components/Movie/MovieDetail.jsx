@@ -12,17 +12,23 @@ export const MovieDetail = ({ movie }) => {
   const [selectedDate, setSelectedDate] = useState('');
   const [loadingShowtimes, setLoadingShowtimes] = useState(false);
 
-  // Translate movie dynamic properties
-  const translatedTitle = t(movie.title);
-  const descKey = `${movie.title}.desc`;
-  const translatedDescription = t(descKey) === descKey ? movie.description : t(descKey);
-  const translatedLanguage = t(movie.language);
+  // ── Lấy title / description / language theo ngôn ngữ trực tiếp từ DB ──────
+  // Nếu phim có titleEN/descriptionEN thì dùng, không thì fallback về bản gốc.
+  const displayTitle = language === 'en'
+    ? (movie.titleEN || movie.title)
+    : movie.title;
+
+  const displayDescription = language === 'en'
+    ? (movie.descriptionEN || movie.description)
+    : movie.description;
+
+  const displayLanguage = t(movie.language);
 
   // Tạo các tab ngày (Hôm nay + 3 ngày tiếp theo)
   const dateTabs = Array.from({ length: 4 }).map((_, i) => {
     const d = new Date();
     d.setDate(d.getDate() + i);
-    
+
     let dayName = '';
     if (i === 0) {
       dayName = language === 'vi' ? 'Hôm nay' : 'Today';
@@ -86,7 +92,7 @@ export const MovieDetail = ({ movie }) => {
           <div className="aspect-[2/3] w-full rounded-2xl overflow-hidden bg-zinc-900 border border-white/5 shadow-[0_20px_40px_rgba(0,0,0,0.6)] relative group">
             <img
               src={movie.posterUrl}
-              alt={translatedTitle}
+              alt={displayTitle}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -108,7 +114,7 @@ export const MovieDetail = ({ movie }) => {
               </span>
             </div>
             <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-tight drop-shadow-lg">
-              {translatedTitle}
+              {displayTitle}
             </h1>
             <div className="flex flex-wrap gap-2 pt-2">
               {movie.genre.map((g) => (
@@ -122,7 +128,7 @@ export const MovieDetail = ({ movie }) => {
           <div className="bg-dark-card/40 backdrop-blur-md border border-white/5 p-6 rounded-2xl shadow-xl space-y-4">
             <h3 className="text-lg font-bold text-white mb-2">{t('movie.synopsis')}</h3>
             <p className="text-zinc-300 leading-relaxed text-sm md:text-base font-medium">
-              {translatedDescription}
+              {displayDescription}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm pt-4 border-t border-white/5 mt-4">
               <div className="space-y-1">
@@ -131,7 +137,7 @@ export const MovieDetail = ({ movie }) => {
               </div>
               <div className="space-y-1">
                 <p className="text-zinc-500 uppercase tracking-wider text-[10px] font-black">{t('movie.languageLabel')}</p>
-                <p className="text-zinc-200 font-medium">{translatedLanguage}</p>
+                <p className="text-zinc-200 font-medium">{displayLanguage}</p>
               </div>
             </div>
             {movie.cast && movie.cast.length > 0 && (
@@ -159,7 +165,7 @@ export const MovieDetail = ({ movie }) => {
             <iframe
               className="absolute inset-0 w-full h-full transition-transform duration-700 ease-in-out"
               src={movie.trailerUrl}
-              title={`Trailer chính thức của ${translatedTitle}`}
+              title={`Trailer - ${displayTitle}`}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />

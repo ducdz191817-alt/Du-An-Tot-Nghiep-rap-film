@@ -1,9 +1,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Play, Calendar, Star } from 'lucide-react';
+import { Play, Calendar } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 
 export const MovieCard = ({ movie }) => {
-  const isComingSoon = movie.status === 'coming-soon';
+  const { language, t } = useLanguage();
+
+  // Lấy title và genre theo ngôn ngữ từ DB
+  const displayTitle = language === 'en'
+    ? (movie.titleEN || movie.title)
+    : movie.title;
 
   return (
     <div className="group relative bg-dark-card border border-dark-border rounded-2xl overflow-hidden hover:border-brand/40 hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
@@ -11,7 +17,7 @@ export const MovieCard = ({ movie }) => {
       <div className="relative aspect-[2/3] w-full overflow-hidden bg-zinc-900">
         <img
           src={movie.posterUrl}
-          alt={movie.title}
+          alt={displayTitle}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           loading="lazy"
         />
@@ -40,13 +46,13 @@ export const MovieCard = ({ movie }) => {
         <div className="flex flex-wrap gap-1">
           {movie.genre.slice(0, 2).map((g) => (
             <span key={g} className="text-[10px] font-bold bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full">
-              {g}
+              {t(g)}
             </span>
           ))}
         </div>
 
         <h3 className="text-zinc-100 font-bold truncate text-base group-hover:text-brand transition-colors">
-          <Link to={`/movies/${movie._id}`}>{movie.title}</Link>
+          <Link to={`/movies/${movie._id}`}>{displayTitle}</Link>
         </h3>
 
         <div className="flex items-center justify-between text-xs text-zinc-500">
@@ -54,7 +60,9 @@ export const MovieCard = ({ movie }) => {
             <Calendar size={13} />
             {new Date(movie.releaseDate).getFullYear()}
           </span>
-          <span className="text-zinc-400 font-bold">{movie.duration} phút</span>
+          <span className="text-zinc-400 font-bold">
+            {movie.duration} {language === 'vi' ? 'phút' : 'min'}
+          </span>
         </div>
       </div>
     </div>

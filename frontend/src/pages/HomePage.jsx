@@ -11,7 +11,7 @@ import { useLanguage } from '../context/LanguageContext';
 
 export const HomePage = () => {
   const dispatch = useDispatch();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { movies, loading, error } = useSelector((state) => state.movie);
   const [filters, setFilters] = useState({
     status: 'now-showing',
@@ -33,6 +33,14 @@ export const HomePage = () => {
   // Phim nổi bật trên banner (phim đầu tiên hoặc tùy chỉnh)
   const featured = nowShowingMovies[0] || movies[0];
 
+  // Lấy title / description theo ngôn ngữ trực tiếp từ DB
+  const featuredTitle = featured
+    ? (language === 'en' ? (featured.titleEN || featured.title) : featured.title)
+    : '';
+  const featuredDescription = featured
+    ? (language === 'en' ? (featured.descriptionEN || featured.description) : featured.description)
+    : '';
+
   return (
     <div className="space-y-12 pb-16">
       {/* 1. Banner giới thiệu phim nổi bật */}
@@ -40,7 +48,7 @@ export const HomePage = () => {
         <div className="relative w-full aspect-[21/9] min-h-[350px] md:min-h-[500px] rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-zinc-950 border border-dark-border/50 group">
           <img
             src={featured.posterUrl}
-            alt={featured.title}
+            alt={featuredTitle}
             className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000 ease-out"
           />
           {/* Gradients */}
@@ -54,10 +62,10 @@ export const HomePage = () => {
               {t('home.featured')}
             </span>
             <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-white leading-tight tracking-tighter drop-shadow-2xl">
-              {featured.title}
+              {featuredTitle}
             </h1>
             <p className="text-sm sm:text-base text-zinc-300 leading-relaxed font-medium line-clamp-3 md:line-clamp-4 drop-shadow-md max-w-2xl">
-              {featured.description}
+              {featuredDescription}
             </p>
             <div className="flex items-center gap-4 pt-2">
               <Link to={`/movies/${featured._id}`}>
