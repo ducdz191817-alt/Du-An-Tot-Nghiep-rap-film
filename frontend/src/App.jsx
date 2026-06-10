@@ -20,34 +20,40 @@ import PromotionsPage from './pages/PromotionsPage';
 import TheatersPage from './pages/TheatersPage';
 import AboutPage from './pages/AboutPage';
 
+// Layout wrapper for public pages (with Header + Footer)
+const PublicLayout = ({ children }) => (
+  <div className="min-h-screen bg-dark-deep text-zinc-100 flex flex-col justify-between selection:bg-brand selection:text-white">
+    <Header />
+    <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in duration-300">
+      {children}
+    </main>
+    <Footer />
+  </div>
+);
+
 function App() {
   return (
     <Provider store={store}>
       <LanguageProvider>
         <BrowserRouter>
-          <div className="min-h-screen bg-dark-deep text-zinc-100 flex flex-col justify-between selection:bg-brand selection:text-white">
-            <Header />
-            
-            <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in duration-300">
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/movies" element={<MoviesPage />} />
-                <Route path="/movies/:id" element={<MovieDetailPage />} />
-                <Route path="/booking/:showtimeId" element={<BookingPage />} />
-                <Route path="/payment" element={<PaymentPage />} />
-                <Route path="/history" element={<BookingHistoryPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/admin" element={<AdminPage />} />
-                <Route path="/promotions" element={<PromotionsPage />} />
-                <Route path="/theaters" element={<TheatersPage />} />
-                <Route path="/about" element={<AboutPage />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </main>
+          <Routes>
+            {/* ── Admin: full-screen standalone (no Header/Footer) ── */}
+            <Route path="/admin" element={<AdminPage />} />
 
-            <Footer />
-          </div>
+            {/* ── Public pages wrapped in Header + Footer ── */}
+            <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
+            <Route path="/movies" element={<PublicLayout><MoviesPage /></PublicLayout>} />
+            <Route path="/movies/:id" element={<PublicLayout><MovieDetailPage /></PublicLayout>} />
+            <Route path="/booking/:showtimeId" element={<PublicLayout><BookingPage /></PublicLayout>} />
+            <Route path="/payment" element={<PublicLayout><PaymentPage /></PublicLayout>} />
+            <Route path="/history" element={<PublicLayout><BookingHistoryPage /></PublicLayout>} />
+            <Route path="/login" element={<PublicLayout><LoginPage /></PublicLayout>} />
+            <Route path="/register" element={<PublicLayout><RegisterPage /></PublicLayout>} />
+            <Route path="/promotions" element={<PublicLayout><PromotionsPage /></PublicLayout>} />
+            <Route path="/theaters" element={<PublicLayout><TheatersPage /></PublicLayout>} />
+            <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </BrowserRouter>
       </LanguageProvider>
     </Provider>

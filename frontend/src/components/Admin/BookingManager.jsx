@@ -114,11 +114,10 @@ export const BookingManager = () => {
       {/* Toast Message */}
       {message.text && (
         <div
-          className={`p-4 rounded-2xl flex items-center justify-between border ${
-            message.type === 'success'
+          className={`p-4 rounded-2xl flex items-center justify-between border ${message.type === 'success'
               ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
               : 'bg-brand/10 border-brand/20 text-brand'
-          }`}
+            }`}
         >
           <div className="flex items-center gap-2 text-sm font-semibold">
             <AlertCircle size={18} />
@@ -190,15 +189,15 @@ export const BookingManager = () => {
 
                   const dateFormatted = showtime.startTime
                     ? new Date(showtime.startTime).toLocaleDateString('vi-VN', {
-                        month: 'short',
-                        day: 'numeric',
-                      })
+                      month: 'short',
+                      day: 'numeric',
+                    })
                     : 'N/A';
                   const timeFormatted = showtime.startTime
                     ? new Date(showtime.startTime).toLocaleTimeString('vi-VN', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
                     : '--:--';
 
                   return (

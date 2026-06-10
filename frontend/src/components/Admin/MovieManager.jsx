@@ -12,7 +12,7 @@ export const MovieManager = () => {
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [editingMovie, setEditingMovie] = useState(null);
-  
+
   const initialForm = {
     title: '',
     description: '',
@@ -183,13 +183,12 @@ export const MovieManager = () => {
                       {m.genre.join(', ')}
                     </td>
                     <td className="py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ${
-                        m.status === 'now-showing'
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ${m.status === 'now-showing'
                           ? 'bg-green-500/10 text-green-400 border border-green-500/20'
                           : m.status === 'coming-soon'
-                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                          : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
-                      }`}>
+                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                            : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
+                        }`}>
                         {m.status === 'now-showing' ? 'Đang chiếu' : m.status === 'coming-soon' ? 'Sắp chiếu' : 'Đã kết thúc'}
                       </span>
                     </td>
@@ -234,7 +233,7 @@ export const MovieManager = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input name="duration" type="number" label="Thời Lượng (phút)" placeholder="Ví dụ: 166" value={form.duration} onChange={handleChange} required />
-            
+
             {/* Trạng thái */}
             <div>
               <label className="block text-sm font-medium text-zinc-300 mb-1.5 pl-0.5">Trạng Thái Phát Hành</label>
