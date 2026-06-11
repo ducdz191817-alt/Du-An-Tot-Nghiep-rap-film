@@ -58,6 +58,22 @@ const deleteRoom = async (id) => {
   return response.data;
 };
 
+// Seat Management
+const getRoomSeats = async (roomId) => {
+  const response = await api.get(`/admin/rooms/${roomId}/seats`);
+  return response.data;
+};
+
+const updateSeat = async (id, seatData) => {
+  const response = await api.put(`/admin/seats/${id}`, seatData);
+  return response.data;
+};
+
+const bulkUpdateSeats = async (updates) => {
+  const response = await api.patch('/admin/seats/bulk', { updates });
+  return response.data;
+};
+
 // Showtime Management
 const createShowtime = async (showtimeData) => {
   const response = await api.post('/admin/showtimes', showtimeData);
@@ -130,6 +146,9 @@ const adminService = {
   createRoom,
   updateRoom,
   deleteRoom,
+  getRoomSeats,
+  updateSeat,
+  bulkUpdateSeats,
   createShowtime,
   updateShowtime,
   deleteShowtime,

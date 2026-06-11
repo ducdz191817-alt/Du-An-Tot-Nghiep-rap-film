@@ -12,6 +12,9 @@ const {
   updateRoom,
   deleteRoom,
   listRooms,
+  getRoomSeats,
+  updateSeat,
+  bulkUpdateSeats,
   createConcession,
   updateConcession,
   deleteConcession,
@@ -51,6 +54,11 @@ router.route('/rooms')
 router.route('/rooms/:id')
   .put(updateRoom)
   .delete(deleteRoom);
+router.get('/rooms/:id/seats', getRoomSeats);
+
+// Seats
+router.put('/seats/:id', updateSeat);
+router.patch('/seats/bulk', bulkUpdateSeats);
 
 // Concessions
 router.route('/concessions')

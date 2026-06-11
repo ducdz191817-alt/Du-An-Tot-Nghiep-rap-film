@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, DoorOpen, Home, AlertCircle, RefreshCw, Edit2, Trash2 } from 'lucide-react';
+import { Plus, DoorOpen, Home, AlertCircle, RefreshCw, Edit2, Trash2, LayoutGrid } from 'lucide-react';
 import adminService from '../../services/admin.service';
 import Input from '../common/Input';
 import Button from '../common/Button';
 import Loading from '../common/Loading';
 import Modal from '../common/Modal';
+import SeatMapModal from './SeatMapModal';
 
 export const RoomManager = () => {
   const [theaters, setTheaters] = useState([]);
@@ -15,6 +16,7 @@ export const RoomManager = () => {
   // Trạng thái của các Modal
   const [isThOpen, setIsThOpen] = useState(false);
   const [isRmOpen, setIsRmOpen] = useState(false);
+  const [seatMapRoom, setSeatMapRoom] = useState(null);
 
   // Editing state trackers
   const [editingTheater, setEditingTheater] = useState(null);
@@ -263,6 +265,14 @@ export const RoomManager = () => {
                   <span className="text-zinc-300">{rm.capacity} Ghế đã tạo</span>
                 </div>
 
+                <button
+                  onClick={() => setSeatMapRoom(rm)}
+                  className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold border border-brand/30 text-brand bg-brand/5 hover:bg-brand/10 hover:border-brand/50 transition-all"
+                >
+                  <LayoutGrid size={13} />
+                  Quản lý sơ đồ ghế
+                </button>
+
                 {/* Floating Action Controls */}
                 <div className="absolute top-2 right-4 flex space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
@@ -439,6 +449,12 @@ export const RoomManager = () => {
           </div>
         </form>
       </Modal>
+
+      <SeatMapModal
+        isOpen={!!seatMapRoom}
+        onClose={() => setSeatMapRoom(null)}
+        room={seatMapRoom}
+      />
     </div>
   );
 };

@@ -39,32 +39,44 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], onSe
               <div className="flex items-center gap-2">
                 {rowSeats.map((seat) => {
                   const seatCode = `${seat.row}${seat.number}`;
+                  // 1. Kiểm tra xem ghế đã được đặt trước đó chưa
                   const isBooked = bookedSeats.includes(seatCode);
+                  // 2. Kiểm tra xem ghế có đang được chọn trong lượt đặt này không
                   const isSelected = selectedSeats.includes(seatCode);
+                  // 3. Kiểm tra xem ghế có bị hỏng/vô hiệu hóa không
+                  const isDisabledSeat = seat.isDisabled === true;
 
+                  // Lấy cấu hình giao diện từ constants dựa theo loại ghế (standard, vip, couple)
                   const seatStyle = SEAT_TYPES[seat.type] || SEAT_TYPES.standard;
                   
+                  // Xác định màu nền và viền của ghế tùy thuộc vào trạng thái
                   let activeBg = seatStyle.color;
-                  if (isBooked) {
+                  if (isDisabledSeat) {
+                    // Nếu ghế bị hỏng: làm mờ, đổi màu xám đen để nhận biết
+                    activeBg = 'bg-[#1f1f23]/40 border border-zinc-800/80 text-zinc-600/40 cursor-not-allowed';
+                  } else if (isBooked) {
+                    // Nếu ghế đã có người đặt: màu đỏ xám
                     activeBg = seatStyle.bookedColor;
                   } else if (isSelected) {
+                    // Nếu đang click chọn: màu thương hiệu (đỏ/tím sáng)
                     activeBg = seatStyle.selectedColor;
                   }
 
-                  // Chiều rộng hiển thị của ghế đôi (gấp đôi ghế thường)
+                  // Kiểm tra kích thước (ghế đôi couple có chiều rộng gấp đôi ghế thường)
                   const isCouple = seat.type === 'couple';
 
                   return (
                     <button
                       key={seat._id}
-                      disabled={isBooked}
+                      // Vô hiệu hóa nút click nếu ghế đã được đặt HOẶC ghế bị hỏng
+                      disabled={isBooked || isDisabledSeat}
                       onClick={() => onSeatClick(seatCode)}
                       className={`h-8 rounded-lg font-bold text-[9px] transition-all flex items-center justify-center transform active:scale-90 ${
                         isCouple ? 'w-[72px]' : 'w-8'
                       } ${activeBg}`}
-                      title={`${seatCode} - ${seat.type.toUpperCase()}`}
+                      title={`${seatCode} - ${seat.type.toUpperCase()}${isDisabledSeat ? ' (Bảo trì)' : ''}${isBooked ? ' (Đã đặt)' : ''}`}
                     >
-                      {isCouple ? `${seatCode} Đôi` : seatCode}
+                      {isDisabledSeat ? 'X' : (isCouple ? `${seatCode} Đôi` : seatCode)}
                     </button>
                   );
                 })}

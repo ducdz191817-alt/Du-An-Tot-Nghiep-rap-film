@@ -1,6 +1,7 @@
 const Movie = require('../models/Movie.model');
 const Theater = require('../models/Theater.model');
 const Room = require('../models/Room.model');
+const Seat = require('../models/Seat.model');
 const Showtime = require('../models/Showtime.model');
 const Booking = require('../models/Booking.model');
 const User = require('../models/User.model');
@@ -87,10 +88,15 @@ const listTheaters = async (req, res, next) => {
   }
 };
 
+// ============================================================================
+// CHỨC NĂNG: Tạo phòng chiếu mới và tự động khởi tạo toàn bộ sơ đồ ghế cho phòng đó
+// ============================================================================
 const createRoom = async (req, res, next) => {
   try {
+    // Lấy thông tin cấu hình phòng và sơ đồ ghế từ client gửi lên
     const { name, theaterId, type = '2D', capacity = 80, standardRows = 5, vipRows = 3, coupleRows = 1, seatsPerRow = 10 } = req.body;
 
+    // 1. Tạo bản ghi phòng chiếu trong database
     const room = await Room.create({
       name,
       theater: theaterId,
@@ -98,13 +104,14 @@ const createRoom = async (req, res, next) => {
       capacity,
     });
 
-    // Automatically generate seats for this room
+    // 2. Tự động sinh ra toàn bộ danh sách ghế (Thường, VIP, Đôi) cho phòng chiếu này
+    // Hàm helper generateSeatsForRoom sẽ tạo các bản ghi Seat liên kết với roomId vừa tạo
     await generateSeatsForRoom(room._id, standardRows, vipRows, coupleRows, seatsPerRow);
 
     res.status(201).json({
       success: true,
       data: room,
-      message: `Room created successfully and ${capacity} seats pre-generated.`,
+      message: `Tạo phòng chiếu thành công và tự động tạo ${capacity} ghế.`,
     });
   } catch (error) {
     next(error);
@@ -480,6 +487,79 @@ const deleteBooking = async (req, res, next) => {
   }
 };
 
+// ==========================================
+// 5. Quản lý Ghế (Seat Management)
+// ==========================================
+
+// CHỨC NĂNG: Lấy danh sách toàn bộ ghế trong một phòng chiếu
+const getRoomSeats = async (req, res, next) => {
+  try {
+    const { id } = req.params; // ID của phòng chiếu
+    // 1. Kiểm tra phòng chiếu có tồn tại không
+    const room = await Room.findById(id);
+    if (!room) {
+      res.status(404);
+      throw new Error('Không tìm thấy phòng chiếu');
+    }
+    // 2. Tìm toàn bộ ghế thuộc phòng chiếu này, sắp xếp theo tên hàng (A->Z) và số ghế (1->9) tăng dần
+    const seats = await Seat.find({ room: id }).sort({ row: 1, number: 1 });
+    res.json({ success: true, count: seats.length, data: seats });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// CHỨC NĂNG: Chỉnh sửa cấu hình của một chiếc ghế cụ thể (loại ghế, giá phụ thu, trạng thái vô hiệu hóa)
+const updateSeat = async (req, res, next) => {
+  try {
+    const { id } = req.params; // ID của chiếc ghế cần sửa
+    const { type, price, isDisabled } = req.body; // Các trường thông tin mới
+
+    // Tìm và cập nhật thông tin ghế trong database
+    const seat = await Seat.findByIdAndUpdate(
+      id,
+      { type, price, isDisabled },
+      { new: true, runValidators: true } // Trả về bản ghi mới sau khi cập nhật và chạy validate dữ liệu đầu vào
+    );
+
+    if (!seat) {
+      res.status(404);
+      throw new Error('Không tìm thấy ghế này');
+    }
+
+    res.json({ success: true, data: seat });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// CHỨC NĂNG: Chỉnh sửa hàng loạt ghế cùng lúc (tối ưu hóa hiệu năng bằng bulkWrite)
+const bulkUpdateSeats = async (req, res, next) => {
+  try {
+    const { updates } = req.body; // updates: danh sách chứa các object thay đổi [{ seatId, type, price, isDisabled }]
+    
+    // Kiểm tra dữ liệu đầu vào
+    if (!Array.isArray(updates) || updates.length === 0) {
+      res.status(400);
+      throw new Error('Không có thông tin cập nhật nào được gửi lên');
+    }
+
+    // Chuyển đổi danh sách updates thành mảng các thao tác updateOne cho MongoDB
+    const ops = updates.map(({ seatId, type, price, isDisabled }) => ({
+      updateOne: {
+        filter: { _id: seatId }, // Điều kiện tìm ghế theo ID
+        update: { $set: { type, price, isDisabled } }, // Các trường cần cập nhật
+      },
+    }));
+
+    // Thực hiện tất cả các thao tác cập nhật trong 1 lượt gửi đến MongoDB
+    const result = await Seat.bulkWrite(ops);
+    res.json({ success: true, modifiedCount: result.modifiedCount });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createMovie,
   updateMovie,
@@ -492,6 +572,9 @@ module.exports = {
   updateRoom,
   deleteRoom,
   listRooms,
+  getRoomSeats,
+  updateSeat,
+  bulkUpdateSeats,
   createConcession,
   updateConcession,
   deleteConcession,

@@ -35,31 +35,38 @@ const createBooking = async (req, res, next) => {
       throw new Error('Cannot book tickets for a past showtime');
     }
 
-    // 3. Check seat availability
+    // 3. KIỂM TRA: Xem ghế khách hàng chọn đã được đặt trước đó chưa
     const alreadyBooked = seats.some((seat) => showtime.bookedSeats.includes(seat));
     if (alreadyBooked) {
       res.status(400);
-      throw new Error('One or more of the selected seats are already booked');
+      throw new Error('Một hoặc nhiều ghế bạn chọn đã được đặt trước đó');
     }
 
-    // 4. Calculate Seat Prices
-    // Find all master seats in this room to check additional seat type price offsets
+    // 4. TÍNH TOÁN GIÁ VÉ & KIỂM TRA TRẠNG THÁI GHẾ (CÓ BỊ HỎNG/KHOÁ KHÔNG)
+    // Truy vấn tất cả cấu hình ghế thực tế của phòng chiếu này từ database
     let seatPriceSum = 0;
     const roomSeats = await Seat.find({ room: showtime.room._id });
 
     for (const seatCode of seats) {
-      // Split A1 into Row A and Number 1
+      // Tách mã ghế ví dụ: "A12" thành hàng "A" và số "12"
       const match = seatCode.match(/^([A-Z]+)(\d+)$/);
       if (match) {
         const row = match[1];
         const number = parseInt(match[2], 10);
         
+        // Tìm thông tin ghế chi tiết tương ứng trong cơ sở dữ liệu
         const seatDetail = roomSeats.find((s) => s.row === row && s.number === number);
         if (seatDetail) {
-          // ticketPrice + additional seat type price
+          // BẢO MẬT: Kiểm tra xem ghế này có đang bị admin khóa/vô hiệu hóa hay không
+          if (seatDetail.isDisabled) {
+            res.status(400);
+            throw new Error(`Ghế ${seatCode} hiện đang bảo trì và không thể đặt.`);
+          }
+
+          // Tổng tiền = Giá vé gốc của lịch chiếu + Phụ thu riêng của loại ghế đó (VIP/Sweetbox)
           seatPriceSum += showtime.ticketPrice + seatDetail.price;
         } else {
-          // Default to base ticket price if seat not registered in database
+          // Nếu không tìm thấy thông tin ghế trong DB, mặc định lấy giá vé gốc của lịch chiếu
           seatPriceSum += showtime.ticketPrice;
         }
       } else {
