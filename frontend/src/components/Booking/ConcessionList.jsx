@@ -5,7 +5,7 @@ export const ConcessionList = ({ concessions = [], selectedConcessions = {}, onQ
   if (concessions.length === 0) {
     return (
       <div className="py-6 text-center text-zinc-500 font-medium text-sm">
-        No concession combos available right now.
+        Hiện tại không có combo đồ ăn thức uống nào.
       </div>
     );
   }
@@ -14,7 +14,7 @@ export const ConcessionList = ({ concessions = [], selectedConcessions = {}, onQ
     <div className="space-y-6">
       <div className="flex items-center gap-2 border-b border-dark-border pb-3">
         <Popcorn className="text-brand" size={20} />
-        <h3 className="text-lg font-black text-zinc-200">Select Snacks & Soft Drinks</h3>
+        <h3 className="text-lg font-black text-zinc-200">Chọn đồ ăn nhẹ & nước uống</h3>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -26,7 +26,7 @@ export const ConcessionList = ({ concessions = [], selectedConcessions = {}, onQ
               key={item._id}
               className="flex bg-dark-card border border-dark-border hover:border-zinc-800 p-3 rounded-2xl gap-4 items-center justify-between transition-colors shadow-sm"
             >
-              {/* Product Thumbnail & Details */}
+              {/* Hình ảnh & Chi tiết sản phẩm */}
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-16 h-16 rounded-xl overflow-hidden bg-zinc-950 shrink-0 border border-dark-border">
                   <img
@@ -46,7 +46,7 @@ export const ConcessionList = ({ concessions = [], selectedConcessions = {}, onQ
                 </div>
               </div>
 
-              {/* Quantity Increments */}
+              {/* Nút Tăng/Giảm số lượng */}
               <div className="flex items-center space-x-3 bg-zinc-900 border border-dark-border p-1 rounded-xl shrink-0">
                 <button
                   onClick={() => onQtyChange(item._id, qty - 1)}

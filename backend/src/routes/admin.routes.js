@@ -6,17 +6,29 @@ const {
   deleteMovie,
   createTheater,
   updateTheater,
+  deleteTheater,
   listTheaters,
   createRoom,
+  updateRoom,
+  deleteRoom,
   listRooms,
+  getRoomSeats,
+  updateSeat,
+  bulkUpdateSeats,
   createConcession,
   updateConcession,
+  deleteConcession,
   listConcessions,
   createShowtime,
   updateShowtime,
   deleteShowtime,
   getDashboardStats,
   getRevenueReport,
+  listBookings,
+  deleteBooking,
+  listUsers,
+  updateUserRole,
+  deleteUser,
 } = require('../controllers/admin.controller');
 const { protect, admin } = require('../middleware/auth.middleware');
 
@@ -34,18 +46,30 @@ router.route('/movies/:id')
 router.route('/theaters')
   .get(listTheaters)
   .post(createTheater);
-router.put('/theaters/:id', updateTheater);
+router.route('/theaters/:id')
+  .put(updateTheater)
+  .delete(deleteTheater);
 
 // Rooms
 router.route('/rooms')
   .get(listRooms)
   .post(createRoom);
+router.route('/rooms/:id')
+  .put(updateRoom)
+  .delete(deleteRoom);
+router.get('/rooms/:id/seats', getRoomSeats);
+
+// Seats
+router.put('/seats/:id', updateSeat);
+router.patch('/seats/bulk', bulkUpdateSeats);
 
 // Concessions
 router.route('/concessions')
   .get(listConcessions)
   .post(createConcession);
-router.put('/concessions/:id', updateConcession);
+router.route('/concessions/:id')
+  .put(updateConcession)
+  .delete(deleteConcession);
 
 // Showtimes
 router.post('/showtimes', createShowtime);
@@ -56,5 +80,14 @@ router.route('/showtimes/:id')
 // Dashboard & Analytics
 router.get('/dashboard/stats', getDashboardStats);
 router.get('/dashboard/revenue', getRevenueReport);
+
+// Booking Management
+router.get('/bookings', listBookings);
+router.delete('/bookings/:id', deleteBooking);
+
+// User Management
+router.get('/users', listUsers);
+router.put('/users/:id/role', updateUserRole);
+router.delete('/users/:id', deleteUser);
 
 module.exports = router;

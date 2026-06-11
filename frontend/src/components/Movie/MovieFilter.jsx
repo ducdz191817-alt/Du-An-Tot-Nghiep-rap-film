@@ -27,7 +27,7 @@ export const MovieFilter = ({ filters, onChange }) => {
               : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
-          Now Showing
+          Đang chiếu
         </button>
         <button
           onClick={() => handleStatusChange('coming-soon')}
@@ -37,7 +37,7 @@ export const MovieFilter = ({ filters, onChange }) => {
               : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
-          Coming Soon
+          Sắp chiếu
         </button>
       </div>
 
@@ -50,7 +50,7 @@ export const MovieFilter = ({ filters, onChange }) => {
           </span>
           <input
             type="text"
-            placeholder="Search movie title..."
+            placeholder="Tìm kiếm tên phim..."
             value={filters.search}
             onChange={handleSearchChange}
             className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 pl-9 pr-4 py-2 text-sm rounded-xl focus:border-brand outline-none transition-all"
@@ -63,7 +63,7 @@ export const MovieFilter = ({ filters, onChange }) => {
           onChange={handleGenreChange}
           className="bg-zinc-900 border border-zinc-800 text-zinc-400 pl-3 pr-8 py-2 text-sm rounded-xl focus:border-brand focus:text-zinc-200 outline-none cursor-pointer select-none"
         >
-          <option value="">All Genres</option>
+          <option value="">Tất cả thể loại</option>
           {MOVIE_GENRES.map((g) => (
             <option key={g} value={g}>
               {g}

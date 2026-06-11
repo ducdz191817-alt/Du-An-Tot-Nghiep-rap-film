@@ -58,6 +58,22 @@ const deleteRoom = async (id) => {
   return response.data;
 };
 
+// Seat Management
+const getRoomSeats = async (roomId) => {
+  const response = await api.get(`/admin/rooms/${roomId}/seats`);
+  return response.data;
+};
+
+const updateSeat = async (id, seatData) => {
+  const response = await api.put(`/admin/seats/${id}`, seatData);
+  return response.data;
+};
+
+const bulkUpdateSeats = async (updates) => {
+  const response = await api.patch('/admin/seats/bulk', { updates });
+  return response.data;
+};
+
 // Showtime Management
 const createShowtime = async (showtimeData) => {
   const response = await api.post('/admin/showtimes', showtimeData);
@@ -75,8 +91,10 @@ const deleteShowtime = async (id) => {
 };
 
 // Concessions
-const getConcessions = async () => {
-  const response = await api.get('/admin/concessions');
+const getConcessions = async (theaterId = '') => {
+  const response = await api.get('/admin/concessions', {
+    params: theaterId ? { theaterId } : {},
+  });
   return response.data;
 };
 
@@ -90,6 +108,11 @@ const updateConcession = async (id, concessionData) => {
   return response.data;
 };
 
+const deleteConcession = async (id) => {
+  const response = await api.delete(`/admin/concessions/${id}`);
+  return response.data;
+};
+
 // Dashboard Stats & Revenue Reports
 const getDashboardStats = async () => {
   const response = await api.get('/admin/dashboard/stats');
@@ -98,6 +121,34 @@ const getDashboardStats = async () => {
 
 const getRevenueReport = async () => {
   const response = await api.get('/admin/dashboard/revenue');
+  return response.data;
+};
+
+const getBookings = async () => {
+  const response = await api.get('/admin/bookings');
+  return response.data;
+};
+
+const deleteBooking = async (id) => {
+  const response = await api.delete(`/admin/bookings/${id}`);
+  return response.data;
+};
+
+// User Management
+const getUsers = async (role = '') => {
+  const response = await api.get('/admin/users', {
+    params: role ? { role } : {},
+  });
+  return response.data;
+};
+
+const updateUserRole = async (id, role) => {
+  const response = await api.put(`/admin/users/${id}/role`, { role });
+  return response.data;
+};
+
+const deleteUser = async (id) => {
+  const response = await api.delete(`/admin/users/${id}`);
   return response.data;
 };
 
@@ -113,14 +164,23 @@ const adminService = {
   createRoom,
   updateRoom,
   deleteRoom,
+  getRoomSeats,
+  updateSeat,
+  bulkUpdateSeats,
   createShowtime,
   updateShowtime,
   deleteShowtime,
   getConcessions,
   createConcession,
   updateConcession,
+  deleteConcession,
   getDashboardStats,
   getRevenueReport,
+  getBookings,
+  deleteBooking,
+  getUsers,
+  updateUserRole,
+  deleteUser,
 };
 
 export default adminService;

@@ -11,7 +11,9 @@ const getMovies = async (req, res, next) => {
 
     // Filter by status ('now-showing', 'coming-soon')
     if (status) {
-      query.status = status;
+      if (status !== 'all') {
+        query.status = status;
+      }
     } else {
       query.status = { $ne: 'ended' }; // Default: exclude ended movies
     }

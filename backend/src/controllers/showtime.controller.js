@@ -69,7 +69,34 @@ const getShowtimeById = async (req, res, next) => {
   }
 };
 
+// @desc    Get all showtimes (optionally filtered by theater/room)
+// @route   GET /api/showtimes
+// @access  Public
+const getShowtimes = async (req, res, next) => {
+  try {
+    const { theaterId, roomId } = req.query;
+    const query = {};
+    if (theaterId) query.theater = theaterId;
+    if (roomId) query.room = roomId;
+
+    const showtimes = await Showtime.find(query)
+      .populate('movie')
+      .populate('theater')
+      .populate('room')
+      .sort({ startTime: 1 });
+
+    res.json({
+      success: true,
+      count: showtimes.length,
+      data: showtimes,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getShowtimesByMovie,
   getShowtimeById,
+  getShowtimes,
 };

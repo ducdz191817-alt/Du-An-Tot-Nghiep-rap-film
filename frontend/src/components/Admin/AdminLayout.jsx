@@ -1,0 +1,392 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  LayoutDashboard, Film, Calendar, Building2, Coffee,
+  Ticket, BarChart3, LogOut, Menu, ChevronRight,
+  Clapperboard, Zap, Bell, ChevronDown, Activity, Users
+} from 'lucide-react';
+import useAuth from '../../hooks/useAuth';
+
+const NAV_ITEMS = [
+  {
+    group: 'Tổng quan',
+    items: [
+      { key: 'dashboard', label: 'Bảng điều khiển', icon: LayoutDashboard },
+    ]
+  },
+  {
+    group: 'Nội dung',
+    items: [
+      { key: 'movies',     label: 'Quản lý Phim',       icon: Film },
+      { key: 'showtimes',  label: 'Lịch chiếu',          icon: Calendar },
+      { key: 'rooms',      label: 'Rạp & Phòng chiếu',   icon: Building2 },
+      { key: 'concessions',label: 'Bắp nước & Combo',    icon: Coffee },
+    ]
+  },
+  {
+    group: 'Giao dịch',
+    items: [
+      { key: 'bookings', label: 'Đặt vé',           icon: Ticket },
+      { key: 'revenue',  label: 'Báo cáo doanh thu', icon: BarChart3 },
+    ]
+  },
+  {
+    group: 'Hệ thống',
+    items: [
+      { key: 'users', label: 'Người dùng', icon: Users },
+    ]
+  },
+];
+
+const AdminLayout = ({ activeTab, setActiveTab, children }) => {
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const [sidebarOpen, setSidebarOpen]   = useState(false);
+  const [collapsed, setCollapsed]       = useState(false);
+  const [profileOpen, setProfileOpen]   = useState(false);
+  const profileRef = useRef(null);
+
+  useEffect(() => {
+    const close = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, []);
+
+  const handleLogout = () => { logout(); navigate('/login'); };
+  const handleNav    = (key) => { setActiveTab(key); setSidebarOpen(false); };
+
+  const currentLabel = NAV_ITEMS.flatMap(g => g.items).find(i => i.key === activeTab)?.label || 'Admin';
+
+  return (
+    <div style={{ display:'flex', height:'100vh', overflow:'hidden', background:'#070709', fontFamily:'Outfit, Inter, sans-serif' }}>
+
+      {/* ── Mobile overlay ── */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          style={{ position:'fixed', inset:0, zIndex:40, background:'rgba(0,0,0,0.7)', backdropFilter:'blur(4px)' }}
+        />
+      )}
+
+      {/* ══════════════ SIDEBAR ══════════════ */}
+      <aside style={{
+        position: 'fixed',
+        top: 0, left: 0, height: '100%',
+        zIndex: 50,
+        display: 'flex', flexDirection: 'column',
+        background: '#0d0d12',
+        borderRight: '1px solid #1a1a28',
+        transition: 'width 0.3s ease, transform 0.3s ease',
+        width: collapsed ? 72 : 256,
+        transform: sidebarOpen ? 'translateX(0)' : undefined,
+        flexShrink: 0,
+      }}
+      className="admin-sidebar"
+      >
+        {/* Logo */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: collapsed ? '0 16px' : '0 20px',
+          height: 64,
+          borderBottom: '1px solid #1a1a28',
+          justifyContent: collapsed ? 'center' : 'flex-start',
+          flexShrink: 0,
+        }}>
+          <div style={{ position:'relative', flexShrink: 0 }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 16px rgba(124,58,237,0.4)',
+            }}>
+              <Clapperboard size={18} color="white" />
+            </div>
+            <div style={{
+              position: 'absolute', bottom: -2, right: -2,
+              width: 10, height: 10, background: '#34d399', borderRadius: '50%',
+              border: '2px solid #0d0d12',
+            }} />
+          </div>
+          {!collapsed && (
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 900, color: 'white', fontSize: 14, letterSpacing: '-0.02em' }}>CineAdmin</div>
+              <div style={{ fontSize: 9, color: '#a78bfa', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase' }}>Management</div>
+            </div>
+          )}
+          {/* Collapse toggle */}
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 24, height: 24, borderRadius: 6,
+              background: 'transparent', border: 'none',
+              color: '#52525b', cursor: 'pointer',
+              marginLeft: collapsed ? 'auto' : undefined,
+            }}
+          >
+            <ChevronRight size={14} style={{ transform: collapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }} />
+          </button>
+        </div>
+
+        {/* Nav */}
+        <nav style={{ flex: 1, overflowY: 'auto', padding: '16px 0' }}>
+          {NAV_ITEMS.map(group => (
+            <div key={group.group} style={{ marginBottom: 8 }}>
+              {!collapsed ? (
+                <p style={{
+                  fontSize: 9, fontWeight: 800, textTransform: 'uppercase',
+                  letterSpacing: '0.15em', color: '#3f3f46',
+                  padding: '4px 20px 8px',
+                }}>
+                  {group.group}
+                </p>
+              ) : (
+                <div style={{ height: 1, background: '#1a1a28', margin: '8px 16px' }} />
+              )}
+              {group.items.map(item => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => handleNav(item.key)}
+                    title={collapsed ? item.label : undefined}
+                    style={{
+                      width: collapsed ? 44 : 'calc(100% - 16px)',
+                      margin: collapsed ? '2px auto' : '1px 8px',
+                      display: 'flex', alignItems: 'center',
+                      gap: 10, padding: '9px 12px',
+                      borderRadius: 10, border: 'none', cursor: 'pointer',
+                      background: isActive ? 'rgba(124,58,237,0.12)' : 'transparent',
+                      color: isActive ? '#c4b5fd' : '#71717a',
+                      fontWeight: 600, fontSize: 13,
+                      textAlign: 'left', position: 'relative',
+                      transition: 'all 0.15s',
+                      justifyContent: collapsed ? 'center' : 'flex-start',
+                    }}
+                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = '#d4d4d8'; }}
+                    onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#71717a'; } }}
+                  >
+                    {isActive && (
+                      <span style={{
+                        position: 'absolute', left: 0, top: '50%',
+                        transform: 'translateY(-50%)',
+                        width: 3, height: 20,
+                        background: '#8b5cf6', borderRadius: '0 4px 4px 0',
+                      }} />
+                    )}
+                    <Icon size={17} color={isActive ? '#a78bfa' : undefined} style={{ flexShrink: 0 }} />
+                    {!collapsed && <span style={{ flex: 1 }}>{item.label}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+
+        {/* Bottom user area */}
+        <div style={{ padding: 12, borderTop: '1px solid #1a1a28', flexShrink: 0 }}>
+          <button
+            onClick={handleLogout}
+            title={collapsed ? 'Đăng xuất' : undefined}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center',
+              gap: 10, padding: '9px 12px', borderRadius: 10,
+              border: 'none', cursor: 'pointer',
+              background: 'transparent', color: '#71717a',
+              fontWeight: 600, fontSize: 13,
+              justifyContent: collapsed ? 'center' : 'flex-start',
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.color = '#f87171'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#71717a'; }}
+          >
+            <LogOut size={16} style={{ flexShrink: 0 }} />
+            {!collapsed && <span>Đăng xuất</span>}
+          </button>
+
+          {!collapsed && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              marginTop: 8, padding: '10px 12px',
+              borderRadius: 10, background: 'rgba(255,255,255,0.03)',
+              border: '1px solid #1a1a28',
+            }}>
+              <div style={{
+                width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
+                background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'white', fontWeight: 900, fontSize: 11,
+              }}>
+                {user?.username?.[0]?.toUpperCase() || 'A'}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#d4d4d8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {user?.username || 'Admin'}
+                </div>
+                <div style={{ fontSize: 10, color: '#52525b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {user?.email || ''}
+                </div>
+              </div>
+              <div style={{
+                fontSize: 8, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em',
+                background: 'rgba(139,92,246,0.15)', color: '#a78bfa',
+                border: '1px solid rgba(139,92,246,0.3)', padding: '2px 6px', borderRadius: 4,
+                flexShrink: 0,
+              }}>
+                Admin
+              </div>
+            </div>
+          )}
+        </div>
+      </aside>
+
+      {/* ══════════════ MAIN CONTENT ══════════════ */}
+      <div style={{
+        flex: 1, display: 'flex', flexDirection: 'column',
+        marginLeft: collapsed ? 72 : 256,
+        transition: 'margin-left 0.3s ease',
+        minWidth: 0, overflow: 'hidden',
+      }}>
+        {/* Top bar */}
+        <header style={{
+          height: 64, display: 'flex', alignItems: 'center', gap: 16,
+          padding: '0 20px',
+          background: 'rgba(13,13,18,0.9)',
+          borderBottom: '1px solid #1a1a28',
+          backdropFilter: 'blur(8px)',
+          flexShrink: 0, zIndex: 10,
+        }}>
+          {/* Mobile menu */}
+          <button
+            onClick={() => setSidebarOpen(true)}
+            style={{ display: 'none', padding: 8, borderRadius: 8, border: 'none', background: 'transparent', color: '#71717a', cursor: 'pointer' }}
+            className="admin-mobile-menu"
+          >
+            <Menu size={20} />
+          </button>
+
+          {/* Breadcrumb */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+            <Clapperboard size={14} color="#8b5cf6" />
+            <ChevronRight size={12} color="#3f3f46" />
+            <span style={{ fontWeight: 700, color: '#d4d4d8' }}>{currentLabel}</span>
+          </div>
+
+          <div style={{ flex: 1 }} />
+
+          {/* Live indicator */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            fontSize: 11, color: '#52525b', fontWeight: 700,
+            background: '#0d0d12', border: '1px solid #1a1a28',
+            padding: '5px 10px', borderRadius: 8,
+          }}>
+            <Activity size={12} color="#34d399" />
+            Live
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#34d399', animation: 'pulse 2s infinite' }} />
+          </div>
+
+          {/* Bell */}
+          <button style={{ padding: 8, borderRadius: 8, border: 'none', background: 'transparent', color: '#71717a', cursor: 'pointer', position: 'relative' }}>
+            <Bell size={18} />
+          </button>
+
+          <div style={{ width: 1, height: 24, background: '#1a1a28' }} />
+
+          {/* Profile */}
+          <div ref={profileRef} style={{ position: 'relative' }}>
+            <button
+              onClick={() => setProfileOpen(!profileOpen)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '6px 10px', borderRadius: 8,
+                border: 'none', background: 'transparent', cursor: 'pointer',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <div style={{
+                width: 28, height: 28, borderRadius: '50%',
+                background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'white', fontWeight: 900, fontSize: 11,
+              }}>
+                {user?.username?.[0]?.toUpperCase() || 'A'}
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#a1a1aa' }}>{user?.username || 'Admin'}</span>
+              <ChevronDown size={13} color="#52525b" style={{ transform: profileOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+            </button>
+
+            {profileOpen && (
+              <div style={{
+                position: 'absolute', right: 0, top: '100%', marginTop: 8,
+                width: 200, background: '#13131c',
+                border: '1px solid #1a1a28', borderRadius: 14,
+                boxShadow: '0 20px 40px rgba(0,0,0,0.5)', overflow: 'hidden', zIndex: 100,
+              }}>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid #1a1a28' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#d4d4d8' }}>{user?.username}</div>
+                  <div style={{ fontSize: 10, color: '#52525b', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</div>
+                </div>
+                <div style={{ padding: 6 }}>
+                  <button
+                    onClick={() => { navigate('/'); setProfileOpen(false); }}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '8px 10px', borderRadius: 8, border: 'none',
+                      background: 'transparent', cursor: 'pointer',
+                      color: '#71717a', fontSize: 12, fontWeight: 600,
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = '#d4d4d8'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#71717a'; }}
+                  >
+                    <Zap size={13} /> Về trang chủ
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '8px 10px', borderRadius: 8, border: 'none',
+                      background: 'transparent', cursor: 'pointer',
+                      color: '#f87171', fontSize: 12, fontWeight: 600,
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.08)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <LogOut size={13} /> Đăng xuất
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </header>
+
+        {/* Page content */}
+        <main style={{
+          flex: 1, overflowY: 'auto', padding: '28px',
+          scrollbarWidth: 'thin', scrollbarColor: '#2a2a35 transparent',
+        }}>
+          <div style={{ maxWidth: 1600, margin: '0 auto' }}>
+            {children}
+          </div>
+        </main>
+      </div>
+
+      <style>{`
+        @media (max-width: 1024px) {
+          .admin-sidebar { transform: translateX(-100%); }
+          .admin-mobile-menu { display: flex !important; }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default AdminLayout;

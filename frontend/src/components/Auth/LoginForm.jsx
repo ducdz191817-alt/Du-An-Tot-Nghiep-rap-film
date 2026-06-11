@@ -12,15 +12,15 @@ export const LoginForm = ({ onSuccess }) => {
   const validate = () => {
     const errors = {};
     if (!formData.email) {
-      errors.email = 'Email is required';
+      errors.email = 'Email là bắt buộc';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Please provide a valid email';
+      errors.email = 'Vui lòng cung cấp một email hợp lệ';
     }
 
     if (!formData.password) {
-      errors.password = 'Password is required';
+      errors.password = 'Mật khẩu là bắt buộc';
     } else if (formData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
+      errors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
     }
 
     setFormErrors(errors);
@@ -57,8 +57,8 @@ export const LoginForm = ({ onSuccess }) => {
       <Input
         name="email"
         type="email"
-        label="Email Address"
-        placeholder="yourname@gmail.com"
+        label="Địa chỉ Email"
+        placeholder="tenban@gmail.com"
         value={formData.email}
         onChange={handleChange}
         error={formErrors.email}
@@ -69,7 +69,7 @@ export const LoginForm = ({ onSuccess }) => {
       <Input
         name="password"
         type="password"
-        label="Password"
+        label="Mật khẩu"
         placeholder="••••••••"
         value={formData.password}
         onChange={handleChange}
@@ -85,7 +85,7 @@ export const LoginForm = ({ onSuccess }) => {
         className="w-full mt-2"
         icon={<LogIn size={18} />}
       >
-        Sign In
+        Đăng nhập
       </Button>
     </form>
   );

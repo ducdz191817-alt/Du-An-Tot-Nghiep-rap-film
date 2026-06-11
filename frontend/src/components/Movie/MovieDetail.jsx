@@ -3,21 +3,44 @@ import { useNavigate } from 'react-router-dom';
 import { Film, User, Clock, Calendar, Ticket, ChevronRight, Play } from 'lucide-react';
 import bookingService from '../../services/booking.service';
 import Button from '../common/Button';
+import { useLanguage } from '../../context/LanguageContext';
 
 export const MovieDetail = ({ movie }) => {
   const navigate = useNavigate();
+  const { language, t } = useLanguage();
   const [showtimes, setShowtimes] = useState([]);
   const [selectedDate, setSelectedDate] = useState('');
   const [loadingShowtimes, setLoadingShowtimes] = useState(false);
+  const [trailerError, setTrailerError] = useState(false);
 
-  // Generate date tabs (Today + 3 upcoming days)
+  // ── Lấy title / description / language theo ngôn ngữ trực tiếp từ DB ──────
+  // Nếu phim có titleEN/descriptionEN thì dùng, không thì fallback về bản gốc.
+  const displayTitle = language === 'en'
+    ? (movie.titleEN || movie.title)
+    : movie.title;
+
+  const displayDescription = language === 'en'
+    ? (movie.descriptionEN || movie.description)
+    : movie.description;
+
+  const displayLanguage = t(movie.language);
+
+  // Tạo các tab ngày (Hôm nay + 3 ngày tiếp theo)
   const dateTabs = Array.from({ length: 4 }).map((_, i) => {
     const d = new Date();
     d.setDate(d.getDate() + i);
+
+    let dayName = '';
+    if (i === 0) {
+      dayName = language === 'vi' ? 'Hôm nay' : 'Today';
+    } else {
+      dayName = d.toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', { weekday: 'short' });
+    }
+
     return {
       isoString: d.toISOString().split('T')[0],
-      dayName: i === 0 ? 'Today' : d.toLocaleDateString('en-US', { weekday: 'short' }),
-      dateLabel: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      dayName,
+      dateLabel: d.toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', { month: 'short', day: 'numeric' }),
     };
   });
 
@@ -27,7 +50,7 @@ export const MovieDetail = ({ movie }) => {
     }
   }, []);
 
-  // Fetch showtimes when movie or date changes
+  // Lấy lịch chiếu khi phim hoặc ngày thay đổi
   useEffect(() => {
     const fetchMovieShowtimes = async () => {
       if (!movie?._id || !selectedDate) return;
@@ -48,9 +71,9 @@ export const MovieDetail = ({ movie }) => {
     navigate(`/booking/${showtimeId}`);
   };
 
-  // Group showtimes by Theater
+  // Nhóm lịch chiếu theo Rạp
   const groupedShowtimes = showtimes.reduce((acc, showtime) => {
-    const theaterName = showtime.theater?.name || 'Unknown Theater';
+    const theaterName = showtime.theater?.name || 'Rạp không xác định';
     if (!acc[theaterName]) {
       acc[theaterName] = [];
     }
@@ -61,131 +84,167 @@ export const MovieDetail = ({ movie }) => {
   return (
     <div className="space-y-12">
       {/* 1. Backdrop Banner & Details Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 relative">
+        {/* Abstract Glow Background */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-full bg-brand/10 blur-[120px] rounded-full pointer-events-none -z-10" />
+
         {/* Left: Poster */}
-        <div className="aspect-[2/3] w-full rounded-2xl overflow-hidden bg-zinc-900 border border-dark-border shadow-2xl">
-          <img
-            src={movie.posterUrl}
-            alt={movie.title}
-            className="w-full h-full object-cover"
-          />
+        <div className="md:col-span-4 lg:col-span-3">
+          <div className="aspect-[2/3] w-full rounded-2xl overflow-hidden bg-zinc-900 border border-white/5 shadow-[0_20px_40px_rgba(0,0,0,0.6)] relative group">
+            <img
+              src={movie.posterUrl}
+              alt={displayTitle}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          </div>
         </div>
 
         {/* Right: Text Information */}
-        <div className="md:col-span-2 space-y-6 flex flex-col justify-center">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="text-sm font-black bg-brand px-3 py-1 rounded-md text-white tracking-wide uppercase">
+        <div className="md:col-span-8 lg:col-span-9 space-y-8 flex flex-col justify-center">
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <span className="text-xs font-black bg-white text-black px-3 py-1 rounded-md tracking-widest uppercase shadow-[0_0_15px_rgba(255,255,255,0.3)]">
                 {movie.rating}
               </span>
-              <span className="text-zinc-400 font-medium text-sm flex items-center gap-1">
-                <Clock size={15} /> {movie.duration} minutes
+              <span className="text-zinc-400 font-semibold text-sm flex items-center gap-1.5 bg-white/5 px-3 py-1 rounded-full border border-white/5 backdrop-blur-sm">
+                <Clock size={14} className="text-brand" /> {movie.duration} {language === 'vi' ? 'phút' : 'min'}
               </span>
-              <span className="text-zinc-400 font-medium text-sm flex items-center gap-1">
-                <Calendar size={15} /> {new Date(movie.releaseDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+              <span className="text-zinc-400 font-semibold text-sm flex items-center gap-1.5 bg-white/5 px-3 py-1 rounded-full border border-white/5 backdrop-blur-sm">
+                <Calendar size={14} className="text-brand" /> {new Date(movie.releaseDate).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
               </span>
             </div>
-            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight">
-              {movie.title}
+            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-tight drop-shadow-lg">
+              {displayTitle}
             </h1>
-            <div className="flex flex-wrap gap-2 pt-1">
+            <div className="flex flex-wrap gap-2 pt-2">
               {movie.genre.map((g) => (
-                <span key={g} className="text-xs font-bold bg-zinc-900 border border-dark-border text-zinc-300 px-3 py-1 rounded-full">
-                  {g}
+                <span key={g} className="text-xs font-bold bg-dark-card border border-white/10 text-zinc-300 px-4 py-1.5 rounded-full hover:bg-white/10 transition-colors cursor-default shadow-sm">
+                  {t(g)}
                 </span>
               ))}
             </div>
           </div>
 
-          <div className="border-y border-dark-border py-4 space-y-3">
-            <p className="text-zinc-300 leading-relaxed text-sm md:text-base">
-              {movie.description}
+          <div className="bg-dark-card/40 backdrop-blur-md border border-white/5 p-6 rounded-2xl shadow-xl space-y-4">
+            <h3 className="text-lg font-bold text-white mb-2">{t('movie.synopsis')}</h3>
+            <p className="text-zinc-300 leading-relaxed text-sm md:text-base font-medium">
+              {displayDescription}
             </p>
-            <div className="grid grid-cols-2 gap-4 text-sm pt-2">
-              <p className="text-zinc-500">
-                <strong className="text-zinc-300">Director:</strong> {movie.director || 'N/A'}
-              </p>
-              <p className="text-zinc-500">
-                <strong className="text-zinc-300">Language:</strong> {movie.language}
-              </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm pt-4 border-t border-white/5 mt-4">
+              <div className="space-y-1">
+                <p className="text-zinc-500 uppercase tracking-wider text-[10px] font-black">{t('movie.director')}</p>
+                <p className="text-zinc-200 font-medium">{movie.director || 'N/A'}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-zinc-500 uppercase tracking-wider text-[10px] font-black">{t('movie.languageLabel')}</p>
+                <p className="text-zinc-200 font-medium">{displayLanguage}</p>
+              </div>
             </div>
             {movie.cast && movie.cast.length > 0 && (
-              <p className="text-sm text-zinc-500">
-                <strong className="text-zinc-300">Cast:</strong> {movie.cast.join(', ')}
-              </p>
+              <div className="space-y-1 pt-4">
+                <p className="text-zinc-500 uppercase tracking-wider text-[10px] font-black">{t('movie.cast')}</p>
+                <p className="text-zinc-200 font-medium leading-relaxed">{movie.cast.join(', ')}</p>
+              </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* 2. Youtube Trailer Video Player */}
-      {movie.trailerUrl && (
-        <div className="space-y-4">
-          <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-2">
-            <Play size={20} className="text-brand" /> Cinematic Trailer
-          </h2>
-          <div className="relative aspect-video w-full max-w-4xl mx-auto rounded-2xl overflow-hidden border border-dark-border shadow-2xl bg-black">
-            <iframe
-              className="absolute inset-0 w-full h-full"
-              src={movie.trailerUrl}
-              title={`${movie.title} Official Trailer`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+      {/* 2. Trình phát video Youtube Trailer */}
+      {movie.trailerUrl && movie.trailerUrl.trim() && (
+        <div className="space-y-6 pt-6">
+          <div className="flex items-center justify-between border-b border-dark-border/50 pb-4">
+            <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-3">
+              <span className="bg-brand/20 p-2 rounded-xl text-brand">
+                <Play size={24} fill="currentColor" />
+              </span>
+              {t('movie.trailer')}
+            </h2>
           </div>
+          {trailerError ? (
+            <div className="relative aspect-video w-full rounded-[2rem] overflow-hidden border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.7)] bg-gradient-to-br from-black to-zinc-900 flex items-center justify-center">
+              <div className="text-center space-y-4">
+                <div className="text-6xl text-zinc-600">🎬</div>
+                <p className="text-zinc-400 font-semibold">{t('movie.trailerUnavailable') || 'Trailer không có sẵn'}</p>
+                <p className="text-zinc-500 text-sm">{t('movie.trailerDescription') || 'Video trailer hiện không thể tải được, vui lòng quay lại sau'}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="relative aspect-video w-full rounded-[2rem] overflow-hidden border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.7)] bg-black group">
+              <iframe
+                className="absolute inset-0 w-full h-full transition-transform duration-700 ease-in-out"
+                src={movie.trailerUrl}
+                title={`Trailer - ${displayTitle}`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                onError={() => setTrailerError(true)}
+              />
+            </div>
+          )}
         </div>
       )}
 
-      {/* 3. Showtime Booking Panel */}
+      {/* 3. Bảng đặt vé theo lịch chiếu */}
       {movie.status === 'now-showing' && (
-        <div className="space-y-6 bg-dark-card border border-dark-border p-6 md:p-8 rounded-3xl shadow-xl">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-dark-border pb-5">
-            <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-2">
-              <Ticket size={22} className="text-brand" /> Book Showtimes
+        <div className="space-y-6 bg-dark-card/60 backdrop-blur-xl border border-white/10 p-6 md:p-10 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] mt-12 relative overflow-hidden">
+          {/* Subtle glow in background */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-brand/5 blur-[80px] rounded-full pointer-events-none" />
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-white/5 pb-6 relative z-10">
+            <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-3 tracking-tight">
+              <span className="bg-brand/20 p-2 rounded-xl text-brand">
+                <Ticket size={24} />
+              </span>
+              {t('movie.bookShowtimes')}
             </h2>
 
             {/* Date selection tabs */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+            <div className="flex items-center gap-3 overflow-x-auto pb-2 sm:pb-0 scrollbar-none snap-x">
               {dateTabs.map((tab) => {
                 const isSelected = selectedDate === tab.isoString;
                 return (
                   <button
                     key={tab.isoString}
                     onClick={() => setSelectedDate(tab.isoString)}
-                    className={`flex flex-col items-center px-4 py-2 rounded-xl transition-all duration-300 shrink-0 transform active:scale-95 border ${
+                    className={`flex flex-col items-center px-5 py-2.5 rounded-2xl transition-all duration-300 shrink-0 transform active:scale-95 snap-center border ${
                       isSelected
-                        ? 'bg-brand text-white border-brand shadow-md'
-                        : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:border-zinc-700'
+                        ? 'bg-gradient-to-br from-brand to-red-700 text-white border-transparent shadow-[0_10px_20px_rgba(239,68,68,0.3)]'
+                        : 'bg-white/5 text-zinc-400 border-white/5 hover:bg-white/10 hover:text-white backdrop-blur-sm'
                     }`}
                   >
-                    <span className="text-[10px] uppercase font-bold tracking-wider">{tab.dayName}</span>
-                    <span className="text-sm font-black">{tab.dateLabel}</span>
+                    <span className="text-[11px] uppercase font-bold tracking-widest opacity-80">{tab.dayName}</span>
+                    <span className="text-base font-black mt-0.5">{tab.dateLabel}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Showtimes lists grouped by Theater */}
+          {/* Danh sách lịch chiếu được nhóm theo rạp */}
           {loadingShowtimes ? (
-            <div className="py-12 flex justify-center text-zinc-400 animate-pulse font-semibold">
-              Loading available slots...
+            <div className="py-16 flex justify-center items-center gap-3 text-zinc-400 font-semibold relative z-10">
+              <div className="w-5 h-5 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+              {t('movie.loadingShowtimes')}
             </div>
           ) : Object.keys(groupedShowtimes).length === 0 ? (
-            <div className="py-12 text-center text-zinc-500 font-medium">
-              No showtimes registered on this day. Please check another date!
+            <div className="py-16 text-center text-zinc-500 font-medium relative z-10 bg-black/20 rounded-2xl border border-white/5 px-4">
+              {t('movie.noShowtimes')}
             </div>
           ) : (
-            <div className="divide-y divide-dark-border">
+            <div className="divide-y divide-white/5 relative z-10">
               {Object.keys(groupedShowtimes).map((theaterName) => (
-                <div key={theaterName} className="py-6 first:pt-0 last:pb-0 flex flex-col md:flex-row md:items-start gap-4 md:gap-8">
-                  <h3 className="w-full md:w-64 font-bold text-zinc-200 text-base shrink-0 pt-1">
-                    {theaterName}
-                  </h3>
+                <div key={theaterName} className="py-8 flex flex-col md:flex-row md:items-start gap-6 md:gap-10">
+                  <div className="w-full md:w-64 shrink-0">
+                    <h3 className="font-bold text-white text-lg tracking-tight">
+                      {theaterName}
+                    </h3>
+                    <p className="text-xs text-zinc-500 mt-1">{t('movie.formats')}</p>
+                  </div>
 
-                  <div className="flex-1 flex flex-wrap gap-3">
+                  <div className="flex-1 flex flex-wrap gap-4">
                     {groupedShowtimes[theaterName].map((showtime) => {
-                      const startTimeString = new Date(showtime.startTime).toLocaleTimeString('en-US', {
+                      const startTimeString = new Date(showtime.startTime).toLocaleTimeString(language === 'vi' ? 'vi-VN' : 'en-US', {
                         hour: '2-digit',
                         minute: '2-digit',
                         hour12: false,
@@ -194,17 +253,17 @@ export const MovieDetail = ({ movie }) => {
                         <button
                           key={showtime._id}
                           onClick={() => handleShowtimeClick(showtime._id)}
-                          className="flex items-center space-x-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-brand/40 px-4 py-2.5 rounded-xl transition-all text-left group transform hover:-translate-y-0.5 active:scale-95"
+                          className="flex items-center space-x-3 bg-white/5 hover:bg-brand/10 border border-white/10 hover:border-brand/50 px-5 py-3 rounded-2xl transition-all duration-300 text-left group transform hover:-translate-y-1 active:scale-95 shadow-sm hover:shadow-[0_10px_20px_rgba(239,68,68,0.15)] backdrop-blur-sm"
                         >
                           <div>
-                            <span className="text-zinc-100 font-black text-sm group-hover:text-brand transition-colors block">
+                            <span className="text-zinc-100 font-black text-base group-hover:text-brand transition-colors block tracking-tight">
                               {startTimeString}
                             </span>
-                            <span className="text-[10px] text-zinc-500 font-semibold block uppercase">
-                              {showtime.room?.name || 'Screen'} ({showtime.format})
+                            <span className="text-[10px] text-zinc-500 font-bold block uppercase tracking-wider group-hover:text-zinc-400">
+                              {showtime.room?.name || 'Screen'} • {showtime.format}
                             </span>
                           </div>
-                          <ChevronRight size={14} className="text-zinc-600 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />
+                          <ChevronRight size={16} className="text-zinc-600 group-hover:text-brand group-hover:translate-x-1 transition-all" />
                         </button>
                       );
                     })}

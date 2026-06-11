@@ -35,31 +35,38 @@ const createBooking = async (req, res, next) => {
       throw new Error('Cannot book tickets for a past showtime');
     }
 
-    // 3. Check seat availability
+    // 3. KIỂM TRA: Xem ghế khách hàng chọn đã được đặt trước đó chưa
     const alreadyBooked = seats.some((seat) => showtime.bookedSeats.includes(seat));
     if (alreadyBooked) {
       res.status(400);
-      throw new Error('One or more of the selected seats are already booked');
+      throw new Error('Một hoặc nhiều ghế bạn chọn đã được đặt trước đó');
     }
 
-    // 4. Calculate Seat Prices
-    // Find all master seats in this room to check additional seat type price offsets
+    // 4. TÍNH TOÁN GIÁ VÉ & KIỂM TRA TRẠNG THÁI GHẾ (CÓ BỊ HỎNG/KHOÁ KHÔNG)
+    // Truy vấn tất cả cấu hình ghế thực tế của phòng chiếu này từ database
     let seatPriceSum = 0;
     const roomSeats = await Seat.find({ room: showtime.room._id });
 
     for (const seatCode of seats) {
-      // Split A1 into Row A and Number 1
+      // Tách mã ghế ví dụ: "A12" thành hàng "A" và số "12"
       const match = seatCode.match(/^([A-Z]+)(\d+)$/);
       if (match) {
         const row = match[1];
         const number = parseInt(match[2], 10);
         
+        // Tìm thông tin ghế chi tiết tương ứng trong cơ sở dữ liệu
         const seatDetail = roomSeats.find((s) => s.row === row && s.number === number);
         if (seatDetail) {
-          // ticketPrice + additional seat type price
+          // BẢO MẬT: Kiểm tra xem ghế này có đang bị admin khóa/vô hiệu hóa hay không
+          if (seatDetail.isDisabled) {
+            res.status(400);
+            throw new Error(`Ghế ${seatCode} hiện đang bảo trì và không thể đặt.`);
+          }
+
+          // Tổng tiền = Giá vé gốc của lịch chiếu + Phụ thu riêng của loại ghế đó (VIP/Sweetbox)
           seatPriceSum += showtime.ticketPrice + seatDetail.price;
         } else {
-          // Default to base ticket price if seat not registered in database
+          // Nếu không tìm thấy thông tin ghế trong DB, mặc định lấy giá vé gốc của lịch chiếu
           seatPriceSum += showtime.ticketPrice;
         }
       } else {
@@ -93,6 +100,7 @@ const createBooking = async (req, res, next) => {
     await showtime.save();
 
     // 7. Create the Booking
+    const isVietQR = paymentMethod === 'vietqr';
     const booking = await Booking.create({
       user: userId,
       showtime: showtimeId,
@@ -102,7 +110,7 @@ const createBooking = async (req, res, next) => {
         quantity: c.quantity,
       })),
       totalPrice,
-      paymentStatus: 'paid', // Mark paid immediately for mock checkout flow
+      paymentStatus: isVietQR ? 'pending' : 'paid',
       paymentMethod,
     });
 
@@ -113,8 +121,33 @@ const createBooking = async (req, res, next) => {
       paymentMethod,
       transactionId,
       amount: totalPrice,
-      status: 'completed',
+      status: isVietQR ? 'pending' : 'completed',
     });
+
+    if (isVietQR) {
+      // 9. VietQR logic
+      const bankId = process.env.VIETQR_BANK_ID || 'MB';
+      const accountNo = process.env.VIETQR_ACCOUNT_NO || '0903123456';
+      const accountName = process.env.VIETQR_ACCOUNT_NAME || 'TRAN TIEN DUC';
+      const addInfo = `NOVA${booking._id.toString().slice(-6).toUpperCase()}`;
+      
+      const qrUrl = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact.png?amount=${totalPrice}&addInfo=${addInfo}&accountName=${encodeURIComponent(accountName)}`;
+      
+      return res.status(201).json({
+        success: true,
+        data: {
+          booking,
+          payment,
+          vietqr: {
+            bankId,
+            accountNo,
+            accountName,
+            addInfo,
+            qrUrl
+          }
+        }
+      });
+    }
 
     // 9. Send Confirmation Email
     const dateFormatted = new Date(showtime.startTime).toLocaleDateString('en-US', {
@@ -252,8 +285,195 @@ const getBookingById = async (req, res, next) => {
   }
 };
 
+// @desc    Get booking payment status
+// @route   GET /api/bookings/:id/status
+// @access  Private
+const getBookingStatus = async (req, res, next) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      res.status(404);
+      throw new Error('Booking not found');
+    }
+    
+    // Check ownership
+    if (booking.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      res.status(403);
+      throw new Error('Not authorized to access this booking record');
+    }
+
+    res.json({
+      success: true,
+      paymentStatus: booking.paymentStatus,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Simulate payment success (updates status to paid and sends email)
+// @route   POST /api/bookings/:id/simulate-pay
+// @access  Private
+const simulatePayment = async (req, res, next) => {
+  try {
+    const booking = await Booking.findById(req.params.id)
+      .populate({
+        path: 'showtime',
+        populate: [{ path: 'movie' }, { path: 'theater' }, { path: 'room' }]
+      });
+
+    if (!booking) {
+      res.status(404);
+      throw new Error('Booking not found');
+    }
+
+    // Check ownership
+    if (booking.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      res.status(403);
+      throw new Error('Not authorized');
+    }
+
+    if (booking.paymentStatus === 'paid') {
+      return res.json({
+        success: true,
+        message: 'Booking is already paid',
+        data: booking,
+      });
+    }
+
+    // 1. Update Booking payment status
+    booking.paymentStatus = 'paid';
+    await booking.save();
+
+    // 2. Update Payment Transaction
+    const payment = await Payment.findOne({ booking: booking._id });
+    if (payment) {
+      payment.status = 'completed';
+      await payment.save();
+    }
+
+    // 3. Send Confirmation Email
+    const dateFormatted = new Date(booking.showtime.startTime).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+    const timeFormatted = new Date(booking.showtime.startTime).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    const concessionItems = [];
+    for (const item of booking.concessions) {
+      const concessionDoc = await Concession.findById(item.concession);
+      if (concessionDoc) {
+        concessionItems.push({
+          name: concessionDoc.name,
+          quantity: item.quantity,
+          price: concessionDoc.price,
+        });
+      }
+    }
+
+    const emailContentHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+        <h2 style="color: #e50914; text-align: center;">Ticket Booking Confirmation (VietQR)</h2>
+        <p>Dear ${req.user.username},</p>
+        <p>Thank you for booking with us! Your ticket is confirmed. Details below:</p>
+        
+        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <h3 style="margin-top: 0; color: #333;">${booking.showtime.movie.title}</h3>
+          <p><strong>Theater:</strong> ${booking.showtime.theater.name}</p>
+          <p><strong>Hall / Room:</strong> ${booking.showtime.room.name} (${booking.showtime.format})</p>
+          <p><strong>Date:</strong> ${dateFormatted}</p>
+          <p><strong>Time:</strong> ${timeFormatted}</p>
+          <p><strong>Seats Booked:</strong> ${booking.seats.join(', ')}</p>
+        </div>
+
+        ${concessionItems.length > 0 ? `
+          <div style="margin: 15px 0;">
+            <h4 style="margin-bottom: 5px; color: #333;">Concessions Selected:</h4>
+            <ul style="padding-left: 20px;">
+              ${concessionItems.map((item) => `<li>${item.name} x ${item.quantity} (${(item.price * item.quantity).toLocaleString()} VND)</li>`).join('')}
+            </ul>
+          </div>
+        ` : ''}
+
+        <div style="border-top: 2px dashed #e0e0e0; padding-top: 15px; margin-top: 15px;">
+          <p style="font-size: 16px;"><strong>Total Price Paid:</strong> <span style="color: #e50914; font-size: 18px; font-weight: bold;">${booking.totalPrice.toLocaleString()} VND</span></p>
+          <p><strong>Transaction ID:</strong> ${payment ? payment.transactionId : 'N/A'}</p>
+        </div>
+
+        <p style="font-size: 12px; color: #777; margin-top: 30px; text-align: center;">Please show this email code at the ticket counter to claim your popcorn or enter the hall. Enjoy your movie!</p>
+      </div>
+    `;
+
+    try {
+      await sendEmail({
+        to: req.user.email,
+        subject: `Movie Ticket Confirmation: ${booking.showtime.movie.title}`,
+        html: emailContentHtml,
+      });
+    } catch (emailErr) {
+      console.error('Email sending failed:', emailErr);
+    }
+
+    res.json({
+      success: true,
+      message: 'Payment simulated and booking confirmed',
+      data: booking,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Cancel a pending booking (releases seats and deletes booking record)
+// @route   DELETE /api/bookings/:id/cancel
+// @access  Private
+const cancelBooking = async (req, res, next) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      res.status(404);
+      throw new Error('Booking not found');
+    }
+
+    // Check ownership
+    if (booking.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      res.status(403);
+      throw new Error('Not authorized');
+    }
+
+    if (booking.paymentStatus !== 'pending') {
+      res.status(400);
+      throw new Error('Only pending bookings can be cancelled');
+    }
+
+    // Release showtime booked seats
+    await Showtime.findByIdAndUpdate(booking.showtime, {
+      $pull: { bookedSeats: { $in: booking.seats } },
+    });
+
+    // Delete payment and booking
+    await Payment.deleteMany({ booking: booking._id });
+    await booking.deleteOne();
+
+    res.json({
+      success: true,
+      message: 'Booking cancelled and seats released successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createBooking,
   getMyBookings,
   getBookingById,
+  getBookingStatus,
+  simulatePayment,
+  cancelBooking,
 };

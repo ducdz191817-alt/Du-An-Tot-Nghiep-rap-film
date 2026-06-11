@@ -26,28 +26,28 @@ export const RevenueReport = () => {
 
   const COLORS = ['#e50914', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
 
-  const monthlyData = report?.monthlySales || [];
-  const movieData = report?.movieSales || [];
-  const theaterData = report?.theaterSales || [];
+  const monthlyData = report?.data?.monthlySales || report?.monthlySales || [];
+  const movieData = report?.data?.movieSales || report?.movieSales || [];
+  const theaterData = report?.data?.theaterSales || report?.theaterSales || [];
 
   return (
     <div className="space-y-8">
       <div>
-        <h3 className="text-lg font-black text-zinc-200">Financial Reports & Insights</h3>
-        <p className="text-xs text-zinc-500 mt-1">Review complex sales performances, monthly ticket flows, and top popular films.</p>
+        <h3 className="text-lg font-black text-zinc-200">Báo Cáo & Phân Tích Tài Chính</h3>
+        <p className="text-xs text-zinc-500 mt-1">Xem lại hiệu suất bán hàng của các cụm rạp, lưu lượng vé hàng tháng và các phim nổi bật nhất.</p>
       </div>
 
-      {/* Grid Charts */}
+      {/* Lưới biểu đồ */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* 1. Monthly Revenue Chart */}
+        {/* 1. Biểu đồ doanh thu hàng tháng */}
         <div className="bg-dark-card border border-dark-border p-6 rounded-3xl space-y-4 shadow-sm">
           <h4 className="font-bold text-zinc-300 text-sm flex items-center gap-2">
-            <DollarSign size={16} className="text-brand" /> Monthly Booking Revenue
+            <DollarSign size={16} className="text-brand" /> Doanh Thu Đặt Vé Hàng Tháng
           </h4>
           <div className="h-72 w-full pt-4">
             {monthlyData.length === 0 ? (
               <div className="h-full flex items-center justify-center text-zinc-500 italic text-xs">
-                No monthly sales aggregates registered.
+                Chưa có dữ liệu tổng hợp doanh thu hàng tháng.
               </div>
             ) : (
               <ResponsiveContainer width="100%" h="100%">
@@ -66,15 +66,15 @@ export const RevenueReport = () => {
           </div>
         </div>
 
-        {/* 2. Theater venues Sales Chart */}
+        {/* 2. Biểu đồ doanh thu theo cụm rạp */}
         <div className="bg-dark-card border border-dark-border p-6 rounded-3xl space-y-4 shadow-sm">
           <h4 className="font-bold text-zinc-300 text-sm flex items-center gap-2">
-            <Landmark size={16} className="text-blue-500" /> Complex Venues Performance
+            <Landmark size={16} className="text-blue-500" /> Hiệu Suất Các Cụm Rạp
           </h4>
           <div className="h-72 w-full pt-4">
             {theaterData.length === 0 ? (
               <div className="h-full flex items-center justify-center text-zinc-500 italic text-xs">
-                No theater sales comparisons registered.
+                Chưa có dữ liệu so sánh doanh thu các rạp.
               </div>
             ) : (
               <ResponsiveContainer width="100%" h="100%">
@@ -93,16 +93,16 @@ export const RevenueReport = () => {
           </div>
         </div>
 
-        {/* 3. Movie Proportion Chart */}
+        {/* 3. Biểu đồ tỷ lệ doanh thu theo phim */}
         <div className="bg-dark-card border border-dark-border p-6 rounded-3xl space-y-4 shadow-sm lg:col-span-2">
           <h4 className="font-bold text-zinc-300 text-sm flex items-center gap-2">
-            <BarChart3 size={16} className="text-emerald-500" /> Movie Sales Proportions
+            <BarChart3 size={16} className="text-emerald-500" /> Tỷ Trọng Doanh Thu Theo Phim
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center pt-4">
             <div className="h-64 w-full">
               {movieData.length === 0 ? (
                 <div className="h-full flex items-center justify-center text-zinc-500 italic text-xs">
-                  No movie proportions tracked.
+                  Chưa có dữ liệu tỷ trọng của phim.
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" h="100%">
@@ -121,12 +121,12 @@ export const RevenueReport = () => {
               )}
             </div>
 
-            {/* List custom Legend color keys */}
+            {/* Danh sách chú giải màu sắc tùy chỉnh */}
             <div className="space-y-3">
-              <h5 className="text-zinc-400 font-bold text-xs uppercase tracking-wider">Top Performing Movies</h5>
+              <h5 className="text-zinc-400 font-bold text-xs uppercase tracking-wider">Top Phim Có Doanh Thu Cao Nhất</h5>
               <div className="space-y-2.5 max-h-56 overflow-y-auto pr-2 custom-scrollbar">
                 {movieData.length === 0 ? (
-                  <p className="text-xs text-zinc-600 italic">No movie data tracked.</p>
+                  <p className="text-xs text-zinc-600 italic">Chưa có dữ liệu phim.</p>
                 ) : (
                   movieData.map((item, idx) => (
                     <div key={item.name} className="flex justify-between items-center text-xs font-semibold">
@@ -134,7 +134,7 @@ export const RevenueReport = () => {
                         <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
                         <span className="text-zinc-300 truncate max-w-[150px]">{item.name}</span>
                       </div>
-                      <span className="text-zinc-500">{item.value.toLocaleString()} VND</span>
+                      <span className="text-zinc-500">{(item.value || 0).toLocaleString('vi-VN')} VNĐ</span>
                     </div>
                   ))
                 )}

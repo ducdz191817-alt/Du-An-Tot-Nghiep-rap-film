@@ -17,25 +17,25 @@ export const RegisterForm = ({ onSuccess }) => {
   const validate = () => {
     const errors = {};
     if (!formData.username.trim()) {
-      errors.username = 'Username is required';
+      errors.username = 'Tên đăng nhập là bắt buộc';
     } else if (formData.username.trim().length < 3) {
-      errors.username = 'Username must be at least 3 characters';
+      errors.username = 'Tên đăng nhập phải có ít nhất 3 ký tự';
     }
 
     if (!formData.email) {
-      errors.email = 'Email is required';
+      errors.email = 'Email là bắt buộc';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Please provide a valid email';
+      errors.email = 'Vui lòng cung cấp một email hợp lệ';
     }
 
     if (!formData.password) {
-      errors.password = 'Password is required';
+      errors.password = 'Mật khẩu là bắt buộc';
     } else if (formData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
+      errors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
     }
 
     if (formData.phone && !/^\d{10,11}$/.test(formData.phone)) {
-      errors.phone = 'Phone number must be 10-11 digits';
+      errors.phone = 'Số điện thoại phải từ 10-11 chữ số';
     }
 
     setFormErrors(errors);
@@ -76,8 +76,8 @@ export const RegisterForm = ({ onSuccess }) => {
 
       <Input
         name="username"
-        label="Username"
-        placeholder="johndoe"
+        label="Tên đăng nhập"
+        placeholder="nguyenvana"
         value={formData.username}
         onChange={handleChange}
         error={formErrors.username}
@@ -88,8 +88,8 @@ export const RegisterForm = ({ onSuccess }) => {
       <Input
         name="email"
         type="email"
-        label="Email Address"
-        placeholder="yourname@gmail.com"
+        label="Địa chỉ Email"
+        placeholder="tenban@gmail.com"
         value={formData.email}
         onChange={handleChange}
         error={formErrors.email}
@@ -99,7 +99,7 @@ export const RegisterForm = ({ onSuccess }) => {
 
       <Input
         name="phone"
-        label="Phone Number"
+        label="Số điện thoại"
         placeholder="0123456789"
         value={formData.phone}
         onChange={handleChange}
@@ -110,7 +110,7 @@ export const RegisterForm = ({ onSuccess }) => {
       <Input
         name="password"
         type="password"
-        label="Password"
+        label="Mật khẩu"
         placeholder="••••••••"
         value={formData.password}
         onChange={handleChange}
@@ -126,7 +126,7 @@ export const RegisterForm = ({ onSuccess }) => {
         className="w-full mt-2"
         icon={<UserPlus size={18} />}
       >
-        Create Account
+        Tạo tài khoản
       </Button>
     </form>
   );

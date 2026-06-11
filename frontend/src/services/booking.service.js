@@ -12,6 +12,11 @@ const getShowtimeById = async (id) => {
   return response.data;
 };
 
+const getShowtimes = async (filters = {}) => {
+  const response = await api.get('/showtimes', { params: filters });
+  return response.data;
+};
+
 const createBooking = async (bookingData) => {
   const response = await api.post('/bookings', bookingData);
   return response.data;
@@ -27,12 +32,39 @@ const getBookingById = async (id) => {
   return response.data;
 };
 
+const getConcessions = async (theaterId = '') => {
+  const response = await api.get('/concessions', {
+    params: theaterId ? { theaterId } : {},
+  });
+  return response.data;
+};
+
+const getBookingStatus = async (id) => {
+  const response = await api.get(`/bookings/${id}/status`);
+  return response.data;
+};
+
+const simulatePayment = async (id) => {
+  const response = await api.post(`/bookings/${id}/simulate-pay`);
+  return response.data;
+};
+
+const cancelBooking = async (id) => {
+  const response = await api.delete(`/bookings/${id}/cancel`);
+  return response.data;
+};
+
 const bookingService = {
   getShowtimesByMovie,
   getShowtimeById,
+  getShowtimes,
   createBooking,
   getMyBookings,
   getBookingById,
+  getConcessions,
+  getBookingStatus,
+  simulatePayment,
+  cancelBooking,
 };
 
 export default bookingService;
