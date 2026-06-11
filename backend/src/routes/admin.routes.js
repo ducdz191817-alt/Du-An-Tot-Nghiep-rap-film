@@ -14,12 +14,15 @@ const {
   listRooms,
   createConcession,
   updateConcession,
+  deleteConcession,
   listConcessions,
   createShowtime,
   updateShowtime,
   deleteShowtime,
   getDashboardStats,
   getRevenueReport,
+  listBookings,
+  deleteBooking,
 } = require('../controllers/admin.controller');
 const { protect, admin } = require('../middleware/auth.middleware');
 
@@ -53,7 +56,9 @@ router.route('/rooms/:id')
 router.route('/concessions')
   .get(listConcessions)
   .post(createConcession);
-router.put('/concessions/:id', updateConcession);
+router.route('/concessions/:id')
+  .put(updateConcession)
+  .delete(deleteConcession);
 
 // Showtimes
 router.post('/showtimes', createShowtime);
@@ -64,5 +69,9 @@ router.route('/showtimes/:id')
 // Dashboard & Analytics
 router.get('/dashboard/stats', getDashboardStats);
 router.get('/dashboard/revenue', getRevenueReport);
+
+// Booking Management
+router.get('/bookings', listBookings);
+router.delete('/bookings/:id', deleteBooking);
 
 module.exports = router;

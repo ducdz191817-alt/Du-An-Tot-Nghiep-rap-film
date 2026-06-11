@@ -26,9 +26,9 @@ export const RevenueReport = () => {
 
   const COLORS = ['#e50914', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
 
-  const monthlyData = report?.monthlySales || [];
-  const movieData = report?.movieSales || [];
-  const theaterData = report?.theaterSales || [];
+  const monthlyData = report?.data?.monthlySales || report?.monthlySales || [];
+  const movieData = report?.data?.movieSales || report?.movieSales || [];
+  const theaterData = report?.data?.theaterSales || report?.theaterSales || [];
 
   return (
     <div className="space-y-8">
@@ -134,7 +134,7 @@ export const RevenueReport = () => {
                         <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
                         <span className="text-zinc-300 truncate max-w-[150px]">{item.name}</span>
                       </div>
-                      <span className="text-zinc-500">{item.value.toLocaleString('vi-VN')} VNĐ</span>
+                      <span className="text-zinc-500">{(item.value || 0).toLocaleString('vi-VN')} VNĐ</span>
                     </div>
                   ))
                 )}

@@ -7,9 +7,20 @@ const MovieSchema = new mongoose.Schema(
       required: [true, 'Please provide a movie title'],
       trim: true,
     },
+    // English title (optional, falls back to title if not provided)
+    titleEN: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     description: {
       type: String,
       required: [true, 'Please provide a movie description'],
+    },
+    // English description (optional, falls back to description if not provided)
+    descriptionEN: {
+      type: String,
+      default: '',
     },
     duration: {
       type: Number, // in minutes

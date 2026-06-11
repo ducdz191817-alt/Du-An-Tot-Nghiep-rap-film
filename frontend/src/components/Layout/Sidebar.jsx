@@ -5,6 +5,7 @@ import {
   CalendarDays,
   DoorOpen,
   Apple,
+  Ticket,
   TrendingUp,
 } from 'lucide-react';
 
@@ -14,6 +15,8 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
     { id: 'movies', label: 'Quản lý phim', icon: <Film size={18} /> },
     { id: 'showtimes', label: 'Lịch chiếu', icon: <CalendarDays size={18} /> },
     { id: 'rooms', label: 'Quản lý phòng', icon: <DoorOpen size={18} /> },
+    { id: 'concessions', label: 'Quản lý bỏng nước', icon: <Apple size={18} /> },
+    { id: 'bookings', label: 'Quản lý đặt vé', icon: <Ticket size={18} /> },
     { id: 'revenue', label: 'Báo cáo doanh thu', icon: <TrendingUp size={18} /> },
   ];
 

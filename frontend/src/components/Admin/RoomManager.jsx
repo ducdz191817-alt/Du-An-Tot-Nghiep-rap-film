@@ -64,7 +64,7 @@ export const RoomManager = () => {
   // Open Handlers
   const handleOpenAddTheater = () => {
     setEditingTheater(null);
-    setThForm({ name: '', address: '', city: 'Ho Chi Minh', phone: '' });
+    setThForm({ name: '', address: '', city: 'Hồ Chí Minh', phone: '' });
     setError('');
     setIsThOpen(true);
   };
@@ -178,7 +178,7 @@ export const RoomManager = () => {
 
   // Delete Handlers
   const handleDeleteTheater = async (id) => {
-    if (!window.confirm('WARNING: Deleting this cinema complex will delete all its rooms, generated seats, scheduled showtimes, and user bookings! Are you absolutely sure?')) return;
+    if (!window.confirm('CẢNH BÁO: Xóa cụm rạp này sẽ đồng thời xóa toàn bộ các phòng chiếu, danh sách ghế, lịch chiếu và các giao dịch đặt vé liên quan! Bạn có chắc chắn muốn xóa không?')) return;
     try {
       await adminService.deleteTheater(id);
       loadData();
@@ -188,7 +188,7 @@ export const RoomManager = () => {
   };
 
   const handleDeleteRoom = async (id) => {
-    if (!window.confirm('WARNING: Deleting this hall will delete all its generated seats, scheduled showtimes, and user bookings! Are you sure?')) return;
+    if (!window.confirm('CẢNH BÁO: Xóa phòng chiếu này sẽ đồng thời xóa toàn bộ danh sách ghế, lịch chiếu và các giao dịch đặt vé liên quan! Bạn có chắc chắn muốn xóa không?')) return;
     try {
       await adminService.deleteRoom(id);
       loadData();
@@ -209,10 +209,10 @@ export const RoomManager = () => {
 
         <div className="flex items-center gap-3">
           <Button onClick={handleOpenAddTheater} variant="secondary" className="py-2 px-4 text-sm" icon={<Home size={15} />}>
-            Add Complex
+            Thêm Cụm Rạp
           </Button>
           <Button onClick={handleOpenAddRoom} variant="primary" className="py-2 px-4 text-sm" icon={<Plus size={16} />}>
-            Add Hall / Room
+            Thêm Phòng Chiếu
           </Button>
         </div>
       </div>
@@ -242,7 +242,7 @@ export const RoomManager = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {rooms.length === 0 ? (
             <div className="col-span-full py-12 text-center text-zinc-500 italic border border-dashed border-dark-border rounded-3xl bg-dark-card/20">
-              No rooms registered yet. Add one above!
+              Chưa có phòng chiếu nào được đăng ký. Hãy thêm phòng chiếu ở trên!
             </div>
           ) : (
             rooms.map((rm) => (
@@ -252,15 +252,15 @@ export const RoomManager = () => {
                     <h4 className="font-bold text-zinc-200 text-sm flex items-center gap-2">
                       <DoorOpen size={16} className="text-brand" /> {rm.name}
                     </h4>
-                    <span className="text-[10px] text-zinc-500 font-semibold uppercase">{rm.theater?.name || 'Unknown Theater'}</span>
+                    <span className="text-[10px] text-zinc-500 font-semibold uppercase">{rm.theater?.name || 'Không xác định'}</span>
                   </div>
                   <span className="bg-zinc-900 border border-zinc-850 px-2 py-0.5 rounded text-[9px] uppercase font-bold text-zinc-400 shrink-0">
                     {rm.type}
                   </span>
                 </div>
                 <div className="text-xs font-semibold text-zinc-500 border-t border-dark-border/40 pt-2 flex justify-between items-center">
-                  <span>Capacity Layout</span>
-                  <span className="text-zinc-300">{rm.capacity} Seats generated</span>
+                  <span>Sơ đồ sức chứa</span>
+                  <span className="text-zinc-300">{rm.capacity} Ghế đã tạo</span>
                 </div>
 
                 {/* Floating Action Controls */}
@@ -268,14 +268,14 @@ export const RoomManager = () => {
                   <button
                     onClick={() => handleOpenEditRoom(rm)}
                     className="p-1.5 bg-zinc-900 border border-dark-border hover:border-brand/40 text-zinc-400 hover:text-zinc-200 rounded-lg transition-all"
-                    title="Edit Hall"
+                    title="Sửa phòng chiếu"
                   >
                     <Edit2 size={12} />
                   </button>
                   <button
                     onClick={() => handleDeleteRoom(rm._id)}
                     className="p-1.5 bg-zinc-900 border border-dark-border hover:border-red-500/40 text-zinc-400 hover:text-red-400 rounded-lg transition-all"
-                    title="Delete Hall"
+                    title="Xóa phòng chiếu"
                   >
                     <Trash2 size={12} />
                   </button>
@@ -291,7 +291,7 @@ export const RoomManager = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {theaters.length === 0 ? (
             <div className="col-span-full py-12 text-center text-zinc-500 italic border border-dashed border-dark-border rounded-3xl bg-dark-card/20">
-              No theater complexes registered yet. Add one above!
+              Chưa có cụm rạp nào được đăng ký. Hãy thêm cụm rạp ở trên!
             </div>
           ) : (
             theaters.map((th) => (
@@ -299,7 +299,7 @@ export const RoomManager = () => {
                 <div className="pr-12">
                   <h4 className="font-bold text-zinc-200 text-sm">{th.name}</h4>
                   <p className="text-xs text-zinc-400 mt-1">{th.address}, {th.city}</p>
-                  <p className="text-[10px] text-zinc-500 font-bold mt-0.5">Phone: {th.phone}</p>
+                  <p className="text-[10px] text-zinc-500 font-bold mt-0.5">Hotline: {th.phone}</p>
                 </div>
 
                 {/* Floating Action Controls */}
@@ -307,14 +307,14 @@ export const RoomManager = () => {
                   <button
                     onClick={() => handleOpenEditTheater(th)}
                     className="p-1.5 bg-zinc-900 border border-dark-border hover:border-brand/40 text-zinc-400 hover:text-zinc-200 rounded-lg transition-all"
-                    title="Edit Complex"
+                    title="Chỉnh sửa cụm rạp"
                   >
                     <Edit2 size={12} />
                   </button>
                   <button
                     onClick={() => handleDeleteTheater(th._id)}
                     className="p-1.5 bg-zinc-900 border border-dark-border hover:border-red-500/40 text-zinc-400 hover:text-red-400 rounded-lg transition-all"
-                    title="Delete Complex"
+                    title="Xóa cụm rạp"
                   >
                     <Trash2 size={12} />
                   </button>
@@ -326,7 +326,7 @@ export const RoomManager = () => {
       )}
 
       {/* Add / Edit Complex Modal */}
-      <Modal isOpen={isThOpen} onClose={() => setIsThOpen(false)} title={editingTheater ? "Modify Cinema Complex" : "Register Cinema Complex"} size="md">
+      <Modal isOpen={isThOpen} onClose={() => setIsThOpen(false)} title={editingTheater ? "Chỉnh Sửa Cụm Rạp" : "Đăng Ký Cụm Rạp Mới"} size="md">
         <form onSubmit={handleTheaterSubmit} className="space-y-4">
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm flex items-center gap-2">
@@ -348,14 +348,14 @@ export const RoomManager = () => {
               Hủy
             </Button>
             <Button type="submit" variant="primary" className="px-6 py-2">
-              {editingTheater ? "Save" : "Register"}
+              {editingTheater ? "Lưu" : "Đăng Ký"}
             </Button>
           </div>
         </form>
       </Modal>
 
       {/* Add / Edit Hall Modal */}
-      <Modal isOpen={isRmOpen} onClose={() => setIsRmOpen(false)} title={editingRoom ? "Modify Seated Hall" : "Register Hall & Generate Seat Map"} size="lg">
+      <Modal isOpen={isRmOpen} onClose={() => setIsRmOpen(false)} title={editingRoom ? "Chỉnh Sửa Phòng Chiếu" : "Đăng Ký Phòng Chiếu & Tạo Sơ Đồ Ghế"} size="lg">
         <form onSubmit={handleRoomSubmit} className="space-y-4">
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm flex items-center gap-2">
@@ -405,27 +405,27 @@ export const RoomManager = () => {
             </div>
 
             {!editingRoom && (
-              <Input name="seatsPerRow" type="number" label="Seats per Row" placeholder="10" value={rmForm.seatsPerRow} onChange={handleRmChange} required />
+              <Input name="seatsPerRow" type="number" label="Số ghế mỗi hàng" placeholder="10" value={rmForm.seatsPerRow} onChange={handleRmChange} required />
             )}
           </div>
 
           {!editingRoom ? (
             <>
               <div className="grid grid-cols-3 gap-4 border-t border-dark-border/40 pt-4">
-                <Input name="standardRows" type="number" label="Standard Seat Rows" placeholder="5" value={rmForm.standardRows} onChange={handleRmChange} required />
-                <Input name="vipRows" type="number" label="VIP Seat Rows" placeholder="3" value={rmForm.vipRows} onChange={handleRmChange} required />
-                <Input name="coupleRows" type="number" label="Couple Seat Rows" placeholder="1" value={rmForm.coupleRows} onChange={handleRmChange} required />
+                <Input name="standardRows" type="number" label="Hàng ghế thường" placeholder="5" value={rmForm.standardRows} onChange={handleRmChange} required />
+                <Input name="vipRows" type="number" label="Hàng ghế VIP" placeholder="3" value={rmForm.vipRows} onChange={handleRmChange} required />
+                <Input name="coupleRows" type="number" label="Hàng ghế đôi" placeholder="1" value={rmForm.coupleRows} onChange={handleRmChange} required />
               </div>
 
               <p className="text-[10px] text-zinc-500 font-bold bg-zinc-900/60 p-3 rounded-lg border border-dark-border flex items-center gap-2">
                 <RefreshCw size={12} className="animate-spin text-brand shrink-0" />
-                <span>Seats will be automatically populated inside database using rows mapping alphabet letters (A-Z) and standard prices offsets.</span>
+                <span>Sơ đồ ghế sẽ được tạo tự động trong cơ sở dữ liệu dựa theo các chữ cái hàng (A-Z) và cấu hình giá tương ứng.</span>
               </p>
             </>
           ) : (
             <p className="text-[11px] text-amber-500 font-bold bg-amber-500/5 p-3 rounded-lg border border-amber-500/20 flex items-center gap-2">
               <AlertCircle size={14} className="shrink-0" />
-              <span>Seating capacity layout config is locked during edit mode. To modify seat map structures, please recreate the hall.</span>
+              <span>Cấu hình sơ đồ và sức chứa ghế bị khóa trong chế độ chỉnh sửa. Để thay đổi cấu trúc sơ đồ ghế, vui lòng tạo mới phòng chiếu.</span>
             </p>
           )}
 
@@ -434,7 +434,7 @@ export const RoomManager = () => {
               Hủy
             </Button>
             <Button type="submit" variant="primary" className="px-6 py-2">
-              {editingRoom ? "Save" : "Save & Generate Chart"}
+              {editingRoom ? "Lưu" : "Lưu & Tạo sơ đồ ghế"}
             </Button>
           </div>
         </form>

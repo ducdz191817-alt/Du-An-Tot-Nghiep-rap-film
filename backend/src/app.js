@@ -58,6 +58,15 @@ const seedDatabase = async () => {
     const movieCount = await Movie.countDocuments();
     if (movieCount > 0) {
       console.log('Database already seeded with movies. Skipping seeding.');
+      // Auto-migrate existing concessions without theater
+      const existingConcessions = await Concession.find({ theater: { $exists: false } });
+      if (existingConcessions.length > 0) {
+        const firstTheater = await Theater.findOne();
+        if (firstTheater) {
+          await Concession.updateMany({ theater: { $exists: false } }, { theater: firstTheater._id });
+          console.log(`Auto-Migration: Associated ${existingConcessions.length} existing concessions to theater ${firstTheater.name}`);
+        }
+      }
       return;
     }
 
@@ -186,32 +195,69 @@ const seedDatabase = async () => {
     // 5. Create Concession Items
     await Concession.create([
       {
-        name: 'Single Combo',
+        name: 'Single Combo (Landmark 81)',
         description: '1 Large Popcorn + 1 Medium Soft Drink (Pepsi/7Up)',
         price: 79000,
         imageUrl: 'https://images.unsplash.com/photo-1585647347483-22b66260dfff?w=500&auto=format&fit=crop&q=60',
         type: 'combo',
+        theater: t1._id,
       },
       {
-        name: 'Couple Combo',
+        name: 'Couple Combo (Landmark 81)',
         description: '1 Large Popcorn + 2 Medium Soft Drinks (Pepsi/7Up)',
         price: 109000,
         imageUrl: 'https://images.unsplash.com/photo-1578849278619-e73505e9610f?w=500&auto=format&fit=crop&q=60',
         type: 'combo',
+        theater: t1._id,
       },
       {
-        name: 'Salty Popcorn Large',
+        name: 'Salty Popcorn Large (Landmark 81)',
         description: 'Delicious hot butter salted popcorn',
         price: 55000,
         imageUrl: 'https://images.unsplash.com/photo-1505686994434-e3cc5abf1330?w=500&auto=format&fit=crop&q=60',
         type: 'food',
+        theater: t1._id,
       },
       {
-        name: 'Pepsi Large',
+        name: 'Pepsi Large (Landmark 81)',
         description: 'Cold and refreshing carbonated beverage',
         price: 35000,
         imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500&auto=format&fit=crop&q=60',
         type: 'drink',
+        theater: t1._id,
+      },
+      // Theater 2 (Accident Studio Grand Hanoi) items
+      {
+        name: 'Single Combo (Grand Hanoi)',
+        description: '1 Large Popcorn + 1 Medium Soft Drink (Pepsi/7Up)',
+        price: 85000,
+        imageUrl: 'https://images.unsplash.com/photo-1585647347483-22b66260dfff?w=500&auto=format&fit=crop&q=60',
+        type: 'combo',
+        theater: t2._id,
+      },
+      {
+        name: 'Couple Combo (Grand Hanoi)',
+        description: '1 Large Popcorn + 2 Medium Soft Drinks (Pepsi/7Up)',
+        price: 119000,
+        imageUrl: 'https://images.unsplash.com/photo-1578849278619-e73505e9610f?w=500&auto=format&fit=crop&q=60',
+        type: 'combo',
+        theater: t2._id,
+      },
+      {
+        name: 'Salty Popcorn Large (Grand Hanoi)',
+        description: 'Delicious hot butter salted popcorn',
+        price: 60000,
+        imageUrl: 'https://images.unsplash.com/photo-1505686994434-e3cc5abf1330?w=500&auto=format&fit=crop&q=60',
+        type: 'food',
+        theater: t2._id,
+      },
+      {
+        name: 'Pepsi Large (Grand Hanoi)',
+        description: 'Cold and refreshing carbonated beverage',
+        price: 38000,
+        imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500&auto=format&fit=crop&q=60',
+        type: 'drink',
+        theater: t2._id,
       },
     ]);
 

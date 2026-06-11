@@ -131,14 +131,14 @@ const seedData = async () => {
       // ─ NOW SHOWING ─
       {
         title: 'Avengers: Secret Wars',
-        description:
-          'Sau các sự kiện của Endgame, các anh hùng Marvel đối mặt với mối đe dọa lớn nhất từ trước đến nay khi các thực tại song song va chạm, buộc họ phải liên minh với những phiên bản khác của chính mình.',
+        titleEN: 'Avengers: Secret Wars',
+        description: 'Sau các sự kiện của Endgame, các anh hùng Marvel đối mặt với mối đe dọa lớn nhất từ trước đến nay khi các thực tại song song va chạm, buộc họ phải liên minh với những phiên bản khác của chính mình.',
+        descriptionEN: 'Following the events of Endgame, the Marvel heroes face their greatest threat yet as parallel realities collide, forcing them to ally with alternate versions of themselves.',
         duration: 172,
         genre: ['Action', 'Sci-Fi', 'Adventure'],
         language: 'Tiếng Anh',
         releaseDate: pastDays(20),
-        posterUrl:
-          'https://image.tmdb.org/t/p/original/8mjYkBTKdB0jS9BHxHJ6KYi7WiR.jpg',
+        posterUrl: 'https://image.tmdb.org/t/p/original/8mjYkBTKdB0jS9BHxHJ6KYi7WiR.jpg',
         trailerUrl: 'https://www.youtube.com/embed/TcMBFSGVi1c',
         rating: 'T13',
         director: 'Joe Russo',
@@ -147,14 +147,14 @@ const seedData = async () => {
       },
       {
         title: 'Minecraft: The Movie',
-        description:
-          'Bốn người lạ mặt và một thú mỏ vịt bất ngờ bị hút vào thế giới Minecraft đầy khối vuông và nguy hiểm. Họ phải học cách sinh tồn và tìm đường về nhà.',
+        titleEN: 'Minecraft: The Movie',
+        description: 'Bốn người lạ mặt và một thú mỏ vịt bất ngờ bị hút vào thế giới Minecraft đầy khối vuông và nguy hiểm. Họ phải học cách sinh tồn và tìm đường về nhà.',
+        descriptionEN: 'Four misfits and a platypus find themselves pulled into the cubical and perilous world of Minecraft. They must learn to survive and find their way home.',
         duration: 101,
         genre: ['Adventure', 'Comedy', 'Family'],
         language: 'Tiếng Anh',
         releaseDate: pastDays(15),
-        posterUrl:
-          'https://image.tmdb.org/t/p/original/cMgu69fFqxE8faBbFVhMhXDxnYS.jpg',
+        posterUrl: 'https://image.tmdb.org/t/p/original/cMgu69fFqxE8faBbFVhMhXDxnYS.jpg',
         trailerUrl: 'https://www.youtube.com/embed/iMqM6EoHOmk',
         rating: 'P',
         director: 'Jared Hess',
@@ -163,14 +163,14 @@ const seedData = async () => {
       },
       {
         title: 'Thunderbolts*',
-        description:
-          'Một nhóm các nhân vật phản diện và anh hùng sa ngã của Marvel được tập hợp lại để thực hiện nhiệm vụ tối mật. Khi mọi thứ sụp đổ, họ phải lựa chọn giữa sứ mệnh và lương tâm.',
+        titleEN: 'Thunderbolts*',
+        description: 'Một nhóm các nhân vật phản diện và anh hùng sa ngã của Marvel được tập hợp lại để thực hiện nhiệm vụ tối mật. Khi mọi thứ sụp đổ, họ phải lựa chọn giữa sứ mệnh và lương tâm.',
+        descriptionEN: 'A group of reformed villains and fallen heroes from Marvel are assembled for a top-secret mission. When everything crumbles, they must choose between their directive and their conscience.',
         duration: 126,
         genre: ['Action', 'Adventure'],
         language: 'Tiếng Anh',
         releaseDate: pastDays(10),
-        posterUrl:
-          'https://image.tmdb.org/t/p/original/m9EtP1iGSLzJJLP5sPdnXKWbHBO.jpg',
+        posterUrl: 'https://image.tmdb.org/t/p/original/m9EtP1iGSLzJJLP5sPdnXKWbHBO.jpg',
         trailerUrl: 'https://www.youtube.com/embed/d_R7eMHTBHg',
         rating: 'T13',
         director: 'Jake Schreier',
@@ -179,14 +179,14 @@ const seedData = async () => {
       },
       {
         title: 'Lilo & Stitch',
-        description:
-          'Phiên bản live-action của bộ phim hoạt hình kinh điển Disney. Lilo, một cô bé Hawaii cô đơn, kết bạn với một sinh vật ngoài hành tinh tên Stitch và cùng nhau học về ý nghĩa của gia đình.',
+        titleEN: 'Lilo & Stitch',
+        description: 'Phiên bản live-action của bộ phim hoạt hình kinh điển Disney. Lilo, một cô bé Hawaii cô đơn, kết bạn với một sinh vật ngoài hành tinh tên Stitch và cùng nhau học về ý nghĩa của gia đình.',
+        descriptionEN: 'Live-action adaptation of the classic Disney animated film. Lilo, a lonely Hawaiian girl, befriends an alien creature named Stitch, and together they learn the meaning of family.',
         duration: 108,
         genre: ['Family', 'Comedy', 'Sci-Fi'],
         language: 'Tiếng Anh',
         releaseDate: pastDays(5),
-        posterUrl:
-          'https://image.tmdb.org/t/p/original/4YpLnX2JX4pVPhan4IM3nJJETEB.jpg',
+        posterUrl: 'https://image.tmdb.org/t/p/original/4YpLnX2JX4pVPhan4IM3nJJETEB.jpg',
         trailerUrl: 'https://www.youtube.com/embed/Q6DFiSI5wgo',
         rating: 'P',
         director: 'Dean Fleischer Camp',
@@ -195,14 +195,14 @@ const seedData = async () => {
       },
       {
         title: 'Tôi Thấy Hoa Vàng Trên Cỏ Xanh 2',
-        description:
-          'Tiếp nối câu chuyện tuổi thơ đong đầy cảm xúc, hai anh em Thiều và Tường trưởng thành hơn trong hành trình tìm kiếm bản thân giữa vùng quê yên bình miền Trung.',
+        titleEN: 'Yellow Flowers on the Green Grass 2',
+        description: 'Tiếp nối câu chuyện tuổi thơ đong đầy cảm xúc, hai anh em Thiều và Tường trưởng thành hơn trong hành trình tìm kiếm bản thân giữa vùng quê yên bình miền Trung.',
+        descriptionEN: 'Continuing the emotional childhood story, brothers Thieu and Tuong grow older in their journey to find themselves amidst the peaceful countryside of Central Vietnam.',
         duration: 118,
         genre: ['Drama', 'Family'],
         language: 'Tiếng Việt',
         releaseDate: pastDays(8),
-        posterUrl:
-          'https://image.tmdb.org/t/p/original/bUFuFAhK6xyU9m5BIX3ECMy5p58.jpg',
+        posterUrl: 'https://image.tmdb.org/t/p/original/bUFuFAhK6xyU9m5BIX3ECMy5p58.jpg',
         trailerUrl: 'https://www.youtube.com/embed/example1',
         rating: 'P',
         director: 'Victor Vũ',
@@ -212,14 +212,14 @@ const seedData = async () => {
       // ─ COMING SOON ─
       {
         title: 'Superman: Legacy',
-        description:
-          'James Gunn tái khởi động vũ trụ DC với câu chuyện về Superman trẻ tuổi Clark Kent, người đang cố gắng cân bằng di sản Krypton và cuộc sống con người trên Trái Đất.',
+        titleEN: 'Superman: Legacy',
+        description: 'James Gunn tái khởi động vũ trụ DC với câu chuyện về Superman trẻ tuổi Clark Kent, người đang cố gắng cân bằng di sản Krypton và cuộc sống con người trên Trái Đất.',
+        descriptionEN: 'James Gunn reboots the DC Universe with the story of a young Superman, Clark Kent, as he strives to balance his Kryptonian heritage with his human upbringing on Earth.',
         duration: 135,
         genre: ['Action', 'Adventure', 'Sci-Fi'],
         language: 'Tiếng Anh',
         releaseDate: futureDays(14),
-        posterUrl:
-          'https://image.tmdb.org/t/p/original/74oqkKoNhMkJGQDhU0gGLAD7Qjr.jpg',
+        posterUrl: 'https://image.tmdb.org/t/p/original/74oqkKoNhMkJGQDhU0gGLAD7Qjr.jpg',
         trailerUrl: 'https://www.youtube.com/embed/f5a4KSHQJxg',
         rating: 'T13',
         director: 'James Gunn',
@@ -228,14 +228,14 @@ const seedData = async () => {
       },
       {
         title: 'Jurassic World: Rebirth',
-        description:
-          'Năm năm sau thảm họa toàn cầu, ba nhóm người sống sót phải hợp tác để truy tìm mẫu ADN khủng long quý giá có thể cứu nhân loại. Nhưng những loài ăn thịt nguyên thủy nhất đang chờ đợi họ.',
+        titleEN: 'Jurassic World: Rebirth',
+        description: 'Năm năm sau thảm họa toàn cầu, ba nhóm người sống sót phải hợp tác để truy tìm mẫu ADN khủng long quý giá có thể cứu nhân loại. Nhưng những loài ăn thịt nguyên thủy nhất đang chờ đợi họ.',
+        descriptionEN: 'Five years after a global disaster, three groups of survivors must cooperate to retrieve a precious dinosaur DNA sample that could save humanity. But the most primal carnivores await them.',
         duration: 124,
         genre: ['Action', 'Adventure', 'Sci-Fi'],
         language: 'Tiếng Anh',
         releaseDate: futureDays(21),
-        posterUrl:
-          'https://image.tmdb.org/t/p/original/mNhiEOj7WNSrmBScqLGBG7Ztgbv.jpg',
+        posterUrl: 'https://image.tmdb.org/t/p/original/mNhiEOj7WNSrmBScqLGBG7Ztgbv.jpg',
         trailerUrl: 'https://www.youtube.com/embed/YeWxuWRj8H8',
         rating: 'T13',
         director: 'Gareth Edwards',
@@ -244,14 +244,14 @@ const seedData = async () => {
       },
       {
         title: 'Cám',
-        description:
-          'Phiên bản kinh dị Việt Nam của câu chuyện cổ tích Tấm Cám. Cám xinh đẹp nhưng độc ác sẵn sàng làm mọi thứ để giành được cuộc sống mà mình ao ước, kể cả những điều không thể tưởng tượng.',
+        titleEN: 'Cam: The Dark Tale',
+        description: 'Phiên bản kinh dị Việt Nam của câu chuyện cổ tích Tấm Cám. Cám xinh đẹp nhưng độc ác sẵn sàng làm mọi thứ để giành được cuộc sống mà mình ao ước, kể cả những điều không thể tưởng tượng.',
+        descriptionEN: 'A Vietnamese horror adaptation of the classic fairy tale Tam Cam. Cam, beautiful but cruel, is willing to do whatever it takes to win the life she desires, including the unthinkable.',
         duration: 112,
         genre: ['Horror', 'Drama'],
         language: 'Tiếng Việt',
         releaseDate: futureDays(7),
-        posterUrl:
-          'https://image.tmdb.org/t/p/original/example_cam.jpg',
+        posterUrl: 'https://image.tmdb.org/t/p/original/example_cam.jpg',
         trailerUrl: 'https://www.youtube.com/embed/exampleCam',
         rating: 'T18',
         director: 'Trần Hữu Tấn',
@@ -261,14 +261,14 @@ const seedData = async () => {
       // ─ ENDED ─
       {
         title: 'Dune: Part Two',
-        description:
-          'Paul Atreides liên minh với người Fremen và thực hiện hành trình báo thù những kẻ âm mưu hủy diệt gia đình mình. Khi anh phải lựa chọn giữa tình yêu và định mệnh của vũ trụ.',
+        titleEN: 'Dune: Part Two',
+        description: 'Paul Atreides liên minh với người Fremen và thực hiện hành trình báo thù những kẻ âm mưu hủy diệt gia đình mình. Khi anh phải lựa chọn giữa tình yêu và định mệnh của vũ trụ.',
+        descriptionEN: 'Paul Atreides unites with Chani and the Fremen while seeking revenge against the conspirators who destroyed his family. Facing a choice between the love of his life and the fate of the universe, he endeavors to prevent a terrible future only he can foresee.',
         duration: 166,
         genre: ['Sci-Fi', 'Adventure', 'Action'],
         language: 'Tiếng Anh',
         releaseDate: pastDays(90),
-        posterUrl:
-          'https://image.tmdb.org/t/p/original/1pdfLvkbY9ohJlCjQH2JGqqUT1O.jpg',
+        posterUrl: 'https://image.tmdb.org/t/p/original/1pdfLvkbY9ohJlCjQH2JGqqUT1O.jpg',
         trailerUrl: 'https://www.youtube.com/embed/Way9Dexny3w',
         rating: 'T13',
         director: 'Denis Villeneuve',
@@ -277,14 +277,14 @@ const seedData = async () => {
       },
       {
         title: 'Kung Fu Panda 4',
-        description:
-          'Po được bổ nhiệm làm Lãnh đạo Tinh thần của Thung lũng Hòa bình, nhưng trước tiên phải tìm và đào tạo một Chiến binh Rồng mới. Hành trình đưa anh đến một thành phố ven biển nguy hiểm.',
+        titleEN: 'Kung Fu Panda 4',
+        description: 'Po được bổ nhiệm làm Lãnh đạo Tinh thần của Thung lũng Hòa bình, nhưng trước tiên phải tìm và đào tạo một Chiến binh Rồng mới. Hành trình đưa anh đến một thành phố ven biển nguy hiểm.',
+        descriptionEN: 'Po is tapped to become the Spiritual Leader of the Valley of Peace, but must first find and train a new Dragon Warrior. The journey takes him to a dangerous coastal city.',
         duration: 94,
         genre: ['Animation', 'Action', 'Comedy', 'Family'],
         language: 'Tiếng Anh',
         releaseDate: pastDays(75),
-        posterUrl:
-          'https://image.tmdb.org/t/p/original/kDp1vUBnMpe8ak4rjgl3cLELqjU.jpg',
+        posterUrl: 'https://image.tmdb.org/t/p/original/kDp1vUBnMpe8ak4rjgl3cLELqjU.jpg',
         trailerUrl: 'https://www.youtube.com/embed/_inKs4eeHiI',
         rating: 'P',
         director: 'Mike Mitchell',

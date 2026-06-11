@@ -45,8 +45,9 @@ export const BookingPage = () => {
         selectShowtime(stResult.showtime);
         setSeatsList(stResult.seats);
 
-        // 2. Lấy danh sách bắp nước
-        const conResult = await adminService.getConcessions();
+        // 2. Lấy danh sách bắp nước tương ứng với rạp chiếu
+        const theaterId = stResult.showtime.theater?._id || stResult.showtime.theater;
+        const conResult = await adminService.getConcessions(theaterId);
         setConcessionsList(conResult);
       } catch (err) {
         console.error(err);
