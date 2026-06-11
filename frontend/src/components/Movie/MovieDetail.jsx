@@ -5,6 +5,53 @@ import bookingService from '../../services/booking.service';
 import Button from '../common/Button';
 import { useLanguage } from '../../context/LanguageContext';
 
+// Helper function to convert any YouTube link into a secure, embeddable URL
+const getEmbedUrl = (url) => {
+  if (!url) return '';
+  if (url.includes('youtube.com/embed/')) return url;
+  
+  let videoId = '';
+  
+  if (url.includes('youtube.com/watch')) {
+    try {
+      const urlObj = new URL(url);
+      videoId = urlObj.searchParams.get('v');
+    } catch (e) {
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = url.match(regExp);
+      if (match && match[2].length === 11) videoId = match[2];
+    }
+  } else if (url.includes('youtu.be/')) {
+    try {
+      const urlObj = new URL(url);
+      videoId = urlObj.pathname.substring(1);
+    } catch (e) {
+      const regExp = /^.*(youtu.be\/)([^#\&\?]*).*/;
+      const match = url.match(regExp);
+      if (match && match[2].length === 11) videoId = match[2];
+    }
+  } else if (url.includes('youtube.com/shorts/')) {
+    try {
+      const urlObj = new URL(url);
+      const parts = urlObj.pathname.split('/');
+      videoId = parts[parts.length - 1] || parts[parts.length - 2];
+    } catch (e) {
+      const match = url.match(/youtube\.com\/shorts\/([^#\&\?]+)/);
+      if (match) videoId = match[1];
+    }
+  } else {
+    if (url.trim().length === 11 && !url.includes('/') && !url.includes('.')) {
+      videoId = url.trim();
+    } else {
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = url.match(regExp);
+      if (match && match[2].length === 11) videoId = match[2];
+    }
+  }
+  
+  return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+};
+
 export const MovieDetail = ({ movie }) => {
   const navigate = useNavigate();
   const { language, t } = useLanguage();
@@ -162,26 +209,15 @@ export const MovieDetail = ({ movie }) => {
               {t('movie.trailer')}
             </h2>
           </div>
-          {trailerError ? (
-            <div className="relative aspect-video w-full rounded-[2rem] overflow-hidden border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.7)] bg-gradient-to-br from-black to-zinc-900 flex items-center justify-center">
-              <div className="text-center space-y-4">
-                <div className="text-6xl text-zinc-600">🎬</div>
-                <p className="text-zinc-400 font-semibold">{t('movie.trailerUnavailable') || 'Trailer không có sẵn'}</p>
-                <p className="text-zinc-500 text-sm">{t('movie.trailerDescription') || 'Video trailer hiện không thể tải được, vui lòng quay lại sau'}</p>
-              </div>
-            </div>
-          ) : (
-            <div className="relative aspect-video w-full rounded-[2rem] overflow-hidden border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.7)] bg-black group">
-              <iframe
-                className="absolute inset-0 w-full h-full transition-transform duration-700 ease-in-out"
-                src={movie.trailerUrl}
-                title={`Trailer - ${displayTitle}`}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                onError={() => setTrailerError(true)}
-              />
-            </div>
-          )}
+          <div className="relative aspect-video w-full rounded-[2rem] overflow-hidden border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.7)] bg-black group">
+            <iframe
+              className="absolute inset-0 w-full h-full transition-transform duration-700 ease-in-out"
+              src={getEmbedUrl(movie.trailerUrl)}
+              title={`Trailer - ${displayTitle}`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
         </div>
       )}
 
