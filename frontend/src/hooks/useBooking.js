@@ -32,25 +32,32 @@ export const useBooking = () => {
   };
 
   // Pricing calculations
-  const calculateTotal = (concessionsList = []) => {
+  const calculateTotal = (concessionsList = [], seatsList = []) => {
     if (!selectedShowtime) return { seatsTotal: 0, concessionsTotal: 0, grandTotal: 0 };
 
     const basePrice = selectedShowtime.ticketPrice;
 
-    // Calculate seats price
+    // Build a lookup map seatCode -> seat object for O(1) access
+    const seatMap = {};
+    seatsList.forEach((s) => {
+      seatMap[s.seatCode] = s;
+    });
+
+    // Calculate seats price using actual seat type from DB
     let seatsTotal = 0;
     selectedSeats.forEach((seatCode) => {
-      // Split seat A1 -> A & 1
-      const match = seatCode.match(/^([A-Z]+)(\d+)$/);
+      const seat = seatMap[seatCode];
       let addition = 0;
-      if (match) {
-        const row = match[1];
-        // VIP seat rows are usually F, G, H in standard seeding
-        // Couple rows are usually J in standard seeding
-        if (['F', 'G', 'H'].includes(row)) {
-          addition = 20000;
-        } else if (['I', 'J'].includes(row)) {
-          addition = 40000;
+      if (seat) {
+        if (seat.type === 'vip') addition = 20000;
+        else if (seat.type === 'couple') addition = 40000;
+      } else {
+        // Fallback: guess from row letter if seat not found in list
+        const match = seatCode.match(/^([A-Z]+)(\d+)$/);
+        if (match) {
+          const row = match[1];
+          if (['F', 'G', 'H'].includes(row)) addition = 20000;
+          else if (['I', 'J'].includes(row)) addition = 40000;
         }
       }
       seatsTotal += basePrice + addition;

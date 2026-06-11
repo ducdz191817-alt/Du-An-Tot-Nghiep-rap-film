@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, Popcorn, Armchair } from 'lucide-react';
 import bookingService from '../services/booking.service';
-import adminService from '../services/admin.service';
 import useBooking from '../hooks/useBooking';
 import useAuth from '../hooks/useAuth';
 import SeatMap from '../components/Booking/SeatMap';
@@ -45,9 +44,11 @@ export const BookingPage = () => {
         selectShowtime(stResult.showtime);
         setSeatsList(stResult.seats);
 
-        // 2. Fetch concessions
-        const conResult = await adminService.getConcessions();
-        setConcessionsList(conResult);
+        // 2. Lấy danh sách bắp nước tương ứng với rạp chiếu
+        const theaterId = stResult.showtime.theater?._id || stResult.showtime.theater;
+        const conResult = await bookingService.getConcessions(theaterId);
+        const concessionArray = Array.isArray(conResult) ? conResult : (conResult?.data || []);
+        setConcessionsList(concessionArray);
       } catch (err) {
         console.error(err);
       } finally {
@@ -59,7 +60,7 @@ export const BookingPage = () => {
 
   if (loading) return <Loading fullPage />;
 
-  const pricing = calculateTotal(concessionsList);
+  const pricing = calculateTotal(concessionsList, seatsList);
 
   const handleProceed = () => {
     if (activeStep === 1) {
