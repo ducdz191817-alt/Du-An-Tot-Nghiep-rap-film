@@ -11,6 +11,7 @@ export const MovieDetail = ({ movie }) => {
   const [showtimes, setShowtimes] = useState([]);
   const [selectedDate, setSelectedDate] = useState('');
   const [loadingShowtimes, setLoadingShowtimes] = useState(false);
+  const [trailerError, setTrailerError] = useState(false);
 
   // ── Lấy title / description / language theo ngôn ngữ trực tiếp từ DB ──────
   // Nếu phim có titleEN/descriptionEN thì dùng, không thì fallback về bản gốc.
@@ -151,7 +152,7 @@ export const MovieDetail = ({ movie }) => {
       </div>
 
       {/* 2. Trình phát video Youtube Trailer */}
-      {movie.trailerUrl && (
+      {movie.trailerUrl && movie.trailerUrl.trim() && (
         <div className="space-y-6 pt-6">
           <div className="flex items-center justify-between border-b border-dark-border/50 pb-4">
             <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-3">
@@ -161,15 +162,26 @@ export const MovieDetail = ({ movie }) => {
               {t('movie.trailer')}
             </h2>
           </div>
-          <div className="relative aspect-video w-full rounded-[2rem] overflow-hidden border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.7)] bg-black group">
-            <iframe
-              className="absolute inset-0 w-full h-full transition-transform duration-700 ease-in-out"
-              src={movie.trailerUrl}
-              title={`Trailer - ${displayTitle}`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
+          {trailerError ? (
+            <div className="relative aspect-video w-full rounded-[2rem] overflow-hidden border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.7)] bg-gradient-to-br from-black to-zinc-900 flex items-center justify-center">
+              <div className="text-center space-y-4">
+                <div className="text-6xl text-zinc-600">🎬</div>
+                <p className="text-zinc-400 font-semibold">{t('movie.trailerUnavailable') || 'Trailer không có sẵn'}</p>
+                <p className="text-zinc-500 text-sm">{t('movie.trailerDescription') || 'Video trailer hiện không thể tải được, vui lòng quay lại sau'}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="relative aspect-video w-full rounded-[2rem] overflow-hidden border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.7)] bg-black group">
+              <iframe
+                className="absolute inset-0 w-full h-full transition-transform duration-700 ease-in-out"
+                src={movie.trailerUrl}
+                title={`Trailer - ${displayTitle}`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                onError={() => setTrailerError(true)}
+              />
+            </div>
+          )}
         </div>
       )}
 

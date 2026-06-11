@@ -1,25 +1,34 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Play, Calendar } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
 export const MovieCard = ({ movie }) => {
   const { language, t } = useLanguage();
+  const [imageError, setImageError] = useState(false);
 
   // Lấy title và genre theo ngôn ngữ từ DB
   const displayTitle = language === 'en'
     ? (movie.titleEN || movie.title)
     : movie.title;
 
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
+  // Fallback poster image
+  const fallbackPoster = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600"%3E%3Crect fill="%231f2937" width="400" height="600"/%3E%3Ctext x="50%25" y="50%25" font-size="24" fill="%239ca3af" text-anchor="middle" dominant-baseline="middle" font-family="Arial"%3EMovie Poster%3C/text%3E%3C/svg%3E';
+
   return (
     <div className="group relative bg-dark-card border border-dark-border rounded-2xl overflow-hidden hover:border-brand/40 hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
       {/* Vùng chứa hình ảnh */}
       <div className="relative aspect-[2/3] w-full overflow-hidden bg-zinc-900">
         <img
-          src={movie.posterUrl}
+          src={imageError ? fallbackPoster : movie.posterUrl}
           alt={displayTitle}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           loading="lazy"
+          onError={handleImageError}
         />
 
         {/* Hiệu ứng nền & Lớp phủ */}

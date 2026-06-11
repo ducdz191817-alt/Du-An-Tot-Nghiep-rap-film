@@ -18,6 +18,7 @@ export const HomePage = () => {
     genre: '',
     search: '',
   });
+  const [bannerImageError, setBannerImageError] = useState(false);
 
   useEffect(() => {
     dispatch(fetchMovies(filters));
@@ -25,6 +26,10 @@ export const HomePage = () => {
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
+  };
+
+  const handleBannerImageError = () => {
+    setBannerImageError(true);
   };
 
   const nowShowingMovies = movies.filter((m) => m.status === 'now-showing');
@@ -45,12 +50,15 @@ export const HomePage = () => {
     <div className="space-y-12 pb-16">
       {/* 1. Banner giới thiệu phim nổi bật */}
       {featured && (
-        <div className="relative w-full aspect-[21/9] min-h-[350px] md:min-h-[500px] rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-zinc-950 border border-dark-border/50 group">
-          <img
-            src={featured.posterUrl}
-            alt={featuredTitle}
-            className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000 ease-out"
-          />
+        <div className="relative w-full aspect-[21/9] min-h-[350px] md:min-h-[500px] rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-gradient-to-br from-zinc-900 to-black border border-dark-border/50 group">
+          {!bannerImageError && (
+            <img
+              src={featured.posterUrl}
+              alt={featuredTitle}
+              className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000 ease-out"
+              onError={handleBannerImageError}
+            />
+          )}
           {/* Gradients */}
           <div className="absolute inset-0 bg-gradient-to-t from-dark-deep via-dark-deep/50 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r from-dark-deep via-dark-deep/40 to-transparent" />
