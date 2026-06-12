@@ -40,6 +40,9 @@ export const PaymentPage = () => {
   const [snapshotSeats, setSnapshotSeats] = useState([]);
 
   useEffect(() => {
+    // Nếu đang hiển thị modal thành công thì không chuyển hướng an toàn về trang chủ
+    if (successModal.open) return;
+
     // Chuyển hướng an toàn: Nếu người dùng truy cập trực tiếp vào trang thanh toán mà chưa chọn ghế
     if (!selectedShowtime || selectedSeats.length === 0) {
       if (!showQRScreen) {
@@ -60,7 +63,7 @@ export const PaymentPage = () => {
       }
     };
     loadConcessions();
-  }, [selectedShowtime, selectedSeats, showQRScreen]);
+  }, [selectedShowtime, selectedSeats, showQRScreen, successModal.open]);
 
   // Bộ đếm ngược và Polling trạng thái cho VietQR
   useEffect(() => {
