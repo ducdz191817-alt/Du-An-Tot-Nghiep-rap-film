@@ -1,4 +1,4 @@
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export const MOVIE_GENRES = [
   'Action',
@@ -43,4 +43,42 @@ export const SEAT_TYPES = {
     bookedColor: 'bg-[#b91c1c]/20 border border-red-800/40 text-red-500/50 cursor-not-allowed',
     extraPrice: 40000,
   },
+};
+
+export const getPosterUrl = (url) => {
+  if (!url) return '';
+  // Use Google Image Proxy for TMDB images to bypass Vietnamese ISP blocking
+  if (url.includes('image.tmdb.org')) {
+    return `https://images1-focus-opensocial.googleusercontent.com/gadgets/proxy?container=focus&refresh=2592000&url=${encodeURIComponent(url)}`;
+  }
+  return url;
+};
+
+export const getEmbedUrl = (url) => {
+  if (!url) return '';
+  const cleanedUrl = url.trim();
+  if (cleanedUrl.includes('youtube.com/embed/')) return cleanedUrl;
+  
+  let videoId = '';
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+  const match = cleanedUrl.match(regExp);
+  
+  if (match && match[2].length === 11) {
+    videoId = match[2];
+  } else {
+    try {
+      const urlObj = new URL(cleanedUrl);
+      if (urlObj.hostname.includes('youtube.com')) {
+        videoId = urlObj.searchParams.get('v');
+      } else if (urlObj.hostname.includes('youtu.be')) {
+        videoId = urlObj.pathname.substring(1);
+      }
+    } catch (e) {
+      if (cleanedUrl.length === 11 && !cleanedUrl.includes('/') && !cleanedUrl.includes('.')) {
+        videoId = cleanedUrl;
+      }
+    }
+  }
+  
+  return videoId ? `https://www.youtube.com/embed/${videoId}` : cleanedUrl;
 };

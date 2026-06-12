@@ -8,6 +8,7 @@ import Loading from '../components/common/Loading';
 import Button from '../components/common/Button';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { getPosterUrl } from '../utils/constants';
 
 export const HomePage = () => {
   const dispatch = useDispatch();
@@ -53,7 +54,7 @@ export const HomePage = () => {
         <div className="relative w-full aspect-[21/9] min-h-[350px] md:min-h-[500px] rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-gradient-to-br from-zinc-900 to-black border border-dark-border/50 group">
           {!bannerImageError && (
             <img
-              src={featured.posterUrl}
+              src={getPosterUrl(featured.posterUrl)}
               alt={featuredTitle}
               className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000 ease-out"
               onError={handleBannerImageError}

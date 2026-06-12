@@ -6,6 +6,7 @@ import Input from '../common/Input';
 import Button from '../common/Button';
 import Loading from '../common/Loading';
 import Modal from '../common/Modal';
+import { getPosterUrl } from '../../utils/constants';
 
 export const MovieManager = () => {
   const [movies, setMovies] = useState([]);
@@ -167,7 +168,7 @@ export const MovieManager = () => {
                   <tr key={m._id} className="hover:bg-zinc-800/10 transition-colors">
                     <td className="py-3 pl-6 flex items-center gap-3">
                       <div className="w-10 h-14 rounded overflow-hidden bg-zinc-950 shrink-0 border border-dark-border">
-                        <img src={m.posterUrl} alt={m.title} className="w-full h-full object-cover" />
+                        <img src={getPosterUrl(m.posterUrl)} alt={m.title} className="w-full h-full object-cover" />
                       </div>
                       <div>
                         <div className="font-bold text-zinc-200 text-sm max-w-[250px] truncate">{m.title}</div>

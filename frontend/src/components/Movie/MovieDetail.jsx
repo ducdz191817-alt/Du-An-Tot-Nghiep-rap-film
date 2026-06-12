@@ -5,53 +5,7 @@ import bookingService from '../../services/booking.service';
 import Button from '../common/Button';
 import { useLanguage } from '../../context/LanguageContext';
 import ReviewSection from './ReviewSection';
-
-// Helper function to convert any YouTube link into a secure, embeddable URL
-const getEmbedUrl = (url) => {
-  if (!url) return '';
-  if (url.includes('youtube.com/embed/')) return url;
-  
-  let videoId = '';
-  
-  if (url.includes('youtube.com/watch')) {
-    try {
-      const urlObj = new URL(url);
-      videoId = urlObj.searchParams.get('v');
-    } catch (e) {
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-      const match = url.match(regExp);
-      if (match && match[2].length === 11) videoId = match[2];
-    }
-  } else if (url.includes('youtu.be/')) {
-    try {
-      const urlObj = new URL(url);
-      videoId = urlObj.pathname.substring(1);
-    } catch (e) {
-      const regExp = /^.*(youtu.be\/)([^#\&\?]*).*/;
-      const match = url.match(regExp);
-      if (match && match[2].length === 11) videoId = match[2];
-    }
-  } else if (url.includes('youtube.com/shorts/')) {
-    try {
-      const urlObj = new URL(url);
-      const parts = urlObj.pathname.split('/');
-      videoId = parts[parts.length - 1] || parts[parts.length - 2];
-    } catch (e) {
-      const match = url.match(/youtube\.com\/shorts\/([^#\&\?]+)/);
-      if (match) videoId = match[1];
-    }
-  } else {
-    if (url.trim().length === 11 && !url.includes('/') && !url.includes('.')) {
-      videoId = url.trim();
-    } else {
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-      const match = url.match(regExp);
-      if (match && match[2].length === 11) videoId = match[2];
-    }
-  }
-  
-  return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
-};
+import { getPosterUrl, getEmbedUrl } from '../../utils/constants';
 
 export const MovieDetail = ({ movie }) => {
   const navigate = useNavigate();
@@ -140,7 +94,7 @@ export const MovieDetail = ({ movie }) => {
         <div className="md:col-span-4 lg:col-span-3">
           <div className="aspect-[2/3] w-full rounded-2xl overflow-hidden bg-zinc-900 border border-white/5 shadow-[0_20px_40px_rgba(0,0,0,0.6)] relative group">
             <img
-              src={movie.posterUrl}
+              src={getPosterUrl(movie.posterUrl)}
               alt={displayTitle}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
             />

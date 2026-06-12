@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Play, Calendar } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import { getPosterUrl } from '../../utils/constants';
 
 export const MovieCard = ({ movie }) => {
   const { language, t } = useLanguage();
@@ -24,7 +25,7 @@ export const MovieCard = ({ movie }) => {
       {/* Vùng chứa hình ảnh */}
       <div className="relative aspect-[2/3] w-full overflow-hidden bg-zinc-900">
         <img
-          src={imageError ? fallbackPoster : movie.posterUrl}
+          src={imageError ? fallbackPoster : getPosterUrl(movie.posterUrl)}
           alt={displayTitle}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           loading="lazy"

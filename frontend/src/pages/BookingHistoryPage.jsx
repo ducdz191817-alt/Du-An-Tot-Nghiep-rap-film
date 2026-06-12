@@ -6,6 +6,7 @@ import {
 import bookingService from '../services/booking.service';
 import Loading from '../components/common/Loading';
 import Button from '../components/common/Button';
+import { getPosterUrl } from '../utils/constants';
 
 export const BookingHistoryPage = () => {
   const [bookings, setBookings] = useState([]);
@@ -111,7 +112,7 @@ export const BookingHistoryPage = () => {
             const seatsList = (booking.seats || []).join(', ') || 'Chưa chọn ghế';
             const priceFormatted = (booking.totalPrice || 0).toLocaleString('vi-VN');
             const posterImage =
-              movie.posterUrl || 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?q=80&w=200';
+              getPosterUrl(movie.posterUrl) || 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?q=80&w=200';
 
             return (
               <div

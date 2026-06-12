@@ -354,7 +354,7 @@ const seedDatabase = async () => {
 };
 
 // Execute seeding after connection established
-mongooseConnection = require('mongoose').connection;
+const mongooseConnection = require('mongoose').connection;
 mongooseConnection.once('open', seedDatabase);
 
 // Error Middlewares
