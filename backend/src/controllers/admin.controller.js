@@ -581,7 +581,7 @@ const listUsers = async (req, res, next) => {
   }
 };
 
-// CHỨC NĂNG: Cập nhật role của một người dùng (user <-> admin)
+// CHỨC NĂNG: Nâng quyền người dùng lên admin (KHÔNG cho phép hạ quyền admin)
 const updateUserRole = async (req, res, next) => {
   try {
     const { role } = req.body;
@@ -591,24 +591,29 @@ const updateUserRole = async (req, res, next) => {
       throw new Error('Role không hợp lệ. Chỉ chấp nhận: user, admin');
     }
 
-    // Không cho phép admin tự hạ quyền chính mình
+    // Không cho phép tự thay đổi quyền của chính mình
     if (req.params.id === req.user._id.toString()) {
       res.status(400);
       throw new Error('Không thể tự thay đổi quyền của chính bạn');
     }
 
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { role },
-      { new: true, runValidators: true }
-    ).select('-password');
-
-    if (!user) {
+    // Tìm user mục tiêu trước để kiểm tra
+    const targetUser = await User.findById(req.params.id).select('-password');
+    if (!targetUser) {
       res.status(404);
       throw new Error('Không tìm thấy người dùng');
     }
 
-    res.json({ success: true, data: user });
+    // Không cho phép hạ quyền admin xuống thành người dùng thường
+    if (targetUser.role === 'admin' && role === 'user') {
+      res.status(400);
+      throw new Error('Không thể hạ quyền Quản trị viên. Hành động này không được phép.');
+    }
+
+    targetUser.role = role;
+    await targetUser.save();
+
+    res.json({ success: true, data: targetUser });
   } catch (error) {
     next(error);
   }

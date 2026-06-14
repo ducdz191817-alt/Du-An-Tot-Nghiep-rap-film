@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Film, Calendar, Building2, Coffee,
   Ticket, BarChart3, LogOut, Menu, ChevronRight,
-  Clapperboard, Zap, Bell, ChevronDown, Activity, Users
+  Clapperboard, Zap, Bell, ChevronDown, Activity, Users,
+  Hourglass, X, AlertCircle,
 } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
+import adminService from '../../services/admin.service';
 
 const NAV_ITEMS = [
   {
@@ -44,14 +46,32 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
   const [sidebarOpen, setSidebarOpen]   = useState(false);
   const [collapsed, setCollapsed]       = useState(false);
   const [profileOpen, setProfileOpen]   = useState(false);
+  const [bellOpen, setBellOpen]         = useState(false);
+  const [pendingBookings, setPendingBookings] = useState([]);
   const profileRef = useRef(null);
+  const bellRef    = useRef(null);
 
   useEffect(() => {
     const close = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
+      if (bellRef.current    && !bellRef.current.contains(e.target))    setBellOpen(false);
     };
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
+  }, []);
+
+  // Fetch pending bookings for notifications
+  useEffect(() => {
+    const loadPending = async () => {
+      try {
+        const data = await adminService.getBookings();
+        const list = Array.isArray(data) ? data : (data?.data || []);
+        setPendingBookings(list.filter(b => b.paymentStatus === 'pending'));
+      } catch (_) {}
+    };
+    loadPending();
+    const interval = setInterval(loadPending, 60000); // Refresh mỗi 1 phút
+    return () => clearInterval(interval);
   }, []);
 
   const handleLogout = () => { logout(); navigate('/login'); };
@@ -289,10 +309,142 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#34d399', animation: 'pulse 2s infinite' }} />
           </div>
 
-          {/* Bell */}
-          <button style={{ padding: 8, borderRadius: 8, border: 'none', background: 'transparent', color: '#71717a', cursor: 'pointer', position: 'relative' }}>
-            <Bell size={18} />
-          </button>
+          {/* Bell – Thông báo đơn chưa thanh toán */}
+          <div ref={bellRef} style={{ position: 'relative' }}>
+            <button
+              onClick={() => setBellOpen(!bellOpen)}
+              style={{
+                padding: 8, borderRadius: 8, border: 'none',
+                background: bellOpen ? 'rgba(245,158,11,0.08)' : 'transparent',
+                color: pendingBookings.length > 0 ? '#f59e0b' : '#71717a',
+                cursor: 'pointer', position: 'relative',
+                transition: 'all 0.2s',
+              }}
+            >
+              <Bell size={18} />
+              {pendingBookings.length > 0 && (
+                <span style={{
+                  position: 'absolute', top: 4, right: 4,
+                  minWidth: 16, height: 16, borderRadius: 8,
+                  background: '#ef4444', color: 'white',
+                  fontSize: 9, fontWeight: 900,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  border: '2px solid #0d0d12', padding: '0 3px',
+                }}>
+                  {pendingBookings.length > 99 ? '99+' : pendingBookings.length}
+                </span>
+              )}
+            </button>
+
+            {/* Notification Dropdown */}
+            {bellOpen && (
+              <div style={{
+                position: 'absolute', right: 0, top: 'calc(100% + 8px)',
+                width: 360, background: '#13131c',
+                border: '1px solid #1a1a28', borderRadius: 16,
+                boxShadow: '0 24px 48px rgba(0,0,0,0.6)',
+                zIndex: 200, overflow: 'hidden',
+              }}>
+                {/* Header */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '14px 16px', borderBottom: '1px solid #1a1a28',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: 8,
+                      background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Hourglass size={13} color="#f59e0b" />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: '#d4d4d8' }}>Nhắc nhở thanh toán</div>
+                      <div style={{ fontSize: 10, color: '#71717a' }}>
+                        {pendingBookings.length} đơn chưa thanh toán
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setBellOpen(false)}
+                    style={{ background: 'transparent', border: 'none', color: '#52525b', cursor: 'pointer', padding: 4, borderRadius: 6 }}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+
+                {/* List */}
+                <div style={{ maxHeight: 340, overflowY: 'auto' }}>
+                  {pendingBookings.length === 0 ? (
+                    <div style={{ padding: 32, textAlign: 'center', color: '#52525b', fontSize: 12 }}>
+                      <Bell size={28} style={{ margin: '0 auto 8px', opacity: 0.3 }} />
+                      <p>Không có đơn nào chưa thanh toán</p>
+                    </div>
+                  ) : (
+                    pendingBookings.slice(0, 8).map((b, idx) => {
+                      const movie = b.showtime?.movie || {};
+                      const user  = b.user || {};
+                      const startTime = b.showtime?.startTime ? new Date(b.showtime.startTime) : null;
+                      const isLast = idx === Math.min(pendingBookings.length, 8) - 1;
+                      return (
+                        <div
+                          key={b._id}
+                          style={{
+                            padding: '12px 16px',
+                            borderBottom: isLast ? 'none' : '1px solid #1a1a28',
+                            display: 'flex', alignItems: 'flex-start', gap: 10,
+                            cursor: 'pointer',
+                            transition: 'background 0.15s',
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                          onClick={() => { setActiveTab('bookings'); setBellOpen(false); }}
+                        >
+                          <div style={{
+                            width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                            background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            <AlertCircle size={14} color="#f59e0b" />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: '#d4d4d8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {user.username || 'Khách'} — {movie.title || 'Phim đã xóa'}
+                            </div>
+                            <div style={{ fontSize: 10, color: '#71717a', marginTop: 2 }}>
+                              {startTime ? startTime.toLocaleDateString('vi-VN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                            </div>
+                            <div style={{ fontSize: 11, fontWeight: 800, color: '#f59e0b', marginTop: 2 }}>
+                              {(b.totalPrice || 0).toLocaleString()} VND — Chờ thanh toán
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Footer */}
+                {pendingBookings.length > 0 && (
+                  <div style={{ padding: '10px 16px', borderTop: '1px solid #1a1a28' }}>
+                    <button
+                      onClick={() => { setActiveTab('bookings'); setBellOpen(false); }}
+                      style={{
+                        width: '100%', padding: '8px 12px',
+                        background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
+                        borderRadius: 10, color: '#f59e0b', fontSize: 11, fontWeight: 700,
+                        cursor: 'pointer', transition: 'all 0.15s',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(245,158,11,0.15)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'rgba(245,158,11,0.08)'}
+                    >
+                      Xem tất cả {pendingBookings.length} đơn chưa thanh toán →
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           <div style={{ width: 1, height: 24, background: '#1a1a28' }} />
 

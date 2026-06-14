@@ -280,24 +280,22 @@ export const UserManager = () => {
                       {/* Actions */}
                       <td className="py-4 pr-6">
                         <div className="flex items-center justify-center gap-2">
-                          {/* Toggle Role button */}
-                          <button
-                            onClick={() =>
-                              setConfirmRole({
-                                id: user._id,
-                                username: user.username,
-                                newRole: user.role === 'admin' ? 'user' : 'admin',
-                              })
-                            }
-                            title={user.role === 'admin' ? 'Hạ xuống Người dùng' : 'Nâng lên Quản trị viên'}
-                            className={`p-2 rounded-xl border transition-all duration-300 active:scale-95 inline-flex items-center justify-center ${
-                              user.role === 'admin'
-                                ? 'bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/20 hover:border-amber-500/40 text-amber-400'
-                                : 'bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20 hover:border-blue-500/40 text-blue-400'
-                            }`}
-                          >
-                            <ShieldCheck size={14} />
-                          </button>
+                          {/* Nút Nâng quyền - chỉ hiển thị với người dùng thường (không cho phép hạ quyền admin) */}
+                          {user.role !== 'admin' && (
+                            <button
+                              onClick={() =>
+                                setConfirmRole({
+                                  id: user._id,
+                                  username: user.username,
+                                  newRole: 'admin',
+                                })
+                              }
+                              title="Nâng lên Quản trị viên"
+                              className="p-2 rounded-xl border transition-all duration-300 active:scale-95 inline-flex items-center justify-center bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20 hover:border-blue-500/40 text-blue-400"
+                            >
+                              <ShieldCheck size={14} />
+                            </button>
+                          )}
 
                           {/* Delete button */}
                           <button
@@ -343,26 +341,19 @@ export const UserManager = () => {
         <ConfirmModal
           icon={<ShieldCheck size={24} className="text-amber-400" />}
           iconBg="bg-amber-500/10 border-amber-500/20"
-          title="Xác nhận thay đổi quyền?"
+          title="Xác nhận nâng quyền?"
           description={
             <>
-              Bạn muốn thay đổi quyền của{' '}
-              <span className="font-mono text-brand font-bold">@{confirmRole.username}</span> thành{' '}
-              <span className="font-bold text-amber-400">
-                {confirmRole.newRole === 'admin' ? 'Quản trị viên' : 'Người dùng'}
-              </span>
-              ?
+              Bạn muốn nâng quyền{' '}
+              <span className="font-mono text-brand font-bold">@{confirmRole.username}</span> lên{' '}
+              <span className="font-bold text-amber-400">Quản trị viên</span>?
             </>
           }
-          note={
-            confirmRole.newRole === 'admin'
-              ? 'Quản trị viên có toàn quyền trên hệ thống. Hãy cân nhắc kỹ.'
-              : 'Người dùng này sẽ mất quyền truy cập vào trang quản trị.'
-          }
+          note="Quản trị viên có toàn quyền trên hệ thống. Hãy cân nhắc kỹ trước khi xác nhận."
           onCancel={() => setConfirmRole(null)}
           onConfirm={handleUpdateRole}
           loading={actionLoading}
-          confirmLabel="Xác nhận"
+          confirmLabel="Xác nhận nâng quyền"
           confirmClass="bg-amber-500 hover:bg-amber-600 shadow-[0_4px_14px_rgba(245,158,11,0.3)]"
         />
       )}

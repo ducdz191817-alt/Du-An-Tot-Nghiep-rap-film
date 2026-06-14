@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Film, User, LogOut, LayoutDashboard, History } from 'lucide-react';
+import { Film, User, LogOut, LayoutDashboard, History, Bell, X, Hourglass, CreditCard } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 import { useLanguage } from '../../context/LanguageContext';
+import bookingService from '../../services/booking.service';
 import myLogo from '../../assets/images/logo.png';
 
 // Flag SVGs (Vietnamese & US/UK English)
@@ -46,17 +47,32 @@ export const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [bellOpen, setBellOpen]             = useState(false);
+  const [pendingBookings, setPendingBookings] = useState([]);
   const dropdownRef = useRef(null);
+  const bellRef     = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false);
-      }
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) setIsDropdownOpen(false);
+      if (bellRef.current     && !bellRef.current.contains(event.target))     setBellOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Load pending bookings of the current user
+  useEffect(() => {
+    if (!isAuthenticated) { setPendingBookings([]); return; }
+    const loadPending = async () => {
+      try {
+        const res = await bookingService.getMyBookings();
+        const list = Array.isArray(res) ? res : (res?.data || []);
+        setPendingBookings(list.filter(b => b.paymentStatus === 'pending'));
+      } catch (_) {}
+    };
+    loadPending();
+  }, [isAuthenticated]);
 
   const handleLogout = () => {
     logout();
@@ -111,7 +127,7 @@ export const Header = () => {
         {/* Auth status / CTA */}
         <div className="flex items-center space-x-4">
           {isAuthenticated ? (
-            <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4">
               {isAdmin && (
                 <Link
                   to="/admin"
@@ -121,7 +137,79 @@ export const Header = () => {
                   <span>{t('nav.admin')}</span>
                 </Link>
               )}
-              
+
+              {/* 🔔 Thông báo đơn chưa thanh toán */}
+              <div className="relative" ref={bellRef}>
+                <button
+                  onClick={() => setBellOpen(!bellOpen)}
+                  className={`relative p-2 rounded-xl transition-all ${
+                    pendingBookings.length > 0
+                      ? 'text-amber-400 hover:bg-amber-400/10'
+                      : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900'
+                  }`}
+                  title="Thông báo"
+                >
+                  <Bell size={18} />
+                  {pendingBookings.length > 0 && (
+                    <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-dark-deep">
+                      {pendingBookings.length > 9 ? '9+' : pendingBookings.length}
+                    </span>
+                  )}
+                </button>
+
+                {/* Dropdown */}
+                {bellOpen && (
+                  <div className="absolute right-0 top-[calc(100%+10px)] w-80 bg-[#13131c] border border-dark-border rounded-2xl shadow-[0_20px_48px_rgba(0,0,0,0.6)] z-50 overflow-hidden">
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-dark-border">
+                      <p className="text-sm font-bold text-zinc-200">Thông báo</p>
+                      <button onClick={() => setBellOpen(false)} className="text-zinc-500 hover:text-zinc-300 transition-colors">
+                        <X size={14} />
+                      </button>
+                    </div>
+
+                    {/* List */}
+                    <div className="max-h-72 overflow-y-auto divide-y divide-dark-border/50">
+                      {pendingBookings.length > 0 ? (
+                        pendingBookings.map((b) => {
+                          const movie = b.showtime?.movie || {};
+                          const startTime = b.showtime?.startTime ? new Date(b.showtime.startTime) : null;
+                          return (
+                            <div
+                              key={b._id}
+                              className="px-4 py-3 hover:bg-zinc-800/30 transition-colors cursor-pointer"
+                              onClick={() => { navigate('/history'); setBellOpen(false); }}
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
+                                  <CreditCard size={13} className="text-amber-400" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-bold text-zinc-200 truncate">Thanh toán vé phim {movie.title || 'Phim'}</p>
+                                  <p className="text-[10px] text-zinc-500 mt-0.5">
+                                    {startTime ? startTime.toLocaleDateString('vi-VN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                                  </p>
+                                  <p className="text-[11px] font-black text-amber-400 mt-1">
+                                    {(b.totalPrice || 0).toLocaleString()} VND
+                                  </p>
+                                </div>
+                                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0 self-start mt-0.5">
+                                  Chưa TT
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="px-4 py-8 text-center">
+                          <p className="text-sm text-zinc-500">Chưa có thông báo mới</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* User Dropdown Profile mock */}
               <div className="flex items-center space-x-2 bg-zinc-900/80 px-3 py-1.5 rounded-xl border border-zinc-800">
                 <div className="w-6 h-6 rounded-full bg-brand/20 flex items-center justify-center text-brand font-black text-xs uppercase">

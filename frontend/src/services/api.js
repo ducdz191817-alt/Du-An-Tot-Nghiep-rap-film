@@ -33,6 +33,16 @@ api.interceptors.response.use(
       error.response && error.response.data && error.response.data.message
         ? error.response.data.message
         : error.message;
+
+    // Auto-logout nếu token hết hạn hoặc không có quyền admin
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      localStorage.removeItem('userInfo');
+      // Chỉ redirect nếu không đang ở trang login
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
+    }
+
     return Promise.reject(new Error(message));
   }
 );
