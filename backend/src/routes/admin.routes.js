@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 const {
   createMovie,
@@ -24,62 +24,36 @@ const {
   deleteShowtime,
   getDashboardStats,
   getRevenueReport,
-  listBookings,
-  deleteBooking,
-  listUsers,
-  updateUserRole,
-  deleteUser,
-} = require('../controllers/admin.controller');
-const { protect, admin } = require('../middleware/auth.middleware');
+} = require("../controllers/admin.controller");
+const { protect, admin } = require("../middleware/auth.middleware");
 
 // Apply protection & admin role validation to all administrative routes
 router.use(protect);
 router.use(admin);
 
 // Movies
-router.post('/movies', createMovie);
-router.route('/movies/:id')
-  .put(updateMovie)
-  .delete(deleteMovie);
+router.post("/movies", createMovie);
+router.route("/movies/:id").put(updateMovie).delete(deleteMovie);
 
 // Theaters
-router.route('/theaters')
-  .get(listTheaters)
-  .post(createTheater);
-router.route('/theaters/:id')
-  .put(updateTheater)
-  .delete(deleteTheater);
+router.route("/theaters").get(listTheaters).post(createTheater);
+router.route("/theaters/:id").put(updateTheater).delete(deleteTheater);
 
 // Rooms
-router.route('/rooms')
-  .get(listRooms)
-  .post(createRoom);
-router.route('/rooms/:id')
-  .put(updateRoom)
-  .delete(deleteRoom);
-router.get('/rooms/:id/seats', getRoomSeats);
-
-// Seats
-router.put('/seats/:id', updateSeat);
-router.patch('/seats/bulk', bulkUpdateSeats);
+router.route("/rooms").get(listRooms).post(createRoom);
+router.route("/rooms/:id").put(updateRoom).delete(deleteRoom);
 
 // Concessions
-router.route('/concessions')
-  .get(listConcessions)
-  .post(createConcession);
-router.route('/concessions/:id')
-  .put(updateConcession)
-  .delete(deleteConcession);
+router.route("/concessions").get(listConcessions).post(createConcession);
+router.put("/concessions/:id", updateConcession);
 
 // Showtimes
-router.post('/showtimes', createShowtime);
-router.route('/showtimes/:id')
-  .put(updateShowtime)
-  .delete(deleteShowtime);
+router.post("/showtimes", createShowtime);
+router.route("/showtimes/:id").put(updateShowtime).delete(deleteShowtime);
 
 // Dashboard & Analytics
-router.get('/dashboard/stats', getDashboardStats);
-router.get('/dashboard/revenue', getRevenueReport);
+router.get("/dashboard/stats", getDashboardStats);
+router.get("/dashboard/revenue", getRevenueReport);
 
 // Booking Management
 router.get('/bookings', listBookings);
