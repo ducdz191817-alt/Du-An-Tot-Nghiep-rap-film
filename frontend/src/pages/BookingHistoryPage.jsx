@@ -17,7 +17,7 @@ export const BookingHistoryPage = () => {
     const fetchHistory = async () => {
       try {
         const result = await bookingService.getMyBookings();
-        const bookingsList = Array.isArray(result) ? result : (result?.data || []);
+        const bookingsList = Array.isArray(result) ? result : [];
         setBookings(bookingsList);
       } catch (err) {
         console.error(err);

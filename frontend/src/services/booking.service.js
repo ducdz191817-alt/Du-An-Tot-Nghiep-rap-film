@@ -1,57 +1,61 @@
 import api from './api';
 
+const normalizeResponse = (response) => {
+  return response && response.data !== undefined ? response.data : response;
+};
+
 const getShowtimesByMovie = async (movieId, date = '') => {
   const response = await api.get(`/showtimes/movie/${movieId}`, {
     params: date ? { date } : {},
   });
-  return response.data;
+  return normalizeResponse(response);
 };
 
 const getShowtimeById = async (id) => {
   const response = await api.get(`/showtimes/${id}`);
-  return response.data;
+  return normalizeResponse(response);
 };
 
 const getShowtimes = async (filters = {}) => {
   const response = await api.get('/showtimes', { params: filters });
-  return response.data;
+  return normalizeResponse(response);
 };
 
 const createBooking = async (bookingData) => {
   const response = await api.post('/bookings', bookingData);
-  return response.data;
+  return normalizeResponse(response);
 };
 
 const getMyBookings = async () => {
   const response = await api.get('/bookings/my');
-  return response.data;
+  return normalizeResponse(response);
 };
 
 const getBookingById = async (id) => {
   const response = await api.get(`/bookings/${id}`);
-  return response.data;
+  return normalizeResponse(response);
 };
 
 const getConcessions = async (theaterId = '') => {
   const response = await api.get('/concessions', {
     params: theaterId ? { theaterId } : {},
   });
-  return response.data;
+  return normalizeResponse(response);
 };
 
 const getBookingStatus = async (id) => {
   const response = await api.get(`/bookings/${id}/status`);
-  return response.data;
+  return normalizeResponse(response);
 };
 
 const simulatePayment = async (id) => {
   const response = await api.post(`/bookings/${id}/simulate-pay`);
-  return response.data;
+  return normalizeResponse(response);
 };
 
 const cancelBooking = async (id) => {
   const response = await api.delete(`/bookings/${id}/cancel`);
-  return response.data;
+  return normalizeResponse(response);
 };
 
 const bookingService = {

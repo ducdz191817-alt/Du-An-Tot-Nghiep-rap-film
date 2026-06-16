@@ -8,15 +8,15 @@ const createPayment = async (req, res) => {
     const { bookingId, amount, orderInfo } = req.body;
     if (!bookingId || !amount) return res.status(400).json({ error: 'Missing bookingId or amount' });
 
-    const partnerCode = process.env.MOMO_PARTNER_CODE;
-    const accessKey = process.env.MOMO_ACCESS_KEY;
-    const secretKey = process.env.MOMO_SECRET_KEY;
-    const redirectUrl = process.env.MOMO_REDIRECT_URL; // frontend
-    const ipnUrl = process.env.MOMO_IPN_URL; // backend callback
+    const partnerCode = process.env.MOMO_PARTNER_CODE?.trim();
+    const accessKey = process.env.MOMO_ACCESS_KEY?.trim();
+    const secretKey = process.env.MOMO_SECRET_KEY?.trim();
+    const redirectUrl = process.env.MOMO_REDIRECT_URL?.trim(); // frontend callback after payment
+    const ipnUrl = process.env.MOMO_IPN_URL?.trim(); // backend callback for payment status
 
     const orderId = `ORDER_${Date.now()}`;
     const requestId = `REQ_${Date.now()}`;
-    const requestType = 'captureMoMoWallet';
+    const requestType = 'captureWallet';
     const extraData = '';
 
     const rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo || ''}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
@@ -37,7 +37,12 @@ const createPayment = async (req, res) => {
     };
 
     const momoEndpoint = process.env.MOMO_ENDPOINT || 'https://test-payment.momo.vn/v2/gateway/api/create';
-    const r = await axios.post(momoEndpoint, body, { timeout: 10000 });
+    const r = await axios.post(momoEndpoint, body, { timeout: 10000, headers: { 'Content-Type': 'application/json' } });
+
+    if (!r.data || Number(r.data.resultCode) !== 0) {
+      console.error('createPayment momo returned failure', r.data);
+      return res.status(502).json({ error: 'Momo gateway rejected payment request', detail: r.data });
+    }
 
     // Create Payment record (pending)
     await Payment.create({

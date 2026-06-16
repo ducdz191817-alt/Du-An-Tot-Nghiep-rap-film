@@ -69,7 +69,11 @@ export const MovieDetail = ({ movie }) => {
     fetchMovieShowtimes();
   }, [movie?._id, selectedDate]);
 
-  const handleShowtimeClick = (showtimeId) => {
+  const handleShowtimeClick = (showtimeId, isPastShowtime) => {
+    if (isPastShowtime) {
+      alert('Suất chiếu này đã bắt đầu hoặc đã kết thúc. Vui lòng chọn suất chiếu khác.');
+      return;
+    }
     navigate(`/booking/${showtimeId}`);
   };
 
@@ -235,6 +239,8 @@ export const MovieDetail = ({ movie }) => {
 
                   <div className="flex-1 flex flex-wrap gap-4">
                     {groupedShowtimes[theaterName].map((showtime) => {
+                      const showtimeTimestamp = new Date(showtime.startTime).getTime();
+                      const isPastShowtime = showtimeTimestamp <= Date.now();
                       const startTimeString = new Date(showtime.startTime).toLocaleTimeString(language === 'vi' ? 'vi-VN' : 'en-US', {
                         hour: '2-digit',
                         minute: '2-digit',
@@ -243,18 +249,29 @@ export const MovieDetail = ({ movie }) => {
                       return (
                         <button
                           key={showtime._id}
-                          onClick={() => handleShowtimeClick(showtime._id)}
-                          className="flex items-center space-x-3 bg-white/5 hover:bg-brand/10 border border-white/10 hover:border-brand/50 px-5 py-3 rounded-2xl transition-all duration-300 text-left group transform hover:-translate-y-1 active:scale-95 shadow-sm hover:shadow-[0_10px_20px_rgba(239,68,68,0.15)] backdrop-blur-sm"
+                          onClick={() => handleShowtimeClick(showtime._id, isPastShowtime)}
+                          disabled={isPastShowtime}
+                          className={`flex items-center space-x-3 px-5 py-3 rounded-2xl transition-all duration-300 text-left group backdrop-blur-sm border ${
+                            isPastShowtime
+                              ? 'bg-white/5 border-white/10 text-zinc-500 cursor-not-allowed opacity-70'
+                              : 'bg-white/5 hover:bg-brand/10 border-white/10 hover:border-brand/50 hover:-translate-y-1 active:scale-95 shadow-sm hover:shadow-[0_10px_20px_rgba(239,68,68,0.15)]'
+                          }`}
                         >
-                          <div>
-                            <span className="text-zinc-100 font-black text-base group-hover:text-brand transition-colors block tracking-tight">
+                          <div className="flex-1">
+                            <span className={`text-zinc-100 font-black text-base transition-colors ${isPastShowtime ? 'text-zinc-400' : 'group-hover:text-brand'}`}>
                               {startTimeString}
                             </span>
-                            <span className="text-[10px] text-zinc-500 font-bold block uppercase tracking-wider group-hover:text-zinc-400">
+                            <span className="text-[10px] text-zinc-500 font-bold block uppercase tracking-wider">
                               {showtime.room?.name || 'Screen'} • {showtime.format}
                             </span>
                           </div>
-                          <ChevronRight size={16} className="text-zinc-600 group-hover:text-brand group-hover:translate-x-1 transition-all" />
+                          <div className="flex items-center gap-2">
+                            {isPastShowtime ? (
+                              <span className="text-[10px] uppercase font-black tracking-wider text-red-400">Đã bắt đầu</span>
+                            ) : (
+                              <ChevronRight size={16} className="text-zinc-600 group-hover:text-brand transition-all" />
+                            )}
+                          </div>
                         </button>
                       );
                     })}

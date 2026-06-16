@@ -87,6 +87,20 @@ export const useBooking = () => {
       throw new Error('Please select showtime and seats before booking');
     }
 
+    if (selectedShowtime.startTime && new Date(selectedShowtime.startTime).getTime() <= Date.now()) {
+      throw new Error('Cannot book tickets for a past showtime');
+    }
+
+    // Refresh showtime status before booking to avoid stale availability
+    const freshShowtimeData = await bookingService.getShowtimeById(selectedShowtime._id);
+    const currentBookedSeats = freshShowtimeData.showtime?.bookedSeats || [];
+    const bookedSeatSet = new Set(currentBookedSeats.map((seat) => String(seat).trim().toUpperCase()));
+    const normalizedSelectedSeats = selectedSeats.map((seat) => String(seat).trim().toUpperCase());
+    const alreadyBooked = normalizedSelectedSeats.some((seat) => bookedSeatSet.has(seat));
+    if (alreadyBooked) {
+      throw new Error('Một hoặc nhiều ghế bạn chọn đã được đặt trước đó. Vui lòng chọn lại ghế.');
+    }
+
     dispatch(setBookingLoading(true));
     try {
       // Prepare payload

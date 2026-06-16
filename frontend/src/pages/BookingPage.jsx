@@ -42,14 +42,12 @@ export const BookingPage = () => {
         // 1. Lấy thông tin chi tiết ghế của suất chiếu
         const stResult = await bookingService.getShowtimeById(showtimeId);
         selectShowtime(stResult.showtime);
-        setSeatsList(stResult.seats);
+        setSeatsList(stResult.seats || []);
 
         // 2. Lấy danh sách bắp nước tương ứng với rạp chiếu
-        const theaterId = stResult.showtime.theater?._id || stResult.showtime.theater;
+        const theaterId = stResult.showtime?.theater?._id || stResult.showtime?.theater;
         const conResult = await bookingService.getConcessions(theaterId);
-        const concessionArray = Array.isArray(conResult) ? conResult : (conResult?.data || []);
-        setConcessionsList(concessionArray);
-        setConcessionsList(conResult);
+        setConcessionsList(Array.isArray(conResult) ? conResult : []);
       } catch (err) {
         console.error(err);
       } finally {

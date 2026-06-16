@@ -39,10 +39,14 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], onSe
               <div className="flex items-center gap-2">
                 {rowSeats.map((seat) => {
                   const seatCode = `${seat.row}${seat.number}`;
+                  const normalizedSeatCode = String(seatCode).trim().toUpperCase();
+                  const normalizedBookedSeats = new Set(
+                    (bookedSeats || []).map((seatCodeItem) => String(seatCodeItem).trim().toUpperCase())
+                  );
                   // 1. Kiểm tra xem ghế đã được đặt trước đó chưa
-                  const isBooked = bookedSeats.includes(seatCode);
+                  const isBooked = normalizedBookedSeats.has(normalizedSeatCode);
                   // 2. Kiểm tra xem ghế có đang được chọn trong lượt đặt này không
-                  const isSelected = selectedSeats.includes(seatCode);
+                  const isSelected = selectedSeats.includes(normalizedSeatCode);
                   // 3. Kiểm tra xem ghế có bị hỏng/vô hiệu hóa không
                   const isDisabledSeat = seat.isDisabled === true;
 

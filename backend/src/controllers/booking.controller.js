@@ -30,16 +30,31 @@ const createBooking = async (req, res, next) => {
     }
 
     // 2. Check if showtime has already passed
-    if (new Date(showtime.startTime) < new Date()) {
+    const currentTime = Date.now();
+    const showtimeTimestamp = showtime.startTime instanceof Date
+      ? showtime.startTime.getTime()
+      : new Date(showtime.startTime).getTime();
+
+    if (showtimeTimestamp <= currentTime) {
       res.status(400);
       throw new Error('Cannot book tickets for a past showtime');
     }
 
     // 3. KIỂM TRA: Xem ghế khách hàng chọn đã được đặt trước đó chưa
-    const alreadyBooked = seats.some((seat) => showtime.bookedSeats.includes(seat));
-    if (alreadyBooked) {
+    const bookedSeatSet = new Set(
+      (showtime.bookedSeats || []).map((seatCode) => String(seatCode).trim().toUpperCase())
+    );
+
+    const normalizedSeats = seats
+      .map((seatCode) => String(seatCode).trim().toUpperCase())
+      .filter((seatCode) => seatCode);
+
+    const conflictingSeats = normalizedSeats.filter((seatCode) => bookedSeatSet.has(seatCode));
+    if (conflictingSeats.length > 0) {
       res.status(400);
-      throw new Error('Một hoặc nhiều ghế bạn chọn đã được đặt trước đó');
+      throw new Error(
+        `Một hoặc nhiều ghế bạn chọn đã được đặt trước đó: ${conflictingSeats.join(', ')}. Vui lòng chọn ghế khác.`
+      );
     }
 
     // 4. TÍNH TOÁN GIÁ VÉ & KIỂM TRA TRẠNG THÁI GHẾ (CÓ BỊ HỎNG/KHOÁ KHÔNG)
@@ -95,9 +110,24 @@ const createBooking = async (req, res, next) => {
 
     const totalPrice = seatPriceSum + concessionPriceSum;
 
-    // 6. Register/Book the seats in the Showtime document
-    showtime.bookedSeats.push(...seats);
-    await showtime.save();
+    // 6. Register/Book the seats in the Showtime document atomically to avoid race conditions
+    const updatedShowtime = await Showtime.findOneAndUpdate(
+      {
+        _id: showtime._id,
+        bookedSeats: { $nin: normalizedSeats },
+      },
+      {
+        $addToSet: { bookedSeats: { $each: normalizedSeats } },
+      },
+      {
+        new: true,
+      }
+    );
+
+    if (!updatedShowtime) {
+      res.status(400);
+      throw new Error('Một hoặc nhiều ghế bạn chọn đã được đặt trước đó. Vui lòng chọn lại ghế.');
+    }
 
     // 7. Create the Booking
     const isVietQR = paymentMethod === 'vietqr';
@@ -105,7 +135,7 @@ const createBooking = async (req, res, next) => {
     const booking = await Booking.create({
       user: userId,
       showtime: showtimeId,
-      seats,
+      seats: normalizedSeats,
       concessions: concessions.map((c) => ({
         concession: c.concessionId,
         quantity: c.quantity,

@@ -28,7 +28,11 @@ export const BookingSuccessModal = ({ isOpen, bookingResult, showtime, selectedS
 
   if (!isOpen) return null;
 
-  const booking = bookingResult?.booking || bookingResult?.data?.booking || {};
+  const booking =
+    bookingResult?.booking ||
+    (bookingResult?.data?.booking || null) ||
+    (bookingResult?._id ? bookingResult : null) ||
+    {};
   const payment = bookingResult?.payment || bookingResult?.data?.payment || {};
 
   const movie = showtime?.movie || {};

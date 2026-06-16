@@ -54,13 +54,22 @@ export const PaymentPage = () => {
       return;
     }
 
+    const showtimeStartsAt = selectedShowtime.startTime
+      ? new Date(selectedShowtime.startTime).getTime()
+      : null;
+
+    if (showtimeStartsAt !== null && showtimeStartsAt <= Date.now() && !showQRScreen) {
+      alert('Suất chiếu này đã bắt đầu hoặc đã kết thúc. Vui lòng chọn một suất chiếu khác.');
+      navigate('/');
+      return;
+    }
+
     const loadConcessions = async () => {
       try {
         // Fix bug: truyền đúng theaterId để lấy đồ ăn của rạp đang đặt vé
         const theaterId = selectedShowtime.theater?._id || selectedShowtime.theater;
         const result = await bookingService.getConcessions(theaterId);
-        const concessionArray = Array.isArray(result) ? result : (result?.data || []);
-        setConcessionsList(concessionArray);
+        setConcessionsList(Array.isArray(result) ? result : []);
       } catch (err) {
         console.error('Không thể tải danh sách đồ ăn uống:', err);
       }
@@ -119,17 +128,17 @@ export const PaymentPage = () => {
       setSnapshotSeats([...selectedSeats]);
 
       const result = await submitBooking(paymentMethod);
-      const bookingIdFromResult = result.data.booking._id;
+      const bookingIdFromResult = result.booking._id;
       setBookingId(bookingIdFromResult);
 
       if (paymentMethod === 'vietqr') {
-        setQrData(result.data.vietqr);
+        setQrData(result.vietqr);
         setShowQRScreen(true);
         setTimeLeft(300);
       } else if (paymentMethod === 'momo') {
         const momoResult = await paymentService.createMomoPayment({
           bookingId: bookingIdFromResult,
-          amount: result.data.booking.totalPrice,
+          amount: result.booking.totalPrice,
           orderInfo: `Booking ${bookingIdFromResult}`,
         });
 

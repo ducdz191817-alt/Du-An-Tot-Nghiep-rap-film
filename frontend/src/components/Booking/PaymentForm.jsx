@@ -169,7 +169,7 @@ export const PaymentForm = ({ onSubmit, loading, pricing }) => {
 
       {/* E-wallet & QR simulations */}
       {method !== 'card' && (
-        <div className="space-y-4 pt-4 text-center">
+        <form onSubmit={handlePay} className="space-y-4 pt-4 text-center">
           {method === 'vietqr' ? (
             <div className="bg-zinc-900 border border-dark-border p-5 rounded-2xl max-w-sm mx-auto text-left space-y-2.5">
               <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
@@ -194,7 +194,7 @@ export const PaymentForm = ({ onSubmit, loading, pricing }) => {
           )}
 
           <Button
-            onClick={handlePay}
+            type="submit"
             variant="primary"
             loading={loading}
             className="w-full py-3.5 rounded-2xl font-black text-sm"
@@ -205,7 +205,7 @@ export const PaymentForm = ({ onSubmit, loading, pricing }) => {
               ? `Tiến hành thanh toán MoMo`
               : `Tôi đã hoàn tất thanh toán`}
           </Button>
-        </div>
+        </form>
       )}
     </div>
   );
