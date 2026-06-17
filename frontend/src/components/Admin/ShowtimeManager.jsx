@@ -39,11 +39,15 @@ export const ShowtimeManager = () => {
         setForm((prev) => ({ ...prev, theaterId: thRes[0]._id }));
       }
 
-      // 2. Lấy phim đang chiếu
-      const mvRes = await movieService.getMovies({ status: 'now-showing' });
-      setMovies(mvRes);
-      if (mvRes.length > 0) {
-        setForm((prev) => ({ ...prev, movieId: mvRes[0]._id }));
+      // 2. Lấy phim đang chiếu + chiếu sớm
+      const [mvNow, mvPreview] = await Promise.all([
+        movieService.getMovies({ status: 'now-showing' }),
+        movieService.getMovies({ status: 'preview' }),
+      ]);
+      const allMovies = [...mvNow, ...mvPreview];
+      setMovies(allMovies);
+      if (allMovies.length > 0) {
+        setForm((prev) => ({ ...prev, movieId: allMovies[0]._id }));
       }
     } catch (err) {
       console.error(err);

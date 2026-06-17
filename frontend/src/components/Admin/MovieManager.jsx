@@ -8,6 +8,22 @@ import Loading from '../common/Loading';
 import Modal from '../common/Modal';
 import { getPosterUrl } from '../../utils/constants';
 
+// Helper: trả về config hiển thị cho từng trạng thái phim
+const getStatusConfig = (status) => {
+  const map = {
+    'now-showing':  { label: 'Đang chiếu',    classes: 'bg-green-500/10 text-green-400 border border-green-500/20' },
+    'coming-soon':  { label: 'Sắp chiếu',     classes: 'bg-amber-500/10 text-amber-400 border border-amber-500/20' },
+    'ended':        { label: 'Đã kết thúc',    classes: 'bg-zinc-800 text-zinc-500 border border-zinc-700' },
+    'suspended':    { label: 'Tạm hoãn',       classes: 'bg-orange-500/10 text-orange-400 border border-orange-500/20' },
+    'stopped':      { label: 'Ngừng chiếu',    classes: 'bg-red-500/10 text-red-400 border border-red-500/20' },
+    'cancelled':    { label: 'Hủy phát hành',  classes: 'bg-rose-500/10 text-rose-400 border border-rose-500/20' },
+    'pre-release':  { label: 'Sắp ra mắt',    classes: 'bg-sky-500/10 text-sky-400 border border-sky-500/20' },
+    'preview':      { label: 'Chiếu sớm',      classes: 'bg-violet-500/10 text-violet-400 border border-violet-500/20' },
+    'hidden':       { label: 'Ẩn / Bảo trì',  classes: 'bg-zinc-900 text-zinc-600 border border-zinc-800' },
+  };
+  return map[status] || { label: status, classes: 'bg-zinc-800 text-zinc-500 border border-zinc-700' };
+};
+
 export const MovieManager = () => {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -186,14 +202,11 @@ export const MovieManager = () => {
                       {m.genre.join(', ')}
                     </td>
                     <td className="py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ${m.status === 'now-showing'
-                          ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                          : m.status === 'coming-soon'
-                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                            : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
-                        }`}>
-                        {m.status === 'now-showing' ? 'Đang chiếu' : m.status === 'coming-soon' ? 'Sắp chiếu' : 'Đã kết thúc'}
-                      </span>
+                      {(() => { const cfg = getStatusConfig(m.status); return (
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ${cfg.classes}`}>
+                          {cfg.label}
+                        </span>
+                      ); })()}
                     </td>
                     <td className="py-3 max-w-[200px] truncate text-zinc-400 font-medium" title={m.description}>
                       {m.description || 'Chưa cập nhật'}
@@ -251,9 +264,15 @@ export const MovieManager = () => {
             <div>
               <label className="block text-sm font-medium text-zinc-300 mb-1.5 pl-0.5">Trạng Thái Phát Hành</label>
               <select name="status" value={form.status} onChange={handleChange} className="w-full bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer">
-                <option value="now-showing">Đang chiếu</option>
-                <option value="coming-soon">Sắp chiếu</option>
-                <option value="ended">Đã kết thúc</option>
+                <option value="now-showing">🟢 Đang chiếu</option>
+                <option value="coming-soon">🟡 Sắp chiếu</option>
+                <option value="pre-release">🔵 Sắp ra mắt</option>
+                <option value="preview">🟣 Chiếu sớm / Preview</option>
+                <option value="ended">⚫ Đã kết thúc</option>
+                <option value="suspended">🟠 Tạm hoãn</option>
+                <option value="stopped">🔴 Ngừng chiếu</option>
+                <option value="cancelled">❌ Hủy phát hành</option>
+                <option value="hidden">🔒 Ẩn / Bảo trì</option>
               </select>
             </div>
 

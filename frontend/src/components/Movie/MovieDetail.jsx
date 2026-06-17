@@ -181,7 +181,7 @@ export const MovieDetail = ({ movie }) => {
       )}
 
       {/* 3. Bảng đặt vé theo lịch chiếu */}
-      {movie.status === 'now-showing' && (
+      {(movie.status === 'now-showing' || movie.status === 'preview') && (
         <div className="space-y-6 bg-dark-card/60 backdrop-blur-xl border border-white/10 p-6 md:p-10 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] mt-12 relative overflow-hidden">
           {/* Subtle glow in background */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand/5 blur-[80px] rounded-full pointer-events-none" />

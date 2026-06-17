@@ -17,7 +17,7 @@ export const MovieFilter = ({ filters, onChange }) => {
 
   return (
     <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-dark-card border border-dark-border p-4 rounded-2xl">
-      {/* Status tabs ('now-showing', 'coming-soon') */}
+      {/* Status tabs */}
       <div className="flex items-center bg-zinc-900 p-1.5 rounded-xl border border-dark-border w-full md:w-auto shrink-0">
         <button
           onClick={() => handleStatusChange('now-showing')}
@@ -38,6 +38,26 @@ export const MovieFilter = ({ filters, onChange }) => {
           }`}
         >
           Sắp chiếu
+        </button>
+        <button
+          onClick={() => handleStatusChange('preview')}
+          className={`flex-1 md:flex-none text-xs sm:text-sm font-bold px-4 py-2 rounded-lg transition-all duration-300 ${
+            filters.status === 'preview'
+              ? 'bg-violet-600 text-white shadow-md'
+              : 'text-zinc-400 hover:text-zinc-200'
+          }`}
+        >
+          Chiếu sớm
+        </button>
+        <button
+          onClick={() => handleStatusChange('pre-release')}
+          className={`flex-1 md:flex-none text-xs sm:text-sm font-bold px-4 py-2 rounded-lg transition-all duration-300 ${
+            filters.status === 'pre-release'
+              ? 'bg-sky-600 text-white shadow-md'
+              : 'text-zinc-400 hover:text-zinc-200'
+          }`}
+        >
+          Sắp ra mắt
         </button>
       </div>
 
