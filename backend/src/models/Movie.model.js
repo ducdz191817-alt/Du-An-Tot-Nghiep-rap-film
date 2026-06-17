@@ -48,7 +48,17 @@ const MovieSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['now-showing', 'coming-soon', 'ended'],
+      enum: [
+        'now-showing',    // Đang chiếu
+        'coming-soon',    // Sắp chiếu
+        'ended',          // Đã kết thúc (theo kế hoạch)
+        'suspended',      // Tạm hoãn (hoãn phát hành hoặc tạm ngừng chiếu)
+        'stopped',        // Ngừng chiếu (khác với đã kết thúc theo kế hoạch)
+        'cancelled',      // Hủy phát hành (không ra rạp nữa)
+        'pre-release',    // Sắp ra mắt (tách riêng với Sắp chiếu)
+        'preview',        // Chiếu sớm / Preview (suất chiếu đặc biệt)
+        'hidden',         // Bảo trì / Ẩn (dùng cho quản trị viên)
+      ],
       default: 'now-showing',
     },
     rating: {

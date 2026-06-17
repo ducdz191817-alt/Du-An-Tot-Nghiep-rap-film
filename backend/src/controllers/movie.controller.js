@@ -9,13 +9,14 @@ const getMovies = async (req, res, next) => {
 
     const query = {};
 
-    // Filter by status ('now-showing', 'coming-soon')
+    // Filter by status ('now-showing', 'coming-soon', 'preview', 'pre-release', etc.)
     if (status) {
       if (status !== 'all') {
         query.status = status;
       }
     } else {
-      query.status = { $ne: 'ended' }; // Default: exclude ended movies
+      // Default: only show public-facing statuses to customers
+      query.status = { $in: ['now-showing', 'coming-soon', 'pre-release', 'preview'] };
     }
 
     // Filter by title / description search query
