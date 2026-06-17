@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, AlertCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, AlertCircle, Eye } from 'lucide-react';
 import movieService from '../../services/movie.service';
 import adminService from '../../services/admin.service';
 import Input from '../common/Input';
@@ -13,6 +13,7 @@ export const MovieManager = () => {
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [editingMovie, setEditingMovie] = useState(null);
+  const [viewingMovie, setViewingMovie] = useState(null);
 
   const initialForm = {
     title: '',
@@ -153,13 +154,14 @@ export const MovieManager = () => {
                 <th className="py-4">Phân loại</th>
                 <th className="py-4">Thể loại</th>
                 <th className="py-4">Trạng thái</th>
+                <th className="py-4">Chi tiết</th>
                 <th className="py-4 pr-6 text-right">Hành động</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-dark-border/40 text-xs font-semibold text-zinc-300">
               {movies.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="py-12 text-center text-zinc-500 italic">
+                  <td colSpan="6" className="py-12 text-center text-zinc-500 italic">
                     Chưa có phim nào được thêm vào hệ thống. Hãy tạo phim mới ở trên!
                   </td>
                 </tr>
@@ -193,7 +195,17 @@ export const MovieManager = () => {
                         {m.status === 'now-showing' ? 'Đang chiếu' : m.status === 'coming-soon' ? 'Sắp chiếu' : 'Đã kết thúc'}
                       </span>
                     </td>
+                    <td className="py-3 max-w-[200px] truncate text-zinc-400 font-medium" title={m.description}>
+                      {m.description || 'Chưa cập nhật'}
+                    </td>
                     <td className="py-3 pr-6 text-right space-x-2">
+                      <button
+                        onClick={() => setViewingMovie(m)}
+                        className="p-2 bg-zinc-900 border border-dark-border hover:border-brand/40 text-zinc-400 hover:text-zinc-200 rounded-xl transition-all"
+                        title="Xem chi tiết phim"
+                      >
+                        <Eye size={13} />
+                      </button>
                       <button
                         onClick={() => handleOpenEdit(m)}
                         className="p-2 bg-zinc-900 border border-dark-border hover:border-brand/40 text-zinc-400 hover:text-zinc-200 rounded-xl transition-all"
@@ -291,6 +303,127 @@ export const MovieManager = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal Xem Chi Tiết Phim */}
+      <Modal isOpen={!!viewingMovie} onClose={() => setViewingMovie(null)} title="Xem Chi Tiết Phim" size="xl">
+        {viewingMovie && (
+          <div className="space-y-6 text-zinc-300">
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Cột trái: Poster & Trạng thái */}
+              <div className="w-full md:w-1/3 space-y-4 shrink-0">
+                <div className="aspect-[2/3] rounded-2xl overflow-hidden bg-zinc-950 border border-dark-border shadow-md">
+                  <img
+                    src={getPosterUrl(viewingMovie.posterUrl)}
+                    alt={viewingMovie.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  <span className="bg-brand/10 border border-brand/20 text-brand px-3 py-1 rounded-xl font-black text-xs">
+                    Độ tuổi: {viewingMovie.rating}
+                  </span>
+                  <span className={`px-3 py-1 rounded-full text-xs uppercase font-bold tracking-wider ${
+                    viewingMovie.status === 'now-showing'
+                      ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                      : viewingMovie.status === 'coming-soon'
+                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                        : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
+                  }`}>
+                    {viewingMovie.status === 'now-showing' ? 'Đang chiếu' : viewingMovie.status === 'coming-soon' ? 'Sắp chiếu' : 'Đã kết thúc'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Cột phải: Thông tin chi tiết */}
+              <div className="flex-1 space-y-4 text-xs">
+                <div>
+                  <h4 className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Tên phim</h4>
+                  <h3 className="text-lg font-black text-zinc-100 mt-0.5">{viewingMovie.title}</h3>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Đạo diễn</h4>
+                    <p className="font-bold text-zinc-300 mt-0.5">{viewingMovie.director || 'Chưa cập nhật'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Thời lượng</h4>
+                    <p className="font-bold text-zinc-300 mt-0.5">{viewingMovie.duration} phút</p>
+                  </div>
+                  <div>
+                    <h4 className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Ngày phát hành</h4>
+                    <p className="font-bold text-zinc-300 mt-0.5">
+                      {viewingMovie.releaseDate ? new Date(viewingMovie.releaseDate).toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Chưa cập nhật'}
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Thể loại</h4>
+                    <p className="font-bold text-zinc-300 mt-0.5">{viewingMovie.genre.join(', ')}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Ngôn ngữ</h4>
+                  <p className="font-bold text-zinc-300 mt-0.5">{viewingMovie.language || 'Chưa cập nhật'}</p>
+                </div>
+
+                <div>
+                  <h4 className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Diễn viên</h4>
+                  <p className="font-bold text-zinc-300 mt-0.5">{viewingMovie.cast && viewingMovie.cast.length > 0 ? viewingMovie.cast.join(', ') : 'Chưa cập nhật'}</p>
+                </div>
+
+                <div>
+                  <h4 className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Tóm tắt nội dung</h4>
+                  <p className="text-zinc-400 mt-1 leading-relaxed whitespace-pre-line font-medium max-h-[120px] overflow-y-auto pr-1">
+                    {viewingMovie.description || 'Chưa cập nhật'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Trailer preview if trailerUrl is provided */}
+            {viewingMovie.trailerUrl && (
+              <div className="space-y-2">
+                <h4 className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Trailer</h4>
+                <div className="aspect-video w-full rounded-2xl overflow-hidden border border-dark-border bg-zinc-950">
+                  <iframe
+                    src={viewingMovie.trailerUrl.includes('embed/') ? viewingMovie.trailerUrl : viewingMovie.trailerUrl.replace('watch?v=', 'embed/').split('&')[0]}
+                    title={`Trailer - ${viewingMovie.title}`}
+                    className="w-full h-full"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Footer buttons */}
+            <div className="flex justify-between items-center pt-4 border-t border-dark-border">
+              <a
+                href={`/movies/${viewingMovie._id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-brand hover:text-brand-hover font-black flex items-center gap-1 hover:underline"
+              >
+                Xem trên trang khách hàng &rarr;
+              </a>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setViewingMovie(null); handleOpenEdit(viewingMovie); }}
+                  className="px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl transition-all"
+                >
+                  Chỉnh sửa
+                </button>
+                <button
+                  onClick={() => setViewingMovie(null)}
+                  className="px-5 py-2 text-xs font-bold text-white bg-brand hover:bg-brand-hover rounded-xl transition-all shadow-md"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );
