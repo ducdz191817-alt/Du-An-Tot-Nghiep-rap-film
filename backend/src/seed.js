@@ -790,23 +790,33 @@ const seedData = async () => {
       const usedRows = seatRows.slice(0, rowCount);
 
       for (const row of usedRows) {
-        for (let num = 1; num <= cols; num++) {
-          let type = 'standard';
-          const rowIndex = usedRows.indexOf(row);
-          if (room.type === 'GOLDCLASS') {
-            type = 'couple';
-          } else if (rowIndex >= usedRows.length - 2) {
-            type = 'vip';
-          }
+        const rowIndex = usedRows.indexOf(row);
+        const isLastRow = rowIndex === usedRows.length - 1;
 
-          allSeatsData.push({
-            room: room._id,
-            row,
-            number: num,
-            type,
-            price:
-              type === 'couple' ? 350000 : type === 'vip' ? 120000 : 90000,
-          });
+        if (room.type === 'GOLDCLASS' || (room.type !== 'GOLDCLASS' && isLastRow)) {
+          // Ghế đôi: ghép 2 ghế thành 1 (chỉ tạo các số lẻ 1, 3, 5, 7...)
+          for (let num = 1; num <= cols; num += 2) {
+            allSeatsData.push({
+              room: room._id,
+              row,
+              number: num,
+              type: 'couple',
+              price: 120000, // Phụ thu ghế đôi (+120k)
+            });
+          }
+        } else {
+          // Ghế thường (A, B) hoặc VIP (C trở lên)
+          const isStandard = rowIndex < 2; // Chỉ hàng A và B là ghế thường
+
+          for (let num = 1; num <= cols; num++) {
+            allSeatsData.push({
+              room: room._id,
+              row,
+              number: num,
+              type: isStandard ? 'standard' : 'vip',
+              price: isStandard ? 0 : 5000,
+            });
+          }
         }
       }
     }

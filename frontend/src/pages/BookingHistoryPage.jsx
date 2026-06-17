@@ -190,14 +190,32 @@ export const BookingHistoryPage = () => {
                         label="Ghế đã chọn"
                       >
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {(booking.seats || []).map((s) => (
-                            <span
-                              key={s}
-                              className="bg-zinc-900 border border-dark-border px-2 py-0.5 rounded font-black text-brand text-[10px]"
-                            >
-                              {s}
-                            </span>
-                          ))}
+                          {(booking.seats || []).map((s) => {
+                            const match = s.match(/^([A-Z]+)(\d+)$/);
+                            let displaySeat = s;
+                            if (match) {
+                              const row = match[1];
+                              const num = parseInt(match[2], 10);
+                              
+                              const capacity = room.capacity || 0;
+                              const cols = capacity <= 30 ? 6 : capacity <= 60 ? 10 : 12;
+                              const rowCount = Math.ceil(capacity / cols);
+                              const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                              const lastRowLetter = rowCount > 0 ? alphabet[rowCount - 1] : '';
+
+                              if (row === lastRowLetter || room.type === 'GOLDCLASS') {
+                                displaySeat = `${row}${num}-${row}${num + 1}`;
+                              }
+                            }
+                            return (
+                              <span
+                                key={s}
+                                className="bg-zinc-900 border border-dark-border px-2 py-0.5 rounded font-black text-brand text-[10px]"
+                              >
+                                {displaySeat}
+                              </span>
+                            );
+                          })}
                         </div>
                       </DetailBlock>
 
