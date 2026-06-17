@@ -44,6 +44,7 @@ export const MovieManager = () => {
     rating: 'T16',
     director: '',
     cast: '',
+    country: '',
   };
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState('');
@@ -92,6 +93,7 @@ export const MovieManager = () => {
       rating: movie.rating,
       director: movie.director || '',
       cast: movie.cast ? movie.cast.join(', ') : '',
+      country: movie.country || '',
     });
     setError('');
     setIsOpen(true);
@@ -298,7 +300,10 @@ export const MovieManager = () => {
             <Input name="trailerUrl" label="Đường Dẫn Nhúng Trailer YouTube (URL)" placeholder="https://www.youtube.com/embed/..." value={form.trailerUrl} onChange={handleChange} />
           </div>
 
-          <Input name="cast" label="Danh Sách Diễn Viên (phân tách bằng dấu phẩy)" placeholder="Timothée Chalamet, Zendaya, Austin Butler" value={form.cast} onChange={handleChange} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input name="cast" label="Danh Sách Diễn Viên (phân tách bằng dấu phẩy)" placeholder="Timothée Chalamet, Zendaya, Austin Butler" value={form.cast} onChange={handleChange} />
+            <Input name="country" label="Quốc Gia" placeholder="Ví dụ: Mỹ, Hàn Quốc, Việt Nam" value={form.country} onChange={handleChange} />
+          </div>
 
           <Input
             name="description"

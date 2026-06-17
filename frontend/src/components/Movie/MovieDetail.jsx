@@ -137,7 +137,7 @@ export const MovieDetail = ({ movie }) => {
             <p className="text-zinc-300 leading-relaxed text-sm md:text-base font-medium">
               {displayDescription}
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm pt-4 border-t border-white/5 mt-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 text-sm pt-4 border-t border-white/5 mt-4">
               <div className="space-y-1">
                 <p className="text-zinc-500 uppercase tracking-wider text-[10px] font-black">{t('movie.director')}</p>
                 <p className="text-zinc-200 font-medium">{movie.director || 'N/A'}</p>
@@ -145,6 +145,20 @@ export const MovieDetail = ({ movie }) => {
               <div className="space-y-1">
                 <p className="text-zinc-500 uppercase tracking-wider text-[10px] font-black">{t('movie.languageLabel')}</p>
                 <p className="text-zinc-200 font-medium">{displayLanguage}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-zinc-500 uppercase tracking-wider text-[10px] font-black">Thời lượng</p>
+                <p className="text-zinc-200 font-medium">{movie.duration} {language === 'vi' ? 'phút' : 'min'}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-zinc-500 uppercase tracking-wider text-[10px] font-black">Khởi chiếu</p>
+                <p className="text-zinc-200 font-medium">
+                  {new Date(movie.releaseDate).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-zinc-500 uppercase tracking-wider text-[10px] font-black">Quốc gia</p>
+                <p className="text-zinc-200 font-medium">{movie.country || 'Chưa cập nhật'}</p>
               </div>
             </div>
             {movie.cast && movie.cast.length > 0 && (
