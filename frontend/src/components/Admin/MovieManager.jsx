@@ -269,18 +269,16 @@ export const MovieManager = () => {
 
           <Input name="cast" label="Danh Sách Diễn Viên (phân tách bằng dấu phẩy)" placeholder="Timothée Chalamet, Zendaya, Austin Butler" value={form.cast} onChange={handleChange} />
 
-          <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1.5 pl-0.5">Tóm Tắt Nội Dung / Mô Tả Phim</label>
-            <textarea
-              name="description"
-              rows="4"
-              placeholder="Cung cấp tóm tắt cốt truyện hoặc mô tả chi tiết của phim..."
-              value={form.description}
-              onChange={handleChange}
-              className="w-full bg-zinc-900 border border-zinc-800 focus:border-brand focus:ring-1 focus:ring-brand text-zinc-100 placeholder-zinc-500 rounded-lg p-3 outline-none transition-all duration-300 text-sm"
-              required
-            />
-          </div>
+          <Input
+            name="description"
+            type="textarea"
+            label="Tóm Tắt Nội Dung / Mô Tả Phim"
+            rows={4}
+            placeholder="Cung cấp tóm tắt cốt truyện hoặc mô tả chi tiết của phim..."
+            value={form.description}
+            onChange={handleChange}
+            required
+          />
 
           <div className="flex justify-end gap-3 pt-3 border-t border-dark-border">
             <Button onClick={() => setIsOpen(false)} variant="secondary" className="px-5 py-2">
