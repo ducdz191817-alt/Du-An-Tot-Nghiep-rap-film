@@ -142,14 +142,32 @@ export const BookingSuccessModal = ({ isOpen, bookingResult, showtime, selectedS
                 label="Ghế đã chọn"
                 value={
                   <div className="flex flex-wrap gap-1 justify-end">
-                    {(selectedSeats || booking?.seats || []).map((s) => (
-                      <span
-                        key={s}
-                        className="bg-zinc-800 border border-zinc-700 text-brand font-black px-1.5 py-0.5 rounded text-[10px]"
-                      >
-                        {s}
-                      </span>
-                    ))}
+                    {(selectedSeats || booking?.seats || []).map((s) => {
+                      const match = s.match(/^([A-Z]+)(\d+)$/);
+                      let displaySeat = s;
+                      if (match) {
+                        const row = match[1];
+                        const num = parseInt(match[2], 10);
+                        
+                        const capacity = room.capacity || 0;
+                        const cols = capacity <= 30 ? 6 : capacity <= 60 ? 10 : 12;
+                        const rowCount = Math.ceil(capacity / cols);
+                        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                        const lastRowLetter = rowCount > 0 ? alphabet[rowCount - 1] : '';
+
+                        if (row === lastRowLetter || room.type === 'GOLDCLASS') {
+                          displaySeat = `${row}${num}-${row}${num + 1}`;
+                        }
+                      }
+                      return (
+                        <span
+                          key={s}
+                          className="bg-zinc-800 border border-zinc-700 text-brand font-black px-1.5 py-0.5 rounded text-[10px]"
+                        >
+                          {displaySeat}
+                        </span>
+                      );
+                    })}
                   </div>
                 }
               />

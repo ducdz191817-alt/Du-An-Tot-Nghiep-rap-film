@@ -68,6 +68,9 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], onSe
 
                   // Kiểm tra kích thước (ghế đôi couple có chiều rộng gấp đôi ghế thường)
                   const isCouple = seat.type === 'couple';
+                  const displayLabel = isCouple
+                    ? `${seat.row}${seat.number}-${seat.row}${seat.number + 1} Đôi`
+                    : seatCode;
 
                   return (
                     <button
@@ -78,9 +81,9 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], onSe
                       className={`h-8 rounded-lg font-bold text-[9px] transition-all flex items-center justify-center transform active:scale-90 ${
                         isCouple ? 'w-[72px]' : 'w-8'
                       } ${activeBg}`}
-                      title={`${seatCode} - ${seat.type.toUpperCase()}${isDisabledSeat ? ' (Bảo trì)' : ''}${isBooked ? ' (Đã đặt)' : ''}`}
+                      title={`${displayLabel} - ${seat.type.toUpperCase()}${isDisabledSeat ? ' (Bảo trì)' : ''}${isBooked ? ' (Đã đặt)' : ''}`}
                     >
-                      {isDisabledSeat ? 'X' : (isCouple ? `${seatCode} Đôi` : seatCode)}
+                      {isDisabledSeat ? 'X' : displayLabel}
                     </button>
                   );
                 })}
