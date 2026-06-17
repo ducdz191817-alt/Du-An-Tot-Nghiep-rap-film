@@ -23,7 +23,7 @@ export const MovieCard = ({ movie }) => {
   return (
     <div className="group relative bg-dark-card border border-dark-border rounded-2xl overflow-hidden hover:border-brand/40 hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
       {/* Vùng chứa hình ảnh */}
-      <div className="relative aspect-[2/3] w-full overflow-hidden bg-zinc-900">
+      <div className="relative aspect-[4/5] w-full overflow-hidden bg-zinc-900">
         <img
           src={imageError ? fallbackPoster : getPosterUrl(movie.posterUrl)}
           alt={displayTitle}
