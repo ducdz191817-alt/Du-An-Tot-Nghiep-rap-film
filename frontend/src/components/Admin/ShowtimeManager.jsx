@@ -25,7 +25,7 @@ export const ShowtimeManager = () => {
     theaterId: '',
     roomId: '',
     startTime: '',
-    ticketPrice: 90000,
+    ticketPrice: 80000,
     format: '2D',
   });
   const [error, setError] = useState('');
@@ -135,7 +135,17 @@ export const ShowtimeManager = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => {
+      const updated = { ...prev, [name]: value };
+      if (name === 'format') {
+        if (value === '3D') {
+          updated.ticketPrice = 90000;
+        } else if (value === '2D') {
+          updated.ticketPrice = 80000;
+        }
+      }
+      return updated;
+    });
   };
 
   const handleTheaterChange = async (e) => {
@@ -158,7 +168,7 @@ export const ShowtimeManager = () => {
       theaterId: selectedTheater,
       roomId: firstRoomId,
       startTime: '',
-      ticketPrice: 90000,
+      ticketPrice: 80000,
       format: '2D',
     });
     setIsOpen(true);

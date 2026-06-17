@@ -839,7 +839,7 @@ const seedData = async () => {
     ];
 
     const showtimesData = [];
-    const prices = { IMAX: 180000, '3D': 120000, '2D': 90000, GOLDCLASS: 300000 };
+    const prices = { IMAX: 180000, '3D': 90000, '2D': 80000, GOLDCLASS: 300000 };
 
     // Generate showtimes for the next 7 days + past 3 days
     for (let dayOffset = -3; dayOffset <= 7; dayOffset++) {
