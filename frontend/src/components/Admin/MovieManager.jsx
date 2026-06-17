@@ -24,6 +24,14 @@ const getStatusConfig = (status) => {
   return map[status] || { label: status, classes: 'bg-zinc-800 text-zinc-500 border border-zinc-700' };
 };
 
+const AVAILABLE_GENRES = [
+  'Action', 'Adventure', 'Animation', 'Anime', 'Biography', 'Comedy', 
+  'Crime', 'Disaster', 'Documentary', 'Drama', 'Family', 'Fantasy', 
+  'History', 'Horror', 'Martial Arts', 'Music', 'Musical', 'Mystery', 
+  'Psychological', 'Romance', 'Sci-Fi', 'Sport', 'Supernatural', 
+  'Thriller', 'War', 'Western'
+];
+
 export const MovieManager = () => {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -68,6 +76,24 @@ export const MovieManager = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const handleToggleGenre = (genre) => {
+    const currentGenres = form.genre
+      ? form.genre.split(',').map((g) => g.trim()).filter((g) => g !== '')
+      : [];
+
+    let newGenres;
+    if (currentGenres.includes(genre)) {
+      newGenres = currentGenres.filter((g) => g !== genre);
+    } else {
+      newGenres = [...currentGenres, genre];
+    }
+
+    setForm({
+      ...form,
+      genre: newGenres.join(', '),
+    });
+  };
+
   const handleOpenAdd = () => {
     setEditingMovie(null);
     setForm(initialForm);
@@ -77,6 +103,7 @@ export const MovieManager = () => {
 
   const handleOpenEdit = (movie) => {
     setEditingMovie(movie);
+
     // Định dạng ngày chính xác
     const dateFormatted = movie.releaseDate ? new Date(movie.releaseDate).toISOString().split('T')[0] : '';
     setForm({
@@ -278,9 +305,43 @@ export const MovieManager = () => {
             </div>
           </div>
 
+          {/* Thể loại (Lựa chọn danh mục) */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-zinc-300 mb-1.5 pl-0.5">
+              Thể Loại <span className="text-brand">*</span>
+            </label>
+            <div className="flex flex-wrap gap-2 p-3 bg-zinc-900/60 border border-zinc-800 rounded-lg max-h-[160px] overflow-y-auto">
+              {(() => {
+                const currentGenres = form.genre
+                  ? form.genre.split(',').map((g) => g.trim()).filter((g) => g !== '')
+                  : [];
+                // Merge static list with current genres to ensure any database genres not in list are still shown
+                const allVisible = Array.from(new Set([...AVAILABLE_GENRES, ...currentGenres]));
+
+                return allVisible.map((genre) => {
+                  const isSelected = currentGenres.includes(genre);
+                  return (
+                    <button
+                      key={genre}
+                      type="button"
+                      onClick={() => handleToggleGenre(genre)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                        isSelected
+                          ? 'bg-brand/10 border-brand/40 text-brand shadow-[0_2px_8px_rgba(168,85,247,0.15)]'
+                          : 'bg-zinc-800/40 border-zinc-700/40 text-zinc-400 hover:border-zinc-650 hover:text-zinc-200'
+                      }`}
+                    >
+                      {genre}
+                    </button>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input name="genre" label="Thể Loại (phân tách bằng dấu phẩy)" placeholder="Ví dụ: Sci-Fi, Phiêu lưu, Hành động" value={form.genre} onChange={handleChange} required />
             <Input name="releaseDate" type="date" label="Ngày Phát Hành" value={form.releaseDate} onChange={handleChange} required />
+            <Input name="country" label="Quốc Gia" placeholder="Ví dụ: Mỹ, Hàn Quốc, Việt Nam" value={form.country} onChange={handleChange} />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -288,10 +349,7 @@ export const MovieManager = () => {
             <Input name="trailerUrl" label="Đường Dẫn Nhúng Trailer YouTube (URL)" placeholder="https://www.youtube.com/embed/..." value={form.trailerUrl} onChange={handleChange} />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input name="cast" label="Danh Sách Diễn Viên (phân tách bằng dấu phẩy)" placeholder="Timothée Chalamet, Zendaya, Austin Butler" value={form.cast} onChange={handleChange} />
-            <Input name="country" label="Quốc Gia" placeholder="Ví dụ: Mỹ, Hàn Quốc, Việt Nam" value={form.country} onChange={handleChange} />
-          </div>
+          <Input name="cast" label="Danh Sách Diễn Viên (phân tách bằng dấu phẩy)" placeholder="Timothée Chalamet, Zendaya, Austin Butler" value={form.cast} onChange={handleChange} />
 
           <Input
             name="description"
