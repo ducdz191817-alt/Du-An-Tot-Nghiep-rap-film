@@ -73,6 +73,10 @@ const MovieSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    country: {
+      type: String,
+      default: '',
+    },
   },
   {
     timestamps: true,
