@@ -817,12 +817,15 @@ const seedData = async () => {
     // ── 7. Showtimes ──────────────────────────────────────────────────────────
     console.log('\n⏰ Creating Showtimes...');
     const showtimeSlots = [
-      { hour: 8, minute: 30 },
-      { hour: 10, minute: 45 },
-      { hour: 13, minute: 0 },
+      { hour: 8, minute: 45 },
+      { hour: 11, minute: 30 },
+      { hour: 12, minute: 0 },
+      { hour: 13, minute: 30 },
       { hour: 15, minute: 30 },
-      { hour: 18, minute: 0 },
-      { hour: 20, minute: 30 },
+      { hour: 17, minute: 30 },
+      { hour: 19, minute: 30 },
+      { hour: 20, minute: 45 },
+      { hour: 22, minute: 0 },
     ];
 
     const showtimesData = [];
@@ -844,10 +847,8 @@ const seedData = async () => {
             (t) => t._id.toString() === room.theater.toString()
           );
 
-          // Pick 3 random time slots
-          const selectedSlots = showtimeSlots
-            .sort(() => Math.random() - 0.5)
-            .slice(0, 3);
+          // Use all time slots
+          const selectedSlots = showtimeSlots;
 
           for (const slot of selectedSlots) {
             const startTime = new Date(baseDate);
