@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, AlertCircle, Eye } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Plus, Edit2, Trash2, X, AlertCircle, Eye, Search, Sparkles, Star, Calendar, Clock, Loader2 } from 'lucide-react';
 import movieService from '../../services/movie.service';
 import adminService from '../../services/admin.service';
 import Input from '../common/Input';
@@ -38,6 +38,14 @@ export const MovieManager = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [editingMovie, setEditingMovie] = useState(null);
   const [viewingMovie, setViewingMovie] = useState(null);
+
+  // TMDB Search States
+  const [tmdbOpen, setTmdbOpen] = useState(false);
+  const [tmdbQuery, setTmdbQuery] = useState('');
+  const [tmdbResults, setTmdbResults] = useState([]);
+  const [tmdbLoading, setTmdbLoading] = useState(false);
+  const [tmdbError, setTmdbError] = useState('');
+  const [tmdbDetailLoading, setTmdbDetailLoading] = useState(null);
 
   const initialForm = {
     title: '',
@@ -100,6 +108,69 @@ export const MovieManager = () => {
     setForm(initialForm);
     setError('');
     setIsOpen(true);
+  };
+
+  // === TMDB Auto Import ===
+  const handleOpenTMDB = () => {
+    setTmdbQuery('');
+    setTmdbResults([]);
+    setTmdbError('');
+    setTmdbOpen(true);
+  };
+
+  const handleSearchTMDB = useCallback(async (query) => {
+    if (!query || query.trim().length < 2) {
+      setTmdbResults([]);
+      return;
+    }
+    setTmdbLoading(true);
+    setTmdbError('');
+    try {
+      const result = await adminService.searchTMDB(query);
+      setTmdbResults(result.data || []);
+    } catch (err) {
+      setTmdbError(err.message || 'Lỗi tìm kiếm TMDB');
+      setTmdbResults([]);
+    } finally {
+      setTmdbLoading(false);
+    }
+  }, []);
+
+  // Debounce search
+  useEffect(() => {
+    if (!tmdbOpen) return;
+    const timer = setTimeout(() => handleSearchTMDB(tmdbQuery), 500);
+    return () => clearTimeout(timer);
+  }, [tmdbQuery, tmdbOpen, handleSearchTMDB]);
+
+  const handleSelectTMDBMovie = async (tmdbId) => {
+    setTmdbDetailLoading(tmdbId);
+    try {
+      const result = await adminService.getTMDBMovieDetail(tmdbId);
+      const m = result.data;
+      setForm({
+        title: m.title || '',
+        description: m.description || '',
+        duration: m.duration || '',
+        genre: (m.genre || []).join(', '),
+        language: m.language || 'Tiếng Anh kèm Phụ đề Tiếng Việt',
+        releaseDate: m.releaseDate ? m.releaseDate.split('T')[0] : '',
+        posterUrl: m.posterUrl || '',
+        trailerUrl: m.trailerUrl || '',
+        status: m.status || 'coming-soon',
+        rating: m.rating || 'T16',
+        director: m.director || '',
+        cast: (m.cast || []).join(', '),
+        country: m.country || '',
+      });
+      setEditingMovie(null);
+      setTmdbOpen(false);
+      setIsOpen(true);
+    } catch (err) {
+      setTmdbError(err.message || 'Lỗi lấy chi tiết phim');
+    } finally {
+      setTmdbDetailLoading(null);
+    }
   };
 
   const handleOpenEdit = (movie) => {
@@ -184,9 +255,14 @@ export const MovieManager = () => {
           <h3 className="text-lg font-black text-zinc-200">Kho Lưu Trữ Phim</h3>
           <p className="text-xs text-zinc-500 mt-1">Quản lý danh sách phát hành, giới hạn độ tuổi, mã nhúng trailer và thông tin chi tiết.</p>
         </div>
-        <Button onClick={handleOpenAdd} variant="primary" className="py-2 px-4 text-sm" icon={<Plus size={16} />}>
-          Thêm Phim
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleOpenTMDB} variant="secondary" className="py-2 px-4 text-sm" icon={<Sparkles size={16} />}>
+            Thêm Từ TMDB
+          </Button>
+          <Button onClick={handleOpenAdd} variant="primary" className="py-2 px-4 text-sm" icon={<Plus size={16} />}>
+            Thêm Thủ Công
+          </Button>
+        </div>
       </div>
 
       {/* Bảng Danh Sách Phim */}
@@ -504,6 +580,88 @@ export const MovieManager = () => {
             </div>
           </div>
         )}
+      </Modal>
+      {/* Modal Tìm Kiếm TMDB */}
+      <Modal isOpen={tmdbOpen} onClose={() => setTmdbOpen(false)} title="🎬 Tìm Phim Từ TMDB" size="xl">
+        <div className="space-y-4">
+          {/* Search Input */}
+          <div className="relative">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+            <input
+              type="text"
+              value={tmdbQuery}
+              onChange={(e) => setTmdbQuery(e.target.value)}
+              placeholder="Nhập tên phim tiếng Anh hoặc tiếng Việt..."
+              className="w-full bg-zinc-900 border border-zinc-700 text-zinc-200 rounded-xl py-3 pl-10 pr-4 focus:border-brand focus:ring-1 focus:ring-brand/30 outline-none placeholder:text-zinc-600 text-sm"
+              autoFocus
+            />
+            {tmdbLoading && <Loader2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-brand animate-spin" />}
+          </div>
+
+          {tmdbError && (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm flex items-center gap-2">
+              <AlertCircle size={16} />
+              <span>{tmdbError}</span>
+            </div>
+          )}
+
+          {/* Results */}
+          <div className="max-h-[55vh] overflow-y-auto space-y-2 custom-scrollbar pr-1">
+            {!tmdbLoading && tmdbQuery.length >= 2 && tmdbResults.length === 0 && (
+              <p className="text-center text-zinc-500 py-8 text-sm">Không tìm thấy phim nào cho "{tmdbQuery}"</p>
+            )}
+            {tmdbResults.map((movie) => (
+              <button
+                key={movie.tmdbId}
+                onClick={() => handleSelectTMDBMovie(movie.tmdbId)}
+                disabled={tmdbDetailLoading === movie.tmdbId}
+                className="w-full flex items-start gap-3 p-3 bg-zinc-900/50 hover:bg-zinc-800/80 border border-zinc-800 hover:border-brand/30 rounded-xl transition-all text-left group"
+              >
+                <div className="w-14 h-20 rounded-lg overflow-hidden bg-zinc-950 shrink-0 border border-zinc-800">
+                  {movie.posterUrl ? (
+                    <img src={getPosterUrl(movie.posterUrl)} alt={movie.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-zinc-700 text-xs">N/A</div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-bold text-zinc-200 group-hover:text-brand transition-colors truncate">
+                    {movie.title}
+                  </h4>
+                  {movie.originalTitle !== movie.title && (
+                    <p className="text-[11px] text-zinc-500 truncate">{movie.originalTitle}</p>
+                  )}
+                  <div className="flex items-center gap-3 mt-1 text-[11px] text-zinc-500">
+                    {movie.releaseDate && (
+                      <span className="flex items-center gap-1"><Calendar size={10} />{movie.releaseDate.slice(0, 4)}</span>
+                    )}
+                    {movie.voteAverage > 0 && (
+                      <span className="flex items-center gap-1 text-amber-400"><Star size={10} />{movie.voteAverage.toFixed(1)}</span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {(movie.genres || []).slice(0, 3).map((g) => (
+                      <span key={g} className="px-1.5 py-0.5 bg-zinc-800 border border-zinc-700/50 rounded text-[10px] text-zinc-400">{g}</span>
+                    ))}
+                  </div>
+                </div>
+                {tmdbDetailLoading === movie.tmdbId ? (
+                  <Loader2 size={16} className="text-brand animate-spin shrink-0 mt-2" />
+                ) : (
+                  <span className="text-[10px] text-zinc-600 group-hover:text-brand font-bold shrink-0 mt-2 transition-colors">CHỌN →</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {!tmdbQuery && (
+            <div className="text-center py-6">
+              <Sparkles size={32} className="mx-auto text-zinc-700 mb-2" />
+              <p className="text-zinc-500 text-sm">Nhập tên phim để tìm kiếm trên TMDB</p>
+              <p className="text-zinc-600 text-xs mt-1">Dữ liệu sẽ tự động điền vào form tạo phim</p>
+            </div>
+          )}
+        </div>
       </Modal>
     </div>
   );
