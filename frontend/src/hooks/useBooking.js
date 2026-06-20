@@ -1,6 +1,7 @@
 import { useSelector, useDispatch } from 'react-redux';
 import {
   setSelectShowtime,
+  setSelectedSeats,
   toggleSeatSelection,
   updateConcessionQuantity,
   clearBookingFlow,
@@ -17,6 +18,10 @@ export const useBooking = () => {
 
   const selectShowtime = (showtime) => {
     dispatch(setSelectShowtime(showtime));
+  };
+
+  const setSeats = (seatsArray) => {
+    dispatch(setSelectedSeats(seatsArray));
   };
 
   const selectSeat = (seatCode) => {
@@ -133,6 +138,7 @@ export const useBooking = () => {
     loading,
     error,
     selectShowtime,
+    setSeats,
     selectSeat,
     changeConcessionQty,
     clearBooking,

@@ -18,6 +18,9 @@ const bookingSlice = createSlice({
       state.selectedSeats = [];
       state.selectedConcessions = {};
     },
+    setSelectedSeats: (state, action) => {
+      state.selectedSeats = action.payload;
+    },
     toggleSeatSelection: (state, action) => {
       const seat = action.payload;
       const index = state.selectedSeats.indexOf(seat);
@@ -61,6 +64,7 @@ const bookingSlice = createSlice({
 
 export const {
   setSelectShowtime,
+  setSelectedSeats,
   toggleSeatSelection,
   updateConcessionQuantity,
   clearBookingFlow,
