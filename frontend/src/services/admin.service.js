@@ -152,6 +152,19 @@ const deleteUser = async (id) => {
   return response.data;
 };
 
+// TMDB Integration
+const searchTMDB = async (query, page = 1) => {
+  const response = await api.get('/admin/tmdb/search', {
+    params: { query, page },
+  });
+  return response;
+};
+
+const getTMDBMovieDetail = async (tmdbId) => {
+  const response = await api.get(`/admin/tmdb/movie/${tmdbId}`);
+  return response;
+};
+
 const adminService = {
   createMovie,
   updateMovie,
@@ -181,6 +194,8 @@ const adminService = {
   getUsers,
   updateUserRole,
   deleteUser,
+  searchTMDB,
+  getTMDBMovieDetail,
 };
 
 export default adminService;
