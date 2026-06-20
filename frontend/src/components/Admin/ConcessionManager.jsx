@@ -318,18 +318,16 @@ export const ConcessionManager = () => {
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1.5 pl-0.5">Mô Tả Chi Tiết / Combo Gồm Những Gì</label>
-            <textarea
-              name="description"
-              rows="3"
-              placeholder="Ví dụ: 1 Hộp bắp ngọt lớn + 1 Cốc pepsi mát lạnh..."
-              value={form.description}
-              onChange={handleChange}
-              className="w-full bg-zinc-900 border border-zinc-800 focus:border-brand focus:ring-1 focus:ring-brand text-zinc-100 placeholder-zinc-500 rounded-lg p-3 outline-none transition-all duration-300 text-sm"
-              required
-            />
-          </div>
+          <Input
+            name="description"
+            type="textarea"
+            label="Mô Tả Chi Tiết / Combo Gồm Những Gì"
+            rows={3}
+            placeholder="Ví dụ: 1 Hộp bắp ngọt lớn + 1 Cốc pepsi mát lạnh..."
+            value={form.description}
+            onChange={handleChange}
+            required
+          />
 
           <div className="flex justify-end gap-3 pt-3 border-t border-dark-border">
             <Button onClick={() => setIsOpen(false)} variant="secondary" className="px-5 py-2">

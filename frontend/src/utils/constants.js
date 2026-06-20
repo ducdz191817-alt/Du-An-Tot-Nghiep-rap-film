@@ -34,23 +34,19 @@ export const SEAT_TYPES = {
     color: 'bg-[#6366f1]/20 hover:bg-[#6366f1]/40 border border-[#6366f1]/30 text-[#818cf8]',
     selectedColor: 'bg-brand border border-brand/50 text-white shadow-[0_0_12px_rgba(168,85,247,0.5)]',
     bookedColor: 'bg-[#b91c1c]/20 border border-red-800/40 text-red-500/50 cursor-not-allowed',
-    extraPrice: 20000,
+    extraPrice: 5000,
   },
   couple: {
     label: 'Sweetbox',
     color: 'bg-[#ec4899]/20 hover:bg-[#ec4899]/40 border border-[#ec4899]/30 text-[#f472b6]',
     selectedColor: 'bg-brand border border-brand/50 text-white shadow-[0_0_12px_rgba(168,85,247,0.5)]',
     bookedColor: 'bg-[#b91c1c]/20 border border-red-800/40 text-red-500/50 cursor-not-allowed',
-    extraPrice: 40000,
+    extraPrice: 120000,
   },
 };
 
 export const getPosterUrl = (url) => {
   if (!url) return '';
-  // Use Google Image Proxy for TMDB images to bypass Vietnamese ISP blocking
-  if (url.includes('image.tmdb.org')) {
-    return `https://images1-focus-opensocial.googleusercontent.com/gadgets/proxy?container=focus&refresh=2592000&url=${encodeURIComponent(url)}`;
-  }
   return url;
 };
 

@@ -9,13 +9,14 @@ const getMovies = async (req, res, next) => {
 
     const query = {};
 
-    // Filter by status ('now-showing', 'coming-soon')
+    // Filter by status ('now-showing', 'coming-soon', 'preview', 'pre-release', etc.)
     if (status) {
       if (status !== 'all') {
         query.status = status;
       }
     } else {
-      query.status = { $ne: 'ended' }; // Default: exclude ended movies
+      // Default: only show public-facing statuses to customers
+      query.status = { $in: ['now-showing', 'coming-soon', 'pre-release', 'preview'] };
     }
 
     // Filter by title / description search query
@@ -36,7 +37,37 @@ const getMovies = async (req, res, next) => {
       query.rating = rating;
     }
 
-    const movies = await Movie.find(query).sort({ releaseDate: -1 });
+    const movies = await Movie.aggregate([
+      { $match: query },
+      {
+        $lookup: {
+          from: 'reviews',
+          localField: '_id',
+          foreignField: 'movie',
+          as: 'movieReviews',
+        },
+      },
+      {
+        $addFields: {
+          reviewsCount: { $size: '$movieReviews' },
+          reviewsAverage: {
+            $cond: {
+              if: { $eq: [{ $size: '$movieReviews' }, 0] },
+              then: 0,
+              else: { $round: [{ $avg: '$movieReviews.rating' }, 1] },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          movieReviews: 0,
+        },
+      },
+      {
+        $sort: { releaseDate: -1 },
+      },
+    ]);
 
     res.json({
       success: true,

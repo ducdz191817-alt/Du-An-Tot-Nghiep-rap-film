@@ -5,14 +5,14 @@ import { MapPin, Phone, Clock, ChevronDown, ChevronUp, Tv2, Star, Zap, MonitorPl
 const theaters = [
   {
     id: 1,
-    name: 'Nova Cinema Hồ Chí Minh',
-    slug: 'hcm',
-    city: 'Hồ Chí Minh',
-    address: '123 Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh',
+    name: 'Nova Cinema Hà Nội',
+    slug: 'hanoi',
+    city: 'Hà Nội',
+    address: '123 Hoàng Quốc Việt, Phường Cầu Giấy, Quận Cầu Giấy, Hà Nội',
     phone: '1900 9090',
     hotline: '1900 9090',
     mapEmbed:
-      'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.4479!2d106.698!3d10.7757!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTDCsDQ2JzMyLjUiTiAxMDbCsDQxJzU0LjAiRQ!5e0!3m2!1sen!2s!4v0',
+      'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3723.8638!2d105.7958!3d21.0381!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjHCsDAyJzE3LjIiTiAxMDXCsDQ3JzQ0LjkiRQ!5e0!3m2!1sen!2s!4v0',
     hours: [
       { day: 'Thứ 2 – Thứ 6', time: '08:30 – 23:30' },
       { day: 'Thứ 7 – Chủ Nhật', time: '08:00 – 00:00' },
@@ -23,63 +23,18 @@ const theaters = [
       { name: 'Phòng 2', type: '3D', seats: 80, icon: <Tv2 size={14} />, color: 'text-blue-400 bg-blue-400/10 border-blue-400/20' },
       { name: 'Phòng 3', type: '2D', seats: 60, icon: <MonitorPlay size={14} />, color: 'text-zinc-400 bg-zinc-400/10 border-zinc-400/20' },
       { name: 'Phòng 4', type: 'GOLDCLASS', seats: 30, icon: <Star size={14} />, color: 'text-purple-400 bg-purple-400/10 border-purple-400/20' },
+      { name: 'Phòng 5', type: '3D', seats: 100, icon: <Tv2 size={14} />, color: 'text-blue-400 bg-blue-400/10 border-blue-400/20' },
+      { name: 'Phòng 6', type: '2D', seats: 70, icon: <MonitorPlay size={14} />, color: 'text-zinc-400 bg-zinc-400/10 border-zinc-400/20' },
+      { name: 'Phòng 7', type: '2D', seats: 60, icon: <MonitorPlay size={14} />, color: 'text-zinc-400 bg-zinc-400/10 border-zinc-400/20' },
+      { name: 'Phòng 8', type: '3D', seats: 80, icon: <Tv2 size={14} />, color: 'text-blue-400 bg-blue-400/10 border-blue-400/20' },
     ],
     facilities: ['Bắp rang bơ Nova', 'Cocktail bar', 'Ghế massage VIP', 'Bãi xe miễn phí', 'WiFi tốc độ cao', 'Trung tâm thương mại'],
     badge: 'Flagship',
     badgeColor: 'bg-brand text-white',
     image: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=800&auto=format&fit=crop&q=80',
   },
-  {
-    id: 2,
-    name: 'Nova Cinema Hà Nội',
-    slug: 'hanoi',
-    city: 'Hà Nội',
-    address: '456 Tràng Tiền, Phường Tràng Tiền, Quận Hoàn Kiếm, Hà Nội',
-    phone: '1900 9191',
-    hotline: '1900 9191',
-    mapEmbed:
-      'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3724.0!2d105.854!3d21.0285!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjHCsDAxJzQyLjYiTiAxMDXCsDUxJzE0LjQiRQ!5e0!3m2!1sen!2s!4v0',
-    hours: [
-      { day: 'Thứ 2 – Thứ 6', time: '09:00 – 23:00' },
-      { day: 'Thứ 7 – Chủ Nhật', time: '08:30 – 23:30' },
-      { day: 'Lễ & Tết', time: '08:00 – 00:00' },
-    ],
-    rooms: [
-      { name: 'Phòng 1', type: '3D', seats: 100, icon: <Tv2 size={14} />, color: 'text-blue-400 bg-blue-400/10 border-blue-400/20' },
-      { name: 'Phòng 2', type: '2D', seats: 70, icon: <MonitorPlay size={14} />, color: 'text-zinc-400 bg-zinc-400/10 border-zinc-400/20' },
-    ],
-    facilities: ['Bắp rang bơ Nova', 'Ghế VIP', 'Bãi xe tự quản', 'WiFi tốc độ cao', 'Khu mua sắm lân cận'],
-    badge: 'Premium',
-    badgeColor: 'bg-blue-600 text-white',
-    image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 3,
-    name: 'Nova Cinema Đà Nẵng',
-    slug: 'danang',
-    city: 'Đà Nẵng',
-    address: '789 Nguyễn Văn Linh, Phường Thạc Gián, Quận Thanh Khê, Đà Nẵng',
-    phone: '1900 9292',
-    hotline: '1900 9292',
-    mapEmbed:
-      'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3833.8!2d108.211!3d16.0471!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTbCsDAyJzQ5LjYiTiAxMDjCsDEyJzM5LjYiRQ!5e0!3m2!1sen!2s!4v0',
-    hours: [
-      { day: 'Thứ 2 – Thứ 6', time: '09:00 – 22:30' },
-      { day: 'Thứ 7 – Chủ Nhật', time: '08:30 – 23:00' },
-      { day: 'Lễ & Tết', time: '08:00 – 23:30' },
-    ],
-    rooms: [
-      { name: 'Phòng 1', type: '2D', seats: 60, icon: <MonitorPlay size={14} />, color: 'text-zinc-400 bg-zinc-400/10 border-zinc-400/20' },
-      { name: 'Phòng 2', type: '3D', seats: 80, icon: <Tv2 size={14} />, color: 'text-blue-400 bg-blue-400/10 border-blue-400/20' },
-    ],
-    facilities: ['Bắp rang bơ Nova', 'Ghế tiêu chuẩn & VIP', 'Bãi xe miễn phí', 'View biển tuyệt đẹp', 'Khu vui chơi trẻ em'],
-    badge: 'Biển',
-    badgeColor: 'bg-emerald-600 text-white',
-    image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=80',
-  },
 ];
 
-const cityList = ['Tất cả', 'Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng'];
 
 // ─── SubComponents ────────────────────────────────────────────────────────────
 const RoomBadge = ({ room }) => (
@@ -209,11 +164,6 @@ const TheaterCard = ({ theater }) => {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 const TheatersPage = () => {
-  const [activeCity, setActiveCity] = useState('Tất cả');
-
-  const filtered = activeCity === 'Tất cả'
-    ? theaters
-    : theaters.filter((t) => t.city === activeCity);
 
   const totalSeats = theaters.flatMap((t) => t.rooms).reduce((a, r) => a + r.seats, 0);
 
@@ -225,13 +175,13 @@ const TheatersPage = () => {
         <div className="relative z-10 space-y-3">
           <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 text-zinc-300 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest">
             <MapPin size={12} />
-            Hệ thống rạp chiếu phim
+            Rạp chiếu phim
           </div>
           <h1 className="text-3xl md:text-5xl font-black text-white leading-tight">
             Rạp <span className="text-brand">Nova Cinema</span>
           </h1>
           <p className="text-zinc-400 max-w-lg mx-auto text-sm leading-relaxed">
-            Hệ thống rạp chiếu phim hiện đại trên toàn quốc với màn hình IMAX, 4DX và trải nghiệm âm thanh đỉnh cao.
+            Rạp chiếu phim hiện đại với màn hình IMAX, 3D và trải nghiệm âm thanh đỉnh cao.
           </p>
         </div>
       </div>
@@ -251,41 +201,16 @@ const TheatersPage = () => {
         ))}
       </div>
 
-      {/* Filter by city */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <span className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">Lọc theo thành phố:</span>
-        {cityList.map((city) => (
-          <button
-            key={city}
-            onClick={() => setActiveCity(city)}
-            className={`
-              text-xs font-bold px-4 py-2 rounded-xl border transition-all duration-200
-              ${activeCity === city
-                ? 'bg-brand border-brand text-white shadow-lg shadow-brand/20'
-                : 'bg-dark-card border-dark-border text-zinc-400 hover:text-white hover:border-brand/40'}
-            `}
-          >
-            {city}
-          </button>
-        ))}
-      </div>
 
       {/* Theater Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filtered.map((theater) => (
+      <div className="grid grid-cols-1 max-w-2xl mx-auto gap-6">
+        {theaters.map((theater) => (
           <TheaterCard key={theater.id} theater={theater} />
         ))}
       </div>
-
-      {filtered.length === 0 && (
-        <div className="text-center py-20 text-zinc-500">
-          <MapPin size={40} className="mx-auto mb-4 opacity-30" />
-          <p className="font-semibold">Chưa có rạp tại thành phố này</p>
-          <p className="text-xs mt-1">Chúng tôi đang mở rộng hệ thống!</p>
-        </div>
-      )}
     </div>
   );
 };
+
 
 export default TheatersPage;

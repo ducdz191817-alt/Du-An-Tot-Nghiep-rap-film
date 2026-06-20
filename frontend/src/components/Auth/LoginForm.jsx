@@ -12,13 +12,13 @@ export const LoginForm = ({ onSuccess }) => {
   const validate = () => {
     const errors = {};
     if (!formData.email) {
-      errors.email = 'Email là bắt buộc';
+      errors.email = 'Vui lòng điền địa chỉ email';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       errors.email = 'Vui lòng cung cấp một email hợp lệ';
     }
 
     if (!formData.password) {
-      errors.password = 'Mật khẩu là bắt buộc';
+      errors.password = 'Vui lòng điền mật khẩu';
     } else if (formData.password.length < 6) {
       errors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
     }
@@ -47,7 +47,7 @@ export const LoginForm = ({ onSuccess }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
       {error && (
         <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm text-center font-medium">
           {error}

@@ -32,6 +32,27 @@ export const BookingSummary = ({
     month: 'short',
   });
 
+  const formatSeatCodes = (seats) => {
+    return seats.map(seatCode => {
+      const match = seatCode.match(/^([A-Z]+)(\d+)$/);
+      if (match) {
+        const row = match[1];
+        const num = parseInt(match[2], 10);
+        
+        const capacity = room.capacity || 0;
+        const cols = capacity <= 30 ? 6 : capacity <= 60 ? 10 : 12;
+        const rowCount = Math.ceil(capacity / cols);
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const lastRowLetter = rowCount > 0 ? alphabet[rowCount - 1] : '';
+
+        if (row === lastRowLetter || room.type === 'GOLDCLASS') {
+          return `${row}${num}-${row}${num + 1}`;
+        }
+      }
+      return seatCode;
+    });
+  };
+
   return (
     <div className="bg-dark-card border border-dark-border p-6 rounded-3xl space-y-6 shadow-xl sticky top-24">
       {/* Movie Details Invoice Header */}
@@ -55,7 +76,7 @@ export const BookingSummary = ({
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5 text-zinc-300">
               <Ticket size={14} className="text-brand" />
-              <span>Ghế: {selectedSeats.join(', ')}</span>
+              <span>Ghế: {formatSeatCodes(selectedSeats).join(', ')}</span>
             </div>
             <div className="flex justify-between pl-5 text-zinc-500">
               <span>{selectedSeats.length} Vé</span>

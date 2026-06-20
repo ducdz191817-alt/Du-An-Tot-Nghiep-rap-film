@@ -19,6 +19,7 @@ import AdminPage from './pages/AdminPage';
 import PromotionsPage from './pages/PromotionsPage';
 import TheatersPage from './pages/TheatersPage';
 import AboutPage from './pages/AboutPage';
+import VNPayReturnPage from './pages/VNPayReturnPage';
 
 // Layout wrapper for public pages (with Header + Footer)
 const PublicLayout = ({ children }) => (
@@ -52,6 +53,7 @@ function App() {
             <Route path="/promotions" element={<PublicLayout><PromotionsPage /></PublicLayout>} />
             <Route path="/theaters" element={<PublicLayout><TheatersPage /></PublicLayout>} />
             <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
+            <Route path="/vnpay-return" element={<PublicLayout><VNPayReturnPage /></PublicLayout>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>

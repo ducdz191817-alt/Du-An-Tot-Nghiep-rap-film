@@ -46,6 +46,31 @@ export const BookingPage = () => {
       try {
         // 1. Lấy thông tin chi tiết ghế của suất chiếu
         const stResult = await bookingService.getShowtimeById(showtimeId);
+
+        // Check age limit here
+        const movie = stResult.showtime?.movie;
+        if (movie && user) {
+          const userAge = user.age || 0;
+          const getMovieAgeLimit = (r) => {
+            if (!r) return 0;
+            if (r === 'P') return 0;
+            const match = r.match(/\d+/);
+            return match ? parseInt(match[0], 10) : 0;
+          };
+          const requiredAge = getMovieAgeLimit(movie.rating);
+          if (userAge < requiredAge) {
+            setAgeWarning({
+              isOpen: true,
+              movieTitle: movie.title,
+              requiredAge,
+              userAge,
+              movieId: movie._id,
+            });
+            setLoading(false);
+            return;
+          }
+        }
+
         selectShowtime(stResult.showtime);
         setSeatsList(stResult.seats || []);
 
@@ -143,6 +168,36 @@ export const BookingPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      {/* Modal Cảnh Báo Độ Tuổi Cho Booking */}
+      <Modal
+        isOpen={ageWarning.isOpen}
+        onClose={() => navigate(`/movies/${ageWarning.movieId}`)}
+        title="Thông báo: Giới hạn độ tuổi"
+        size="sm"
+      >
+        <div className="flex flex-col items-center text-center space-y-4 py-4">
+          <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)] animate-pulse">
+            <ShieldAlert size={36} />
+          </div>
+          <div className="space-y-2">
+            <h4 className="font-extrabold text-white text-base">Bạn chưa đủ tuổi xem phim</h4>
+            <p className="text-xs text-zinc-400 leading-relaxed font-semibold">
+              Phim <span className="text-zinc-200 font-bold">"{ageWarning.movieTitle}"</span> yêu cầu độ tuổi tối thiểu từ <span className="text-red-400 font-bold">{ageWarning.requiredAge} tuổi</span> trở lên.
+            </p>
+            <p className="text-[11px] text-zinc-500 font-medium">
+              Số tuổi tài khoản hiện tại của bạn: <span className="text-zinc-300 font-bold">{ageWarning.userAge} tuổi</span>.
+            </p>
+          </div>
+          <Button
+            onClick={() => navigate(`/movies/${ageWarning.movieId}`)}
+            variant="primary"
+            className="w-full py-2.5 rounded-xl font-bold mt-2"
+          >
+            Quay lại trang chi tiết phim
+          </Button>
+        </div>
+      </Modal>
+
       {/* Nút quay lại chi tiết phim */}
       <button
         onClick={handleBackStep}

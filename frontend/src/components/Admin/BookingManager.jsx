@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Search, Trash2, Ticket, Calendar, MapPin, User, RefreshCw,
-  AlertCircle, ShoppingBag, Info, X, Eye, CreditCard, Clock,
+  Search, Ticket, Calendar, MapPin, User, RefreshCw,
+  AlertCircle, ShoppingBag, X, Eye, CreditCard, Clock,
   Film, Building2, DoorOpen, Armchair, Popcorn, Receipt, CheckCircle2,
   Hourglass, Undo2,
 } from 'lucide-react';
@@ -13,8 +13,6 @@ export const BookingManager = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
   const [selectedBooking, setSelectedBooking] = useState(null); // Chi tiết hóa đơn
 
@@ -35,23 +33,6 @@ export const BookingManager = () => {
   useEffect(() => {
     fetchBookings();
   }, []);
-
-  const handleDelete = async (id) => {
-    setDeleting(true);
-    try {
-      await adminService.deleteBooking(id);
-      setMessage({ text: 'Xóa vé đặt và giải phóng ghế thành công!', type: 'success' });
-      setConfirmDeleteId(null);
-      setSelectedBooking(null);
-      fetchBookings();
-    } catch (err) {
-      console.error(err);
-      setMessage({ text: err.message || 'Lỗi khi xóa vé đặt.', type: 'error' });
-    } finally {
-      setDeleting(false);
-      setTimeout(() => setMessage({ text: '', type: '' }), 4000);
-    }
-  };
 
   const filteredBookings = bookings.filter((b) => {
     const showtime = b.showtime || {};
@@ -263,20 +244,13 @@ export const BookingManager = () => {
 
                       {/* Actions */}
                       <td className="py-4 pr-6 text-center">
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex items-center justify-center">
                           <button
                             onClick={(e) => { e.stopPropagation(); setSelectedBooking(b); }}
                             className="p-2 bg-zinc-800/60 hover:bg-zinc-700/60 border border-zinc-700/40 hover:border-zinc-600/60 text-zinc-400 hover:text-white rounded-xl transition-all duration-300 active:scale-95 inline-flex items-center justify-center"
                             title="Xem chi tiết"
                           >
                             <Eye size={14} />
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(b._id); }}
-                            className="p-2 bg-brand/10 hover:bg-brand/20 border border-brand/20 hover:border-brand/40 text-brand rounded-xl transition-all duration-300 active:scale-95 inline-flex items-center justify-center"
-                            title="Xóa vé này"
-                          >
-                            <Trash2 size={14} />
                           </button>
                         </div>
                       </td>
@@ -470,13 +444,7 @@ export const BookingManager = () => {
               </div>
 
               {/* Modal Footer */}
-              <div className="px-6 py-4 border-t border-dark-border flex items-center justify-between gap-3 bg-[#0a0a0c]/40">
-                <button
-                  onClick={() => { setConfirmDeleteId(b._id); setSelectedBooking(null); }}
-                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-brand hover:text-white bg-brand/10 hover:bg-brand/20 border border-brand/20 hover:border-brand/40 rounded-xl transition-all active:scale-95"
-                >
-                  <Trash2 size={13} /> Xóa hóa đơn này
-                </button>
+              <div className="px-6 py-4 border-t border-dark-border flex justify-end gap-3 bg-[#0a0a0c]/40">
                 <button
                   onClick={() => setSelectedBooking(null)}
                   className="px-5 py-2 text-xs font-bold text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl transition-all active:scale-95"
@@ -488,48 +456,6 @@ export const BookingManager = () => {
           </div>
         );
       })()}
-
-      {/* Delete Confirmation Modal */}
-      {confirmDeleteId && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-dark-card border border-dark-border rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-6">
-            <div className="flex gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center text-brand shrink-0">
-                <Trash2 size={24} />
-              </div>
-              <div className="space-y-2">
-                <h4 className="font-black text-white text-base">Xác nhận xóa đặt vé?</h4>
-                <p className="text-xs text-zinc-400 leading-relaxed">
-                  Hành động này sẽ xóa vĩnh viễn giao dịch đặt vé mã{' '}
-                  <span className="font-mono text-brand font-bold">{confirmDeleteId.slice(-8).toUpperCase()}</span>.
-                </p>
-                <div className="bg-zinc-900 border border-dark-border p-2.5 rounded-xl flex items-start gap-2 mt-2">
-                  <Info size={14} className="text-zinc-500 shrink-0 mt-0.5" />
-                  <span className="text-[10px] text-zinc-500 leading-normal">
-                    Các ghế tương ứng sẽ được giải phóng lập tức và các bản ghi Thanh toán liên quan cũng sẽ bị gỡ bỏ.
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                disabled={deleting}
-                onClick={() => setConfirmDeleteId(null)}
-                className="px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white bg-transparent hover:bg-zinc-800 rounded-xl transition-colors"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                disabled={deleting}
-                onClick={() => handleDelete(confirmDeleteId)}
-                className="px-4 py-2 text-xs font-bold text-white bg-brand hover:bg-brand-hover rounded-xl flex items-center gap-1.5 transition-all shadow-[0_4px_14px_rgba(229,9,20,0.3)] disabled:opacity-50"
-              >
-                {deleting ? <><RefreshCw size={13} className="animate-spin" /> Đang xóa...</> : 'Đồng ý xóa'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -7,20 +7,20 @@ export const SeatLegend = () => {
     <div className="flex flex-wrap items-center justify-center gap-6 bg-dark-card border border-dark-border px-6 py-3.5 rounded-2xl max-w-2xl mx-auto text-xs font-semibold text-zinc-400 select-none">
       {/* 1. Ghế Thường */}
       <div className="flex items-center space-x-2">
-        <span className="w-5 h-5 rounded bg-zinc-700 border border-zinc-600 block" />
+        <span className="w-5 h-5 rounded bg-[#2a2a35]/60 border border-zinc-700/50 block" />
         <span>Ghế thường</span>
       </div>
 
       {/* 2. Ghế VIP */}
       <div className="flex items-center space-x-2">
-        <span className="w-5 h-5 rounded bg-amber-600 border border-amber-400 block" />
-        <span>Ghế VIP (+20k)</span>
+        <span className="w-5 h-5 rounded bg-[#6366f1]/20 border border-[#6366f1]/30 block" />
+        <span>Ghế VIP (+5k)</span>
       </div>
 
       {/* 3. Ghế Đôi (Sweetbox) */}
       <div className="flex items-center space-x-2">
-        <span className="w-9 h-5 rounded bg-pink-600 border border-pink-400 block" />
-        <span>Ghế Đôi Sweetbox (+40k)</span>
+        <span className="w-9 h-5 rounded bg-[#ec4899]/20 border border-[#ec4899]/30 block" />
+        <span>Ghế Đôi Sweetbox (+20k)</span>
       </div>
 
       {/* 4. Ghế Đang Được Chọn */}

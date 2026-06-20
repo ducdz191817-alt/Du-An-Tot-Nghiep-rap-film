@@ -258,7 +258,7 @@ const deleteConcession = async (req, res, next) => {
 };
 
 // ==========================================
-// 3. Showtime Management
+// 3. Showtime Management (Checked for overlap conflicts)
 // ==========================================
 const createShowtime = async (req, res, next) => {
   try {
@@ -275,18 +275,18 @@ const createShowtime = async (req, res, next) => {
     const end = new Date(start.getTime() + movie.duration * 60000 + 20 * 60000); // add 20 mins break time
 
     // Prevent showtime overlapping in the same room
+    // Sử dụng strict inequality: kự này bắt đầu trước khi kự kia kết thúc AND kự này kết thúc sau khi kự kia bắt đầu
     const overlappingShowtime = await Showtime.findOne({
       room: roomId,
-      $or: [
-        { startTime: { $gte: start, $lt: end } },
-        { endTime: { $gt: start, $lte: end } },
-        { startTime: { $lte: start }, endTime: { $gte: end } },
-      ],
+      startTime: { $lt: end },
+      endTime: { $gt: start },
     });
 
     if (overlappingShowtime) {
       res.status(400);
-      throw new Error(`Overlapping showtime! This room is occupied from ${overlappingShowtime.startTime.toLocaleTimeString()} to ${overlappingShowtime.endTime.toLocaleTimeString()}.`);
+      const existStart = overlappingShowtime.startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      const existEnd = overlappingShowtime.endTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      throw new Error(`⚠️ Lịch chiếu bị trùng! Phòng này đã có suất chiếu "${overlappingShowtime.movie ? (await Movie.findById(overlappingShowtime.movie).select('title'))?.title || 'Khác' : 'Khác'}" từ ${existStart} đến ${existEnd}. Vui lòng chọn giờ chiếu khác.`);
     }
 
     const showtime = await Showtime.create({
@@ -307,14 +307,55 @@ const createShowtime = async (req, res, next) => {
 
 const updateShowtime = async (req, res, next) => {
   try {
-    const showtime = await Showtime.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
-    if (!showtime) {
+    const showtimeId = req.params.id;
+    const existingShowtime = await Showtime.findById(showtimeId);
+    if (!existingShowtime) {
       res.status(404);
       throw new Error('Showtime not found');
     }
+
+    // Merge updates with existing data to calculate new times/room
+    const movieId = req.body.movieId || req.body.movie || existingShowtime.movie;
+    const roomId = req.body.roomId || req.body.room || existingShowtime.room;
+    const startTimeStr = req.body.startTime || existingShowtime.startTime;
+
+    const movie = await Movie.findById(movieId);
+    if (!movie) {
+      res.status(404);
+      throw new Error('Movie not found');
+    }
+
+    const start = new Date(startTimeStr);
+    const end = new Date(start.getTime() + movie.duration * 60000 + 20 * 60000); // add 20 mins break time
+
+    // Prevent showtime overlapping in the same room, excluding current showtime
+    const overlappingShowtime = await Showtime.findOne({
+      _id: { $ne: showtimeId },
+      room: roomId,
+      startTime: { $lt: end },
+      endTime: { $gt: start },
+    });
+
+    if (overlappingShowtime) {
+      res.status(400);
+      const existStart = overlappingShowtime.startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      const existEnd = overlappingShowtime.endTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      const existMovie = await Movie.findById(overlappingShowtime.movie).select('title');
+      throw new Error(`⚠️ Lịch chiếu bị trùng! Phòng này đã có suất chiếu "${existMovie?.title || 'Khác'}" từ ${existStart} đến ${existEnd}. Vui lòng chọn giờ chiếu khác.`);
+    }
+
+    const updateData = {
+      ...req.body,
+      endTime: end,
+    };
+    if (req.body.movieId) updateData.movie = req.body.movieId;
+    if (req.body.roomId) updateData.room = req.body.roomId;
+
+    const showtime = await Showtime.findByIdAndUpdate(showtimeId, updateData, {
+      new: true,
+      runValidators: true,
+    });
+
     res.json({ success: true, data: showtime });
   } catch (error) {
     next(error);

@@ -229,11 +229,15 @@ const createBooking = async (req, res, next) => {
       </div>
     `;
 
-    await sendEmail({
-      to: req.user.email,
-      subject: `Movie Ticket Confirmation: ${showtime.movie.title}`,
-      html: emailContentHtml,
-    });
+    try {
+      await sendEmail({
+        to: req.user.email,
+        subject: `Movie Ticket Confirmation: ${showtime.movie.title}`,
+        html: emailContentHtml,
+      });
+    } catch (emailErr) {
+      console.error('Email sending failed (non-fatal):', emailErr.message);
+    }
 
     res.status(201).json({
       success: true,

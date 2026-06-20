@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Film, CalendarDays, Compass, Star } from 'lucide-react';
+import { Film, CalendarDays, Compass, Star, ArrowUp } from 'lucide-react';
 import { fetchMovies } from '../store/movieSlice';
 import MovieList from '../components/Movie/MovieList';
 import MovieFilter from '../components/Movie/MovieFilter';
@@ -14,16 +14,38 @@ export const HomePage = () => {
   const dispatch = useDispatch();
   const { t, language } = useLanguage();
   const { movies, loading, error } = useSelector((state) => state.movie);
+  
   const [filters, setFilters] = useState({
     status: 'now-showing',
-    genre: '',
     search: '',
+    genres: [],
+    rating: '',
+    sortBy: 'newest',
   });
+  
   const [bannerImageError, setBannerImageError] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Scroll listener
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 400) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   useEffect(() => {
-    dispatch(fetchMovies(filters));
-  }, [dispatch, filters]);
+    dispatch(fetchMovies({ status: filters.status, search: filters.search }));
+  }, [dispatch, filters.status, filters.search]);
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
@@ -34,7 +56,6 @@ export const HomePage = () => {
   };
 
   const nowShowingMovies = movies.filter((m) => m.status === 'now-showing');
-  const comingSoonMovies = movies.filter((m) => m.status === 'coming-soon');
 
   // Phim nổi bật trên banner (phim đầu tiên hoặc tùy chỉnh)
   const featured = nowShowingMovies[0] || movies[0];
@@ -47,8 +68,84 @@ export const HomePage = () => {
     ? (language === 'en' ? (featured.descriptionEN || featured.description) : featured.description)
     : '';
 
+  // Perform filtering & sorting client-side for smooth instant response
+  const filteredAndSortedMovies = useMemo(() => {
+    if (!movies) return [];
+
+    let result = [...movies];
+
+    // 1. Multi-genre filter
+    if (filters.genres && filters.genres.length > 0) {
+      result = result.filter((movie) =>
+        filters.genres.some((genre) => movie.genre && movie.genre.includes(genre))
+      );
+    }
+
+    // 2. Rating filter
+    if (filters.rating) {
+      const minRating = parseFloat(filters.rating);
+      result = result.filter((movie) => movie.reviewsAverage >= minRating);
+    }
+
+    // 3. Sort logic
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const isMovieReleased = (movie) => {
+      if (!movie.releaseDate) return false;
+      const releaseDate = new Date(movie.releaseDate);
+      releaseDate.setHours(0, 0, 0, 0);
+      return releaseDate <= today;
+    };
+
+    result.sort((a, b) => {
+      if (filters.sortBy === 'newest') {
+        // Prioritize currently released movies, then sort by newest releaseDate.
+        // Upcoming movies go below, sorted by earliest releaseDate first.
+        const releasedA = isMovieReleased(a);
+        const releasedB = isMovieReleased(b);
+        
+        if (releasedA && !releasedB) return -1;
+        if (!releasedA && releasedB) return 1;
+        if (releasedA && releasedB) {
+          return new Date(b.releaseDate) - new Date(a.releaseDate);
+        }
+        return new Date(a.releaseDate) - new Date(b.releaseDate);
+      }
+
+      if (filters.sortBy === 'rating') {
+        if (b.reviewsAverage !== a.reviewsAverage) {
+          return (b.reviewsAverage || 0) - (a.reviewsAverage || 0);
+        }
+        return (b.reviewsCount || 0) - (a.reviewsCount || 0);
+      }
+
+      if (filters.sortBy === 'durationAsc') {
+        const durA = parseInt(a.duration) || 0;
+        const durB = parseInt(b.duration) || 0;
+        return durA - durB;
+      }
+
+      if (filters.sortBy === 'durationDesc') {
+        const durA = parseInt(a.duration) || 0;
+        const durB = parseInt(b.duration) || 0;
+        return durB - durA;
+      }
+
+      if (filters.sortBy === 'titleAZ') {
+        const titleA = language === 'en' ? (a.titleEN || a.title) : a.title;
+        const titleB = language === 'en' ? (b.titleEN || b.title) : b.title;
+        return (titleA || '').localeCompare(titleB || '', language);
+      }
+
+      return 0;
+    });
+
+    return result;
+  }, [movies, filters.genres, filters.rating, filters.sortBy, language]);
+
   return (
-    <div className="space-y-12 pb-16">
+    <div className="space-y-12 pb-16 relative">
       {/* 1. Banner giới thiệu phim nổi bật */}
       {featured && (
         <div className="relative w-full aspect-[21/9] min-h-[350px] md:min-h-[500px] rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-gradient-to-br from-zinc-900 to-black border border-dark-border/50 group">
@@ -64,7 +161,7 @@ export const HomePage = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-dark-deep via-dark-deep/50 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r from-dark-deep via-dark-deep/40 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-tr from-brand/10 to-transparent opacity-50 mix-blend-overlay" />
-
+ 
           {/* Banner Content overlay */}
           <div className="absolute inset-0 flex flex-col justify-center px-6 sm:px-12 md:px-16 max-w-2xl space-y-4">
             <span className="text-[10px] font-black bg-brand px-3 py-1 rounded text-white tracking-widest uppercase w-max select-none shadow-md">
@@ -149,9 +246,20 @@ export const HomePage = () => {
             {t('home.loadingError')}: {error}
           </div>
         ) : (
-          <MovieList movies={movies} />
+          <MovieList movies={filteredAndSortedMovies} />
         )}
       </div>
+
+      {/* Floating Scroll to top button */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 p-3 rounded-full bg-brand text-white shadow-[0_4px_20px_rgba(229,9,20,0.4)] hover:bg-brand-light transition-all duration-300 hover:scale-110 z-50 cursor-pointer active:scale-95 animate-in fade-in zoom-in-50 duration-200"
+          aria-label="Scroll to top"
+        >
+          <ArrowUp size={20} strokeWidth={2.5} />
+        </button>
+      )}
     </div>
   );
 };

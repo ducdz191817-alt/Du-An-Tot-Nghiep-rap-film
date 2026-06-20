@@ -9,8 +9,8 @@ export const useAuth = () => {
     return dispatch(loginAction({ email, password })).unwrap();
   };
 
-  const register = async (username, email, password, phone) => {
-    return dispatch(registerAction({ username, email, password, phone })).unwrap();
+  const register = async (username, email, password, phone, age) => {
+    return dispatch(registerAction({ username, email, password, phone, age })).unwrap();
   };
 
   const logout = () => {

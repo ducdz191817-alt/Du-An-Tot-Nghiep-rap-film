@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Play, Calendar } from 'lucide-react';
+import { Play, Calendar, Star } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { getPosterUrl } from '../../utils/constants';
 
@@ -70,6 +70,12 @@ export const MovieCard = ({ movie }) => {
             <Calendar size={13} />
             {new Date(movie.releaseDate).getFullYear()}
           </span>
+          {movie.reviewsAverage > 0 && (
+            <span className="flex items-center gap-1 text-amber-400 font-black" title={`${movie.reviewsCount} ${t('review.reviews')}`}>
+              <Star size={13} className="fill-amber-400 text-amber-400" />
+              {movie.reviewsAverage.toFixed(1)}
+            </span>
+          )}
           <span className="text-zinc-400 font-bold">
             {movie.duration} {language === 'vi' ? 'phút' : 'min'}
           </span>

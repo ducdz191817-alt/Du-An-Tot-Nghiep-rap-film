@@ -37,7 +37,7 @@ const seedData = async () => {
   try {
     console.log('🔌 Connecting to MongoDB...');
     await mongoose.connect(
-      process.env.MONGODB_URI || 'mongodb://localhost:27017/movie-ticket-booking'
+      process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/movie-ticket-booking'
     );
     console.log('✅ Connected!\n');
 
@@ -68,6 +68,7 @@ const seedData = async () => {
         password: hashedPassword,
         role: 'admin',
         phone: '0901111111',
+        age: 30,
       },
       {
         username: 'Staff HCM',
@@ -75,6 +76,7 @@ const seedData = async () => {
         password: hashedPassword,
         role: 'user',
         phone: '0902222222',
+        age: 28,
       },
       {
         username: 'Nguyễn Văn An',
@@ -82,6 +84,7 @@ const seedData = async () => {
         password: hashedPassword,
         role: 'user',
         phone: '0903333333',
+        age: 15,
       },
       {
         username: 'Trần Thị Bình',
@@ -89,6 +92,7 @@ const seedData = async () => {
         password: hashedPassword,
         role: 'user',
         phone: '0904444444',
+        age: 22,
       },
       {
         username: 'Lê Hoàng Cường',
@@ -96,6 +100,7 @@ const seedData = async () => {
         password: hashedPassword,
         role: 'user',
         phone: '0905555555',
+        age: 10,
       },
       {
         username: 'Phạm Thị Dung',
@@ -103,6 +108,7 @@ const seedData = async () => {
         password: hashedPassword,
         role: 'user',
         phone: '0906666666',
+        age: 17,
       },
       {
         username: 'Võ Minh Đức',
@@ -110,6 +116,7 @@ const seedData = async () => {
         password: hashedPassword,
         role: 'user',
         phone: '0907777777',
+        age: 12,
       },
       {
         username: 'Đặng Quỳnh Như',
@@ -117,6 +124,7 @@ const seedData = async () => {
         password: hashedPassword,
         role: 'user',
         phone: '0908888888',
+        age: 19,
       },
     ]);
     console.log(`   ✔ Created ${users.length} users`);
@@ -700,32 +708,19 @@ const seedData = async () => {
     console.log('\n🏢 Creating Theaters...');
     const theaters = await Theater.insertMany([
       {
-        name: 'Nova Cinema Hồ Chí Minh',
-        address: '123 Lê Lợi, Phường Bến Thành, Quận 1',
-        city: 'Hồ Chí Minh',
-        phone: '19009090',
-      },
-      {
         name: 'Nova Cinema Hà Nội',
-        address: '456 Tràng Tiền, Phường Tràng Tiền, Quận Hoàn Kiếm',
+        address: '123 Hoàng Quốc Việt, Phường Cầu Giấy, Quận Cầu Giấy, Hà Nội',
         city: 'Hà Nội',
-        phone: '19009191',
-      },
-      {
-        name: 'Nova Cinema Đà Nẵng',
-        address: '789 Nguyễn Văn Linh, Phường Thạc Gián, Quận Thanh Khê',
-        city: 'Đà Nẵng',
-        phone: '19009292',
+        phone: '1900 9090',
       },
     ]);
     console.log(`   ✔ Created ${theaters.length} theaters`);
 
-    const [theaterHCM, theaterHN, theaterDN] = theaters;
+    const theaterHCM = theaters[0];
 
     // ── 5. Rooms ──────────────────────────────────────────────────────────────
     console.log('\n🚪 Creating Rooms...');
     const rooms = await Room.insertMany([
-      // HCM Rooms
       {
         name: 'Phòng 1 - IMAX',
         theater: theaterHCM._id,
@@ -750,29 +745,27 @@ const seedData = async () => {
         type: 'GOLDCLASS',
         capacity: 30,
       },
-      // Hanoi Rooms
       {
-        name: 'Phòng 1 - 3D',
-        theater: theaterHN._id,
+        name: 'Phòng 5 - 3D',
+        theater: theaterHCM._id,
         type: '3D',
         capacity: 100,
       },
       {
-        name: 'Phòng 2 - 2D',
-        theater: theaterHN._id,
+        name: 'Phòng 6 - 2D',
+        theater: theaterHCM._id,
         type: '2D',
         capacity: 70,
       },
-      // Da Nang Rooms
       {
-        name: 'Phòng 1 - 2D',
-        theater: theaterDN._id,
+        name: 'Phòng 7 - 2D',
+        theater: theaterHCM._id,
         type: '2D',
         capacity: 60,
       },
       {
-        name: 'Phòng 2 - 3D',
-        theater: theaterDN._id,
+        name: 'Phòng 8 - 3D',
+        theater: theaterHCM._id,
         type: '3D',
         capacity: 80,
       },
@@ -790,23 +783,33 @@ const seedData = async () => {
       const usedRows = seatRows.slice(0, rowCount);
 
       for (const row of usedRows) {
-        for (let num = 1; num <= cols; num++) {
-          let type = 'standard';
-          const rowIndex = usedRows.indexOf(row);
-          if (room.type === 'GOLDCLASS') {
-            type = 'couple';
-          } else if (rowIndex >= usedRows.length - 2) {
-            type = 'vip';
-          }
+        const rowIndex = usedRows.indexOf(row);
+        const isLastRow = rowIndex === usedRows.length - 1;
 
-          allSeatsData.push({
-            room: room._id,
-            row,
-            number: num,
-            type,
-            price:
-              type === 'couple' ? 350000 : type === 'vip' ? 120000 : 90000,
-          });
+        if (room.type === 'GOLDCLASS' || (room.type !== 'GOLDCLASS' && isLastRow)) {
+          // Ghế đôi: ghép 2 ghế thành 1 (chỉ tạo các số lẻ 1, 3, 5, 7...)
+          for (let num = 1; num <= cols; num += 2) {
+            allSeatsData.push({
+              room: room._id,
+              row,
+              number: num,
+              type: 'couple',
+              price: 120000, // Phụ thu ghế đôi (+120k)
+            });
+          }
+        } else {
+          // Ghế thường (A, B) hoặc VIP (C trở lên)
+          const isStandard = rowIndex < 2; // Chỉ hàng A và B là ghế thường
+
+          for (let num = 1; num <= cols; num++) {
+            allSeatsData.push({
+              room: room._id,
+              row,
+              number: num,
+              type: isStandard ? 'standard' : 'vip',
+              price: isStandard ? 0 : 5000,
+            });
+          }
         }
       }
     }
@@ -816,29 +819,47 @@ const seedData = async () => {
 
     // ── 7. Showtimes ──────────────────────────────────────────────────────────
     console.log('\n⏰ Creating Showtimes...');
+    // Các khung giờ cách nhau đủ để không trùng (mỗi slot cách nhau ~3h)
     const showtimeSlots = [
-      { hour: 8, minute: 45 },
-      { hour: 11, minute: 30 },
-      { hour: 12, minute: 0 },
-      { hour: 13, minute: 30 },
-      { hour: 15, minute: 30 },
-      { hour: 17, minute: 30 },
-      { hour: 19, minute: 30 },
-      { hour: 20, minute: 45 },
-      { hour: 22, minute: 0 },
+      { hour: 8, minute: 0 },
+      { hour: 11, minute: 0 },
+      { hour: 14, minute: 0 },
+      { hour: 17, minute: 0 },
+      { hour: 20, minute: 0 },
     ];
 
     const showtimesData = [];
-    const prices = { IMAX: 180000, '3D': 120000, '2D': 90000, GOLDCLASS: 300000 };
+    const prices = { IMAX: 180000, '3D': 90000, '2D': 80000, GOLDCLASS: 300000 };
+
+    // roomSchedule: { "roomId_dateStr": [ {start, end} ] } - track lịch đã dùng
+    const roomSchedule = {};
+
+    const hasConflict = (roomId, dateStr, newStart, newEnd) => {
+      const key = `${roomId}_${dateStr}`;
+      if (!roomSchedule[key]) return false;
+      return roomSchedule[key].some(({ start, end }) =>
+        newStart < end && newEnd > start
+      );
+    };
+
+    const markUsed = (roomId, dateStr, newStart, newEnd) => {
+      const key = `${roomId}_${dateStr}`;
+      if (!roomSchedule[key]) roomSchedule[key] = [];
+      roomSchedule[key].push({ start: newStart, end: newEnd });
+    };
 
     // Generate showtimes for the next 7 days + past 3 days
     for (let dayOffset = -3; dayOffset <= 7; dayOffset++) {
       const baseDate = new Date();
       baseDate.setDate(baseDate.getDate() + dayOffset);
+      const dateStr = baseDate.toISOString().slice(0, 10);
 
-      for (const movie of nowShowingMovies) {
+      // Shuffle movies để phân phối đều hơn
+      const shuffledMovies = [...nowShowingMovies].sort(() => Math.random() - 0.5);
+
+      for (const movie of shuffledMovies) {
         // Pick 2 random rooms per movie per day
-        const selectedRooms = rooms
+        const selectedRooms = [...rooms]
           .sort(() => Math.random() - 0.5)
           .slice(0, 2);
 
@@ -847,14 +868,25 @@ const seedData = async () => {
             (t) => t._id.toString() === room.theater.toString()
           );
 
-          // Use all time slots
-          const selectedSlots = showtimeSlots;
+          // Shuffle slots để phân phối đều hơn
+          const shuffledSlots = [...showtimeSlots].sort(() => Math.random() - 0.5);
 
-          for (const slot of selectedSlots) {
+          // Mỗi phim chỉ chiếu 1-2 suất tại mỗi phòng trong ngày
+          let slotsAdded = 0;
+          for (const slot of shuffledSlots) {
+            if (slotsAdded >= 2) break; // Tối đa 2 suất/phim/phòng/ngày
+
             const startTime = new Date(baseDate);
             startTime.setHours(slot.hour, slot.minute, 0, 0);
-            const endTime = addMinutes(startTime, movie.duration + 15);
+            // endTime bao gồm 20 phút dọn phòng
+            const endTime = addMinutes(startTime, movie.duration + 20);
 
+            // Bỏ qua nếu trùng lịch phòng
+            if (hasConflict(room._id.toString(), dateStr, startTime, endTime)) {
+              continue;
+            }
+
+            markUsed(room._id.toString(), dateStr, startTime, endTime);
             showtimesData.push({
               movie: movie._id,
               theater: theater._id,
@@ -865,6 +897,7 @@ const seedData = async () => {
               format: room.type,
               bookedSeats: [],
             });
+            slotsAdded++;
           }
         }
       }

@@ -8,8 +8,8 @@ const login = async (email, password) => {
   return response.data;
 };
 
-const register = async (username, email, password, phone) => {
-  const response = await api.post('/auth/register', { username, email, password, phone });
+const register = async (username, email, password, phone, age) => {
+  const response = await api.post('/auth/register', { username, email, password, phone, age });
   if (response.success && response.data) {
     localStorage.setItem('userInfo', JSON.stringify(response.data));
   }

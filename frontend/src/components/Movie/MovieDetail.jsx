@@ -1,19 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Film, User, Clock, Calendar, Ticket, ChevronRight, Play } from 'lucide-react';
+import { Film, User, Clock, Calendar, Ticket, ChevronRight, Play, ShieldAlert } from 'lucide-react';
 import bookingService from '../../services/booking.service';
 import Button from '../common/Button';
 import { useLanguage } from '../../context/LanguageContext';
+import useAuth from '../../hooks/useAuth';
+import Modal from '../common/Modal';
 import ReviewSection from './ReviewSection';
 import { getPosterUrl, getEmbedUrl } from '../../utils/constants';
 
 export const MovieDetail = ({ movie }) => {
   const navigate = useNavigate();
   const { language, t } = useLanguage();
+  const { user } = useAuth();
+  const [ageWarning, setAgeWarning] = useState({ isOpen: false, movieTitle: '', requiredAge: 0, userAge: 0 });
   const [showtimes, setShowtimes] = useState([]);
   const [selectedDate, setSelectedDate] = useState('');
   const [loadingShowtimes, setLoadingShowtimes] = useState(false);
   const [trailerError, setTrailerError] = useState(false);
+  const [sortBy, setSortBy] = useState('earliest');
+  const [formatFilter, setFormatFilter] = useState('');
 
   // ── Lấy title / description / language theo ngôn ngữ trực tiếp từ DB ──────
   // Nếu phim có titleEN/descriptionEN thì dùng, không thì fallback về bản gốc.
@@ -71,21 +77,62 @@ export const MovieDetail = ({ movie }) => {
 
   const handleShowtimeClick = (showtimeId, isPastShowtime) => {
     if (isPastShowtime) {
-      alert('Suất chiếu này đã bắt đầu hoặc đã kết thúc. Vui lòng chọn suất chiếu khác.');
+      alert(t('showtime.alertPastShowtime'));
       return;
     }
+
+    if (user) {
+      const userAge = user.age || 0;
+      const getMovieAgeLimit = (r) => {
+        if (!r) return 0;
+        if (r === 'P') return 0;
+        const match = r.match(/\d+/);
+        return match ? parseInt(match[0], 10) : 0;
+      };
+      const requiredAge = getMovieAgeLimit(movie.rating);
+      if (userAge < requiredAge) {
+        setAgeWarning({
+          isOpen: true,
+          movieTitle: movie.title,
+          requiredAge,
+          userAge,
+        });
+        return;
+      }
+    }
+
     navigate(`/booking/${showtimeId}`);
   };
 
-  // Nhóm lịch chiếu theo Rạp
-  const groupedShowtimes = showtimes.reduce((acc, showtime) => {
-    const theaterName = showtime.theater?.name || 'Rạp không xác định';
-    if (!acc[theaterName]) {
-      acc[theaterName] = [];
+  // Lọc và sắp xếp showtimes client-side
+  const processedShowtimes = useMemo(() => {
+    if (!showtimes) return [];
+
+    let filtered = [...showtimes];
+    if (formatFilter) {
+      filtered = filtered.filter((s) => s.format === formatFilter);
     }
-    acc[theaterName].push(showtime);
-    return acc;
-  }, {});
+
+    filtered.sort((a, b) => {
+      const timeA = new Date(a.startTime).getTime();
+      const timeB = new Date(b.startTime).getTime();
+      return sortBy === 'earliest' ? timeA - timeB : timeB - timeA;
+    });
+
+    return filtered;
+  }, [showtimes, formatFilter, sortBy]);
+
+  // Nhóm lịch chiếu theo Rạp
+  const groupedShowtimes = useMemo(() => {
+    return processedShowtimes.reduce((acc, showtime) => {
+      const theaterName = showtime.theater?.name || 'Rạp không xác định';
+      if (!acc[theaterName]) {
+        acc[theaterName] = [];
+      }
+      acc[theaterName].push(showtime);
+      return acc;
+    }, {});
+  }, [processedShowtimes]);
 
   return (
     <div className="space-y-12">
@@ -113,6 +160,11 @@ export const MovieDetail = ({ movie }) => {
               <span className="text-xs font-black bg-white text-black px-3 py-1 rounded-md tracking-widest uppercase shadow-[0_0_15px_rgba(255,255,255,0.3)]">
                 {movie.rating}
               </span>
+              {movie.rating && (
+                <span className="text-red-400 font-extrabold text-xs bg-red-500/10 border border-red-500/20 px-3.5 py-1 rounded-full backdrop-blur-sm">
+                  {movie.rating === 'P' ? 'Mọi lứa tuổi (P)' : `Yêu cầu từ ${movie.rating.match(/\d+/)?.[0] || '0'} tuổi trở lên`}
+                </span>
+              )}
               <span className="text-zinc-400 font-semibold text-sm flex items-center gap-1.5 bg-white/5 px-3 py-1 rounded-full border border-white/5 backdrop-blur-sm">
                 <Clock size={14} className="text-brand" /> {movie.duration} {language === 'vi' ? 'phút' : 'min'}
               </span>
@@ -137,7 +189,7 @@ export const MovieDetail = ({ movie }) => {
             <p className="text-zinc-300 leading-relaxed text-sm md:text-base font-medium">
               {displayDescription}
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm pt-4 border-t border-white/5 mt-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 text-sm pt-4 border-t border-white/5 mt-4">
               <div className="space-y-1">
                 <p className="text-zinc-500 uppercase tracking-wider text-[10px] font-black">{t('movie.director')}</p>
                 <p className="text-zinc-200 font-medium">{movie.director || 'N/A'}</p>
@@ -145,6 +197,26 @@ export const MovieDetail = ({ movie }) => {
               <div className="space-y-1">
                 <p className="text-zinc-500 uppercase tracking-wider text-[10px] font-black">{t('movie.languageLabel')}</p>
                 <p className="text-zinc-200 font-medium">{displayLanguage}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-zinc-500 uppercase tracking-wider text-[10px] font-black">Thời lượng</p>
+                <p className="text-zinc-200 font-medium">{movie.duration} {language === 'vi' ? 'phút' : 'min'}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-zinc-500 uppercase tracking-wider text-[10px] font-black">Khởi chiếu</p>
+                <p className="text-zinc-200 font-medium">
+                  {new Date(movie.releaseDate).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-zinc-500 uppercase tracking-wider text-[10px] font-black">Quốc gia</p>
+                <p className="text-zinc-200 font-medium">{movie.country || 'Chưa cập nhật'}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-zinc-500 uppercase tracking-wider text-[10px] font-black">Giới hạn tuổi</p>
+                <p className="text-zinc-200 font-medium">
+                  {movie.rating === 'P' ? 'Mọi lứa tuổi' : `Từ ${movie.rating.match(/\d+/)?.[0] || '0'} tuổi trở lên`}
+                </p>
               </div>
             </div>
             {movie.cast && movie.cast.length > 0 && (
@@ -181,7 +253,7 @@ export const MovieDetail = ({ movie }) => {
       )}
 
       {/* 3. Bảng đặt vé theo lịch chiếu */}
-      {movie.status === 'now-showing' && (
+      {(movie.status === 'now-showing' || movie.status === 'preview') && (
         <div className="space-y-6 bg-dark-card/60 backdrop-blur-xl border border-white/10 p-6 md:p-10 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] mt-12 relative overflow-hidden">
           {/* Subtle glow in background */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand/5 blur-[80px] rounded-full pointer-events-none" />
@@ -215,6 +287,38 @@ export const MovieDetail = ({ movie }) => {
               })}
             </div>
           </div>
+
+          {/* Sub-row: Sort and Format Filter */}
+          {!loadingShowtimes && Object.keys(groupedShowtimes).length > 0 && (
+            <div className="flex flex-wrap items-center gap-6 py-4 border-b border-white/5 relative z-10">
+              {/* Sort selector */}
+              <div className="flex items-center gap-2.5">
+                <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">{t('showtime.sortBy')}:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white pl-3.5 pr-9 py-2 text-xs rounded-xl focus:border-brand/60 outline-none cursor-pointer transition-colors"
+                >
+                  <option value="earliest">{t('showtime.sort.earliest')}</option>
+                  <option value="latest">{t('showtime.sort.latest')}</option>
+                </select>
+              </div>
+
+              {/* Format selector */}
+              <div className="flex items-center gap-2.5">
+                <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">{t('showtime.format')}:</span>
+                <select
+                  value={formatFilter}
+                  onChange={(e) => setFormatFilter(e.target.value)}
+                  className="bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white pl-3.5 pr-9 py-2 text-xs rounded-xl focus:border-brand/60 outline-none cursor-pointer transition-colors"
+                >
+                  <option value="">{t('showtime.format.all')}</option>
+                  <option value="2D">2D</option>
+                  <option value="3D">3D</option>
+                </select>
+              </div>
+            </div>
+          )}
 
           {/* Danh sách lịch chiếu được nhóm theo rạp */}
           {loadingShowtimes ? (
@@ -267,7 +371,7 @@ export const MovieDetail = ({ movie }) => {
                           </div>
                           <div className="flex items-center gap-2">
                             {isPastShowtime ? (
-                              <span className="text-[10px] uppercase font-black tracking-wider text-red-400">Đã bắt đầu</span>
+                              <span className="text-[10px] uppercase font-black tracking-wider text-red-400">{t('showtime.started')}</span>
                             ) : (
                               <ChevronRight size={16} className="text-zinc-600 group-hover:text-brand transition-all" />
                             )}
@@ -285,6 +389,36 @@ export const MovieDetail = ({ movie }) => {
 
       {/* 4. Khu vực đánh giá / bình luận phim */}
       <ReviewSection movieId={movie._id} />
+
+      {/* Modal Cảnh Báo Độ Tuổi */}
+      <Modal
+        isOpen={ageWarning.isOpen}
+        onClose={() => setAgeWarning({ ...ageWarning, isOpen: false })}
+        title="Thông báo: Giới hạn độ tuổi"
+        size="sm"
+      >
+        <div className="flex flex-col items-center text-center space-y-4 py-4">
+          <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)] animate-pulse">
+            <ShieldAlert size={36} />
+          </div>
+          <div className="space-y-2">
+            <h4 className="font-extrabold text-white text-base">Bạn chưa đủ tuổi xem phim</h4>
+            <p className="text-xs text-zinc-400 leading-relaxed font-semibold">
+              Phim <span className="text-zinc-200 font-bold">"{ageWarning.movieTitle}"</span> yêu cầu độ tuổi tối thiểu từ <span className="text-red-400 font-bold">{ageWarning.requiredAge} tuổi</span> trở lên.
+            </p>
+            <p className="text-[11px] text-zinc-500 font-medium">
+              Số tuổi tài khoản hiện tại của bạn: <span className="text-zinc-300 font-bold">{ageWarning.userAge} tuổi</span>.
+            </p>
+          </div>
+          <Button
+            onClick={() => setAgeWarning({ ...ageWarning, isOpen: false })}
+            variant="primary"
+            className="w-full py-2.5 rounded-xl font-bold mt-2"
+          >
+            Đã hiểu và quay lại
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 };

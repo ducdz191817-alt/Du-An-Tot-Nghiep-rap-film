@@ -51,11 +51,11 @@ export const Footer = () => {
           <h4 className="text-zinc-200 font-bold mb-4 uppercase tracking-wider text-xs">{t('footer.contact')}</h4>
           <p className="flex items-start gap-2">
             <MapPin size={14} className="text-brand shrink-0" />
-            <span>Tầng B1, Landmark 81, Quận Bình Thạnh, TP.HCM</span>
+            <span>123 Hoàng Quốc Việt, Phường Cầu Giấy, Quận Cầu Giấy, Hà Nội</span>
           </p>
           <p className="flex items-center gap-2">
             <Phone size={14} className="text-brand shrink-0" />
-            <span>1900 6017</span>
+            <span>1900 9090</span>
           </p>
         </div>
       </div>

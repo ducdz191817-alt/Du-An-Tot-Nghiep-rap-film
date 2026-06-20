@@ -13,7 +13,7 @@ const generateToken = (id) => {
 // @access  Public
 const registerUser = async (req, res, next) => {
   try {
-    const { username, email, password, phone } = req.body;
+    const { username, email, password, phone, age } = req.body;
 
     // Check if user exists
     const userExists = await User.findOne({ email });
@@ -28,6 +28,7 @@ const registerUser = async (req, res, next) => {
       email,
       password,
       phone,
+      age,
     });
 
     if (user) {
@@ -39,6 +40,7 @@ const registerUser = async (req, res, next) => {
           email: user.email,
           role: user.role,
           phone: user.phone,
+          age: user.age,
           token: generateToken(user._id),
         },
       });
@@ -79,6 +81,7 @@ const loginUser = async (req, res, next) => {
         email: user.email,
         role: user.role,
         phone: user.phone,
+        age: user.age,
         token: generateToken(user._id),
       },
     });
@@ -102,6 +105,7 @@ const getUserProfile = async (req, res, next) => {
           email: user.email,
           role: user.role,
           phone: user.phone,
+          age: user.age,
         },
       });
     } else {
@@ -123,6 +127,7 @@ const updateUserProfile = async (req, res, next) => {
     if (user) {
       user.username = req.body.username || user.username;
       user.phone = req.body.phone || user.phone;
+      user.age = req.body.age !== undefined ? req.body.age : user.age;
 
       if (req.body.password) {
         user.password = req.body.password;
@@ -138,6 +143,7 @@ const updateUserProfile = async (req, res, next) => {
           email: updatedUser.email,
           role: updatedUser.role,
           phone: updatedUser.phone,
+          age: updatedUser.age,
           token: generateToken(updatedUser._id),
         },
       });

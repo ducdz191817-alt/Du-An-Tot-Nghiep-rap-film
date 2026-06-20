@@ -148,6 +148,14 @@ export const PaymentPage = () => {
         });
         setShowMomoScreen(true);
         setTimeLeft(300);
+      } else if (paymentMethod === 'vnpay') {
+        const vnpayResult = await paymentService.createVnpayPayment({
+          bookingId: bookingIdFromResult,
+          amount: result.booking.totalPrice,
+          orderInfo: `Booking ${bookingIdFromResult}`,
+        });
+        // Redirect user to VNPay Sandbox portal
+        window.location.href = vnpayResult.payUrl;
       } else {
         // Xóa trạng thái đặt vé trong Redux
         clearBooking();
