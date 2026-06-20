@@ -4,6 +4,7 @@ const Seat = require('../models/Seat.model');
 const Concession = require('../models/Concession.model');
 const Payment = require('../models/Payment.model');
 const sendEmail = require('../utils/sendEmail');
+const { confirmBookingClearHolds } = require('../sockets/seatSocket');
 
 // @desc    Create a new booking and process payment
 // @route   POST /api/bookings
@@ -128,6 +129,9 @@ const createBooking = async (req, res, next) => {
       res.status(400);
       throw new Error('Một hoặc nhiều ghế bạn chọn đã được đặt trước đó. Vui lòng chọn lại ghế.');
     }
+
+    // Release real-time holds and broadcast seat_booked to all clients
+    confirmBookingClearHolds(showtimeId, normalizedSeats, userId);
 
     // 7. Create the Booking
     const isVietQR = paymentMethod === 'vietqr';

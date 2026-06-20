@@ -57,7 +57,14 @@ app.get('/api/status', (req, res) => {
 app.use(notFound);
 app.use(errorHandler);
 
+const http = require('http');
+const server = http.createServer(app);
+
+// Initialize Socket.io
+const { initSocket } = require('./sockets/seatSocket');
+initSocket(server);
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
 });

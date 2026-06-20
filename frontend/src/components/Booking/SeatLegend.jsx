@@ -42,6 +42,12 @@ export const SeatLegend = () => {
         </span>
         <span>Ghế bảo trì (Khóa)</span>
       </div>
+
+      {/* 7. Ghế Đang Được Người Khác Giữ (Realtime) */}
+      <div className="flex items-center space-x-2">
+        <span className="w-5 h-5 rounded bg-orange-500/20 border border-orange-500 block" />
+        <span>Đang giữ (Realtime)</span>
+      </div>
     </div>
   );
 };
