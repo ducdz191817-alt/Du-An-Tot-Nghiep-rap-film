@@ -1,0 +1,568 @@
+[
+  {
+    "_id": "6a36785d8605c13ef4491686",
+    "user": "6a36785d8605c13ef4491286",
+    "showtime": "6a36785d8605c13ef44914f0",
+    "seats": [
+      "A1"
+    ],
+    "concessions": [
+      {
+        "concession": "6a36785d8605c13ef4491679",
+        "quantity": 1,
+        "_id": "6a36785d8605c13ef4491687"
+      }
+    ],
+    "totalPrice": 245000,
+    "paymentStatus": "paid",
+    "paymentMethod": "cash",
+    "bookingDate": "2026-06-17T05:10:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.116Z",
+    "updatedAt": "2026-06-20T11:24:13.116Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef4491688",
+    "user": "6a36785d8605c13ef4491287",
+    "showtime": "6a36785d8605c13ef44914f1",
+    "seats": [
+      "A2"
+    ],
+    "concessions": [],
+    "totalPrice": 180000,
+    "paymentStatus": "paid",
+    "paymentMethod": "card",
+    "bookingDate": "2026-06-17T09:43:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.116Z",
+    "updatedAt": "2026-06-20T11:24:13.116Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef4491689",
+    "user": "6a36785d8605c13ef4491288",
+    "showtime": "6a36785d8605c13ef44914f2",
+    "seats": [
+      "A5",
+      "A6"
+    ],
+    "concessions": [],
+    "totalPrice": 180000,
+    "paymentStatus": "paid",
+    "paymentMethod": "vnpay",
+    "bookingDate": "2026-06-16T23:21:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.116Z",
+    "updatedAt": "2026-06-20T11:24:13.116Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef449168a",
+    "user": "6a36785d8605c13ef4491289",
+    "showtime": "6a36785d8605c13ef44914f3",
+    "seats": [
+      "A4"
+    ],
+    "concessions": [
+      {
+        "concession": "6a36785d8605c13ef449167c",
+        "quantity": 2,
+        "_id": "6a36785d8605c13ef449168b"
+      }
+    ],
+    "totalPrice": 230000,
+    "paymentStatus": "paid",
+    "paymentMethod": "momo",
+    "bookingDate": "2026-06-17T02:43:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.116Z",
+    "updatedAt": "2026-06-20T11:24:13.116Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef449168c",
+    "user": "6a36785d8605c13ef449128a",
+    "showtime": "6a36785d8605c13ef44914f4",
+    "seats": [
+      "A5"
+    ],
+    "concessions": [],
+    "totalPrice": 80000,
+    "paymentStatus": "pending",
+    "paymentMethod": "cash",
+    "bookingDate": "2026-06-17T12:22:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.116Z",
+    "updatedAt": "2026-06-20T11:24:13.116Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef449168d",
+    "user": "6a36785d8605c13ef449128b",
+    "showtime": "6a36785d8605c13ef44914f5",
+    "seats": [
+      "B4",
+      "B5",
+      "B6"
+    ],
+    "concessions": [],
+    "totalPrice": 240000,
+    "paymentStatus": "refunded",
+    "paymentMethod": "card",
+    "bookingDate": "2026-06-17T08:51:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.116Z",
+    "updatedAt": "2026-06-20T11:24:13.116Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef449168e",
+    "user": "6a36785d8605c13ef4491286",
+    "showtime": "6a36785d8605c13ef44914f6",
+    "seats": [
+      "B3",
+      "B4"
+    ],
+    "concessions": [
+      {
+        "concession": "6a36785d8605c13ef449167f",
+        "quantity": 1,
+        "_id": "6a36785d8605c13ef449168f"
+      }
+    ],
+    "totalPrice": 195000,
+    "paymentStatus": "paid",
+    "paymentMethod": "vnpay",
+    "bookingDate": "2026-06-17T02:29:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.116Z",
+    "updatedAt": "2026-06-20T11:24:13.116Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef4491690",
+    "user": "6a36785d8605c13ef4491287",
+    "showtime": "6a36785d8605c13ef44914f7",
+    "seats": [
+      "B5",
+      "B6"
+    ],
+    "concessions": [],
+    "totalPrice": 160000,
+    "paymentStatus": "paid",
+    "paymentMethod": "momo",
+    "bookingDate": "2026-06-17T05:34:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.116Z",
+    "updatedAt": "2026-06-20T11:24:13.116Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef4491691",
+    "user": "6a36785d8605c13ef4491288",
+    "showtime": "6a36785d8605c13ef44914f8",
+    "seats": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "concessions": [],
+    "totalPrice": 540000,
+    "paymentStatus": "paid",
+    "paymentMethod": "cash",
+    "bookingDate": "2026-06-17T02:42:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.116Z",
+    "updatedAt": "2026-06-20T11:24:13.116Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef4491692",
+    "user": "6a36785d8605c13ef4491289",
+    "showtime": "6a36785d8605c13ef44914f9",
+    "seats": [
+      "B7",
+      "B8"
+    ],
+    "concessions": [
+      {
+        "concession": "6a36785d8605c13ef4491682",
+        "quantity": 1,
+        "_id": "6a36785d8605c13ef4491693"
+      }
+    ],
+    "totalPrice": 480000,
+    "paymentStatus": "paid",
+    "paymentMethod": "card",
+    "bookingDate": "2026-06-17T00:53:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.116Z",
+    "updatedAt": "2026-06-20T11:24:13.116Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef4491694",
+    "user": "6a36785d8605c13ef449128a",
+    "showtime": "6a36785d8605c13ef44914fa",
+    "seats": [
+      "B9",
+      "B10"
+    ],
+    "concessions": [],
+    "totalPrice": 180000,
+    "paymentStatus": "pending",
+    "paymentMethod": "vnpay",
+    "bookingDate": "2026-06-17T06:43:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.116Z",
+    "updatedAt": "2026-06-20T11:24:13.116Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef4491695",
+    "user": "6a36785d8605c13ef449128b",
+    "showtime": "6a36785d8605c13ef44914fb",
+    "seats": [
+      "B11",
+      "B12"
+    ],
+    "concessions": [],
+    "totalPrice": 180000,
+    "paymentStatus": "refunded",
+    "paymentMethod": "momo",
+    "bookingDate": "2026-06-17T09:20:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.116Z",
+    "updatedAt": "2026-06-20T11:24:13.116Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef4491696",
+    "user": "6a36785d8605c13ef4491286",
+    "showtime": "6a36785d8605c13ef44914fc",
+    "seats": [
+      "B1"
+    ],
+    "concessions": [
+      {
+        "concession": "6a36785d8605c13ef4491679",
+        "quantity": 1,
+        "_id": "6a36785d8605c13ef4491697"
+      }
+    ],
+    "totalPrice": 245000,
+    "paymentStatus": "paid",
+    "paymentMethod": "cash",
+    "bookingDate": "2026-06-17T12:47:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.116Z",
+    "updatedAt": "2026-06-20T11:24:13.116Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef4491698",
+    "user": "6a36785d8605c13ef4491287",
+    "showtime": "6a36785d8605c13ef44914fd",
+    "seats": [
+      "C3",
+      "C4"
+    ],
+    "concessions": [],
+    "totalPrice": 160000,
+    "paymentStatus": "paid",
+    "paymentMethod": "card",
+    "bookingDate": "2026-06-17T05:59:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.116Z",
+    "updatedAt": "2026-06-20T11:24:13.116Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef4491699",
+    "user": "6a36785d8605c13ef4491288",
+    "showtime": "6a36785d8605c13ef44914fe",
+    "seats": [
+      "D7",
+      "D8",
+      "D9"
+    ],
+    "concessions": [],
+    "totalPrice": 240000,
+    "paymentStatus": "paid",
+    "paymentMethod": "vnpay",
+    "bookingDate": "2026-06-17T03:01:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.116Z",
+    "updatedAt": "2026-06-20T11:24:13.116Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef449169a",
+    "user": "6a36785d8605c13ef4491289",
+    "showtime": "6a36785d8605c13ef44914ff",
+    "seats": [
+      "D10",
+      "D11",
+      "D12"
+    ],
+    "concessions": [
+      {
+        "concession": "6a36785d8605c13ef449167c",
+        "quantity": 1,
+        "_id": "6a36785d8605c13ef449169b"
+      }
+    ],
+    "totalPrice": 340000,
+    "paymentStatus": "paid",
+    "paymentMethod": "momo",
+    "bookingDate": "2026-06-17T12:27:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.116Z",
+    "updatedAt": "2026-06-20T11:24:13.116Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef449169c",
+    "user": "6a36785d8605c13ef449128a",
+    "showtime": "6a36785d8605c13ef4491500",
+    "seats": [
+      "B5"
+    ],
+    "concessions": [],
+    "totalPrice": 80000,
+    "paymentStatus": "pending",
+    "paymentMethod": "cash",
+    "bookingDate": "2026-06-16T23:17:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.116Z",
+    "updatedAt": "2026-06-20T11:24:13.116Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef449169d",
+    "user": "6a36785d8605c13ef449128b",
+    "showtime": "6a36785d8605c13ef4491501",
+    "seats": [
+      "F3",
+      "F5",
+      "F7"
+    ],
+    "concessions": [],
+    "totalPrice": 240000,
+    "paymentStatus": "refunded",
+    "paymentMethod": "card",
+    "bookingDate": "2026-06-17T11:28:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.116Z",
+    "updatedAt": "2026-06-20T11:24:13.116Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef449169e",
+    "user": "6a36785d8605c13ef4491286",
+    "showtime": "6a36785d8605c13ef4491502",
+    "seats": [
+      "B9"
+    ],
+    "concessions": [
+      {
+        "concession": "6a36785d8605c13ef449167f",
+        "quantity": 1,
+        "_id": "6a36785d8605c13ef449169f"
+      }
+    ],
+    "totalPrice": 115000,
+    "paymentStatus": "paid",
+    "paymentMethod": "vnpay",
+    "bookingDate": "2026-06-17T00:21:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.116Z",
+    "updatedAt": "2026-06-20T11:24:13.116Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef44916a0",
+    "user": "6a36785d8605c13ef4491287",
+    "showtime": "6a36785d8605c13ef4491503",
+    "seats": [
+      "E1",
+      "E3"
+    ],
+    "concessions": [],
+    "totalPrice": 600000,
+    "paymentStatus": "paid",
+    "paymentMethod": "momo",
+    "bookingDate": "2026-06-17T00:03:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.116Z",
+    "updatedAt": "2026-06-20T11:24:13.116Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef44916a1",
+    "user": "6a36785d8605c13ef4491288",
+    "showtime": "6a36785d8605c13ef4491504",
+    "seats": [
+      "C1"
+    ],
+    "concessions": [],
+    "totalPrice": 300000,
+    "paymentStatus": "paid",
+    "paymentMethod": "cash",
+    "bookingDate": "2026-06-17T02:43:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.116Z",
+    "updatedAt": "2026-06-20T11:24:13.116Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef44916a2",
+    "user": "6a36785d8605c13ef4491289",
+    "showtime": "6a36785d8605c13ef4491505",
+    "seats": [
+      "E3",
+      "E4"
+    ],
+    "concessions": [
+      {
+        "concession": "6a36785d8605c13ef4491682",
+        "quantity": 2,
+        "_id": "6a36785d8605c13ef44916a3"
+      }
+    ],
+    "totalPrice": 400000,
+    "paymentStatus": "paid",
+    "paymentMethod": "card",
+    "bookingDate": "2026-06-17T11:48:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.117Z",
+    "updatedAt": "2026-06-20T11:24:13.117Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef44916a4",
+    "user": "6a36785d8605c13ef449128a",
+    "showtime": "6a36785d8605c13ef4491506",
+    "seats": [
+      "C3"
+    ],
+    "concessions": [],
+    "totalPrice": 80000,
+    "paymentStatus": "pending",
+    "paymentMethod": "vnpay",
+    "bookingDate": "2026-06-17T08:08:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.117Z",
+    "updatedAt": "2026-06-20T11:24:13.117Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef44916a5",
+    "user": "6a36785d8605c13ef449128b",
+    "showtime": "6a36785d8605c13ef4491507",
+    "seats": [
+      "C4"
+    ],
+    "concessions": [],
+    "totalPrice": 80000,
+    "paymentStatus": "refunded",
+    "paymentMethod": "momo",
+    "bookingDate": "2026-06-17T03:50:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.117Z",
+    "updatedAt": "2026-06-20T11:24:13.117Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef44916a6",
+    "user": "6a36785d8605c13ef4491286",
+    "showtime": "6a36785d8605c13ef4491508",
+    "seats": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "concessions": [
+      {
+        "concession": "6a36785d8605c13ef4491679",
+        "quantity": 2,
+        "_id": "6a36785d8605c13ef44916a7"
+      }
+    ],
+    "totalPrice": 370000,
+    "paymentStatus": "paid",
+    "paymentMethod": "cash",
+    "bookingDate": "2026-06-17T05:08:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.117Z",
+    "updatedAt": "2026-06-20T11:24:13.117Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef44916a8",
+    "user": "6a36785d8605c13ef4491287",
+    "showtime": "6a36785d8605c13ef4491509",
+    "seats": [
+      "E3",
+      "E4"
+    ],
+    "concessions": [],
+    "totalPrice": 180000,
+    "paymentStatus": "paid",
+    "paymentMethod": "card",
+    "bookingDate": "2026-06-17T11:31:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.117Z",
+    "updatedAt": "2026-06-20T11:24:13.117Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef44916a9",
+    "user": "6a36785d8605c13ef4491288",
+    "showtime": "6a36785d8605c13ef449150a",
+    "seats": [
+      "A4",
+      "A5",
+      "A6"
+    ],
+    "concessions": [],
+    "totalPrice": 270000,
+    "paymentStatus": "paid",
+    "paymentMethod": "vnpay",
+    "bookingDate": "2026-06-17T02:31:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.117Z",
+    "updatedAt": "2026-06-20T11:24:13.117Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef44916aa",
+    "user": "6a36785d8605c13ef4491289",
+    "showtime": "6a36785d8605c13ef449150b",
+    "seats": [
+      "A2",
+      "A3"
+    ],
+    "concessions": [
+      {
+        "concession": "6a36785d8605c13ef449167c",
+        "quantity": 1,
+        "_id": "6a36785d8605c13ef44916ab"
+      }
+    ],
+    "totalPrice": 230000,
+    "paymentStatus": "paid",
+    "paymentMethod": "momo",
+    "bookingDate": "2026-06-17T00:34:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.117Z",
+    "updatedAt": "2026-06-20T11:24:13.117Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef44916ac",
+    "user": "6a36785d8605c13ef449128a",
+    "showtime": "6a36785d8605c13ef449150c",
+    "seats": [
+      "E9",
+      "E10"
+    ],
+    "concessions": [],
+    "totalPrice": 180000,
+    "paymentStatus": "pending",
+    "paymentMethod": "cash",
+    "bookingDate": "2026-06-17T08:38:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.117Z",
+    "updatedAt": "2026-06-20T11:24:13.117Z"
+  },
+  {
+    "_id": "6a36785d8605c13ef44916ad",
+    "user": "6a36785d8605c13ef449128b",
+    "showtime": "6a36785d8605c13ef449150d",
+    "seats": [
+      "C6"
+    ],
+    "concessions": [],
+    "totalPrice": 90000,
+    "paymentStatus": "refunded",
+    "paymentMethod": "card",
+    "bookingDate": "2026-06-17T06:53:00.000Z",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.117Z",
+    "updatedAt": "2026-06-20T11:24:13.117Z"
+  }
+]

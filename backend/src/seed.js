@@ -40,6 +40,52 @@ const seedData = async () => {
       process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/movie-ticket-booking'
     );
     console.log('✅ Connected!\n');
+ 
+    // Check if backup files exist and use them instead of hardcoded seed
+    const fs = require('fs');
+    const path = require('path');
+    const BACKUP_DIR = path.join(__dirname, '..', 'data', 'db-backup');
+    const backupExists = fs.existsSync(BACKUP_DIR) && 
+                         fs.readdirSync(BACKUP_DIR).some(file => file.endsWith('.json'));
+
+    if (backupExists) {
+      console.log('📂 Found database backup in data/db-backup/. Restoring from backup instead of default seed...\n');
+      
+      console.log('🗑️  Clearing all old collections...');
+      const MODELS_MAP = {
+        users: User,
+        movies: Movie,
+        theaters: Theater,
+        rooms: Room,
+        seats: Seat,
+        showtimes: Showtime,
+        concessions: Concession,
+        bookings: Booking,
+        payments: Payment
+      };
+
+      for (const [key, Model] of Object.entries(MODELS_MAP)) {
+        await Model.deleteMany({});
+      }
+      console.log('✅ Old data cleared.\n');
+
+      for (const [key, Model] of Object.entries(MODELS_MAP)) {
+        const filePath = path.join(BACKUP_DIR, `${key}.json`);
+        if (fs.existsSync(filePath)) {
+          console.log(`📥 Importing collection: ${key}...`);
+          const fileContent = fs.readFileSync(filePath, 'utf-8');
+          const documents = JSON.parse(fileContent);
+          
+          if (documents && documents.length > 0) {
+            await Model.insertMany(documents);
+            console.log(`   ✔ Imported ${documents.length} documents into ${key}`);
+          }
+        }
+      }
+
+      console.log('\n🎉 DATABASE RESTORED FROM BACKUP SUCCESSFULLY!');
+      process.exit(0);
+    }
 
     // ── 1. Clear all collections ─────────────────────────────────────────────
     console.log('🗑️  Clearing old data...');

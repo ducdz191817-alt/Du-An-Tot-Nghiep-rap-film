@@ -1,0 +1,12 @@
+[
+  {
+    "_id": "6a36785d8605c13ef44912b1",
+    "name": "Nova Cinema Hà Nội",
+    "address": "123 Hoàng Quốc Việt, Phường Cầu Giấy, Quận Cầu Giấy, Hà Nội",
+    "city": "Hà Nội",
+    "phone": "1900 9090",
+    "__v": 0,
+    "createdAt": "2026-06-20T11:24:13.029Z",
+    "updatedAt": "2026-06-20T11:24:13.029Z"
+  }
+]
