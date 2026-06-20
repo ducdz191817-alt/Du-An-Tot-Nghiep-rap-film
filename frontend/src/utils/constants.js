@@ -47,10 +47,6 @@ export const SEAT_TYPES = {
 
 export const getPosterUrl = (url) => {
   if (!url) return '';
-  // Use Google Image Proxy for TMDB images to bypass Vietnamese ISP blocking
-  if (url.includes('image.tmdb.org')) {
-    return `https://images1-focus-opensocial.googleusercontent.com/gadgets/proxy?container=focus&refresh=2592000&url=${encodeURIComponent(url)}`;
-  }
   return url;
 };
 
