@@ -327,6 +327,11 @@ const translations = {
     'filter.sort.durationDesc': 'Thời lượng giảm dần',
     'filter.sort.titleAZ': 'Tên phim (A-Z)',
     'filter.clearAll': 'Xóa bộ lọc',
+    'filter.status': 'Trạng thái',
+    'filter.statusAll': 'Tất cả trạng thái',
+    'filter.date': 'Ngày chiếu',
+    'filter.dateAll': 'Tất cả ngày chiếu',
+    'filter.customDate': 'Chọn ngày khác...',
     'movies.title': 'Danh mục phim',
     'movies.subtitle': 'Duyệt danh sách phim đang chiếu hoặc xem trước các phim sắp ra mắt.',
     // Showtime filters & sorting
@@ -663,6 +668,11 @@ const translations = {
     'filter.sort.durationDesc': 'Duration (Long to Short)',
     'filter.sort.titleAZ': 'Title (A-Z)',
     'filter.clearAll': 'Clear filters',
+    'filter.status': 'Status',
+    'filter.statusAll': 'All Statuses',
+    'filter.date': 'Show Date',
+    'filter.dateAll': 'All Show Dates',
+    'filter.customDate': 'Choose other date...',
     'movies.title': 'Movie Catalog',
     'movies.subtitle': 'Browse the list of movies now showing or preview upcoming releases.',
     // Showtime filters & sorting
