@@ -5,7 +5,7 @@ const Movie = require('../models/Movie.model');
 // @access  Public
 const getMovies = async (req, res, next) => {
   try {
-    const { status, search, genre, rating } = req.query;
+    const { status, search, genre, rating, date } = req.query;
 
     const query = {};
 
@@ -25,6 +25,29 @@ const getMovies = async (req, res, next) => {
         { title: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
       ];
+    }
+
+    // Filter by show date
+    if (date) {
+      try {
+        const Showtime = require('../models/Showtime.model');
+        const startOfDay = new Date(date);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(date);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const showtimes = await Showtime.find({
+          startTime: {
+            $gte: startOfDay,
+            $lte: endOfDay,
+          },
+        }).select('movie');
+
+        const movieIds = showtimes.map((s) => s.movie);
+        query._id = { $in: movieIds };
+      } catch (err) {
+        console.error('Error filtering movies by date:', err);
+      }
     }
 
     // Filter by genre

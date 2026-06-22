@@ -20,6 +20,7 @@ export const HomePage = () => {
     search: '',
     genres: [],
     rating: '',
+    date: '',
     sortBy: 'newest',
   });
   
@@ -44,8 +45,8 @@ export const HomePage = () => {
   };
 
   useEffect(() => {
-    dispatch(fetchMovies({ status: filters.status, search: filters.search }));
-  }, [dispatch, filters.status, filters.search]);
+    dispatch(fetchMovies({ status: filters.status, search: filters.search, date: filters.date }));
+  }, [dispatch, filters.status, filters.search, filters.date]);
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
