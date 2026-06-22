@@ -5,9 +5,9 @@ const connectDB = async () => {
     const conn = await mongoose.connect(
       process.env.MONGO_URI || 
       process.env.MONGODB_URI || 
-      'mongodb://127.0.0.1:27017/movie_ticket_booking'
+      'mongodb://127.0.0.1:27017/movie-ticket-booking'
     );
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    console.log(`MongoDB Connected: ${conn.connection.host}/${conn.connection.name}`);
   } catch (error) {
     console.error(`MongoDB connection error: ${error.message}`);
     console.log('Ensure MongoDB is installed and running locally, or configure MONGODB_URI in your .env file.');
