@@ -114,8 +114,8 @@ const deleteConcession = async (id) => {
 };
 
 // Dashboard Stats & Revenue Reports
-const getDashboardStats = async () => {
-  const response = await api.get('/admin/dashboard/stats');
+const getDashboardStats = async (params = {}) => {
+  const response = await api.get('/admin/dashboard/stats', { params });
   return response.data;
 };
 
