@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { SEAT_TYPES } from '../../utils/constants';
 
-export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], heldSeatsByOthers = [], ticketQuantity = 2, onSeatClick }) => {
-  const [hoveredSeat, setHoveredSeat] = useState(null);
+export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], heldSeatsByOthers = [], onSeatClick }) => {
   // Nhóm ghế theo hàng (chữ cái)
   const groupedSeats = seats.reduce((acc, seat) => {
     const row = seat.row;
@@ -12,6 +11,106 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
     acc[row].push(seat);
     return acc;
   }, {});
+
+  const normalizedBookedSeats = new Set(
+    (bookedSeats || []).map((seatCodeItem) => String(seatCodeItem).trim().toUpperCase())
+  );
+
+  // Helper: Trả về state của một ghế
+  const getSeatState = (seat) => {
+    const seatCode = `${seat.row}${seat.number}`.toUpperCase();
+    const isBooked = normalizedBookedSeats.has(seatCode);
+    const isHeld = heldSeatsByOthers.includes(seatCode);
+    const isDisabled = seat.isDisabled === true;
+    const isAvailable = !isBooked && !isHeld && !isDisabled;
+    return { ...seat, seatCode, isBooked, isHeld, isDisabled, isAvailable };
+  };
+
+  // Helper: Tìm các "khoảng trống" (segment) trong 1 cụm ghế
+  const getEmptySegments = (seatStates, currentSelectedSeats) => {
+    const segments = [];
+    let currentSegmentLength = 0;
+    let isStartEdge = false;
+    
+    for (let i = 0; i < seatStates.length; i++) {
+      const s = seatStates[i];
+      const isOccupied = !s.isAvailable || currentSelectedSeats.includes(s.seatCode);
+      
+      if (!isOccupied) {
+        if (currentSegmentLength === 0 && i === 0) {
+          isStartEdge = true; // Segment chạm rìa trái
+        }
+        currentSegmentLength++;
+      } else {
+        if (currentSegmentLength > 0) {
+          segments.push({
+            length: currentSegmentLength,
+            isEdge: isStartEdge // Nếu nó chạm rìa trái thì là edge
+          });
+          currentSegmentLength = 0;
+          isStartEdge = false;
+        }
+      }
+    }
+    
+    if (currentSegmentLength > 0) {
+      segments.push({
+        length: currentSegmentLength,
+        // Nếu vòng lặp kết thúc mà vẫn còn segment, nghĩa là segment này chạm rìa phải (i = length)
+        isEdge: isStartEdge || true 
+      });
+    }
+    return segments;
+  };
+
+  const handleSeatClick = (clickedSeatCode, rowLetter) => {
+    let newSelected;
+    const isAlreadySelected = selectedSeats.includes(clickedSeatCode);
+
+    if (isAlreadySelected) {
+      // Bỏ chọn
+      newSelected = selectedSeats.filter(code => code !== clickedSeatCode);
+    } else {
+      // Chọn thêm (không giới hạn số lượng)
+      newSelected = [...selectedSeats, clickedSeatCode];
+    }
+
+    // --- KIỂM TRA LUẬT CHỐNG GHẾ SO LE (ORPHAN RULE) ---
+    // Chỉ cần kiểm tra hàng của ghế vừa click
+    const rowSeats = [...groupedSeats[rowLetter]].sort((a, b) => a.number - b.number);
+    const rowSeatStates = rowSeats.map(getSeatState);
+
+    // Chia hàng thành 2 block nếu có lối đi ở giữa (theo giao diện, lối đi ở giữa ghế 6 và 7)
+    const block1 = rowSeatStates.filter(s => s.number <= 6);
+    const block2 = rowSeatStates.filter(s => s.number >= 7);
+
+    // Helper: Xác định xem có ghế so le (orphan) không
+    // Ghế so le là khoảng trống có ĐÚNG 1 ghế và KHÔNG nằm ở rìa của block
+    const checkHasOrphan = (segments) => {
+      return segments.some(seg => seg.length === 1 && !seg.isEdge);
+    };
+
+    // Kiểm tra Block 1
+    const segments1 = getEmptySegments(block1, newSelected);
+    const hasOrphan1 = checkHasOrphan(segments1);
+    const oldSegments1 = getEmptySegments(block1, []); // Trạng thái gốc không tính selectedSeats
+    const hadOrphan1 = checkHasOrphan(oldSegments1);
+
+    // Kiểm tra Block 2
+    const segments2 = getEmptySegments(block2, newSelected);
+    const hasOrphan2 = checkHasOrphan(segments2);
+    const oldSegments2 = getEmptySegments(block2, []); // Trạng thái gốc
+    const hadOrphan2 = checkHasOrphan(oldSegments2);
+
+    // Nếu tạo ra một khoảng trống đúng 1 ghế mới (mà trước đó không có) -> Chặn!
+    if ((hasOrphan1 && !hadOrphan1) || (hasOrphan2 && !hadOrphan2)) {
+      alert("Không được để trống đúng 1 ghế (so le) ở giữa 2 ghế khác. Vui lòng chọn liền kề.");
+      return;
+    }
+
+    // Pass mảng các ghế mới được chọn lên cha
+    onSeatClick(newSelected);
+  };
 
   return (
     <div className="space-y-12 overflow-x-auto py-6">
@@ -26,57 +125,8 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
       {/* 2. Bố cục lưới ghế */}
       <div className="min-w-[600px] flex flex-col items-center justify-center space-y-3">
         {Object.keys(groupedSeats).map((rowLetter) => {
-          // Sắp xếp ghế trong hàng theo số thứ tự tăng dần
           const rowSeats = [...groupedSeats[rowLetter]].sort((a, b) => a.number - b.number);
-
-          const normalizedBookedSeats = new Set(
-            (bookedSeats || []).map((seatCodeItem) => String(seatCodeItem).trim().toUpperCase())
-          );
-
-          // Tiền xử lý trạng thái của từng ghế trong hàng
-          const rowSeatStates = rowSeats.map((seat) => {
-            const seatCode = `${seat.row}${seat.number}`;
-            const normalized = String(seatCode).trim().toUpperCase();
-            const isBooked = normalizedBookedSeats.has(normalized);
-            const isHeld = heldSeatsByOthers.includes(normalized);
-            const isDisabled = seat.isDisabled === true;
-            const isAvailable = !isBooked && !isHeld && !isDisabled;
-            return { ...seat, seatCode: normalized, isBooked, isHeld, isDisabled, isAvailable };
-          });
-
-          // Xác định cụm ghế đang hover và kiểm tra tính hợp lệ
-          const hoveredIndex = rowSeatStates.findIndex(s => s.seatCode === hoveredSeat);
-          let hoverBlock = [];
-          let isHoverValid = false;
-
-          if (hoveredIndex !== -1) {
-            hoverBlock = rowSeatStates.slice(hoveredIndex, hoveredIndex + ticketQuantity);
-            
-            if (hoverBlock.length === ticketQuantity) {
-              const allAvailable = hoverBlock.every(s => s.isAvailable);
-              // Chặn bắc cầu qua lối đi (giữa ghế 6 và 7). 
-              // NHƯNG nếu mua > 6 vé (ví dụ 8 vé) thì bắt buộc phải cho phép qua lối đi vì một bên chỉ có tối đa 6 ghế.
-              const isCrossingAisle = ticketQuantity <= 6 && hoverBlock.some(s => s.number <= 6) && hoverBlock.some(s => s.number >= 7);
-
-              if (allAvailable && !isCrossingAisle) {
-                isHoverValid = true;
-
-                // Kiểm tra luật chống ghế so le (Orphan rule) bên trái
-                const left1 = rowSeatStates[hoveredIndex - 1];
-                if (left1?.isAvailable) {
-                  const left2 = rowSeatStates[hoveredIndex - 2];
-                  if (!left2 || !left2.isAvailable) isHoverValid = false; // Bỏ lại đúng 1 ghế trống
-                }
-
-                // Kiểm tra luật chống ghế so le (Orphan rule) bên phải
-                const right1 = rowSeatStates[hoveredIndex + ticketQuantity];
-                if (right1?.isAvailable) {
-                  const right2 = rowSeatStates[hoveredIndex + ticketQuantity + 1];
-                  if (!right2 || !right2.isAvailable) isHoverValid = false; // Bỏ lại đúng 1 ghế trống
-                }
-              }
-            }
-          }
+          const rowSeatStates = rowSeats.map(getSeatState);
 
           return (
             <div key={rowLetter} className="flex items-center space-x-3">
@@ -87,14 +137,10 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
 
               {/* Các ghế trong hàng */}
               <div className="flex items-center gap-2">
-                {rowSeatStates.map((seatInfo, idx) => {
+                {rowSeatStates.map((seatInfo) => {
                   const isSelected = selectedSeats.includes(seatInfo.seatCode);
-                  const isPartOfHover = hoverBlock.some(s => s.seatCode === seatInfo.seatCode);
-
-                  // Lấy cấu hình giao diện từ constants
                   const seatStyle = SEAT_TYPES[seatInfo.type] || SEAT_TYPES.standard;
                   
-                  // Xác định màu nền và viền của ghế
                   let activeBg = seatStyle.color;
                   if (seatInfo.isDisabled) {
                     activeBg = 'bg-[#1f1f23]/40 border border-zinc-800/80 text-zinc-600/40 cursor-not-allowed';
@@ -102,50 +148,20 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
                     activeBg = seatStyle.bookedColor;
                   } else if (seatInfo.isHeld) {
                     activeBg = 'bg-orange-500/20 border border-orange-500 text-orange-400 cursor-not-allowed';
-                  } else if (isPartOfHover) {
-                    activeBg = isHoverValid 
-                      ? 'bg-brand/80 border border-brand text-white shadow-[0_0_10px_rgba(229,9,20,0.5)] cursor-pointer' 
-                      : 'bg-red-500/50 border border-red-500 text-red-200 cursor-not-allowed';
                   } else if (isSelected) {
-                    activeBg = seatStyle.selectedColor;
+                    activeBg = seatStyle.selectedColor + ' shadow-[0_0_12px_rgba(168,85,247,0.6)] border-brand';
+                  } else {
+                    activeBg = activeBg + ' hover:border-brand/50 hover:bg-brand/20 cursor-pointer';
                   }
 
                   const isCouple = seatInfo.type === 'couple';
 
-                  const handleClick = () => {
-                    // Tính toán lại block để đảm bảo hoạt động tốt trên mobile (không phụ thuộc state hover)
-                    let block = rowSeatStates.slice(idx, idx + ticketQuantity);
-                    if (block.length === ticketQuantity && block.every(s => s.isAvailable)) {
-                      // Chặn không cho click nếu cụm bắc cầu qua lối đi (chỉ áp dụng khi mua <= 6 vé)
-                      const isCrossingAisle = ticketQuantity <= 6 && block.some(s => s.number <= 6) && block.some(s => s.number >= 7);
-                      if (isCrossingAisle) return;
-
-                      let valid = true;
-                      const l1 = rowSeatStates[idx - 1];
-                      if (l1?.isAvailable) {
-                        const l2 = rowSeatStates[idx - 2];
-                        if (!l2 || !l2.isAvailable) valid = false;
-                      }
-                      const r1 = rowSeatStates[idx + ticketQuantity];
-                      if (r1?.isAvailable) {
-                        const r2 = rowSeatStates[idx + ticketQuantity + 1];
-                        if (!r2 || !r2.isAvailable) valid = false;
-                      }
-                      
-                      if (valid) {
-                        onSeatClick(block.map(s => s.seatCode));
-                      }
-                    }
-                  };
-
                   return (
                     <React.Fragment key={seatInfo._id}>
                       <button
-                        disabled={seatInfo.isBooked || seatInfo.isDisabled || seatInfo.isHeld}
-                        onClick={handleClick}
-                        onMouseEnter={() => setHoveredSeat(seatInfo.seatCode)}
-                        onMouseLeave={() => setHoveredSeat(null)}
-                        className={`h-8 rounded-lg font-bold text-[9px] transition-all flex items-center justify-center transform active:scale-90 ${
+                        disabled={!seatInfo.isAvailable}
+                        onClick={() => handleSeatClick(seatInfo.seatCode, rowLetter)}
+                        className={`h-8 rounded-lg font-bold text-[9px] transition-all flex items-center justify-center transform active:scale-90 border ${
                           isCouple ? 'w-[72px]' : 'w-8'
                         } ${activeBg}`}
                         title={`${seatInfo.seatCode} - ${seatInfo.type.toUpperCase()}${seatInfo.isDisabled ? ' (Bảo trì)' : ''}${seatInfo.isBooked ? ' (Đã đặt)' : ''}${seatInfo.isHeld ? ' (Đang giữ)' : ''}`}

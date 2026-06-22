@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { MapPin, Phone, Clock, ChevronDown, ChevronUp, Tv2, Star, Zap, MonitorPlay } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MapPin, Phone, Clock, ChevronDown, ChevronUp, Tv2, Star, Zap, MonitorPlay, Navigation, Loader2 } from 'lucide-react';
 
 // ─── Data ────────────────────────────────────────────────────────────────────
-const theaters = [
+const theatersData = [
   {
     id: 1,
     name: 'Nova Cinema Hà Nội',
@@ -11,6 +11,8 @@ const theaters = [
     address: '123 Hoàng Quốc Việt, Phường Cầu Giấy, Quận Cầu Giấy, Hà Nội',
     phone: '1900 9090',
     hotline: '1900 9090',
+    lat: 21.0464,
+    lng: 105.7963,
     mapEmbed:
       'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3723.8638!2d105.7958!3d21.0381!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjHCsDAyJzE3LjIiTiAxMDXCsDQ3JzQ0LjkiRQ!5e0!3m2!1sen!2s!4v0',
     hours: [
@@ -23,18 +25,51 @@ const theaters = [
       { name: 'Phòng 2', type: '3D', seats: 80, icon: <Tv2 size={14} />, color: 'text-blue-400 bg-blue-400/10 border-blue-400/20' },
       { name: 'Phòng 3', type: '2D', seats: 60, icon: <MonitorPlay size={14} />, color: 'text-zinc-400 bg-zinc-400/10 border-zinc-400/20' },
       { name: 'Phòng 4', type: 'GOLDCLASS', seats: 30, icon: <Star size={14} />, color: 'text-purple-400 bg-purple-400/10 border-purple-400/20' },
-      { name: 'Phòng 5', type: '3D', seats: 100, icon: <Tv2 size={14} />, color: 'text-blue-400 bg-blue-400/10 border-blue-400/20' },
-      { name: 'Phòng 6', type: '2D', seats: 70, icon: <MonitorPlay size={14} />, color: 'text-zinc-400 bg-zinc-400/10 border-zinc-400/20' },
-      { name: 'Phòng 7', type: '2D', seats: 60, icon: <MonitorPlay size={14} />, color: 'text-zinc-400 bg-zinc-400/10 border-zinc-400/20' },
-      { name: 'Phòng 8', type: '3D', seats: 80, icon: <Tv2 size={14} />, color: 'text-blue-400 bg-blue-400/10 border-blue-400/20' },
     ],
-    facilities: ['Bắp rang bơ Nova', 'Cocktail bar', 'Ghế massage VIP', 'Bãi xe miễn phí', 'WiFi tốc độ cao', 'Trung tâm thương mại'],
+    facilities: ['Bắp rang bơ Nova', 'Cocktail bar', 'Ghế massage VIP', 'Bãi xe miễn phí'],
     badge: 'Flagship',
     badgeColor: 'bg-brand text-white',
     image: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=800&auto=format&fit=crop&q=80',
   },
+  {
+    id: 2,
+    name: 'Nova Cinema TP. Hồ Chí Minh',
+    slug: 'hcm',
+    city: 'Hồ Chí Minh',
+    address: '456 Lê Lợi, Phường Bến Nghé, Quận 1, TP.HCM',
+    phone: '1900 9091',
+    hotline: '1900 9091',
+    lat: 10.7769,
+    lng: 106.7009,
+    mapEmbed:
+      'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.4602!2d106.7009!3d10.7769!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTDCsDQ2JzM2LjgiTiAxMDbCsDQyJzAzLjIiRQ!5e0!3m2!1sen!2s!4v0',
+    hours: [
+      { day: 'Thứ 2 – Thứ 6', time: '08:30 – 23:30' },
+      { day: 'Thứ 7 – Chủ Nhật', time: '08:00 – 02:00' },
+    ],
+    rooms: [
+      { name: 'Phòng 1', type: 'IMAX', seats: 150, icon: <Zap size={14} />, color: 'text-amber-400 bg-amber-400/10 border-amber-400/20' },
+      { name: 'Phòng 2', type: '2D', seats: 90, icon: <MonitorPlay size={14} />, color: 'text-zinc-400 bg-zinc-400/10 border-zinc-400/20' },
+    ],
+    facilities: ['Trung tâm thương mại', 'Trà sữa', 'Bãi xe ô tô'],
+    badge: 'Premium',
+    badgeColor: 'bg-amber-500 text-white',
+    image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&auto=format&fit=crop&q=80',
+  }
 ];
 
+// Helper: Tính khoảng cách Haversine giữa 2 tọa độ (km)
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Bán kính trái đất (km)
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // Khoảng cách theo km
+};
 
 // ─── SubComponents ────────────────────────────────────────────────────────────
 const RoomBadge = ({ room }) => (
@@ -58,10 +93,15 @@ const TheaterCard = ({ theater }) => {
           className="w-full h-full object-cover opacity-60 group-hover:opacity-75 group-hover:scale-105 transition-all duration-700"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-dark-card via-dark-card/40 to-transparent" />
-        <div className="absolute top-4 left-4">
+        <div className="absolute top-4 left-4 flex flex-col gap-2 items-start">
           <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-md ${theater.badgeColor}`}>
             {theater.badge}
           </span>
+          {theater.distance !== undefined && (
+            <span className="text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-md bg-green-500/90 text-white flex items-center gap-1">
+              <Navigation size={10} /> Cách bạn {theater.distance.toFixed(1)} km
+            </span>
+          )}
         </div>
         <div className="absolute bottom-4 left-4">
           <h3 className="text-lg font-black text-white drop-shadow-lg leading-tight">{theater.name}</h3>
@@ -164,8 +204,56 @@ const TheaterCard = ({ theater }) => {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 const TheatersPage = () => {
+  const [theaters, setTheaters] = useState(theatersData);
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationError, setLocationError] = useState('');
 
   const totalSeats = theaters.flatMap((t) => t.rooms).reduce((a, r) => a + r.seats, 0);
+
+  const handleFindNearest = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Trình duyệt của bạn không hỗ trợ định vị GPS.');
+      return;
+    }
+
+    setIsLocating(true);
+    setLocationError('');
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        // Tính khoảng cách cho từng rạp
+        const theatersWithDistance = theatersData.map(t => {
+          const distance = calculateDistance(latitude, longitude, t.lat, t.lng);
+          return { ...t, distance };
+        });
+
+        // Sắp xếp rạp gần nhất lên đầu
+        theatersWithDistance.sort((a, b) => a.distance - b.distance);
+        
+        setTheaters(theatersWithDistance);
+        setIsLocating(false);
+      },
+      (error) => {
+        setIsLocating(false);
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            setLocationError('Bạn đã từ chối quyền truy cập vị trí. Vui lòng cấp quyền trong cài đặt trình duyệt.');
+            break;
+          case error.POSITION_UNAVAILABLE:
+            setLocationError('Thông tin vị trí hiện không khả dụng.');
+            break;
+          case error.TIMEOUT:
+            setLocationError('Yêu cầu định vị đã hết thời gian (Timeout).');
+            break;
+          default:
+            setLocationError('Đã xảy ra lỗi không xác định khi lấy định vị.');
+            break;
+        }
+      }
+    );
+  };
 
   return (
     <div className="space-y-10 pb-16">
@@ -175,7 +263,7 @@ const TheatersPage = () => {
         <div className="relative z-10 space-y-3">
           <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 text-zinc-300 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest">
             <MapPin size={12} />
-            Rạp chiếu phim
+            Hệ thống rạp chiếu phim
           </div>
           <h1 className="text-3xl md:text-5xl font-black text-white leading-tight">
             Rạp <span className="text-brand">Nova Cinema</span>
@@ -183,14 +271,39 @@ const TheatersPage = () => {
           <p className="text-zinc-400 max-w-lg mx-auto text-sm leading-relaxed">
             Rạp chiếu phim hiện đại với màn hình IMAX, 3D và trải nghiệm âm thanh đỉnh cao.
           </p>
+          
+          <div className="pt-6">
+            <button
+              onClick={handleFindNearest}
+              disabled={isLocating}
+              className="inline-flex items-center gap-2 bg-white text-zinc-900 hover:bg-zinc-200 px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-xl active:scale-95 disabled:opacity-70"
+            >
+              {isLocating ? (
+                <>
+                  <Loader2 size={18} className="animate-spin text-brand" />
+                  Đang quét vị trí...
+                </>
+              ) : (
+                <>
+                  <Navigation size={18} className="text-brand" />
+                  Tìm rạp gần tôi nhất
+                </>
+              )}
+            </button>
+            {locationError && (
+              <p className="text-red-400 text-xs mt-3 bg-red-500/10 inline-block px-3 py-1.5 rounded-lg border border-red-500/20">
+                ⚠ {locationError}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Cụm rạp', value: theaters.length, icon: <MapPin size={18} className="text-brand" /> },
-          { label: 'Phòng chiếu', value: theaters.flatMap((t) => t.rooms).length, icon: <Tv2 size={18} className="text-sky-400" /> },
+          { label: 'Cụm rạp', value: theatersData.length, icon: <MapPin size={18} className="text-brand" /> },
+          { label: 'Phòng chiếu', value: theatersData.flatMap((t) => t.rooms).length, icon: <Tv2 size={18} className="text-sky-400" /> },
           { label: 'Tổng ghế ngồi', value: totalSeats.toLocaleString(), icon: <Star size={18} className="text-amber-400" /> },
         ].map((s, i) => (
           <div key={i} className="bg-dark-card border border-dark-border rounded-2xl p-4 flex flex-col items-center gap-1 text-center">
@@ -201,9 +314,8 @@ const TheatersPage = () => {
         ))}
       </div>
 
-
       {/* Theater Grid */}
-      <div className="grid grid-cols-1 max-w-2xl mx-auto gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 max-w-5xl mx-auto gap-6">
         {theaters.map((theater) => (
           <TheaterCard key={theater.id} theater={theater} />
         ))}
@@ -211,6 +323,5 @@ const TheatersPage = () => {
     </div>
   );
 };
-
 
 export default TheatersPage;

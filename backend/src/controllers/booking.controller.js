@@ -30,6 +30,22 @@ const createBooking = async (req, res, next) => {
       throw new Error('Showtime not found');
     }
 
+    // 1.5 KIỂM TRA ĐỘ TUỔI CỦA NGƯỜI DÙNG DỰA TRÊN PHÂN LOẠI PHIM
+    const movieRating = showtime.movie.rating; // Ví dụ: 'P', 'T13', 'T16', 'T18'
+    const userAge = req.user.age;
+    
+    if (movieRating && movieRating !== 'P') {
+      let requiredAge = 0;
+      if (movieRating === 'T13') requiredAge = 13;
+      else if (movieRating === 'T16') requiredAge = 16;
+      else if (movieRating === 'T18') requiredAge = 18;
+
+      if (userAge < requiredAge) {
+        res.status(400);
+        throw new Error(`Bạn chưa đủ tuổi để xem phim này. Phim yêu cầu độ tuổi từ ${requiredAge} trở lên (bạn hiện ${userAge} tuổi).`);
+      }
+    }
+
     // 2. Check if showtime has already passed
     const currentTime = Date.now();
     const showtimeTimestamp = showtime.startTime instanceof Date

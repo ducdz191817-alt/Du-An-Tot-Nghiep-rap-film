@@ -50,6 +50,8 @@ export const RegisterForm = ({ onSuccess }) => {
         const ageNum = today.getFullYear() - birthDate.getFullYear();
         if (ageNum > 120) {
           errors.dob = 'Ngày sinh không hợp lệ';
+        } else if (ageNum < 13) {
+          errors.dob = 'Bạn phải từ 13 tuổi trở lên để đăng ký tài khoản';
         }
       }
     }
