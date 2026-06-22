@@ -380,24 +380,69 @@ const deleteShowtime = async (req, res, next) => {
 // ==========================================
 const getDashboardStats = async (req, res, next) => {
   try {
-    const totalBookings = await Booking.countDocuments();
+    const { date, month, year } = req.query;
+    const isFiltered = date || month || year;
+
     const totalMovies = await Movie.countDocuments();
-    const totalUsers = await User.countDocuments({ role: 'user' });
-    const totalTheaters = await Theater.countDocuments();
+    let totalBookings = 0;
+    let totalUsers = 0;
+    let totalRevenue = 0;
+    let recentBookings = [];
 
-    // Total sales accumulation
-    const bookings = await Booking.find({ paymentStatus: 'paid' });
-    const totalRevenue = bookings.reduce((sum, b) => sum + b.totalPrice, 0);
+    const periodQuery = {};
+    if (date) {
+      const start = new Date(date);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+      periodQuery.bookingDate = { $gte: start, $lte: end };
+    } else if (month) {
+      const [y, m] = month.split('-').map(Number);
+      const start = new Date(y, m - 1, 1);
+      const end = new Date(y, m, 0, 23, 59, 59, 999);
+      periodQuery.bookingDate = { $gte: start, $lte: end };
+    } else if (year) {
+      const y = Number(year);
+      const start = new Date(y, 0, 1);
+      const end = new Date(y, 11, 31, 23, 59, 59, 999);
+      periodQuery.bookingDate = { $gte: start, $lte: end };
+    }
 
-    // Get recent bookings listing
-    const recentBookings = await Booking.find()
-      .populate('user', 'username email')
-      .populate({
-        path: 'showtime',
-        populate: [{ path: 'movie', select: 'title' }, { path: 'theater', select: 'name' }],
-      })
-      .sort({ createdAt: -1 })
-      .limit(5);
+    if (isFiltered) {
+      // Filter stats by chosen period
+      totalBookings = await Booking.countDocuments(periodQuery);
+
+      const paidBookings = await Booking.find({ ...periodQuery, paymentStatus: 'paid' });
+      totalRevenue = paidBookings.reduce((sum, b) => sum + b.totalPrice, 0);
+
+      const bookingsInPeriod = await Booking.find(periodQuery);
+      const userIds = new Set(bookingsInPeriod.map((b) => b.user?.toString()).filter(Boolean));
+      totalUsers = userIds.size;
+
+      recentBookings = await Booking.find(periodQuery)
+        .populate('user', 'username email')
+        .populate({
+          path: 'showtime',
+          populate: [{ path: 'movie', select: 'title' }, { path: 'theater', select: 'name' }],
+        })
+        .sort({ bookingDate: -1 });
+    } else {
+      // Default overall stats
+      totalBookings = await Booking.countDocuments();
+      totalUsers = await User.countDocuments({ role: 'user' });
+
+      const allPaidBookings = await Booking.find({ paymentStatus: 'paid' });
+      totalRevenue = allPaidBookings.reduce((sum, b) => sum + b.totalPrice, 0);
+
+      recentBookings = await Booking.find()
+        .populate('user', 'username email')
+        .populate({
+          path: 'showtime',
+          populate: [{ path: 'movie', select: 'title' }, { path: 'theater', select: 'name' }],
+        })
+        .sort({ createdAt: -1 })
+        .limit(5);
+    }
 
     res.json({
       success: true,
@@ -406,7 +451,6 @@ const getDashboardStats = async (req, res, next) => {
           totalBookings,
           totalMovies,
           totalUsers,
-          totalTheaters,
           totalRevenue,
         },
         recentBookings,
