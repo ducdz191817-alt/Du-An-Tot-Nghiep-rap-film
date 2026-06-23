@@ -7,6 +7,29 @@ const getMovies = async (req, res, next) => {
   try {
     const { status, search, genre, rating, date } = req.query;
 
+    // Automatically transition movies with only past showtimes to "ended"
+    try {
+      const Showtime = require('../models/Showtime.model');
+      const activeMovies = await Movie.find({ status: { $in: ['now-showing', 'preview'] } });
+      
+      for (const movie of activeMovies) {
+        const showtimesCount = await Showtime.countDocuments({ movie: movie._id });
+        if (showtimesCount > 0) {
+          const futureShowtimesCount = await Showtime.countDocuments({
+            movie: movie._id,
+            startTime: { $gte: new Date() },
+          });
+          
+          if (futureShowtimesCount === 0) {
+            movie.status = 'ended';
+            await movie.save();
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error auto-ending movies:', err);
+    }
+
     const query = {};
 
     // Filter by status ('now-showing', 'coming-soon', 'preview', 'pre-release', etc.)
@@ -112,6 +135,26 @@ const getMovieById = async (req, res, next) => {
     if (!movie) {
       res.status(404);
       throw new Error('Movie not found');
+    }
+
+    // Automatically transition to "ended" if it has only past showtimes
+    if (['now-showing', 'preview'].includes(movie.status)) {
+      try {
+        const Showtime = require('../models/Showtime.model');
+        const showtimesCount = await Showtime.countDocuments({ movie: movie._id });
+        if (showtimesCount > 0) {
+          const futureShowtimesCount = await Showtime.countDocuments({
+            movie: movie._id,
+            startTime: { $gte: new Date() },
+          });
+          if (futureShowtimesCount === 0) {
+            movie.status = 'ended';
+            await movie.save();
+          }
+        }
+      } catch (err) {
+        console.error('Error auto-ending movie in getMovieById:', err);
+      }
     }
 
     res.json({

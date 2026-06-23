@@ -45,8 +45,13 @@ export const MovieDetail = ({ movie }) => {
       dayName = d.toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', { weekday: 'short' });
     }
 
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const localDateStr = `${yyyy}-${mm}-${dd}`;
+
     return {
-      isoString: d.toISOString().split('T')[0],
+      isoString: localDateStr,
       dayName,
       dateLabel: d.toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', { month: 'short', day: 'numeric' }),
     };
