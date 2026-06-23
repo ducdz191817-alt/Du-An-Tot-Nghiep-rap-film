@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, Popcorn, Armchair, Ticket } from 'lucide-react';
+import { ChevronLeft, Popcorn, Armchair, Ticket, ShieldAlert } from 'lucide-react';
 import bookingService from '../services/booking.service';
 import useBooking from '../hooks/useBooking';
 import useAuth from '../hooks/useAuth';
@@ -9,6 +9,8 @@ import SeatLegend from '../components/Booking/SeatLegend';
 import ConcessionList from '../components/Booking/ConcessionList';
 import BookingSummary from '../components/Booking/BookingSummary';
 import Loading from '../components/common/Loading';
+import Modal from '../components/common/Modal';
+import Button from '../components/common/Button';
 import { io } from 'socket.io-client';
 
 export const BookingPage = () => {
@@ -32,6 +34,7 @@ export const BookingPage = () => {
   const [activeStep, setActiveStep] = useState(1); // Bước 1: Ghế ngồi, Bước 2: Bắp nước
   const [heldSeatsByOthers, setHeldSeatsByOthers] = useState([]);
   const [ticketQuantity, setTicketQuantity] = useState(2);
+  const [ageWarning, setAgeWarning] = useState({ isOpen: false });
   const socketRef = useRef(null);
 
   useEffect(() => {
