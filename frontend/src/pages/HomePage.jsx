@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Film, CalendarDays, Compass, Star, ArrowUp } from 'lucide-react';
-import { fetchMovies } from '../store/movieSlice';
+import { Film, CalendarDays, Compass, Star, ArrowUp, Flame, TrendingUp } from 'lucide-react';
+import { fetchMovies, fetchBestSellers } from '../store/movieSlice';
 import MovieList from '../components/Movie/MovieList';
 import MovieFilter from '../components/Movie/MovieFilter';
 import Loading from '../components/common/Loading';
@@ -13,7 +13,7 @@ import { getPosterUrl } from '../utils/constants';
 export const HomePage = () => {
   const dispatch = useDispatch();
   const { t, language } = useLanguage();
-  const { movies, loading, error } = useSelector((state) => state.movie);
+  const { movies, bestSellers = [], loading, error } = useSelector((state) => state.movie);
   
   const [filters, setFilters] = useState({
     status: 'now-showing',
@@ -47,6 +47,10 @@ export const HomePage = () => {
   useEffect(() => {
     dispatch(fetchMovies({ status: filters.status, search: filters.search, date: filters.date }));
   }, [dispatch, filters.status, filters.search, filters.date]);
+
+  useEffect(() => {
+    dispatch(fetchBestSellers({ limit: 5 }));
+  }, [dispatch]);
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
@@ -223,6 +227,99 @@ export const HomePage = () => {
                 </Button>
               </Link>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Top Best-Selling Movies Section */}
+      {bestSellers && bestSellers.length > 0 && (
+        <div className="space-y-6 animate-fade-in">
+          <div className="flex items-center justify-between border-b border-dark-border pb-4">
+            <div className="space-y-1">
+              <h2 className="text-xl md:text-3xl font-black text-white flex items-center gap-2 tracking-tight">
+                <Flame className="text-orange-500 animate-pulse" size={26} />
+                {t('home.bestSellers')}
+              </h2>
+              <p className="text-xs md:text-sm text-zinc-400 font-medium">
+                {t('home.bestSellersDesc')}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex overflow-x-auto pb-4 gap-6 scrollbar-thin scrollbar-thumb-zinc-700/50 scrollbar-track-transparent snap-x md:grid md:grid-cols-5 md:overflow-x-visible md:pb-0">
+            {bestSellers.map((movie, index) => {
+              const movieTitle = language === 'en' ? (movie.titleEN || movie.title) : movie.title;
+              const rank = index + 1;
+              
+              return (
+                <div 
+                  key={movie._id} 
+                  className="snap-start min-w-[200px] w-[200px] md:w-auto flex-shrink-0 group relative rounded-2xl overflow-hidden border border-white/5 hover:border-brand/40 bg-zinc-950/40 backdrop-blur-md shadow-2xl transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_15px_30px_rgba(229,9,20,0.15)]"
+                >
+                  {/* Rank Overlay Badge */}
+                  <div className="absolute top-3 left-3 z-20 flex items-center justify-center">
+                    <span className={`text-xs font-black tracking-wider px-2.5 py-1 rounded-lg text-white shadow-lg ${
+                      rank === 1 ? 'bg-gradient-to-r from-yellow-500 to-amber-600' :
+                      rank === 2 ? 'bg-gradient-to-r from-zinc-300 to-zinc-400 text-zinc-900' :
+                      rank === 3 ? 'bg-gradient-to-r from-amber-700 to-amber-800' :
+                      'bg-zinc-800/80'
+                    }`}>
+                      #{rank}
+                    </span>
+                  </div>
+
+                  {/* Image Poster */}
+                  <div className="relative aspect-[2/3] w-full overflow-hidden">
+                    <img
+                      src={getPosterUrl(movie.posterUrl)}
+                      alt={movieTitle}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent opacity-90" />
+                  </div>
+
+                  {/* Info Overlay at the bottom */}
+                  <div className="absolute bottom-0 inset-x-0 p-4 flex flex-col justify-end min-h-[120px] bg-gradient-to-t from-zinc-950 via-zinc-950/90 to-transparent">
+                    {/* Rating and Genre */}
+                    <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded text-white ${
+                        movie.rating === 'P' ? 'bg-green-600' :
+                        movie.rating === 'T13' ? 'bg-blue-600' :
+                        movie.rating === 'T16' ? 'bg-orange-600' :
+                        'bg-red-600'
+                      }`}>
+                        {movie.rating}
+                      </span>
+                      {movie.genre && movie.genre.slice(0, 1).map((g) => (
+                        <span key={g} className="text-[9px] text-zinc-400 font-medium">
+                          {t(g)}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Movie Title */}
+                    <Link to={`/movies/${movie._id}`} className="hover:text-brand transition-colors z-20">
+                      <h3 className="text-sm font-bold text-white line-clamp-1 group-hover:text-brand transition-colors">
+                        {movieTitle}
+                      </h3>
+                    </Link>
+
+                    {/* Tickets Sold Indicator */}
+                    <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between text-[11px] text-zinc-400 font-medium">
+                      <span className="flex items-center gap-1 text-orange-500">
+                        <TrendingUp size={12} />
+                        <span className="text-white font-bold">{movie.ticketsSold}</span>
+                      </span>
+                      <span>{t('home.ticketsSold')}</span>
+                    </div>
+                  </div>
+
+                  {/* Full Card Link overlay (except for title/link overlay details) */}
+                  <Link to={`/movies/${movie._id}`} className="absolute inset-0 z-10 cursor-pointer" aria-label={movieTitle} />
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

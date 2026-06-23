@@ -23,6 +23,9 @@ const translations = {
     'home.watchTrailer': 'Xem Trailer',
     'home.discover': 'Khám Phá Phim',
     'home.loadingError': 'Lỗi khi tải danh sách phim',
+    'home.bestSellers': 'Top Phim Bán Chạy',
+    'home.bestSellersDesc': 'Danh sách các bộ phim đang được đặt vé nhiều nhất tại hệ thống rạp',
+    'home.ticketsSold': 'vé đã bán',
 
     // Footer
     'footer.desc': 'Tận hưởng trải nghiệm đặt vé xem phim tuyệt vời. Lựa chọn ghế ngồi ưng ý, đồ ăn vặt hấp dẫn và thanh toán an toàn chỉ với vài cú nhấp chuột.',
@@ -364,6 +367,9 @@ const translations = {
     'home.watchTrailer': 'Watch Trailer',
     'home.discover': 'Discover Movies',
     'home.loadingError': 'Error loading movie list',
+    'home.bestSellers': 'Top Best Selling',
+    'home.bestSellersDesc': 'The most popular and top-selling movies in theaters right now',
+    'home.ticketsSold': 'tickets sold',
 
     // Footer
     'footer.desc': 'Enjoy the ultimate movie ticket booking experience. Select your preferred seats, delicious snacks, and pay securely in just a few clicks.',

@@ -23,8 +23,20 @@ export const fetchMovieDetail = createAsyncThunk(
   }
 );
 
+export const fetchBestSellers = createAsyncThunk(
+  'movie/fetchBestSellers',
+  async (params, thunkAPI) => {
+    try {
+      return await movieService.getBestSellers(params);
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
+    }
+  }
+);
+
 const initialState = {
   movies: [],
+  bestSellers: [],
   currentMovie: null,
   filters: {
     status: 'now-showing',
@@ -78,6 +90,21 @@ const movieSlice = createSlice({
         state.currentMovie = action.payload?.data ?? action.payload;
       })
       .addCase(fetchMovieDetail.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Fetch Best Sellers
+      .addCase(fetchBestSellers.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchBestSellers.fulfilled, (state, action) => {
+        state.loading = false;
+        state.bestSellers = Array.isArray(action.payload)
+          ? action.payload
+          : action.payload?.data ?? [];
+      })
+      .addCase(fetchBestSellers.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
