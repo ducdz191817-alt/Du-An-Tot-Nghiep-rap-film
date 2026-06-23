@@ -193,6 +193,22 @@ export const BookingSuccessModal = ({ isOpen, bookingResult, showtime, selectedS
             </div>
           </div>
 
+          {/* Ticket QR Code */}
+          <div className="flex flex-col items-center justify-center bg-zinc-900/60 border border-dark-border/60 rounded-2xl p-5 space-y-2.5">
+            <div className="bg-white p-2 rounded-2xl shadow-lg flex items-center justify-center w-36 h-36 border border-zinc-200">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
+                  `CINEADMIN TICKET\nMã vé: ${booking?._id?.slice(-10).toUpperCase() || transactionId}\nPhim: ${movie.title || 'N/A'}\nRạp: ${theater.name || 'N/A'} - ${room.name || 'N/A'}\nGhế: ${(selectedSeats || booking?.seats || []).join(', ')}\nSuất chiếu: ${timeString} - ${dateString}\nTrạng thái: ĐÃ THANH TOÁN`
+                )}`}
+                alt="Ticket QR Code"
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider text-center max-w-[220px] leading-relaxed">
+              Đưa mã này cho nhân viên soát vé để vào rạp
+            </p>
+          </div>
+
           {/* Action buttons */}
           <div className="flex flex-col sm:flex-row gap-3 pt-1">
             <button

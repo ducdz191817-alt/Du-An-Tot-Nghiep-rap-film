@@ -205,9 +205,10 @@ export const PaymentPage = () => {
       setBookingId(null);
       setQrData(null);
       setMomoData(null);
-      if (isManual) {
-        navigate(-1);
-      } else {
+      
+      // If time expires automatically, go back to homepage.
+      // If user cancels manually, stay on the payment selection page instead of going back to seat selection.
+      if (!isManual) {
         navigate('/');
       }
     } catch (err) {

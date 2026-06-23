@@ -193,89 +193,115 @@ export const BookingHistoryPage = () => {
                   }`}
                 >
                   <div className="border-t border-dark-border/50 mx-4 mb-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-5 px-2">
-                      {/* Ghế đã đặt */}
-                      <DetailBlock
-                        icon={<Ticket size={14} className="text-brand" />}
-                        label={t('history.selectedSeats')}
-                      >
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {(booking.seats || []).map((s) => {
-                            const match = s.match(/^([A-Z]+)(\d+)$/);
-                            let displaySeat = s;
-                            if (match) {
-                              const row = match[1];
-                              const num = parseInt(match[2], 10);
-                              
-                              const capacity = room.capacity || 0;
-                              const cols = capacity <= 30 ? 6 : capacity <= 60 ? 10 : 12;
-                              const rowCount = Math.ceil(capacity / cols);
-                              const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-                              const lastRowLetter = rowCount > 0 ? alphabet[rowCount - 1] : '';
+                    {(() => {
+                      const isPaid = booking.paymentStatus === 'paid';
+                      return (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-5 px-2">
+                          {/* Left: Ticket details (span 2 columns if paid, span 3 if unpaid) */}
+                          <div className={`${isPaid ? 'md:col-span-2' : 'md:col-span-3'} grid grid-cols-1 sm:grid-cols-2 gap-4`}>
+                            {/* Ghế đã đặt */}
+                            <DetailBlock
+                              icon={<Ticket size={14} className="text-brand" />}
+                              label={t('history.selectedSeats')}
+                            >
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {(booking.seats || []).map((s) => {
+                                  const match = s.match(/^([A-Z]+)(\d+)$/);
+                                  let displaySeat = s;
+                                  if (match) {
+                                    const row = match[1];
+                                    const num = parseInt(match[2], 10);
+                                    
+                                    const capacity = room.capacity || 0;
+                                    const cols = capacity <= 30 ? 6 : capacity <= 60 ? 10 : 12;
+                                    const rowCount = Math.ceil(capacity / cols);
+                                    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                                    const lastRowLetter = rowCount > 0 ? alphabet[rowCount - 1] : '';
 
-                              if (row === lastRowLetter || room.type === 'GOLDCLASS') {
-                                displaySeat = `${row}${num}-${row}${num + 1}`;
-                              }
-                            }
-                            return (
-                              <span
-                                key={s}
-                                className="bg-zinc-900 border border-dark-border px-2 py-0.5 rounded font-black text-brand text-[10px]"
+                                    if (row === lastRowLetter || room.type === 'GOLDCLASS') {
+                                      displaySeat = `${row}${num}-${row}${num + 1}`;
+                                    }
+                                  }
+                                  return (
+                                    <span
+                                      key={s}
+                                      className="bg-zinc-900 border border-dark-border px-2 py-0.5 rounded font-black text-brand text-[10px]"
+                                    >
+                                      {displaySeat}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </DetailBlock>
+
+                            {/* Đồ ăn uống */}
+                            {(booking.concessions || []).length > 0 && (
+                              <DetailBlock
+                                icon={<ShoppingBag size={14} className="text-emerald-500" />}
+                                label={t('history.concessions')}
                               >
-                                {displaySeat}
-                              </span>
-                            );
-                          })}
+                                <ul className="mt-1 space-y-0.5">
+                                  {booking.concessions.map((c, i) => (
+                                    <li key={i} className="text-[11px] text-zinc-400 font-semibold">
+                                      {language === 'en' && c.concession?.nameEN
+                                        ? c.concession.nameEN
+                                        : (c.concession?.name || 'Concession')}{' '}
+                                      <span className="text-zinc-500">x{c.quantity}</span>
+                                      {c.concession?.price && (
+                                        <span className="text-zinc-600 ml-1">
+                                          ({(c.concession.price * c.quantity).toLocaleString(locale)} VND)
+                                        </span>
+                                      )}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </DetailBlock>
+                            )}
+
+                            {/* Phương thức thanh toán */}
+                            <DetailBlock
+                              icon={<CreditCard size={14} className="text-blue-400" />}
+                              label={t('history.paymentMethod')}
+                            >
+                              <p className="text-[11px] text-zinc-300 font-semibold mt-1">
+                                {paymentMethodLabel(booking.paymentMethod)}
+                              </p>
+                            </DetailBlock>
+
+                            {/* Mã đặt vé & ngày đặt */}
+                            <DetailBlock
+                              icon={<Hash size={14} className="text-zinc-400" />}
+                              label={t('history.bookingId')}
+                            >
+                              <p className="text-[11px] font-mono text-zinc-300 mt-1">
+                                {booking._id?.slice(-10).toUpperCase()}
+                              </p>
+                              <p className="text-[10px] text-zinc-500 flex items-center gap-1 mt-0.5">
+                                <Clock size={10} /> {t('history.bookedAt')} {bookingDateString}
+                              </p>
+                            </DetailBlock>
+                          </div>
+
+                          {/* Right: Unique QR Code for paid bookings */}
+                          {isPaid && (
+                            <div className="flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-dark-border/40 pt-5 md:pt-0 md:pl-6 space-y-2.5">
+                              <div className="bg-white p-2 rounded-2xl shadow-lg flex items-center justify-center w-36 h-36 border border-zinc-200">
+                                <img
+                                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
+                                    `CINEADMIN TICKET\nMã vé: ${booking._id?.slice(-10).toUpperCase()}\nPhim: ${displayTitle}\nRạp: ${theater.name || 'N/A'} - ${room.name || 'N/A'}\nGhế: ${booking.seats?.join(', ')}\nSuất chiếu: ${timeString} - ${dateString}\nTrạng thái: ĐÃ THANH TOÁN`
+                                  )}`}
+                                  alt="Ticket QR Code"
+                                  className="w-full h-full object-contain"
+                                />
+                              </div>
+                              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider text-center max-w-[180px] leading-relaxed">
+                                Đưa mã này cho nhân viên soát vé để vào rạp
+                              </p>
+                            </div>
+                          )}
                         </div>
-                      </DetailBlock>
-
-                      {/* Đồ ăn uống */}
-                      {(booking.concessions || []).length > 0 && (
-                        <DetailBlock
-                          icon={<ShoppingBag size={14} className="text-emerald-500" />}
-                          label={t('history.concessions')}
-                        >
-                          <ul className="mt-1 space-y-0.5">
-                            {booking.concessions.map((c, i) => (
-                              <li key={i} className="text-[11px] text-zinc-400 font-semibold">
-                                {language === 'en' && c.concession?.nameEN
-                                  ? c.concession.nameEN
-                                  : (c.concession?.name || 'Concession')}{' '}
-                                <span className="text-zinc-500">x{c.quantity}</span>
-                                {c.concession?.price && (
-                                  <span className="text-zinc-600 ml-1">
-                                    ({(c.concession.price * c.quantity).toLocaleString(locale)} VND)
-                                  </span>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
-                        </DetailBlock>
-                      )}
-
-                      {/* Phương thức thanh toán */}
-                      <DetailBlock
-                        icon={<CreditCard size={14} className="text-blue-400" />}
-                        label={t('history.paymentMethod')}
-                      >
-                        <p className="text-[11px] text-zinc-300 font-semibold mt-1">
-                          {paymentMethodLabel(booking.paymentMethod)}
-                        </p>
-                      </DetailBlock>
-
-                      {/* Mã đặt vé & ngày đặt */}
-                      <DetailBlock
-                        icon={<Hash size={14} className="text-zinc-400" />}
-                        label={t('history.bookingId')}
-                      >
-                        <p className="text-[11px] font-mono text-zinc-300 mt-1">
-                          {booking._id?.slice(-10).toUpperCase()}
-                        </p>
-                        <p className="text-[10px] text-zinc-500 flex items-center gap-1 mt-0.5">
-                          <Clock size={10} /> {t('history.bookedAt')} {bookingDateString}
-                        </p>
-                      </DetailBlock>
-                    </div>
+                      );
+                    })()}
 
                     {/* Footer tổng tiền */}
                     <div className="flex justify-between items-center mt-5 pt-4 border-t border-t-dark-border/30">
