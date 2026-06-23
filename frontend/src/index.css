@@ -5,6 +5,10 @@
 @tailwind utilities;
 
 @layer base {
+  html, body, #root, input, select, textarea, button, p, span, div, h1, h2, h3, h4, h5, h6, table, thead, tbody, tr, th, td, a {
+    font-family: 'Outfit', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
   body {
     @apply bg-dark-deep text-zinc-100 font-sans antialiased selection:bg-brand/80 selection:text-white;
     background-color: #060507;

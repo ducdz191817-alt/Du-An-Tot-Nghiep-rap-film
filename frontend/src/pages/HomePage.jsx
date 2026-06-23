@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Film, CalendarDays, Compass, Star, ArrowUp, Flame, TrendingUp } from 'lucide-react';
+import { Film, CalendarDays, Compass, Star, ArrowUp, Flame, Calendar, Clock } from 'lucide-react';
 import { fetchMovies, fetchBestSellers } from '../store/movieSlice';
 import MovieList from '../components/Movie/MovieList';
 import MovieFilter from '../components/Movie/MovieFilter';
@@ -305,13 +305,16 @@ export const HomePage = () => {
                       </h3>
                     </Link>
 
-                    {/* Tickets Sold Indicator */}
+                    {/* Year and Duration */}
                     <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between text-[11px] text-zinc-400 font-medium">
-                      <span className="flex items-center gap-1 text-orange-500">
-                        <TrendingUp size={12} />
-                        <span className="text-white font-bold">{movie.ticketsSold}</span>
+                      <span className="flex items-center gap-1">
+                        <Calendar size={12} className="text-zinc-500" />
+                        <span>{new Date(movie.releaseDate).getFullYear()}</span>
                       </span>
-                      <span>{t('home.ticketsSold')}</span>
+                      <span className="flex items-center gap-1">
+                        <Clock size={12} className="text-zinc-500" />
+                        <span>{movie.duration} {language === 'vi' ? 'phút' : 'min'}</span>
+                      </span>
                     </div>
                   </div>
 

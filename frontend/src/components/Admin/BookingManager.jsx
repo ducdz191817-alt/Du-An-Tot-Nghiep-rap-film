@@ -68,6 +68,12 @@ export const BookingManager = () => {
             {large && <Undo2 size={13} />} Đã hoàn tiền
           </span>
         );
+      case 'failed':
+        return (
+          <span className={`${base} font-black uppercase bg-red-500/10 text-red-400 border border-red-500/20 inline-flex items-center gap-1.5`}>
+            {large && <X size={13} />} Thanh toán thất bại
+          </span>
+        );
       default:
         return (
           <span className={`${base} font-black uppercase bg-zinc-500/10 text-zinc-500 border border-zinc-500/20`}>

@@ -4,13 +4,13 @@ const Seat = require('../models/Seat.model');
 const Concession = require('../models/Concession.model');
 const Payment = require('../models/Payment.model');
 const sendEmail = require('../utils/sendEmail');
-const { confirmBookingClearHolds } = require('../sockets/seatSocket');
 
 // @desc    Create a new booking and process payment
 // @route   POST /api/bookings
 // @access  Private
 const createBooking = async (req, res, next) => {
   try {
+    await checkAndExpirePendingBookings();
     const { showtimeId, seats, concessions = [], paymentMethod = 'card' } = req.body;
     const userId = req.user._id;
 
@@ -272,6 +272,7 @@ const createBooking = async (req, res, next) => {
 // @access  Private
 const getMyBookings = async (req, res, next) => {
   try {
+    await checkAndExpirePendingBookings();
     const bookings = await Booking.find({ user: req.user._id })
       .populate({
         path: 'showtime',
@@ -301,6 +302,7 @@ const getMyBookings = async (req, res, next) => {
 // @access  Private
 const getBookingById = async (req, res, next) => {
   try {
+    await checkAndExpirePendingBookings();
     const booking = await Booking.findById(req.params.id)
       .populate({
         path: 'showtime',
@@ -345,6 +347,7 @@ const getBookingById = async (req, res, next) => {
 // @access  Private
 const getBookingStatus = async (req, res, next) => {
   try {
+    await checkAndExpirePendingBookings();
     const booking = await Booking.findById(req.params.id);
     if (!booking) {
       res.status(404);
@@ -511,13 +514,18 @@ const cancelBooking = async (req, res, next) => {
       $pull: { bookedSeats: { $in: booking.seats } },
     });
 
-    // Delete payment and booking
-    await Payment.deleteMany({ booking: booking._id });
-    await booking.deleteOne();
+    // Update payment and booking to failed instead of deleting
+    booking.paymentStatus = 'failed';
+    await booking.save();
+
+    await Payment.findOneAndUpdate(
+      { booking: booking._id },
+      { status: 'failed' }
+    );
 
     res.json({
       success: true,
-      message: 'Booking cancelled and seats released successfully',
+      message: 'Booking cancelled (marked failed) and seats released successfully',
     });
   } catch (error) {
     next(error);

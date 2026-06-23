@@ -206,10 +206,10 @@ export const PaymentPage = () => {
       setQrData(null);
       setMomoData(null);
       
-      // If time expires automatically, go back to homepage.
+      // If time expires automatically, go to booking history.
       // If user cancels manually, stay on the payment selection page instead of going back to seat selection.
       if (!isManual) {
-        navigate('/');
+        navigate('/history');
       }
     } catch (err) {
       console.error('Lỗi khi hủy đặt vé:', err);
