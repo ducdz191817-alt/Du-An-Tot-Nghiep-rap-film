@@ -23,7 +23,7 @@ import VNPayReturnPage from './pages/VNPayReturnPage';
 
 // Layout wrapper for public pages (with Header + Footer)
 const PublicLayout = ({ children }) => (
-  <div className="min-h-screen bg-dark-deep text-zinc-100 flex flex-col justify-between selection:bg-brand selection:text-white">
+  <div className="min-h-screen bg-[#faf7f2] text-gray-900 flex flex-col justify-between selection:bg-brand selection:text-white">
     <Header />
     <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in duration-300">
       {children}

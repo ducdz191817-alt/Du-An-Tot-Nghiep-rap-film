@@ -62,13 +62,13 @@ export const Input = React.forwardRef(({
   return (
     <div className="w-full mb-4">
       {label && (
-        <label className="block text-sm font-medium text-zinc-300 mb-1.5 pl-0.5">
+        <label className="block text-sm font-medium text-gray-600 mb-1.5 pl-0.5">
           {label}
         </label>
       )}
       <div className="relative">
         {icon && !isTextarea && (
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
             {icon}
           </div>
         )}
@@ -80,7 +80,7 @@ export const Input = React.forwardRef(({
             onInput={handleInput}
             onChange={handleChange}
             rows={rows || 3}
-            className={`w-full bg-zinc-900/60 backdrop-blur-sm border border-zinc-800 focus:border-brand focus:ring-1 focus:ring-brand text-zinc-100 placeholder-zinc-500 rounded-lg p-3 outline-none transition-all duration-300 text-sm ${
+            className={`w-full bg-gray-50 border border-gray-200 focus:border-brand focus:ring-1 focus:ring-brand text-gray-900 placeholder-gray-400 rounded-lg p-3 outline-none transition-all duration-300 text-sm ${
               displayError ? 'border-red-500 focus:border-red-500/50 focus:ring-red-500/20' : ''
             } ${className}`}
             {...props}
@@ -93,7 +93,7 @@ export const Input = React.forwardRef(({
             onInvalid={handleInvalid}
             onInput={handleInput}
             onChange={handleChange}
-            className={`w-full bg-zinc-900/60 backdrop-blur-sm border border-zinc-800 focus:border-brand focus:ring-1 focus:ring-brand text-zinc-100 placeholder-zinc-500 rounded-lg py-2.5 transition-all duration-300 outline-none ${
+            className={`w-full bg-gray-50 border border-gray-200 focus:border-brand focus:ring-1 focus:ring-brand text-gray-900 placeholder-gray-400 rounded-lg py-2.5 transition-all duration-300 outline-none ${
               icon ? 'pl-10' : 'pl-4'
             } ${displayError ? 'border-red-500 focus:border-red-500/50 focus:ring-red-500/20' : ''} ${className}`}
             {...props}

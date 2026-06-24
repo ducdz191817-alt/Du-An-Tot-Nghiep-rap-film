@@ -90,17 +90,17 @@ export const MovieFilter = ({ filters, onChange }) => {
   ];
 
   return (
-    <div className="space-y-4 bg-dark-card border border-dark-border p-4 sm:p-5 rounded-2xl shadow-xl">
+    <div className="space-y-4 bg-white border border-gray-200 p-4 sm:p-5 rounded-2xl shadow-sm">
       {/* Row 1: Status tabs & Search */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
         {/* Status tabs */}
-        <div className="flex flex-wrap items-center bg-zinc-900 p-1.5 rounded-xl border border-dark-border w-full lg:w-auto overflow-x-auto">
+        <div className="flex flex-wrap items-center bg-gray-100 p-1.5 rounded-xl border border-gray-200 w-full lg:w-auto overflow-x-auto">
           <button
             onClick={() => handleStatusChange('now-showing')}
             className={`flex-1 lg:flex-none text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap ${
               filters.status === 'now-showing'
-                ? 'bg-brand text-white shadow-md shadow-brand/20'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-gray-900 text-white shadow-md'
+                : 'text-gray-500 hover:text-gray-700'
             }`}
           >
             {t('filter.nowShowing')}
@@ -109,8 +109,8 @@ export const MovieFilter = ({ filters, onChange }) => {
             onClick={() => handleStatusChange('coming-soon')}
             className={`flex-1 lg:flex-none text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap ${
               filters.status === 'coming-soon'
-                ? 'bg-brand text-white shadow-md shadow-brand/20'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-gray-900 text-white shadow-md'
+                : 'text-gray-500 hover:text-gray-700'
             }`}
           >
             {t('filter.comingSoon')}
@@ -119,8 +119,8 @@ export const MovieFilter = ({ filters, onChange }) => {
             onClick={() => handleStatusChange('preview')}
             className={`flex-1 lg:flex-none text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap ${
               filters.status === 'preview'
-                ? 'bg-violet-600 text-white shadow-md shadow-violet-600/20'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-gray-900 text-white shadow-md'
+                : 'text-gray-500 hover:text-gray-700'
             }`}
           >
             {t('filter.preview')}
@@ -129,8 +129,8 @@ export const MovieFilter = ({ filters, onChange }) => {
             onClick={() => handleStatusChange('pre-release')}
             className={`flex-1 lg:flex-none text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap ${
               filters.status === 'pre-release'
-                ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20'
-                : 'text-zinc-400 hover:text-zinc-200'
+                ? 'bg-gray-900 text-white shadow-md'
+                : 'text-gray-500 hover:text-gray-700'
             }`}
           >
             {t('filter.preRelease')}
@@ -138,26 +138,31 @@ export const MovieFilter = ({ filters, onChange }) => {
         </div>
 
         {/* Search */}
-        <div className="relative flex-1 max-w-full lg:max-w-md">
-          <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-zinc-500 pointer-events-none">
-            <Search size={16} />
-          </span>
-          <input
-            type="text"
-            placeholder={t('filter.searchPlaceholder')}
-            value={filters.search || ''}
-            onChange={handleSearchChange}
-            className="w-full bg-zinc-900/80 border border-zinc-800/85 text-zinc-200 pl-10 pr-4 py-2.5 text-sm rounded-xl focus:border-brand/60 focus:bg-zinc-900 outline-none transition-all duration-300 shadow-inner"
-          />
+        <div className="relative flex-1 max-w-full lg:max-w-md flex items-center gap-2">
+          <div className="relative flex-1">
+            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400 pointer-events-none">
+              <Search size={16} />
+            </span>
+            <input
+              type="text"
+              placeholder={t('filter.searchPlaceholder')}
+              value={filters.search || ''}
+              onChange={handleSearchChange}
+              className="w-full bg-gray-50 border border-gray-200 text-gray-800 pl-10 pr-4 py-2.5 text-sm rounded-xl focus:border-brand/60 focus:bg-white outline-none transition-all duration-300"
+            />
+          </div>
+          <button className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-500 hover:text-brand hover:border-brand/30 transition-all shrink-0">
+            <SlidersHorizontal size={16} />
+          </button>
         </div>
       </div>
 
       {/* Row 2: Genre Dropdown, Rating Dropdown, Sort Dropdown & Clear Filters */}
-      <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-dark-border/40">
+      <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-gray-100">
         <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
-          <div className="flex items-center gap-1.5 text-zinc-500 text-xs font-bold uppercase tracking-wider pr-1">
-            <SlidersHorizontal size={13} className="text-zinc-500" />
-            <span>Bộ lọc:</span>
+          <div className="flex items-center gap-1.5 text-gray-400 text-xs font-bold uppercase tracking-wider pr-1">
+            <SlidersHorizontal size={13} className="text-gray-400" />
+            <span>{t('filter.sortBy').split(':')[0]}:</span>
           </div>
 
           {/* Genre Multi-select dropdown */}
@@ -165,10 +170,10 @@ export const MovieFilter = ({ filters, onChange }) => {
             <button
               type="button"
               onClick={() => setIsGenreOpen(!isGenreOpen)}
-              className={`w-full sm:w-auto flex items-center justify-between gap-2 px-4 py-2.5 bg-zinc-900/80 border text-sm rounded-xl transition-all hover:bg-zinc-800/80 cursor-pointer ${
+              className={`w-full sm:w-auto flex items-center justify-between gap-2 px-4 py-2.5 bg-gray-50 border text-sm rounded-xl transition-all hover:bg-gray-100 cursor-pointer ${
                 selectedGenres.length > 0
                   ? 'border-brand/40 text-brand font-semibold bg-brand/5'
-                  : 'border-zinc-800 text-zinc-300 hover:text-white'
+                  : 'border-gray-200 text-gray-600 hover:text-gray-800'
               }`}
             >
               <span className="truncate max-w-[140px]">
@@ -181,7 +186,7 @@ export const MovieFilter = ({ filters, onChange }) => {
               <ChevronDown size={14} className={`transition-transform duration-300 shrink-0 ${isGenreOpen ? 'rotate-180' : ''}`} />
             </button>
             {isGenreOpen && (
-              <div className="absolute left-0 mt-2 w-56 rounded-xl bg-zinc-900/95 border border-zinc-800 shadow-2xl z-50 p-2 max-h-72 overflow-y-auto space-y-0.5 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute left-0 mt-2 w-56 rounded-xl bg-white border border-gray-200 shadow-xl z-50 p-2 max-h-72 overflow-y-auto space-y-0.5 animate-in fade-in slide-in-from-top-2 duration-200">
                 {MOVIE_GENRES.map((g) => {
                   const isChecked = selectedGenres.includes(g);
                   return (
@@ -190,7 +195,7 @@ export const MovieFilter = ({ filters, onChange }) => {
                       onClick={(e) => {
                         e.stopPropagation();
                       }}
-                      className="flex items-center justify-between px-3 py-2 text-xs sm:text-sm rounded-lg hover:bg-zinc-800/80 cursor-pointer text-zinc-300 hover:text-white transition-colors"
+                      className="flex items-center justify-between px-3 py-2 text-xs sm:text-sm rounded-lg hover:bg-gray-50 cursor-pointer text-gray-600 hover:text-gray-900 transition-colors"
                     >
                       <span>{t(g)}</span>
                       <div className="flex items-center">
@@ -203,7 +208,7 @@ export const MovieFilter = ({ filters, onChange }) => {
                         <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
                           isChecked
                             ? 'bg-brand border-brand text-white shadow-md shadow-brand/20'
-                            : 'border-zinc-700 bg-zinc-800'
+                            : 'border-gray-300 bg-gray-50'
                         }`}>
                           {isChecked && <Check size={11} strokeWidth={3.5} />}
                         </div>
@@ -220,10 +225,10 @@ export const MovieFilter = ({ filters, onChange }) => {
             <button
               type="button"
               onClick={() => setIsRatingOpen(!isRatingOpen)}
-              className={`w-full sm:w-auto flex items-center justify-between gap-2 px-4 py-2.5 bg-zinc-900/80 border text-sm rounded-xl transition-all hover:bg-zinc-800/80 cursor-pointer ${
+              className={`w-full sm:w-auto flex items-center justify-between gap-2 px-4 py-2.5 bg-gray-50 border text-sm rounded-xl transition-all hover:bg-gray-100 cursor-pointer ${
                 selectedRating !== ''
-                  ? 'border-amber-500/40 text-amber-500 font-semibold bg-amber-500/5'
-                  : 'border-zinc-800 text-zinc-300 hover:text-white'
+                  ? 'border-amber-400/40 text-amber-600 font-semibold bg-amber-50'
+                  : 'border-gray-200 text-gray-600 hover:text-gray-800'
               }`}
             >
               <span className="flex items-center gap-1">
@@ -233,16 +238,16 @@ export const MovieFilter = ({ filters, onChange }) => {
               <ChevronDown size={14} className={`transition-transform duration-300 ${isRatingOpen ? 'rotate-180' : ''}`} />
             </button>
             {isRatingOpen && (
-              <div className="absolute left-0 mt-2 w-52 rounded-xl bg-zinc-900/95 border border-zinc-800 shadow-2xl z-50 p-2 space-y-0.5 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute left-0 mt-2 w-52 rounded-xl bg-white border border-gray-200 shadow-xl z-50 p-2 space-y-0.5 animate-in fade-in slide-in-from-top-2 duration-200">
                 {ratingOptions.map((opt) => (
                   <button
                     key={opt.value}
                     type="button"
                     onClick={() => handleRatingSelect(opt.value)}
-                    className={`w-full text-left px-3.5 py-2.5 text-xs sm:text-sm rounded-lg hover:bg-zinc-800/80 transition-colors flex items-center justify-between ${
+                    className={`w-full text-left px-3.5 py-2.5 text-xs sm:text-sm rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${
                       selectedRating === opt.value
-                        ? 'text-amber-500 bg-amber-500/5 font-semibold'
-                        : 'text-zinc-300 hover:text-white'
+                        ? 'text-amber-600 bg-amber-50 font-semibold'
+                        : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
                     <span>{opt.label}</span>
@@ -258,10 +263,10 @@ export const MovieFilter = ({ filters, onChange }) => {
             <button
               type="button"
               onClick={() => setIsSortOpen(!isSortOpen)}
-              className={`w-full sm:w-auto flex items-center justify-between gap-2 px-4 py-2.5 bg-zinc-900/80 border text-sm rounded-xl transition-all hover:bg-zinc-800/80 cursor-pointer ${
+              className={`w-full sm:w-auto flex items-center justify-between gap-2 px-4 py-2.5 bg-gray-50 border text-sm rounded-xl transition-all hover:bg-gray-100 cursor-pointer ${
                 selectedSortBy !== 'newest'
                   ? 'border-brand/40 text-brand font-semibold bg-brand/5'
-                  : 'border-zinc-800 text-zinc-300 hover:text-white'
+                  : 'border-gray-200 text-gray-600 hover:text-gray-800'
               }`}
             >
               <span className="truncate max-w-[140px]">
@@ -270,16 +275,16 @@ export const MovieFilter = ({ filters, onChange }) => {
               <ChevronDown size={14} className={`transition-transform duration-300 ${isSortOpen ? 'rotate-180' : ''}`} />
             </button>
             {isSortOpen && (
-              <div className="absolute left-0 mt-2 w-56 rounded-xl bg-zinc-900/95 border border-zinc-800 shadow-2xl z-50 p-2 space-y-0.5 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute left-0 mt-2 w-56 rounded-xl bg-white border border-gray-200 shadow-xl z-50 p-2 space-y-0.5 animate-in fade-in slide-in-from-top-2 duration-200">
                 {sortOptions.map((opt) => (
                   <button
                     key={opt.value}
                     type="button"
                     onClick={() => handleSortSelect(opt.value)}
-                    className={`w-full text-left px-3.5 py-2.5 text-xs sm:text-sm rounded-lg hover:bg-zinc-800/80 transition-colors flex items-center justify-between ${
+                    className={`w-full text-left px-3.5 py-2.5 text-xs sm:text-sm rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${
                       selectedSortBy === opt.value
                         ? 'text-brand bg-brand/5 font-semibold'
-                        : 'text-zinc-300 hover:text-white'
+                        : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
                     <span>{opt.label}</span>
@@ -296,7 +301,7 @@ export const MovieFilter = ({ filters, onChange }) => {
           <button
             type="button"
             onClick={handleClearFilters}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 text-zinc-400 hover:text-red-400 text-xs font-bold rounded-lg border border-transparent hover:border-red-500/20 hover:bg-red-500/5 transition-all duration-300 active:scale-95 whitespace-nowrap cursor-pointer mt-2 sm:mt-0"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 text-gray-400 hover:text-red-500 text-xs font-bold rounded-lg border border-transparent hover:border-red-200 hover:bg-red-50 transition-all duration-300 active:scale-95 whitespace-nowrap cursor-pointer mt-2 sm:mt-0"
           >
             <X size={14} />
             <span>{t('filter.clearAll')}</span>

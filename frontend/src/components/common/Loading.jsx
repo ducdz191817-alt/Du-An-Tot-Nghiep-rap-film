@@ -13,15 +13,15 @@ export const Loading = ({ fullPage = false, size = 'md' }) => {
         {/* Outer glowing ring */}
         <div className={`rounded-full border-t-transparent border-brand animate-spin ${sizeStyles[size]}`} />
         {/* Inner static aesthetic ring */}
-        <div className={`absolute top-0 left-0 rounded-full border-zinc-800 opacity-20 ${sizeStyles[size]}`} />
+        <div className={`absolute top-0 left-0 rounded-full border-gray-200 opacity-40 ${sizeStyles[size]}`} />
       </div>
-      <p className="text-zinc-400 text-sm font-medium animate-pulse">Đang tải trải nghiệm...</p>
+      <p className="text-gray-400 text-sm font-medium animate-pulse">Đang tải trải nghiệm...</p>
     </div>
   );
 
   if (fullPage) {
     return (
-      <div className="fixed inset-0 bg-dark-deep z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-[#faf7f2] z-50 flex items-center justify-center">
         {spinner}
       </div>
     );

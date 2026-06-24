@@ -8,14 +8,14 @@ import myLogo from '../../assets/images/logo.png';
 
 // Flag SVGs (Vietnamese & US/UK English)
 const VNFlag = () => (
-  <svg viewBox="0 0 24 24" className="w-5 h-5 rounded-full overflow-hidden inline-block shrink-0 shadow-sm border border-zinc-700/50">
+  <svg viewBox="0 0 24 24" className="w-5 h-5 rounded-full overflow-hidden inline-block shrink-0 shadow-sm border border-gray-200">
     <rect width="24" height="24" fill="#da251d" />
     <polygon points="12,5 13.85,10.7 18.7,10.7 14.78,13.55 16.27,19.25 12,15.7 7.73,19.25 9.22,13.55 5.3,10.7 10.15,10.7" fill="#ffff00" />
   </svg>
 );
 
 const USFlag = () => (
-  <svg viewBox="0 0 24 24" className="w-5 h-5 rounded-full overflow-hidden inline-block shrink-0 shadow-sm border border-zinc-700/50">
+  <svg viewBox="0 0 24 24" className="w-5 h-5 rounded-full overflow-hidden inline-block shrink-0 shadow-sm border border-gray-200">
     <rect width="24" height="24" fill="#fff" />
     <rect width="24" height="1.85" y="0" fill="#b22234" />
     <rect width="24" height="1.85" y="3.7" fill="#b22234" />
@@ -80,7 +80,7 @@ export const Header = () => {
   };
 
   const isActive = (path) => {
-    return location.pathname === path ? 'text-brand font-bold' : 'text-zinc-300 hover:text-white';
+    return location.pathname === path ? 'text-brand font-bold' : 'text-gray-600 hover:text-gray-900';
   };
 
   const selectLanguage = (lang) => {
@@ -89,14 +89,14 @@ export const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-dark-deep/80 backdrop-blur-md border-b border-dark-border">
+    <header className="sticky top-0 z-40 w-full bg-white/90 backdrop-blur-md border-b border-gray-200/80 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center group">
           <img 
             src={myLogo} 
             alt="Nova Cinematic Logo" 
-            className="h-16 w-auto object-contain group-hover:scale-105 transition-transform" 
+            className="h-16 w-auto object-contain group-hover:scale-105 transition-transform brightness-50 contrast-150" 
           />
         </Link>
 
@@ -131,7 +131,7 @@ export const Header = () => {
               {isAdmin && (
                 <Link
                   to="/admin"
-                  className="hidden sm:flex items-center space-x-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 px-3 py-1.5 rounded-lg font-bold transition-all duration-300"
+                  className="hidden sm:flex items-center space-x-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg font-bold transition-all duration-300"
                 >
                   <LayoutDashboard size={14} />
                   <span>{t('nav.admin')}</span>
@@ -144,14 +144,14 @@ export const Header = () => {
                   onClick={() => setBellOpen(!bellOpen)}
                   className={`relative p-2 rounded-xl transition-all ${
                     pendingBookings.length > 0
-                      ? 'text-amber-400 hover:bg-amber-400/10'
-                      : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900'
+                      ? 'text-amber-500 hover:bg-amber-50'
+                      : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
                   }`}
                   title="Thông báo"
                 >
                   <Bell size={18} />
                   {pendingBookings.length > 0 && (
-                    <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-dark-deep">
+                    <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white">
                       {pendingBookings.length > 9 ? '9+' : pendingBookings.length}
                     </span>
                   )}
@@ -159,17 +159,17 @@ export const Header = () => {
 
                 {/* Dropdown */}
                 {bellOpen && (
-                  <div className="absolute right-0 top-[calc(100%+10px)] w-80 bg-[#13131c] border border-dark-border rounded-2xl shadow-[0_20px_48px_rgba(0,0,0,0.6)] z-50 overflow-hidden">
+                  <div className="absolute right-0 top-[calc(100%+10px)] w-80 bg-white border border-gray-200 rounded-2xl shadow-[0_20px_48px_rgba(0,0,0,0.12)] z-50 overflow-hidden">
                     {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-dark-border">
-                      <p className="text-sm font-bold text-zinc-200">Thông báo</p>
-                      <button onClick={() => setBellOpen(false)} className="text-zinc-500 hover:text-zinc-300 transition-colors">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                      <p className="text-sm font-bold text-gray-800">Thông báo</p>
+                      <button onClick={() => setBellOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
                         <X size={14} />
                       </button>
                     </div>
 
                     {/* List */}
-                    <div className="max-h-72 overflow-y-auto divide-y divide-dark-border/50">
+                    <div className="max-h-72 overflow-y-auto divide-y divide-gray-100">
                       {pendingBookings.length > 0 ? (
                         pendingBookings.map((b) => {
                           const movie = b.showtime?.movie || {};
@@ -177,23 +177,23 @@ export const Header = () => {
                           return (
                             <div
                               key={b._id}
-                              className="px-4 py-3 hover:bg-zinc-800/30 transition-colors cursor-pointer"
+                              className="px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer"
                               onClick={() => { navigate('/history'); setBellOpen(false); }}
                             >
                               <div className="flex items-start gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-                                  <CreditCard size={13} className="text-amber-400" />
+                                <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
+                                  <CreditCard size={13} className="text-amber-500" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-bold text-zinc-200 truncate">Thanh toán vé phim {movie.title || 'Phim'}</p>
-                                  <p className="text-[10px] text-zinc-500 mt-0.5">
+                                  <p className="text-xs font-bold text-gray-800 truncate">Thanh toán vé phim {movie.title || 'Phim'}</p>
+                                  <p className="text-[10px] text-gray-400 mt-0.5">
                                     {startTime ? startTime.toLocaleDateString('vi-VN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                                   </p>
-                                  <p className="text-[11px] font-black text-amber-400 mt-1">
+                                  <p className="text-[11px] font-black text-amber-600 mt-1">
                                     {(b.totalPrice || 0).toLocaleString()} VND
                                   </p>
                                 </div>
-                                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0 self-start mt-0.5">
+                                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200 shrink-0 self-start mt-0.5">
                                   Chưa TT
                                 </span>
                               </div>
@@ -202,7 +202,7 @@ export const Header = () => {
                         })
                       ) : (
                         <div className="px-4 py-8 text-center">
-                          <p className="text-sm text-zinc-500">Chưa có thông báo mới</p>
+                          <p className="text-sm text-gray-400">Chưa có thông báo mới</p>
                         </div>
                       )}
                     </div>
@@ -211,16 +211,16 @@ export const Header = () => {
               </div>
 
               {/* User Dropdown Profile mock */}
-              <div className="flex items-center space-x-2 bg-zinc-900/80 px-3 py-1.5 rounded-xl border border-zinc-800">
+              <div className="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-200">
                 <div className="w-6 h-6 rounded-full bg-brand/20 flex items-center justify-center text-brand font-black text-xs uppercase">
                   {user.username.charAt(0)}
                 </div>
-                <span className="text-sm font-semibold text-zinc-200 hidden sm:inline">{user.username}</span>
+                <span className="text-sm font-semibold text-gray-700 hidden sm:inline">{user.username}</span>
               </div>
 
               <button
                 onClick={handleLogout}
-                className="text-zinc-400 hover:text-brand transition-colors p-2 rounded-lg hover:bg-zinc-900"
+                className="text-gray-400 hover:text-brand transition-colors p-2 rounded-lg hover:bg-gray-100"
                 title={t('nav.logout')}
               >
                 <LogOut size={18} />
@@ -230,14 +230,16 @@ export const Header = () => {
             <div className="flex items-center space-x-3">
               <Link
                 to="/login"
-                className="text-zinc-300 hover:text-white text-sm font-semibold px-4 py-2 transition-colors"
+                className="text-gray-600 hover:text-gray-900 text-sm font-semibold px-4 py-2 transition-colors flex items-center gap-1.5"
               >
+                <User size={15} />
                 {t('nav.login')}
               </Link>
               <Link
                 to="/register"
-                className="hidden sm:inline-block text-zinc-300 hover:text-white text-sm font-semibold px-4 py-2 transition-colors"
+                className="hidden sm:inline-flex items-center gap-1.5 text-gray-600 hover:text-gray-900 text-sm font-semibold px-4 py-2 transition-colors"
               >
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
                 {t('nav.register')}
               </Link>
             </div>
@@ -247,23 +249,23 @@ export const Header = () => {
           <div className="relative" ref={dropdownRef}>
             <button 
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center space-x-1.5 px-3 py-2 rounded-lg hover:bg-zinc-900/60 transition-colors focus:outline-none"
+              className="flex items-center space-x-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none"
             >
               {language === 'vi' ? <VNFlag /> : <USFlag />}
-              <span className="text-sm font-bold text-white uppercase tracking-wider">{language === 'vi' ? 'VN' : 'ENG'}</span>
-              <svg className={`w-3.5 h-3.5 text-zinc-400 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <span className="text-sm font-bold text-gray-700 uppercase tracking-wider">{language === 'vi' ? 'VN' : 'ENG'}</span>
+              <svg className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path>
               </svg>
             </button>
             
             {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-28 rounded-xl bg-dark-deep border border-dark-border shadow-[0_10px_30px_rgba(0,0,0,0.5)] p-1 z-50 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col gap-1">
+              <div className="absolute right-0 mt-2 w-28 rounded-xl bg-white border border-gray-200 shadow-[0_10px_30px_rgba(0,0,0,0.1)] p-1 z-50 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col gap-1">
                 <button
                   onClick={() => selectLanguage('vi')}
                   className={`flex items-center space-x-2 w-full px-3 py-2 rounded-lg text-left transition-all ${
                     language === 'vi' 
-                      ? 'bg-red-600 text-white font-black shadow-[0_2px_8px_rgba(220,38,38,0.4)]' 
-                      : 'text-zinc-300 hover:text-white hover:bg-zinc-800/50'
+                      ? 'bg-red-500 text-white font-black shadow-[0_2px_8px_rgba(220,38,38,0.3)]' 
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   }`}
                 >
                   <VNFlag />
@@ -273,8 +275,8 @@ export const Header = () => {
                   onClick={() => selectLanguage('en')}
                   className={`flex items-center space-x-2 w-full px-3 py-2 rounded-lg text-left transition-all ${
                     language === 'en' 
-                      ? 'bg-blue-600 text-white font-black shadow-[0_2px_8px_rgba(37,99,235,0.4)]' 
-                      : 'text-zinc-300 hover:text-white hover:bg-zinc-800/50'
+                      ? 'bg-blue-500 text-white font-black shadow-[0_2px_8px_rgba(37,99,235,0.3)]' 
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   }`}
                 >
                   <USFlag />
@@ -287,7 +289,7 @@ export const Header = () => {
           {/* Quick Book Ticket Button from mockup */}
           <Link
             to="/movies"
-            className="bg-brand hover:bg-brand-dark text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-[0_4px_12px_rgba(168,85,247,0.3)] transition-all transform active:scale-95 uppercase tracking-wider"
+            className="bg-brand hover:bg-brand-dark text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-[0_4px_12px_rgba(200,135,43,0.3)] transition-all transform active:scale-95 uppercase tracking-wider"
           >
             {t('nav.bookNow')}
           </Link>

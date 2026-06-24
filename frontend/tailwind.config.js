@@ -8,23 +8,23 @@ export default {
     extend: {
       colors: {
         brand: {
-          light: '#c084fc',
-          DEFAULT: '#a855f7',
-          dark: '#7e22ce',
+          light: '#daa54e',
+          DEFAULT: '#c8872b',
+          dark: '#a66d1f',
         },
         dark: {
-          deep: '#0a0a0c',
-          card: '#16161e',
-          border: '#2a2a35',
-          text: '#9fa0a6',
+          deep: '#faf7f2',
+          card: '#ffffff',
+          border: '#e8e0d4',
+          text: '#6b6155',
         }
       },
       fontFamily: {
         sans: ['Outfit', 'Inter', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
-        'glass-brand': '0 8px 32px 0 rgba(168, 85, 247, 0.2)',
+        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.06)',
+        'glass-brand': '0 8px 32px 0 rgba(200, 135, 43, 0.15)',
       }
     },
   },
