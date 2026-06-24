@@ -35,7 +35,7 @@ export const RegisterPage = () => {
             alt="Nova Cinematic Logo" 
             className="h-16 w-auto object-contain" 
           />
-          <h2 className="text-xl font-bold text-white uppercase tracking-wider text-center mt-2">
+          <h2 className="text-xl font-bold text-gray-800 uppercase tracking-wider text-center mt-2">
             Tạo tài khoản mới
           </h2>
           <p className="text-xs text-zinc-500 text-center">Đăng ký ngay hôm nay để tận hưởng các ưu đãi điện ảnh.</p>

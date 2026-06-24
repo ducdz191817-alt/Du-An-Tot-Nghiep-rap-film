@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Mail, Lock, Phone, UserPlus, Calendar } from 'lucide-react';
+import { UserPlus, Eye, EyeOff } from 'lucide-react';
 import Input from '../common/Input';
 import Button from '../common/Button';
 import useAuth from '../../hooks/useAuth';
@@ -11,16 +11,20 @@ export const RegisterForm = ({ onSuccess }) => {
     email: '',
     password: '',
     phone: '',
-    dob: '',
+    dobDay: '',
+    dobMonth: '',
+    dobYear: '',
+    gender: 'Nam',
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [formErrors, setFormErrors] = useState({});
 
   const validate = () => {
     const errors = {};
     if (!formData.username.trim()) {
-      errors.username = 'Vui lòng điền tên đăng nhập';
+      errors.username = 'Vui lòng điền tên';
     } else if (formData.username.trim().length < 3) {
-      errors.username = 'Tên đăng nhập phải có ít nhất 3 ký tự';
+      errors.username = 'Tên phải có ít nhất 3 ký tự';
     }
 
     if (!formData.email) {
@@ -35,14 +39,19 @@ export const RegisterForm = ({ onSuccess }) => {
       errors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
     }
 
-    if (formData.phone && !/^\d{10,11}$/.test(formData.phone)) {
+    if (!formData.phone) {
+      errors.phone = 'Vui lòng điền số điện thoại';
+    } else if (!/^\d{10,11}$/.test(formData.phone)) {
       errors.phone = 'Số điện thoại phải từ 10-11 chữ số';
     }
 
-    if (!formData.dob) {
-      errors.dob = 'Vui lòng chọn ngày sinh';
+    if (!formData.dobDay || !formData.dobMonth || !formData.dobYear) {
+      errors.dob = 'Vui lòng điền đầy đủ ngày sinh';
     } else {
-      const birthDate = new Date(formData.dob);
+      const day = parseInt(formData.dobDay, 10);
+      const month = parseInt(formData.dobMonth, 10) - 1; // 0-indexed month
+      const year = parseInt(formData.dobYear, 10);
+      const birthDate = new Date(year, month, day);
       const today = new Date();
       if (birthDate > today) {
         errors.dob = 'Ngày sinh không thể ở tương lai';
@@ -61,9 +70,15 @@ export const RegisterForm = ({ onSuccess }) => {
   };
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    if (formErrors[e.target.name]) {
-      setFormErrors({ ...formErrors, [e.target.name]: '' });
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+
+    if (formErrors[name]) {
+      setFormErrors(prev => ({ ...prev, [name]: '' }));
+    }
+    // Also clear general dob error if any dob dropdown is selected
+    if (name.startsWith('dob') && formErrors.dob) {
+      setFormErrors(prev => ({ ...prev, dob: '' }));
     }
   };
 
@@ -71,9 +86,14 @@ export const RegisterForm = ({ onSuccess }) => {
     e.preventDefault();
     if (!validate()) return;
 
-    const calculateAge = (dobString) => {
+    const day = formData.dobDay.padStart(2, '0');
+    const month = formData.dobMonth.padStart(2, '0');
+    const year = formData.dobYear;
+    const dobString = `${year}-${month}-${day}`;
+
+    const calculateAge = (dobStr) => {
       const today = new Date();
-      const birthDate = new Date(dobString);
+      const birthDate = new Date(dobStr);
       let age = today.getFullYear() - birthDate.getFullYear();
       const m = today.getMonth() - birthDate.getMonth();
       if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
@@ -82,7 +102,7 @@ export const RegisterForm = ({ onSuccess }) => {
       return age;
     };
 
-    const age = calculateAge(formData.dob);
+    const age = calculateAge(dobString);
 
     try {
       await register(
@@ -90,7 +110,9 @@ export const RegisterForm = ({ onSuccess }) => {
         formData.email,
         formData.password,
         formData.phone,
-        age
+        age,
+        formData.gender,
+        dobString
       );
       if (onSuccess) onSuccess();
     } catch (err) {
@@ -108,60 +130,131 @@ export const RegisterForm = ({ onSuccess }) => {
 
       <Input
         name="username"
-        label="Tên đăng nhập"
-        placeholder="nguyenvana"
+        label="Tên"
+        placeholder="Tên"
         value={formData.username}
         onChange={handleChange}
         error={formErrors.username}
-        icon={<User size={18} />}
-        required
-      />
-
-      <Input
-        name="email"
-        type="email"
-        label="Địa chỉ Email"
-        placeholder="tenban@gmail.com"
-        value={formData.email}
-        onChange={handleChange}
-        error={formErrors.email}
-        icon={<Mail size={18} />}
         required
       />
 
       <Input
         name="phone"
         label="Số điện thoại"
-        placeholder="0123456789"
+        placeholder="Số điện thoại"
         value={formData.phone}
         onChange={handleChange}
         error={formErrors.phone}
-        icon={<Phone size={18} />}
+        required
       />
 
       <Input
-        name="dob"
-        type="date"
-        label="Ngày sinh"
-        placeholder="Chọn ngày sinh của bạn"
-        value={formData.dob}
+        name="email"
+        type="email"
+        label="Email"
+        placeholder="Email"
+        value={formData.email}
         onChange={handleChange}
-        error={formErrors.dob}
-        icon={<Calendar size={18} />}
+        error={formErrors.email}
         required
       />
 
       <Input
         name="password"
-        type="password"
+        type={showPassword ? 'text' : 'password'}
         label="Mật khẩu"
-        placeholder="••••••••"
+        placeholder="Mật khẩu"
         value={formData.password}
         onChange={handleChange}
         error={formErrors.password}
-        icon={<Lock size={18} />}
+        rightIcon={
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="text-gray-400 hover:text-gray-600 focus:outline-none"
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        }
         required
       />
+
+      {/* Date of Birth and Gender */}
+      <div className="w-full mb-4">
+        <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">
+          Ngày sinh<span className="text-red-500 ml-0.5">*</span>
+        </label>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Days select */}
+          <select
+            name="dobDay"
+            value={formData.dobDay}
+            onChange={handleChange}
+            className="bg-gray-50 border border-gray-200 focus:border-brand focus:ring-1 focus:ring-brand text-gray-900 rounded-lg py-2 px-3 outline-none text-sm cursor-pointer transition-all"
+          >
+            <option value="">Ngày</option>
+            {Array.from({ length: 31 }, (_, i) => String(i + 1)).map(d => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+
+          {/* Months select */}
+          <select
+            name="dobMonth"
+            value={formData.dobMonth}
+            onChange={handleChange}
+            className="bg-gray-50 border border-gray-200 focus:border-brand focus:ring-1 focus:ring-brand text-gray-900 rounded-lg py-2 px-3 outline-none text-sm cursor-pointer transition-all"
+          >
+            <option value="">Tháng</option>
+            {Array.from({ length: 12 }, (_, i) => String(i + 1)).map(m => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+
+          {/* Years select */}
+          <select
+            name="dobYear"
+            value={formData.dobYear}
+            onChange={handleChange}
+            className="bg-gray-50 border border-gray-200 focus:border-brand focus:ring-1 focus:ring-brand text-gray-900 rounded-lg py-2 px-3 outline-none text-sm cursor-pointer transition-all"
+          >
+            <option value="">Năm</option>
+            {Array.from({ length: 100 }, (_, i) => String(new Date().getFullYear() - i)).map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+
+          {/* Gender Selector */}
+          <div className="flex items-center space-x-3 ml-2">
+            <span className="text-red-500 font-bold">*</span>
+            <label className="flex items-center space-x-1.5 text-sm font-semibold text-gray-700 cursor-pointer">
+              <input
+                type="radio"
+                name="gender"
+                value="Nam"
+                checked={formData.gender === 'Nam'}
+                onChange={handleChange}
+                className="text-brand focus:ring-brand h-4 w-4 border-gray-300"
+              />
+              <span>Nam</span>
+            </label>
+            <label className="flex items-center space-x-1.5 text-sm font-semibold text-gray-700 cursor-pointer">
+              <input
+                type="radio"
+                name="gender"
+                value="Nữ"
+                checked={formData.gender === 'Nữ'}
+                onChange={handleChange}
+                className="text-brand focus:ring-brand h-4 w-4 border-gray-300"
+              />
+              <span>Nữ</span>
+            </label>
+          </div>
+        </div>
+        {formErrors.dob && (
+          <p className="mt-1 text-xs text-red-500 font-medium pl-0.5">{formErrors.dob}</p>
+        )}
+      </div>
 
       <Button
         type="submit"

@@ -41,6 +41,23 @@ const UserSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    gender: {
+      type: String,
+      enum: ['Nam', 'Nữ'],
+      default: 'Nam',
+    },
+    dob: {
+      type: String,
+      default: '',
+    },
+    region: {
+      type: String,
+      default: '',
+    },
+    favoriteTheater: {
+      type: String,
+      default: '',
+    },
   },
   {
     timestamps: true,

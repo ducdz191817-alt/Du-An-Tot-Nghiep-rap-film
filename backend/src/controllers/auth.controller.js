@@ -13,7 +13,7 @@ const generateToken = (id) => {
 // @access  Public
 const registerUser = async (req, res, next) => {
   try {
-    const { username, email, password, phone, age } = req.body;
+    const { username, email, password, phone, age, gender, dob, region, favoriteTheater } = req.body;
 
     // Check if user exists
     const userExists = await User.findOne({ email });
@@ -29,6 +29,10 @@ const registerUser = async (req, res, next) => {
       password,
       phone,
       age,
+      gender,
+      dob,
+      region,
+      favoriteTheater,
     });
 
     if (user) {
@@ -41,6 +45,10 @@ const registerUser = async (req, res, next) => {
           role: user.role,
           phone: user.phone,
           age: user.age,
+          gender: user.gender,
+          dob: user.dob,
+          region: user.region,
+          favoriteTheater: user.favoriteTheater,
           token: generateToken(user._id),
         },
       });
@@ -82,6 +90,10 @@ const loginUser = async (req, res, next) => {
         role: user.role,
         phone: user.phone,
         age: user.age,
+        gender: user.gender,
+        dob: user.dob,
+        region: user.region,
+        favoriteTheater: user.favoriteTheater,
         token: generateToken(user._id),
       },
     });
@@ -106,6 +118,10 @@ const getUserProfile = async (req, res, next) => {
           role: user.role,
           phone: user.phone,
           age: user.age,
+          gender: user.gender,
+          dob: user.dob,
+          region: user.region,
+          favoriteTheater: user.favoriteTheater,
         },
       });
     } else {
@@ -128,6 +144,10 @@ const updateUserProfile = async (req, res, next) => {
       user.username = req.body.username || user.username;
       user.phone = req.body.phone || user.phone;
       user.age = req.body.age !== undefined ? req.body.age : user.age;
+      user.gender = req.body.gender !== undefined ? req.body.gender : user.gender;
+      user.dob = req.body.dob !== undefined ? req.body.dob : user.dob;
+      user.region = req.body.region !== undefined ? req.body.region : user.region;
+      user.favoriteTheater = req.body.favoriteTheater !== undefined ? req.body.favoriteTheater : user.favoriteTheater;
 
       if (req.body.password) {
         user.password = req.body.password;
@@ -144,6 +164,10 @@ const updateUserProfile = async (req, res, next) => {
           role: updatedUser.role,
           phone: updatedUser.phone,
           age: updatedUser.age,
+          gender: updatedUser.gender,
+          dob: updatedUser.dob,
+          region: updatedUser.region,
+          favoriteTheater: updatedUser.favoriteTheater,
           token: generateToken(updatedUser._id),
         },
       });

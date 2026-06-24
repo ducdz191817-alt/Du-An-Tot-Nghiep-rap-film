@@ -227,21 +227,23 @@ export const Header = () => {
               </button>
             </div>
           ) : (
-            <div className="flex items-center space-x-3">
-              <Link
-                to="/login"
-                className="text-gray-600 hover:text-gray-900 text-sm font-semibold px-4 py-2 transition-colors flex items-center gap-1.5"
-              >
-                <User size={15} />
-                {t('nav.login')}
-              </Link>
-              <Link
-                to="/register"
-                className="hidden sm:inline-flex items-center gap-1.5 text-gray-600 hover:text-gray-900 text-sm font-semibold px-4 py-2 transition-colors"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
-                {t('nav.register')}
-              </Link>
+            <div className="flex items-center space-x-1.5 text-gray-600 text-sm font-bold">
+              <User size={18} strokeWidth={2} className="text-gray-700 shrink-0" />
+              <div className="flex items-center uppercase tracking-wide">
+                <Link
+                  to="/login"
+                  className="hover:text-brand transition-colors"
+                >
+                  {t('nav.login')}
+                </Link>
+                <span className="text-gray-400">/</span>
+                <Link
+                  to="/register"
+                  className="hover:text-brand transition-colors pl-1"
+                >
+                  {t('nav.register')}
+                </Link>
+              </div>
             </div>
           )}
 

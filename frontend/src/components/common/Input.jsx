@@ -7,6 +7,7 @@ export const Input = React.forwardRef(({
   placeholder,
   className = '',
   icon,
+  rightIcon,
   onInvalid,
   onInput,
   onChange,
@@ -62,8 +63,9 @@ export const Input = React.forwardRef(({
   return (
     <div className="w-full mb-4">
       {label && (
-        <label className="block text-sm font-medium text-gray-600 mb-1.5 pl-0.5">
+        <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">
           {label}
+          {props.required && <span className="text-red-500 ml-0.5">*</span>}
         </label>
       )}
       <div className="relative">
@@ -95,9 +97,14 @@ export const Input = React.forwardRef(({
             onChange={handleChange}
             className={`w-full bg-gray-50 border border-gray-200 focus:border-brand focus:ring-1 focus:ring-brand text-gray-900 placeholder-gray-400 rounded-lg py-2.5 transition-all duration-300 outline-none ${
               icon ? 'pl-10' : 'pl-4'
-            } ${displayError ? 'border-red-500 focus:border-red-500/50 focus:ring-red-500/20' : ''} ${className}`}
+            } ${rightIcon ? 'pr-10' : 'pr-4'} ${displayError ? 'border-red-500 focus:border-red-500/50 focus:ring-red-500/20' : ''} ${className}`}
             {...props}
           />
+        )}
+        {rightIcon && !isTextarea && (
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+            {rightIcon}
+          </div>
         )}
       </div>
       {displayError && (

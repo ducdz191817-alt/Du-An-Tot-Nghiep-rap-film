@@ -35,7 +35,7 @@ export const LoginPage = () => {
             alt="Nova Cinematic Logo" 
             className="h-16 w-auto object-contain" 
           />
-          <h2 className="text-xl font-bold text-white uppercase tracking-wider text-center mt-2">
+          <h2 className="text-xl font-bold text-gray-800 uppercase tracking-wider text-center mt-2">
             Đăng nhập tài khoản
           </h2>
           <p className="text-xs text-zinc-500 text-center">Chọn ghế ngồi ưng ý và thanh toán chỉ trong vài giây.</p>
