@@ -156,9 +156,9 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
             <div key={group.group} style={{ marginBottom: 8 }}>
               {!collapsed ? (
                 <p style={{
-                  fontSize: 9, fontWeight: 800, textTransform: 'uppercase',
-                  letterSpacing: '0.15em', color: '#3f3f46',
-                  padding: '4px 20px 8px',
+                  fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
+                  letterSpacing: '0.1em', color: '#94a3b8',
+                  padding: '10px 20px 6px',
                 }}>
                   {group.group}
                 </p>
@@ -179,25 +179,36 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
                       display: 'flex', alignItems: 'center',
                       gap: 10, padding: '9px 12px',
                       borderRadius: 10, border: 'none', cursor: 'pointer',
-                      background: isActive ? 'rgba(124,58,237,0.12)' : 'transparent',
-                      color: isActive ? '#c4b5fd' : '#71717a',
-                      fontWeight: 600, fontSize: 13,
+                      background: isActive ? 'rgba(124, 58, 237, 0.25)' : 'transparent',
+                      color: isActive ? '#ffffff' : '#cbd5e1',
+                      fontWeight: isActive ? 700 : 600, fontSize: 14,
                       textAlign: 'left', position: 'relative',
                       transition: 'all 0.15s',
                       justifyContent: collapsed ? 'center' : 'flex-start',
                     }}
-                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = '#d4d4d8'; }}
-                    onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#71717a'; } }}
+                    onMouseEnter={e => {
+                      if (!isActive) {
+                        e.currentTarget.style.background = 'rgba(124, 58, 237, 0.08)';
+                        e.currentTarget.style.color = '#ffffff';
+                      }
+                    }}
+                    onMouseLeave={e => {
+                      if (!isActive) {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.color = '#cbd5e1';
+                      }
+                    }}
                   >
                     {isActive && (
                       <span style={{
                         position: 'absolute', left: 0, top: '50%',
                         transform: 'translateY(-50%)',
-                        width: 3, height: 20,
-                        background: '#8b5cf6', borderRadius: '0 4px 4px 0',
+                        width: 4, height: 20,
+                        background: 'linear-gradient(to bottom, #a855f7, #c084fc)',
+                        borderRadius: '0 4px 4px 0',
                       }} />
                     )}
-                    <Icon size={17} color={isActive ? '#a78bfa' : undefined} style={{ flexShrink: 0 }} />
+                    <Icon size={17} color={isActive ? '#c4b5fd' : undefined} style={{ flexShrink: 0 }} />
                     {!collapsed && <span style={{ flex: 1 }}>{item.label}</span>}
                   </button>
                 );
@@ -215,19 +226,17 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
               width: '100%', display: 'flex', alignItems: 'center',
               gap: 10, padding: '9px 12px', borderRadius: 10,
               border: 'none', cursor: 'pointer',
-              background: 'transparent', color: '#71717a',
+              background: 'transparent', color: '#9ca3af',
               fontWeight: 600, fontSize: 13,
               justifyContent: collapsed ? 'center' : 'flex-start',
               transition: 'all 0.15s',
             }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.color = '#f87171'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#71717a'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#9ca3af'; }}
           >
             <LogOut size={16} style={{ flexShrink: 0 }} />
             {!collapsed && <span>Đăng xuất</span>}
           </button>
-
-
         </div>
       </aside>
 
