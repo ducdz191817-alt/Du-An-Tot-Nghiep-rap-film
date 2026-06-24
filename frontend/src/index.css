@@ -10,60 +10,96 @@
   }
 
   body {
-    @apply bg-dark-deep text-zinc-100 font-sans antialiased selection:bg-brand/80 selection:text-white;
-    background-color: #060507;
+    @apply bg-dark-deep text-gray-900 font-sans antialiased selection:bg-brand/80 selection:text-white;
+    background-color: #faf7f2;
     background-image:
-      radial-gradient(ellipse at 10% 10%, rgba(255,255,255,0.02), transparent 20%),
-      radial-gradient(circle at 80% 20%, rgba(255,255,255,0.02), transparent 15%),
-      repeating-radial-gradient(circle at 20% 80%, rgba(255,255,255,0.03) 0 1px, transparent 2px 6px),
-      linear-gradient(180deg, rgba(255,255,255,0.02), transparent 50%);
+      radial-gradient(ellipse at 10% 10%, rgba(200,135,43,0.03), transparent 20%),
+      radial-gradient(circle at 80% 20%, rgba(200,135,43,0.02), transparent 15%),
+      radial-gradient(circle at 50% 50%, rgba(218,165,78,0.02), transparent 40%);
     background-attachment: fixed;
     background-size: cover;
     position: relative;
     min-height: 100vh;
   }
 
-  /* subtle moving shimmer */
+  /* ✨ Golden shimmer sweep */
   body::before {
     content: "";
     position: fixed;
     inset: 0;
     pointer-events: none;
-    background: linear-gradient(120deg, rgba(255,255,255,0.02), rgba(255,255,255,0) 40%, rgba(255,255,255,0.02));
+    background: linear-gradient(120deg, rgba(200,135,43,0.04), rgba(255,255,255,0) 40%, rgba(200,135,43,0.04));
     transform: translateX(-100%);
     animation: shimmer 8s linear infinite;
-    mix-blend-mode: screen;
+    mix-blend-mode: multiply;
   }
 
-  /* repeating tiny twinkles */
+  /* ✨ Repeating golden star twinkles - nhiều hơn & rõ hơn */
   body::after {
     content: "";
     position: fixed;
     inset: 0;
     pointer-events: none;
     background-image:
-      radial-gradient(circle at 10% 10%, rgba(255,255,255,0.9) 0 1px, transparent 2px),
-      radial-gradient(circle at 30% 40%, rgba(255,255,255,0.8) 0 1px, transparent 2px),
-      radial-gradient(circle at 70% 60%, rgba(255,255,255,0.7) 0 1px, transparent 2px);
+      radial-gradient(circle at 5% 8%, rgba(190,140,40,0.50) 0 1.2px, transparent 1.8px),
+      radial-gradient(circle at 15% 35%, rgba(210,160,50,0.40) 0 1px, transparent 1.6px),
+      radial-gradient(circle at 28% 12%, rgba(200,135,43,0.35) 0 0.8px, transparent 1.4px),
+      radial-gradient(circle at 38% 65%, rgba(218,170,60,0.45) 0 1.1px, transparent 1.7px),
+      radial-gradient(circle at 52% 20%, rgba(190,130,35,0.38) 0 0.9px, transparent 1.5px),
+      radial-gradient(circle at 65% 50%, rgba(200,145,45,0.42) 0 1px, transparent 1.6px),
+      radial-gradient(circle at 72% 15%, rgba(215,160,55,0.36) 0 1.2px, transparent 1.8px),
+      radial-gradient(circle at 82% 70%, rgba(195,140,40,0.40) 0 0.8px, transparent 1.4px),
+      radial-gradient(circle at 90% 30%, rgba(210,155,50,0.44) 0 1px, transparent 1.6px),
+      radial-gradient(circle at 95% 85%, rgba(200,135,43,0.38) 0 1.1px, transparent 1.7px);
     background-repeat: repeat;
-    background-size: 220px 220px;
-    opacity: 0.55;
-    filter: blur(1px);
-    mix-blend-mode: screen;
-    animation: sparkle 6s linear infinite;
+    background-size: 200px 200px;
+    opacity: 0.7;
+    filter: blur(0.3px);
+    mix-blend-mode: multiply;
+    animation: sparkle 6s ease-in-out infinite;
   }
 
   @keyframes shimmer {
-    0% { transform: translateX(-100%); opacity: .45; }
+    0% { transform: translateX(-100%); opacity: .4; }
     50% { transform: translateX(0%); opacity: .6; }
-    100% { transform: translateX(100%); opacity: .45; }
+    100% { transform: translateX(100%); opacity: .4; }
   }
 
   @keyframes sparkle {
-    0% { transform: translateY(0) scale(1); opacity: .6; }
-    50% { transform: translateY(-24px) scale(1.05); opacity: 1; }
-    100% { transform: translateY(0) scale(1); opacity: .6; }
+    0% { transform: translateY(0) scale(1); opacity: .5; }
+    25% { opacity: .85; }
+    50% { transform: translateY(-20px) scale(1.04); opacity: 1; }
+    75% { opacity: .7; }
+    100% { transform: translateY(0) scale(1); opacity: .5; }
   }
+}
+
+/* ✨ Floating star particles via extra pseudo on #root */
+#root::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(circle at 10% 25%, rgba(200,135,43,0.5) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 25% 80%, rgba(218,165,78,0.4) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 45% 45%, rgba(200,145,50,0.45) 0 1.2px, transparent 1.8px),
+    radial-gradient(circle at 60% 10%, rgba(210,155,45,0.38) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 75% 60%, rgba(195,130,40,0.42) 0 1.3px, transparent 1.9px),
+    radial-gradient(circle at 88% 40%, rgba(200,135,43,0.48) 0 1px, transparent 1.6px);
+  background-repeat: repeat;
+  background-size: 300px 320px;
+  opacity: 0.6;
+  animation: sparkle2 10s ease-in-out infinite;
+}
+
+@keyframes sparkle2 {
+  0% { transform: translateY(0) scale(1); opacity: .4; }
+  30% { opacity: .75; }
+  50% { transform: translateY(-14px) scale(1.02); opacity: .9; }
+  70% { opacity: .6; }
+  100% { transform: translateY(0) scale(1); opacity: .4; }
 }
 
 /* Custom premium scrollbar styling */
@@ -77,12 +113,12 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #2a2a35;
+  background: #d4c8b8;
   border-radius: 99px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #a855f7;
+  background: #c8872b;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
@@ -90,15 +126,10 @@
   display: none;
 }
 
-
 .scrollbar-none {
   -ms-overflow-style: none; 
   scrollbar-width: none;  
 }
-
-
-
-
 
 .movie-banner-bg::before {
   content: "";
@@ -108,10 +139,7 @@
   right: 0;
   bottom: 0;
   background: 
-   
-    linear-gradient(to top, #0f1013 10%, rgba(15, 16, 19, 0.8) 50%, rgba(15, 16, 19, 0.4) 100%),
-
-    radial-gradient(circle at 90% 10%, rgba(255, 255, 255, 0.06) 0%, transparent 60%);
+    linear-gradient(to top, #faf7f2 10%, rgba(250, 247, 242, 0.7) 50%, rgba(250, 247, 242, 0.3) 100%),
+    radial-gradient(circle at 90% 10%, rgba(200, 135, 43, 0.08) 0%, transparent 60%);
   pointer-events: none;
 }
-

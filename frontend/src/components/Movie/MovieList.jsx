@@ -4,8 +4,8 @@ import MovieCard from './MovieCard';
 export const MovieList = ({ movies = [] }) => {
   if (movies.length === 0) {
     return (
-      <div className="w-full text-center py-16 border border-dashed border-dark-border rounded-2xl bg-dark-card/30">
-        <p className="text-zinc-500 font-medium">Không tìm thấy phim nào khớp với bộ lọc của bạn.</p>
+      <div className="w-full text-center py-16 border border-dashed border-gray-200 rounded-2xl bg-white/50">
+        <p className="text-gray-400 font-medium">Không tìm thấy phim nào khớp với bộ lọc của bạn.</p>
       </div>
     );
   }
