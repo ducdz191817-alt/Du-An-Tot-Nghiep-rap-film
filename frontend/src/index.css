@@ -7,6 +7,28 @@
 @layer base {
   html, body, #root, input, select, textarea, button, p, span, div, h1, h2, h3, h4, h5, h6, table, thead, tbody, tr, th, td, a {
     font-family: 'Outfit', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Làm nổi bật tiêu đề - headings luôn đậm và rõ nét */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #1a1a2e;
+  }
+
+  /* Đoạn text body rõ ràng hơn */
+  p, span, a, li {
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+
+  /* Label & button text nổi bật */
+  button, label {
+    font-weight: 600;
+    letter-spacing: 0.02em;
   }
 
   body {

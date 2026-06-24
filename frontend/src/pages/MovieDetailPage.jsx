@@ -39,7 +39,7 @@ export const MovieDetailPage = () => {
       {/* Nút quay lại */}
       <Link
         to="/"
-        className="inline-flex items-center text-zinc-400 hover:text-white text-xs font-extrabold uppercase tracking-wider gap-1.5 transition-colors pb-2"
+        className="inline-flex items-center text-gray-500 hover:text-gray-900 text-sm font-extrabold uppercase tracking-wider gap-1.5 transition-colors pb-2"
       >
         <ChevronLeft size={16} /> {t('movie.backToCatalog')}
       </Link>

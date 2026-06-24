@@ -213,13 +213,13 @@ export const HomePage = () => {
  
           {/* Banner Content overlay */}
           <div className="absolute inset-0 flex flex-col justify-center px-6 sm:px-12 md:px-16 max-w-2xl space-y-4">
-            <span className="text-[10px] font-black bg-brand px-3 py-1 rounded text-white tracking-widest uppercase w-max select-none shadow-md">
+            <span className="text-xs font-black bg-brand px-3.5 py-1.5 rounded-md text-white tracking-widest uppercase w-max select-none shadow-md">
               {t('home.featured')}
             </span>
-            <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-gray-900 leading-tight tracking-tighter drop-shadow-sm">
+            <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-gray-900 leading-[0.95] tracking-tighter drop-shadow-sm">
               {featuredTitle}
             </h1>
-            <p className="text-sm sm:text-base text-gray-600 leading-relaxed font-medium line-clamp-3 md:line-clamp-4 max-w-2xl">
+            <p className="text-base sm:text-lg text-gray-600 leading-relaxed font-semibold line-clamp-3 md:line-clamp-4 max-w-2xl">
               {featuredDescription}
             </p>
             <div className="flex items-center gap-4 pt-2">
@@ -307,7 +307,7 @@ export const HomePage = () => {
       {/* 2. Thanh bộ lọc điều hướng tương tác */}
       <div className="space-y-6">
         <div className="flex items-center justify-between border-b border-gray-200 pb-4">
-          <h2 className="text-xl md:text-3xl font-black text-gray-900 flex items-center gap-2 tracking-tight">
+          <h2 className="text-2xl md:text-4xl font-black text-gray-900 flex items-center gap-2 tracking-tight">
             <Compass className="text-brand" size={24} /> {t('home.discover')}
           </h2>
         </div>

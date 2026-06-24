@@ -122,10 +122,10 @@ export const MoviesPage = () => {
   return (
     <div className="space-y-8 pb-16 relative">
       <div>
-        <h1 className="text-2xl md:text-4xl font-black text-white flex items-center gap-2">
-          <Compass className="text-brand" size={28} /> {t('movies.title')}
+        <h1 className="text-3xl md:text-5xl font-black text-gray-900 flex items-center gap-3 tracking-tight">
+          <Compass className="text-brand" size={32} /> {t('movies.title')}
         </h1>
-        <p className="text-xs text-zinc-500 mt-1">{t('movies.subtitle')}</p>
+        <p className="text-sm text-gray-500 mt-2 font-medium">{t('movies.subtitle')}</p>
       </div>
 
       <MovieFilter filters={filters} onChange={handleFilterChange} />

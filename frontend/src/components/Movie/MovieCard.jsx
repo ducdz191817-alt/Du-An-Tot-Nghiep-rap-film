@@ -78,11 +78,11 @@ export const MovieCard = ({ movie }) => {
 
       {/* Phần văn bản chi tiết */}
       <div className="p-4 space-y-2">
-        <h3 className="text-gray-900 font-bold truncate text-base group-hover:text-brand transition-colors">
+        <h3 className="text-gray-900 font-extrabold truncate text-lg group-hover:text-brand transition-colors">
           <Link to={`/movies/${movie._id}`}>{displayTitle}</Link>
         </h3>
 
-        <div className="flex items-center text-xs text-gray-400 gap-1">
+        <div className="flex items-center text-sm text-gray-400 gap-1 font-medium">
           {movie.genre.slice(0, 2).map((g, i) => (
             <React.Fragment key={g}>
               {i > 0 && <span>,</span>}

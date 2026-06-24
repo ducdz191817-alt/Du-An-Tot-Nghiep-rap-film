@@ -101,7 +101,7 @@ export const Header = () => {
         </Link>
 
         {/* Navigation */}
-        <nav className="hidden md:flex items-center space-x-8 text-sm font-semibold">
+        <nav className="hidden md:flex items-center space-x-8 text-base font-bold">
           <Link to="/" className={`${isActive('/')} transition-colors`}>
             {t('nav.home')}
           </Link>
@@ -291,7 +291,7 @@ export const Header = () => {
           {/* Quick Book Ticket Button from mockup */}
           <Link
             to="/movies"
-            className="bg-brand hover:bg-brand-dark text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-[0_4px_12px_rgba(200,135,43,0.3)] transition-all transform active:scale-95 uppercase tracking-wider"
+            className="bg-brand hover:bg-brand-dark text-white text-sm font-extrabold px-5 py-3 rounded-xl shadow-[0_4px_16px_rgba(200,135,43,0.35)] transition-all transform active:scale-95 uppercase tracking-wider"
           >
             {t('nav.bookNow')}
           </Link>
