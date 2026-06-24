@@ -179,10 +179,10 @@ export const Dashboard = () => {
       </div>
 
       {/* 0. Bộ lọc thời gian */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-dark-card border border-dark-border p-5 rounded-3xl shadow-md">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-gray-200 p-5 rounded-3xl shadow-sm">
         <div>
-          <h3 className="text-sm font-black text-zinc-300 uppercase tracking-wider">Bộ lọc doanh thu</h3>
-          <p className="text-[11px] text-zinc-500 mt-1">Chọn lọc theo ngày, tháng hoặc năm để xem chi tiết doanh thu và danh sách giao dịch.</p>
+          <h3 className="text-sm font-black text-gray-700 uppercase tracking-wider">Bộ lọc doanh thu</h3>
+          <p className="text-[11px] text-gray-500 mt-1">Chọn lọc theo ngày, tháng hoặc năm để xem chi tiết doanh thu và danh sách giao dịch.</p>
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
@@ -194,7 +194,7 @@ export const Dashboard = () => {
               setFilterMonth(getTodayMonthString());
               setFilterYear(getTodayYearString());
             }}
-            className="bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs rounded-xl px-3 py-2.5 focus:border-brand outline-none cursor-pointer font-bold"
+            className="bg-gray-50 border border-gray-200 text-gray-700 text-xs rounded-xl px-3 py-2.5 focus:border-brand outline-none cursor-pointer font-bold"
           >
             <option value="all">Tất cả thời gian</option>
             <option value="date">Theo ngày</option>
@@ -207,7 +207,7 @@ export const Dashboard = () => {
               type="date"
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
-              className="bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs rounded-xl px-3.5 py-2.5 focus:border-brand outline-none font-bold select-none"
+              className="bg-gray-50 border border-gray-200 text-gray-700 text-xs rounded-xl px-3.5 py-2.5 focus:border-brand outline-none font-bold select-none"
             />
           )}
 
@@ -224,7 +224,7 @@ export const Dashboard = () => {
             <select
               value={filterYear}
               onChange={(e) => setFilterYear(e.target.value)}
-              className="bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs rounded-xl px-4 py-2.5 focus:border-brand outline-none cursor-pointer font-bold"
+              className="bg-gray-50 border border-gray-200 text-gray-700 text-xs rounded-xl px-4 py-2.5 focus:border-brand outline-none cursor-pointer font-bold"
             >
               <option value="">Chọn năm...</option>
               {years.map((y) => (
@@ -244,15 +244,15 @@ export const Dashboard = () => {
         {cards.map((card, i) => (
           <div
             key={i}
-            className={`bg-dark-card border rounded-3xl p-6 flex items-center justify-between shadow-md bg-gradient-to-br ${card.bg}`}
+            className={`bg-white border rounded-3xl p-6 flex items-center justify-between shadow-sm bg-gradient-to-br ${card.bg}`}
           >
             <div className="space-y-1">
-              <span className="text-zinc-500 text-xs font-bold uppercase tracking-wider block">
+              <span className="text-gray-500 text-xs font-bold uppercase tracking-wider block">
                 {card.label}
               </span>
-              <span className="text-xl md:text-2xl font-black text-white block">{card.value}</span>
+              <span className="text-xl md:text-2xl font-black text-gray-900 block">{card.value}</span>
             </div>
-            <div className="bg-zinc-900 border border-zinc-800 p-3 rounded-2xl shrink-0">
+            <div className="bg-gray-50 border border-gray-200 p-3 rounded-2xl shrink-0">
               {card.icon}
             </div>
           </div>
@@ -260,13 +260,13 @@ export const Dashboard = () => {
       </div>
 
       {/* 2. Bảng giao dịch gần đây */}
-      <div className="bg-dark-card border border-dark-border rounded-3xl p-6 shadow-md space-y-6">
+      <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 className="text-lg font-black text-zinc-200">
+            <h3 className="text-lg font-black text-gray-800">
               {filterType === 'all' ? 'Giao dịch gần đây' : `Danh sách giao dịch${getTimeSuffix()}`}
             </h3>
-            <p className="text-xs text-zinc-500 mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               {filterType === 'all'
                 ? 'Nhật ký thời gian thực về các vé được người dùng mua gần nhất.'
                 : `Hiển thị đầy đủ tất cả các giao dịch được ghi nhận trong thời gian lọc.`}
@@ -278,7 +278,7 @@ export const Dashboard = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-dark-border text-zinc-500 text-xs font-bold uppercase tracking-wider">
+              <tr className="border-b border-gray-200 text-gray-500 text-xs font-bold uppercase tracking-wider">
                 <th className="pb-3 pl-4">Người dùng</th>
                 <th className="pb-3">Phim</th>
                 <th className="pb-3">Rạp</th>
@@ -287,19 +287,19 @@ export const Dashboard = () => {
                 <th className="pb-3 pr-4 text-right">Ngày đặt</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-dark-border/40 text-xs font-semibold text-zinc-300">
+            <tbody className="divide-y divide-gray-100 text-xs font-semibold text-gray-700">
               {recentBookings.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="py-8 text-center text-zinc-500 italic">
+                  <td colSpan="6" className="py-8 text-center text-gray-400 italic">
                     Chưa có giao dịch nào được ghi nhận trong khoảng thời gian này.
                   </td>
                 </tr>
               ) : (
                 recentBookings.map((b) => (
-                  <tr key={b._id} className="hover:bg-zinc-800/20 transition-colors">
+                  <tr key={b._id} className="hover:bg-gray-50 transition-colors">
                     <td className="py-3.5 pl-4">
-                      <div className="font-bold text-zinc-200">{b.user?.username || 'Khách'}</div>
-                      <div className="text-[10px] text-zinc-500">{b.user?.email || 'N/A'}</div>
+                      <div className="font-bold text-gray-800">{b.user?.username || 'Khách'}</div>
+                      <div className="text-[10px] text-gray-400">{b.user?.email || 'N/A'}</div>
                     </td>
                     <td className="py-3.5 max-w-[200px] truncate">
                       {b.showtime?.movie?.title || 'Phim đã xóa'}
@@ -308,14 +308,14 @@ export const Dashboard = () => {
                       {b.showtime?.theater?.name || 'Rạp đã xóa'}
                     </td>
                     <td className="py-3.5">
-                      <span className="bg-zinc-900 border border-dark-border px-2.5 py-1 rounded font-black text-brand text-[10px]">
+                      <span className="bg-gray-100 border border-gray-200 px-2.5 py-1 rounded font-black text-brand text-[10px]">
                         {b.seats.join(', ')}
                       </span>
                     </td>
-                    <td className="py-3.5 font-black text-zinc-200">
+                    <td className="py-3.5 font-black text-gray-800">
                       {b.totalPrice.toLocaleString()} VND
                     </td>
-                    <td className="py-3.5 pr-4 text-right text-zinc-500 font-bold">
+                    <td className="py-3.5 pr-4 text-right text-gray-400 font-bold">
                       {new Date(b.bookingDate).toLocaleDateString('vi-VN', {
                         month: 'short',
                         day: 'numeric',
@@ -329,7 +329,7 @@ export const Dashboard = () => {
         </div>
 
         {/* Export Buttons at the absolute bottom of the page */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-dark-border/40 no-print">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 no-print">
           <button
             onClick={exportToExcel}
             title="Xuất Báo cáo Excel (.csv)"
@@ -341,7 +341,7 @@ export const Dashboard = () => {
           <button
             onClick={exportToPDF}
             title="Xuất Báo cáo PDF"
-            className="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 font-bold text-xs rounded-xl px-4 py-2.5 active:scale-95 transition-all shrink-0 cursor-pointer"
+            className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 font-bold text-xs rounded-xl px-4 py-2.5 active:scale-95 transition-all shrink-0 cursor-pointer"
           >
             <FileText size={14} />
             <span>Xuất PDF</span>
