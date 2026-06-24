@@ -227,39 +227,7 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
             {!collapsed && <span>Đăng xuất</span>}
           </button>
 
-          {!collapsed && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              marginTop: 8, padding: '10px 12px',
-              borderRadius: 10, background: 'rgba(255,255,255,0.03)',
-              border: '1px solid #1a1a28',
-            }}>
-              <div style={{
-                width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-                background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'white', fontWeight: 900, fontSize: 11,
-              }}>
-                {user?.username?.[0]?.toUpperCase() || 'A'}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#d4d4d8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {user?.username || 'Admin'}
-                </div>
-                <div style={{ fontSize: 10, color: '#52525b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {user?.email || ''}
-                </div>
-              </div>
-              <div style={{
-                fontSize: 8, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em',
-                background: 'rgba(139,92,246,0.15)', color: '#a78bfa',
-                border: '1px solid rgba(139,92,246,0.3)', padding: '2px 6px', borderRadius: 4,
-                flexShrink: 0,
-              }}>
-                Admin
-              </div>
-            </div>
-          )}
+
         </div>
       </aside>
 
