@@ -230,6 +230,15 @@ export const BookingPage = () => {
                   <Armchair className="text-brand" size={20} />
                   <h3 className="text-lg font-black text-zinc-200">Chọn vị trí ghế ngồi</h3>
                 </div>
+                
+                {selectedSeats.length > 0 && (
+                  <div className="flex items-center gap-2 bg-brand/10 px-3 py-1.5 rounded-lg border border-brand/20">
+                    <Ticket className="text-brand" size={16} />
+                    <span className="text-sm font-bold text-brand">
+                      Đã chọn: {selectedSeats.length} ghế
+                    </span>
+                  </div>
+                )}
               </div>
 
               <SeatMap
