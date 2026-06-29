@@ -8,6 +8,8 @@ const getMovies = async (req, res, next) => {
     const { status, search, genre, rating, date } = req.query;
 
     // Automatically transition movies with only past showtimes to "ended"
+    // (DISABLED FOR DEVELOPMENT)
+    /*
     try {
       const Showtime = require('../models/Showtime.model');
       const activeMovies = await Movie.find({ status: { $in: ['now-showing', 'preview'] } });
@@ -29,6 +31,7 @@ const getMovies = async (req, res, next) => {
     } catch (err) {
       console.error('Error auto-ending movies:', err);
     }
+    */
 
     const query = {};
 
@@ -138,6 +141,8 @@ const getMovieById = async (req, res, next) => {
     }
 
     // Automatically transition to "ended" if it has only past showtimes
+    // (DISABLED FOR DEVELOPMENT)
+    /*
     if (['now-showing', 'preview'].includes(movie.status)) {
       try {
         const Showtime = require('../models/Showtime.model');
@@ -156,6 +161,7 @@ const getMovieById = async (req, res, next) => {
         console.error('Error auto-ending movie in getMovieById:', err);
       }
     }
+    */
 
     res.json({
       success: true,
