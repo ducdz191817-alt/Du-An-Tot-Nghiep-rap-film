@@ -10,9 +10,15 @@ const getMovieById = async (id) => {
   return response.data;
 };
 
+const getBestSellers = async (params = {}) => {
+  const response = await api.get('/movies/best-sellers', { params });
+  return response.data;
+};
+
 const movieService = {
   getMovies,
   getMovieById,
+  getBestSellers,
 };
 
 export default movieService;

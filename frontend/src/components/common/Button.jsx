@@ -15,11 +15,11 @@ export const Button = ({
   const baseStyle = 'inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-300 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95';
   
   const variants = {
-    primary: 'bg-brand hover:bg-brand-dark text-white shadow-[0_4px_14px_rgba(229,9,20,0.4)] hover:shadow-[0_6px_20px_rgba(229,9,20,0.6)] hover:-translate-y-0.5',
-    secondary: 'bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 hover:-translate-y-0.5',
+    primary: 'bg-brand hover:bg-brand-dark text-white shadow-[0_4px_14px_rgba(200,135,43,0.3)] hover:shadow-[0_6px_20px_rgba(200,135,43,0.4)] hover:-translate-y-0.5',
+    secondary: 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 hover:-translate-y-0.5',
     danger: 'bg-red-600 hover:bg-red-700 text-white shadow-[0_4px_14px_rgba(220,38,38,0.4)] hover:-translate-y-0.5',
     outline: 'border-2 border-brand text-brand hover:bg-brand hover:text-white hover:-translate-y-0.5',
-    glass: 'bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 hover:-translate-y-0.5',
+    glass: 'bg-white/80 backdrop-blur-md border border-gray-200 text-gray-700 hover:bg-white hover:-translate-y-0.5',
   };
 
   const sizes = {

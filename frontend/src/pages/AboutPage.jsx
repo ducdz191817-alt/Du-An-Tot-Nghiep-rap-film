@@ -7,7 +7,7 @@ import {
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 const stats = [
-  { value: '3+', label: 'Cụm rạp toàn quốc', icon: <MapPin size={20} className="text-brand" /> },
+  { value: '1', label: 'Cụm rạp', icon: <MapPin size={20} className="text-brand" /> },
   { value: '500K+', label: 'Khách hàng tin tưởng', icon: <Users size={20} className="text-emerald-400" /> },
   { value: '10K+', label: 'Suất chiếu mỗi tháng', icon: <Film size={20} className="text-sky-400" /> },
   { value: '4.8★', label: 'Đánh giá trung bình', icon: <Star size={20} className="text-amber-400" /> },

@@ -142,14 +142,32 @@ export const BookingSuccessModal = ({ isOpen, bookingResult, showtime, selectedS
                 label="Ghế đã chọn"
                 value={
                   <div className="flex flex-wrap gap-1 justify-end">
-                    {(selectedSeats || booking?.seats || []).map((s) => (
-                      <span
-                        key={s}
-                        className="bg-zinc-800 border border-zinc-700 text-brand font-black px-1.5 py-0.5 rounded text-[10px]"
-                      >
-                        {s}
-                      </span>
-                    ))}
+                    {(selectedSeats || booking?.seats || []).map((s) => {
+                      const match = s.match(/^([A-Z]+)(\d+)$/);
+                      let displaySeat = s;
+                      if (match) {
+                        const row = match[1];
+                        const num = parseInt(match[2], 10);
+                        
+                        const capacity = room.capacity || 0;
+                        const cols = capacity <= 30 ? 6 : capacity <= 60 ? 10 : 12;
+                        const rowCount = Math.ceil(capacity / cols);
+                        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                        const lastRowLetter = rowCount > 0 ? alphabet[rowCount - 1] : '';
+
+                        if (row === lastRowLetter || room.type === 'GOLDCLASS') {
+                          displaySeat = `${row}${num}-${row}${num + 1}`;
+                        }
+                      }
+                      return (
+                        <span
+                          key={s}
+                          className="bg-zinc-800 border border-zinc-700 text-brand font-black px-1.5 py-0.5 rounded text-[10px]"
+                        >
+                          {displaySeat}
+                        </span>
+                      );
+                    })}
                   </div>
                 }
               />
@@ -173,6 +191,22 @@ export const BookingSuccessModal = ({ isOpen, bookingResult, showtime, selectedS
                 <p className="text-xl font-black text-emerald-400">{totalPrice.toLocaleString()} VND</p>
               </div>
             </div>
+          </div>
+
+          {/* Ticket QR Code */}
+          <div className="flex flex-col items-center justify-center bg-zinc-900/60 border border-dark-border/60 rounded-2xl p-5 space-y-2.5">
+            <div className="bg-white p-2 rounded-2xl shadow-lg flex items-center justify-center w-36 h-36 border border-zinc-200">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
+                  `CINEADMIN TICKET\nMã vé: ${booking?._id?.slice(-10).toUpperCase() || transactionId}\nPhim: ${movie.title || 'N/A'}\nRạp: ${theater.name || 'N/A'} - ${room.name || 'N/A'}\nGhế: ${(selectedSeats || booking?.seats || []).join(', ')}\nSuất chiếu: ${timeString} - ${dateString}\nTrạng thái: ĐÃ THANH TOÁN`
+                )}`}
+                alt="Ticket QR Code"
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider text-center max-w-[220px] leading-relaxed">
+              Đưa mã này cho nhân viên soát vé để vào rạp
+            </p>
           </div>
 
           {/* Action buttons */}

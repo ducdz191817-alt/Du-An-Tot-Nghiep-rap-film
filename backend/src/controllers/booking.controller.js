@@ -10,6 +10,7 @@ const sendEmail = require('../utils/sendEmail');
 // @access  Private
 const createBooking = async (req, res, next) => {
   try {
+    await checkAndExpirePendingBookings();
     const { showtimeId, seats, concessions = [], paymentMethod = 'card' } = req.body;
     const userId = req.user._id;
 
@@ -27,6 +28,22 @@ const createBooking = async (req, res, next) => {
     if (!showtime) {
       res.status(404);
       throw new Error('Showtime not found');
+    }
+
+    // 1.5 KIỂM TRA ĐỘ TUỔI CỦA NGƯỜI DÙNG DỰA TRÊN PHÂN LOẠI PHIM
+    const movieRating = showtime.movie.rating; // Ví dụ: 'P', 'T13', 'T16', 'T18'
+    const userAge = req.user.age;
+    
+    if (movieRating && movieRating !== 'P') {
+      let requiredAge = 0;
+      if (movieRating === 'T13') requiredAge = 13;
+      else if (movieRating === 'T16') requiredAge = 16;
+      else if (movieRating === 'T18') requiredAge = 18;
+
+      if (userAge < requiredAge) {
+        res.status(400);
+        throw new Error(`Bạn chưa đủ tuổi để xem phim này. Phim yêu cầu độ tuổi từ ${requiredAge} trở lên (bạn hiện ${userAge} tuổi).`);
+      }
     }
 
     // 2. Check if showtime has already passed
@@ -129,6 +146,9 @@ const createBooking = async (req, res, next) => {
       throw new Error('Một hoặc nhiều ghế bạn chọn đã được đặt trước đó. Vui lòng chọn lại ghế.');
     }
 
+    // Release real-time holds and broadcast seat_booked to all clients
+    confirmBookingClearHolds(showtimeId, normalizedSeats, userId);
+
     // 7. Create the Booking
     const isVietQR = paymentMethod === 'vietqr';
     const isPendingPayment = ['vietqr', 'momo', 'vnpay'].includes(paymentMethod);
@@ -225,11 +245,15 @@ const createBooking = async (req, res, next) => {
       </div>
     `;
 
-    await sendEmail({
-      to: req.user.email,
-      subject: `Movie Ticket Confirmation: ${showtime.movie.title}`,
-      html: emailContentHtml,
-    });
+    try {
+      await sendEmail({
+        to: req.user.email,
+        subject: `Movie Ticket Confirmation: ${showtime.movie.title}`,
+        html: emailContentHtml,
+      });
+    } catch (emailErr) {
+      console.error('Email sending failed (non-fatal):', emailErr.message);
+    }
 
     res.status(201).json({
       success: true,
@@ -248,6 +272,7 @@ const createBooking = async (req, res, next) => {
 // @access  Private
 const getMyBookings = async (req, res, next) => {
   try {
+    await checkAndExpirePendingBookings();
     const bookings = await Booking.find({ user: req.user._id })
       .populate({
         path: 'showtime',
@@ -277,6 +302,7 @@ const getMyBookings = async (req, res, next) => {
 // @access  Private
 const getBookingById = async (req, res, next) => {
   try {
+    await checkAndExpirePendingBookings();
     const booking = await Booking.findById(req.params.id)
       .populate({
         path: 'showtime',
@@ -321,6 +347,7 @@ const getBookingById = async (req, res, next) => {
 // @access  Private
 const getBookingStatus = async (req, res, next) => {
   try {
+    await checkAndExpirePendingBookings();
     const booking = await Booking.findById(req.params.id);
     if (!booking) {
       res.status(404);
@@ -487,13 +514,18 @@ const cancelBooking = async (req, res, next) => {
       $pull: { bookedSeats: { $in: booking.seats } },
     });
 
-    // Delete payment and booking
-    await Payment.deleteMany({ booking: booking._id });
-    await booking.deleteOne();
+    // Update payment and booking to failed instead of deleting
+    booking.paymentStatus = 'failed';
+    await booking.save();
+
+    await Payment.findOneAndUpdate(
+      { booking: booking._id },
+      { status: 'failed' }
+    );
 
     res.json({
       success: true,
-      message: 'Booking cancelled and seats released successfully',
+      message: 'Booking cancelled (marked failed) and seats released successfully',
     });
   } catch (error) {
     next(error);

@@ -1,22 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { Tag, Clock, Copy, CheckCheck, Zap, Gift, Percent, Star, Flame } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 const promotions = [
   {
     id: 1,
     badge: 'HOT',
-    badgeColor: 'bg-red-500',
+    badgeEN: 'HOT',
     icon: <Flame size={22} className="text-red-400" />,
     title: 'Thứ Tư Vui Vẻ',
+    titleEN: 'Happy Wednesday',
     subtitle: 'Giảm 30% tất cả loại vé',
+    subtitleEN: '30% off all ticket types',
     description: 'Mỗi thứ Tư hàng tuần, tất cả vé 2D, 3D và IMAX được giảm 30%. Áp dụng cho tối đa 4 vé mỗi lần đặt.',
+    descriptionEN: 'Every Wednesday, all 2D, 3D and IMAX tickets are 30% off. Applies to maximum of 4 tickets per order.',
     code: 'WEDNESDAY30',
     discount: '30%',
+    discountEN: '30%',
     discountType: 'percent',
     minOrder: '0đ',
+    minOrderEN: '0 VND',
     validUntil: new Date(new Date().setDate(new Date().getDate() + 5)),
     tag: 'Mỗi Thứ Tư',
+    tagEN: 'Every Wednesday',
     gradient: 'from-red-900/40 via-dark-card to-dark-card',
     glowColor: 'shadow-red-500/10',
     borderColor: 'border-red-500/20',
@@ -26,17 +33,23 @@ const promotions = [
   {
     id: 2,
     badge: 'MỚI',
-    badgeColor: 'bg-brand',
+    badgeEN: 'NEW',
     icon: <Gift size={22} className="text-brand" />,
     title: 'Combo Cặp Đôi',
-    subtitle: 'Mua 2 vé tặng 1 combo bắp nước',
+    titleEN: 'Couple Combo',
+    subtitle: 'Mua 2 - Tặng 1 Combo Bắp Nước',
+    subtitleEN: 'Buy 2 - Get 1 Free Concession Combo',
     description: 'Đặt 2 vé bất kỳ cùng lúc, nhận ngay 1 combo bắp rang bơ size L + 2 nước ngọt miễn phí. Chỉ áp dụng cuối tuần.',
+    descriptionEN: 'Book any 2 tickets at the same time, receive 1 free L popcorn + 2 soft drinks. Weekend only.',
     code: 'COUPLE2024',
     discount: 'Tặng combo',
+    discountEN: 'Free Combo',
     discountType: 'gift',
     minOrder: '200,000đ',
+    minOrderEN: '200,000 VND',
     validUntil: new Date(new Date().setDate(new Date().getDate() + 12)),
     tag: 'Cuối tuần',
+    tagEN: 'Weekend',
     gradient: 'from-purple-900/40 via-dark-card to-dark-card',
     glowColor: 'shadow-purple-500/10',
     borderColor: 'border-purple-500/20',
@@ -46,17 +59,23 @@ const promotions = [
   {
     id: 3,
     badge: 'SỐC',
-    badgeColor: 'bg-amber-500',
+    badgeEN: 'FLASH',
     icon: <Zap size={22} className="text-amber-400" />,
     title: 'Flash Sale IMAX',
+    titleEN: 'IMAX Flash Sale',
     subtitle: 'Vé IMAX chỉ 99,000đ',
+    subtitleEN: 'IMAX tickets only 99,000 VND',
     description: 'Giá vé IMAX siêu rẻ chỉ 99,000đ cho suất chiếu trước 12 giờ trưa. Số lượng có hạn, đặt nhanh kẻo hết!',
+    descriptionEN: 'Extremely cheap IMAX tickets for only 99,000 VND for slots before 12 PM. Limited quantity, book now!',
     code: 'IMAXFLASH',
     discount: '99K',
+    discountEN: '99K',
     discountType: 'fixed',
     minOrder: '0đ',
+    minOrderEN: '0 VND',
     validUntil: new Date(new Date().setDate(new Date().getDate() + 2)),
     tag: 'Suất sáng',
+    tagEN: 'Morning slots',
     gradient: 'from-amber-900/40 via-dark-card to-dark-card',
     glowColor: 'shadow-amber-500/10',
     borderColor: 'border-amber-500/20',
@@ -66,17 +85,23 @@ const promotions = [
   {
     id: 4,
     badge: 'VIP',
-    badgeColor: 'bg-emerald-500',
+    badgeEN: 'VIP',
     icon: <Star size={22} className="text-emerald-400" />,
     title: 'Thành Viên Mới',
-    subtitle: 'Giảm 50K đơn hàng đầu tiên',
+    titleEN: 'New Member',
+    subtitle: 'Giảm 50K đơn đầu tiên',
+    subtitleEN: '50K off first order',
     description: 'Đăng ký tài khoản và đặt vé lần đầu tiên nhận ngay ưu đãi giảm 50,000đ. Không giới hạn loại vé hay suất chiếu.',
+    descriptionEN: 'Sign up and book tickets for the first time to get 50,000 VND off. No limits on ticket types or slots.',
     code: 'NEWMEMBER',
     discount: '50K',
+    discountEN: '50K',
     discountType: 'fixed',
     minOrder: '100,000đ',
+    minOrderEN: '100,000 VND',
     validUntil: new Date(new Date().setDate(new Date().getDate() + 30)),
     tag: 'Không giới hạn',
+    tagEN: 'No limits',
     gradient: 'from-emerald-900/40 via-dark-card to-dark-card',
     glowColor: 'shadow-emerald-500/10',
     borderColor: 'border-emerald-500/20',
@@ -86,17 +111,23 @@ const promotions = [
   {
     id: 5,
     badge: 'SINH NHẬT',
-    badgeColor: 'bg-pink-500',
+    badgeEN: 'BIRTHDAY',
     icon: <Percent size={22} className="text-pink-400" />,
     title: 'Ưu Đãi Sinh Nhật',
+    titleEN: 'Birthday Promo',
     subtitle: 'Giảm 40% trong tháng sinh nhật',
+    subtitleEN: '40% off in birthday month',
     description: 'Cập nhật ngày sinh trong tài khoản để nhận ưu đãi 40% toàn bộ vé trong tháng sinh nhật của bạn. Tặng thêm bắp rang miễn phí!',
+    descriptionEN: 'Update birthday in settings to receive 40% off tickets during birthday month. Plus free popcorn!',
     code: 'BIRTHDAY40',
     discount: '40%',
+    discountEN: '40%',
     discountType: 'percent',
     minOrder: '0đ',
+    minOrderEN: '0 VND',
     validUntil: new Date(new Date().setDate(new Date().getDate() + 60)),
     tag: 'Cả tháng',
+    tagEN: 'Full month',
     gradient: 'from-pink-900/40 via-dark-card to-dark-card',
     glowColor: 'shadow-pink-500/10',
     borderColor: 'border-pink-500/20',
@@ -106,17 +137,23 @@ const promotions = [
   {
     id: 6,
     badge: 'NHÓM',
-    badgeColor: 'bg-sky-500',
+    badgeEN: 'GROUP',
     icon: <Gift size={22} className="text-sky-400" />,
     title: 'Đặt Vé Nhóm',
+    titleEN: 'Group Booking',
     subtitle: 'Từ 5 vé giảm 20% toàn bộ',
+    subtitleEN: '20% off for 5+ tickets',
     description: 'Đặt từ 5 vé trở lên trong cùng một đơn hàng, tự động được giảm 20% tổng giá trị. Lý tưởng cho nhóm bạn hoặc gia đình.',
+    descriptionEN: 'Book 5 or more tickets together to automatically get 20% off. Perfect for friends or family.',
     code: 'GROUP5PLUS',
     discount: '20%',
+    discountEN: '20%',
     discountType: 'percent',
     minOrder: '450,000đ',
+    minOrderEN: '450,000 VND',
     validUntil: new Date(new Date().setDate(new Date().getDate() + 90)),
     tag: 'Từ 5 vé',
+    tagEN: '5+ tickets',
     gradient: 'from-sky-900/40 via-dark-card to-dark-card',
     glowColor: 'shadow-sky-500/10',
     borderColor: 'border-sky-500/20',
@@ -157,23 +194,25 @@ const TimeBox = ({ value, label }) => (
 
 const CountdownTimer = ({ validUntil }) => {
   const { d, h, m, s } = useCountdown(validUntil);
+  const { t } = useLanguage();
   return (
     <div className="flex items-center gap-2">
       <Clock size={13} className="text-zinc-500" />
       <div className="flex items-center gap-1.5">
-        <TimeBox value={d} label="ngày" />
+        <TimeBox value={d} label={t('countdown.days')} />
         <span className="text-zinc-500 font-bold text-sm leading-none pb-2">:</span>
-        <TimeBox value={h} label="giờ" />
+        <TimeBox value={h} label={t('countdown.hours')} />
         <span className="text-zinc-500 font-bold text-sm leading-none pb-2">:</span>
-        <TimeBox value={m} label="phút" />
+        <TimeBox value={m} label={t('countdown.minutes')} />
         <span className="text-zinc-500 font-bold text-sm leading-none pb-2">:</span>
-        <TimeBox value={s} label="giây" />
+        <TimeBox value={s} label={t('countdown.seconds')} />
       </div>
     </div>
   );
 };
 
 const PromoCard = ({ promo }) => {
+  const { language, t } = useLanguage();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -181,6 +220,14 @@ const PromoCard = ({ promo }) => {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const displayTitle = language === 'en' ? (promo.titleEN || promo.title) : promo.title;
+  const displaySubtitle = language === 'en' ? (promo.subtitleEN || promo.subtitle) : promo.subtitle;
+  const displayDescription = language === 'en' ? (promo.descriptionEN || promo.description) : promo.description;
+  const displayMinOrder = language === 'en' ? (promo.minOrderEN || promo.minOrder) : promo.minOrder;
+  const displayTag = language === 'en' ? (promo.tagEN || promo.tag) : promo.tag;
+  const displayBadge = language === 'en' ? (promo.badgeEN || promo.badge) : promo.badge;
+  const displayDiscount = language === 'en' ? (promo.discountEN || promo.discount) : promo.discount;
 
   return (
     <div
@@ -204,17 +251,17 @@ const PromoCard = ({ promo }) => {
               {promo.icon}
             </div>
             <span className={`text-[10px] font-black px-2 py-0.5 rounded-md text-white ${promo.badgeColor} uppercase tracking-wider`}>
-              {promo.badge}
+              {displayBadge}
             </span>
           </div>
           <div className={`text-2xl font-black ${promo.accentColor}`}>
-            -{promo.discount}
+            -{displayDiscount}
           </div>
         </div>
 
-        <h3 className="text-base font-black text-white leading-tight">{promo.title}</h3>
-        <p className={`text-sm font-semibold ${promo.accentColor} mt-0.5`}>{promo.subtitle}</p>
-        <p className="text-xs text-zinc-400 mt-2 leading-relaxed line-clamp-3">{promo.description}</p>
+        <h3 className="text-base font-black text-white leading-tight">{displayTitle}</h3>
+        <p className={`text-sm font-semibold ${promo.accentColor} mt-0.5`}>{displaySubtitle}</p>
+        <p className="text-xs text-zinc-400 mt-2 leading-relaxed line-clamp-3">{displayDescription}</p>
       </div>
 
       {/* Divider dashed */}
@@ -224,9 +271,9 @@ const PromoCard = ({ promo }) => {
       <div className="px-5 pb-5 space-y-3 mt-auto">
         {/* Info row */}
         <div className="flex items-center justify-between text-xs text-zinc-500">
-          <span>Đơn tối thiểu: <span className="text-zinc-300 font-semibold">{promo.minOrder}</span></span>
+          <span>{t('promo.minOrderLabel')} <span className="text-zinc-300 font-semibold">{displayMinOrder}</span></span>
           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${promo.bgAccent} ${promo.accentColor}`}>
-            {promo.tag}
+            {displayTag}
           </span>
         </div>
 
@@ -248,7 +295,9 @@ const PromoCard = ({ promo }) => {
             {promo.code}
           </span>
           {copied ? (
-            <CheckCheck size={16} className="text-emerald-400" />
+            <span className="text-[11px] text-emerald-400 font-black flex items-center gap-1">
+              <CheckCheck size={14} /> {t('promo.copied')}
+            </span>
           ) : (
             <Copy size={14} className="text-zinc-500 group-hover/btn:text-zinc-300 transition-colors" />
           )}
@@ -260,6 +309,8 @@ const PromoCard = ({ promo }) => {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 const PromotionsPage = () => {
+  const { language, t } = useLanguage();
+
   return (
     <div className="space-y-10 pb-16">
       {/* Hero */}
@@ -268,13 +319,21 @@ const PromotionsPage = () => {
         <div className="relative z-10 space-y-3">
           <div className="inline-flex items-center gap-2 bg-brand/10 border border-brand/20 text-brand px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest">
             <Tag size={12} />
-            Ưu đãi đặc biệt
+            {t('promo.specialOffer')}
           </div>
           <h1 className="text-3xl md:text-5xl font-black text-white leading-tight">
-            Khuyến Mãi <span className="text-brand">Hấp Dẫn</span>
+            {language === 'en' ? (
+              <>
+                Exciting <span className="text-brand">Promotions</span>
+              </>
+            ) : (
+              <>
+                Khuyến Mãi <span className="text-brand">Hấp Dẫn</span>
+              </>
+            )}
           </h1>
           <p className="text-zinc-400 max-w-lg mx-auto text-sm leading-relaxed">
-            Săn ưu đãi, sao chép mã giảm giá và tận hưởng trải nghiệm xem phim tuyệt vời với chi phí tiết kiệm nhất.
+            {t('promo.subtitle')}
           </p>
         </div>
       </div>
@@ -282,9 +341,9 @@ const PromotionsPage = () => {
       {/* Stats bar */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Mã đang hoạt động', value: promotions.length, icon: <Tag size={18} className="text-brand" /> },
-          { label: 'Tiết kiệm tối đa', value: '50%', icon: <Percent size={18} className="text-emerald-400" /> },
-          { label: 'Cập nhật hàng tuần', value: '7 ngày', icon: <Clock size={18} className="text-amber-400" /> },
+          { label: t('promo.activeCodes'), value: promotions.length, icon: <Tag size={18} className="text-brand" /> },
+          { label: t('promo.maxSavings'), value: '50%', icon: <Percent size={18} className="text-emerald-400" /> },
+          { label: t('promo.weeklyUpdate'), value: language === 'en' ? '7 days' : '7 ngày', icon: <Clock size={18} className="text-amber-400" /> },
         ].map((s, i) => (
           <div key={i} className="bg-dark-card border border-dark-border rounded-2xl p-4 flex flex-col items-center gap-1 text-center">
             {s.icon}
@@ -297,7 +356,7 @@ const PromotionsPage = () => {
       {/* Promotions grid */}
       <div>
         <h2 className="text-xl font-black text-white mb-5 flex items-center gap-2">
-          <Flame size={20} className="text-brand" /> Tất cả ưu đãi
+          <Flame size={20} className="text-brand" /> {t('promo.allOffers')}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {promotions.map((promo) => (
@@ -308,13 +367,29 @@ const PromotionsPage = () => {
 
       {/* How to use */}
       <div className="bg-dark-card border border-dark-border rounded-3xl p-8">
-        <h3 className="text-lg font-black text-white mb-6 text-center">Cách sử dụng mã khuyến mãi</h3>
+        <h3 className="text-lg font-black text-white mb-6 text-center">{t('promo.howToUse')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[
-            { step: '01', title: 'Chọn phim', desc: 'Duyệt danh sách phim và chọn suất chiếu bạn muốn xem.' },
-            { step: '02', title: 'Chọn ghế', desc: 'Chọn ghế yêu thích và thêm bắp nước nếu muốn.' },
-            { step: '03', title: 'Nhập mã', desc: 'Sao chép và dán mã khuyến mãi vào ô nhập khi thanh toán.' },
-            { step: '04', title: 'Tận hưởng', desc: 'Hoàn tất đặt vé và tận hưởng bộ phim với giá ưu đãi!' },
+            {
+              step: '01',
+              title: language === 'en' ? 'Select Movie' : 'Chọn phim',
+              desc: language === 'en' ? 'Browse the movie catalog and choose the showtime you wish to watch.' : 'Duyệt danh sách phim và chọn suất chiếu bạn muốn xem.'
+            },
+            {
+              step: '02',
+              title: language === 'en' ? 'Select Seats' : 'Chọn ghế',
+              desc: language === 'en' ? 'Select your preferred seats and optionally add snacks or drinks.' : 'Chọn ghế yêu thích và thêm bắp nước nếu muốn.'
+            },
+            {
+              step: '03',
+              title: language === 'en' ? 'Apply Code' : 'Nhập mã',
+              desc: language === 'en' ? 'Copy the promotion code and paste it into the voucher input at checkout.' : 'Sao chép và dán mã khuyến mãi vào ô nhập khi thanh toán.'
+            },
+            {
+              step: '04',
+              title: language === 'en' ? 'Enjoy' : 'Tận hưởng',
+              desc: language === 'en' ? 'Complete your booking and enjoy your movie at a discounted rate!' : 'Hoàn tất đặt vé và tận hưởng bộ phim với giá ưu đãi!'
+            },
           ].map((item) => (
             <div key={item.step} className="text-center space-y-2">
               <div className="w-10 h-10 rounded-full bg-brand/10 border border-brand/20 text-brand font-black text-sm flex items-center justify-center mx-auto">

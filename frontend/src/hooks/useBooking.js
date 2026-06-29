@@ -1,6 +1,7 @@
 import { useSelector, useDispatch } from 'react-redux';
 import {
   setSelectShowtime,
+  setSelectedSeats,
   toggleSeatSelection,
   updateConcessionQuantity,
   clearBookingFlow,
@@ -17,6 +18,10 @@ export const useBooking = () => {
 
   const selectShowtime = (showtime) => {
     dispatch(setSelectShowtime(showtime));
+  };
+
+  const setSeats = (seatsArray) => {
+    dispatch(setSelectedSeats(seatsArray));
   };
 
   const selectSeat = (seatCode) => {
@@ -40,7 +45,8 @@ export const useBooking = () => {
     // Build a lookup map seatCode -> seat object for O(1) access
     const seatMap = {};
     seatsList.forEach((s) => {
-      seatMap[s.seatCode] = s;
+      const code = `${s.row}${s.number}`;
+      seatMap[code] = s;
     });
 
     // Calculate seats price using actual seat type from DB
@@ -49,15 +55,30 @@ export const useBooking = () => {
       const seat = seatMap[seatCode];
       let addition = 0;
       if (seat) {
-        if (seat.type === 'vip') addition = 20000;
-        else if (seat.type === 'couple') addition = 40000;
+        addition = seat.price;
       } else {
         // Fallback: guess from row letter if seat not found in list
         const match = seatCode.match(/^([A-Z]+)(\d+)$/);
         if (match) {
           const row = match[1];
-          if (['F', 'G', 'H'].includes(row)) addition = 20000;
-          else if (['I', 'J'].includes(row)) addition = 40000;
+          const room = selectedShowtime?.room || {};
+          if (room.type === 'GOLDCLASS') {
+            addition = 120000;
+          } else {
+            const capacity = room.capacity || 0;
+            const cols = capacity <= 30 ? 6 : capacity <= 60 ? 10 : 12;
+            const rowCount = Math.ceil(capacity / cols);
+            const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const lastRowLetter = rowCount > 0 ? alphabet[rowCount - 1] : '';
+
+            if (row === lastRowLetter) {
+              addition = 120000;
+            } else if (row === 'A' || row === 'B') {
+              addition = 0;
+            } else {
+              addition = 5000;
+            }
+          }
         }
       }
       seatsTotal += basePrice + addition;
@@ -133,6 +154,7 @@ export const useBooking = () => {
     loading,
     error,
     selectShowtime,
+    setSeats,
     selectSeat,
     changeConcessionQty,
     clearBooking,

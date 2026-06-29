@@ -87,13 +87,13 @@ export const UserManager = () => {
   const roleBadge = (role) => {
     if (role === 'admin') {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-amber-500/10 text-amber-400 border border-amber-500/20">
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-amber-50 text-amber-700 border border-amber-200">
           <Crown size={10} /> Quản trị viên
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-blue-500/10 text-blue-400 border border-blue-500/20">
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-blue-50 text-blue-700 border border-blue-200">
         <UserCheck size={10} /> Người dùng
       </span>
     );
@@ -110,11 +110,11 @@ export const UserManager = () => {
 
   const avatarColor = (name = '') => {
     const colors = [
-      'bg-brand/20 text-brand',
-      'bg-emerald-500/20 text-emerald-400',
-      'bg-purple-500/20 text-purple-400',
-      'bg-blue-500/20 text-blue-400',
-      'bg-amber-500/20 text-amber-400',
+      'bg-brand/10 text-brand',
+      'bg-emerald-50 text-emerald-700',
+      'bg-purple-50 text-purple-700',
+      'bg-blue-50 text-blue-700',
+      'bg-amber-50 text-amber-700',
     ];
     const idx = name.charCodeAt(0) % colors.length;
     return colors[idx];
@@ -125,16 +125,16 @@ export const UserManager = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h3 className="text-lg font-black text-zinc-200 flex items-center gap-2">
+          <h3 className="text-lg font-black text-gray-800 flex items-center gap-2">
             <Users className="text-brand" size={20} /> Quản lý Người dùng
           </h3>
-          <p className="text-xs text-zinc-500 mt-1">
+          <p className="text-xs text-gray-500 mt-1">
             Xem danh sách tài khoản, phân quyền hoặc xóa người dùng khỏi hệ thống.
           </p>
         </div>
         <button
           onClick={fetchUsers}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white bg-zinc-900 border border-dark-border hover:border-zinc-700 transition-all active:scale-95 shrink-0"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-gray-500 hover:text-gray-700 bg-gray-100 border border-gray-200 hover:bg-gray-200 transition-all active:scale-95 shrink-0"
         >
           <RefreshCw size={13} className={loading ? 'animate-spin' : ''} /> Làm mới
         </button>
@@ -145,7 +145,7 @@ export const UserManager = () => {
         <div
           className={`p-4 rounded-2xl flex items-center justify-between border ${
             message.type === 'success'
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
               : 'bg-brand/10 border-brand/20 text-brand'
           }`}
         >
@@ -153,7 +153,7 @@ export const UserManager = () => {
             <AlertCircle size={18} />
             <span>{message.text}</span>
           </div>
-          <button onClick={() => setMessage({ text: '', type: '' })} className="text-zinc-500 hover:text-zinc-300">
+          <button onClick={() => setMessage({ text: '', type: '' })} className="text-gray-400 hover:text-gray-600">
             <X size={16} />
           </button>
         </div>
@@ -162,34 +162,34 @@ export const UserManager = () => {
       {/* Stats bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Tổng tài khoản', value: users.length, color: 'text-zinc-300' },
-          { label: 'Người dùng', value: users.filter((u) => u.role === 'user').length, color: 'text-blue-400' },
-          { label: 'Quản trị viên', value: users.filter((u) => u.role === 'admin').length, color: 'text-amber-400' },
+          { label: 'Tổng tài khoản', value: users.length, color: 'text-gray-800' },
+          { label: 'Người dùng', value: users.filter((u) => u.role === 'user').length, color: 'text-blue-600' },
+          { label: 'Quản trị viên', value: users.filter((u) => u.role === 'admin').length, color: 'text-amber-600' },
           { label: 'Kết quả lọc', value: filteredUsers.length, color: 'text-brand' },
         ].map((s) => (
-          <div key={s.label} className="bg-dark-card border border-dark-border rounded-2xl p-4 text-center">
+          <div key={s.label} className="bg-white border border-gray-200 rounded-2xl p-4 text-center shadow-sm">
             <p className={`text-xl font-black ${s.color}`}>{s.value}</p>
-            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mt-1">{s.label}</p>
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1">{s.label}</p>
           </div>
         ))}
       </div>
 
       {/* Search & Filter */}
-      <div className="bg-dark-card border border-dark-border p-4 rounded-2xl flex flex-col md:flex-row gap-4 items-center">
+      <div className="bg-white border border-gray-200 p-4 rounded-2xl flex flex-col md:flex-row gap-4 items-center shadow-sm">
         <div className="relative w-full md:flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
           <input
             type="text"
             placeholder="Tìm theo Tên, Email hoặc SĐT..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#0a0a0c] border border-dark-border rounded-xl pl-11 pr-4 py-2.5 text-xs font-semibold text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-brand/40 transition-colors"
+            className="w-full bg-gray-55/50 bg-gray-50 border border-gray-200 rounded-xl pl-11 pr-4 py-2.5 text-xs font-semibold text-gray-800 placeholder-gray-400 focus:outline-none focus:border-brand/40 transition-colors"
           />
         </div>
         <select
           value={filterRole}
           onChange={(e) => setFilterRole(e.target.value)}
-          className="w-full md:w-44 bg-[#0a0a0c] border border-dark-border rounded-xl px-4 py-2.5 text-xs font-bold text-zinc-400 focus:outline-none focus:border-brand/40 cursor-pointer"
+          className="w-full md:w-44 bg-gray-55/50 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-bold text-gray-700 focus:outline-none focus:border-brand/40 cursor-pointer"
         >
           <option value="all">Tất cả vai trò</option>
           <option value="user">Người dùng</option>
@@ -201,16 +201,16 @@ export const UserManager = () => {
       {loading && users.length === 0 ? (
         <Loading />
       ) : filteredUsers.length === 0 ? (
-        <div className="text-center py-16 bg-dark-card border border-dashed border-dark-border rounded-3xl space-y-4">
-          <Users size={48} className="text-zinc-800 mx-auto" />
-          <p className="text-zinc-500 font-semibold text-xs">Không tìm thấy người dùng nào phù hợp.</p>
+        <div className="text-center py-16 bg-white border border-dashed border-gray-200 rounded-3xl space-y-4 shadow-sm">
+          <Users size={48} className="text-gray-300 mx-auto" />
+          <p className="text-gray-400 font-semibold text-xs">Không tìm thấy người dùng nào phù hợp.</p>
         </div>
       ) : (
-        <div className="bg-dark-card border border-dark-border rounded-3xl overflow-hidden shadow-md">
+        <div className="bg-white border border-gray-200 rounded-3xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[750px]">
               <thead>
-                <tr className="border-b border-dark-border text-zinc-500 text-xs font-bold uppercase tracking-wider bg-[#0a0a0c]/60">
+                <tr className="border-b border-gray-200 text-gray-500 text-xs font-bold uppercase tracking-wider bg-gray-50">
                   <th className="py-4 pl-6">Người dùng</th>
                   <th className="py-4">Liên hệ</th>
                   <th className="py-4">Vai trò</th>
@@ -218,7 +218,7 @@ export const UserManager = () => {
                   <th className="py-4 pr-6 text-center">Hành động</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-dark-border/40 text-xs font-semibold text-zinc-300">
+              <tbody className="divide-y divide-gray-100 text-xs font-semibold text-gray-700">
                 {filteredUsers.map((user) => {
                   const createdDate = user.createdAt
                     ? new Date(user.createdAt).toLocaleDateString('vi-VN', {
@@ -229,23 +229,23 @@ export const UserManager = () => {
                     : 'N/A';
 
                   return (
-                    <tr key={user._id} className="hover:bg-zinc-800/10 transition-colors">
+                    <tr key={user._id} className="hover:bg-gray-50 transition-colors">
                       {/* Avatar + Name */}
                       <td className="py-4 pl-6">
                         <div className="flex items-center gap-3">
                           <div
-                            className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black shrink-0 border border-white/5 ${avatarColor(user.username)}`}
+                            className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black shrink-0 border border-gray-100 ${avatarColor(user.username)}`}
                           >
                             {getInitials(user.username)}
                           </div>
                           <div>
-                            <div className="font-bold text-zinc-200 flex items-center gap-1.5">
+                            <div className="font-bold text-gray-800 flex items-center gap-1.5">
                               {user.username}
                               {user.role === 'admin' && (
                                 <Crown size={11} className="text-amber-400 shrink-0" />
                               )}
                             </div>
-                            <div className="text-[10px] text-zinc-500 font-mono">{user._id?.slice(-8)}</div>
+                            <div className="text-[10px] text-gray-450 font-mono">{user._id?.slice(-8)}</div>
                           </div>
                         </div>
                       </td>
@@ -253,12 +253,12 @@ export const UserManager = () => {
                       {/* Contact */}
                       <td className="py-4">
                         <div className="space-y-0.5">
-                          <div className="flex items-center gap-1 text-zinc-400">
+                          <div className="flex items-center gap-1 text-gray-700">
                             <Mail size={11} className="text-brand shrink-0" />
                             <span className="truncate max-w-[200px]" title={user.email}>{user.email}</span>
                           </div>
                           {user.phone && (
-                            <div className="flex items-center gap-1 text-zinc-500">
+                            <div className="flex items-center gap-1 text-gray-500">
                               <Phone size={11} />
                               <span>{user.phone}</span>
                             </div>
@@ -271,7 +271,7 @@ export const UserManager = () => {
 
                       {/* Join date */}
                       <td className="py-4">
-                        <div className="flex items-center gap-1 text-zinc-500">
+                        <div className="flex items-center gap-1 text-gray-500">
                           <Calendar size={11} />
                           <span>{createdDate}</span>
                         </div>
@@ -364,17 +364,17 @@ export const UserManager = () => {
 // Reusable confirm modal
 const ConfirmModal = ({ icon, iconBg, title, description, note, onCancel, onConfirm, loading, confirmLabel, confirmClass }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-    <div className="bg-dark-card border border-dark-border rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-6">
+    <div className="bg-white border border-gray-200 rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-6">
       <div className="flex gap-4">
         <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0 ${iconBg}`}>
           {icon}
         </div>
         <div className="space-y-2">
-          <h4 className="font-black text-white text-base">{title}</h4>
-          <p className="text-xs text-zinc-400 leading-relaxed">{description}</p>
-          <div className="bg-zinc-900 border border-dark-border p-2.5 rounded-xl flex items-start gap-2 mt-2">
-            <Info size={14} className="text-zinc-500 shrink-0 mt-0.5" />
-            <span className="text-[10px] text-zinc-500 leading-normal">{note}</span>
+          <h4 className="font-black text-gray-900 text-base">{title}</h4>
+          <p className="text-xs text-gray-500 leading-relaxed">{description}</p>
+          <div className="bg-gray-50 border border-gray-200 p-2.5 rounded-xl flex items-start gap-2 mt-2">
+            <Info size={14} className="text-gray-400 shrink-0 mt-0.5" />
+            <span className="text-[10px] text-gray-550/500 leading-normal">{note}</span>
           </div>
         </div>
       </div>
@@ -382,7 +382,7 @@ const ConfirmModal = ({ icon, iconBg, title, description, note, onCancel, onConf
         <button
           disabled={loading}
           onClick={onCancel}
-          className="px-4 py-2 text-xs font-bold text-zinc-400 hover:text-white bg-transparent hover:bg-zinc-800 rounded-xl transition-colors"
+          className="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-750 bg-transparent hover:bg-gray-100 rounded-xl transition-colors"
         >
           Hủy bỏ
         </button>

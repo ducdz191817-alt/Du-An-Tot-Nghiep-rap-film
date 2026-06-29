@@ -17,14 +17,22 @@ export const PaymentForm = ({ onSubmit, loading, pricing }) => {
     if (method !== 'card') return true;
 
     const err = {};
-    if (!cardData.holder.trim()) err.holder = 'Tên chủ thẻ là bắt buộc';
-    if (!/^\d{16}$/.test(cardData.number.replace(/\s+/g, ''))) {
+    if (!cardData.holder.trim()) {
+      err.holder = 'Vui lòng điền tên chủ thẻ';
+    }
+    if (!cardData.number.trim()) {
+      err.number = 'Vui lòng điền số thẻ';
+    } else if (!/^\d{16}$/.test(cardData.number.replace(/\s+/g, ''))) {
       err.number = 'Số thẻ không hợp lệ (yêu cầu 16 chữ số)';
     }
-    if (!/^\d{2}\/\d{2}$/.test(cardData.expiry)) {
+    if (!cardData.expiry.trim()) {
+      err.expiry = 'Vui lòng điền ngày hết hạn';
+    } else if (!/^\d{2}\/\d{2}$/.test(cardData.expiry)) {
       err.expiry = 'Sử dụng định dạng MM/YY';
     }
-    if (!/^\d{3}$/.test(cardData.cvv)) {
+    if (!cardData.cvv.trim()) {
+      err.cvv = 'Vui lòng điền mã bảo mật CVV';
+    } else if (!/^\d{3}$/.test(cardData.cvv)) {
       err.cvv = 'CVV không hợp lệ (yêu cầu 3 chữ số)';
     }
 
@@ -110,7 +118,7 @@ export const PaymentForm = ({ onSubmit, loading, pricing }) => {
 
       {/* Card Details fields */}
       {method === 'card' && (
-        <form onSubmit={handlePay} className="space-y-4 pt-2">
+        <form onSubmit={handlePay} className="space-y-4 pt-2" noValidate>
           <Input
             name="holder"
             label="Tên chủ thẻ"
@@ -169,7 +177,7 @@ export const PaymentForm = ({ onSubmit, loading, pricing }) => {
 
       {/* E-wallet & QR simulations */}
       {method !== 'card' && (
-        <form onSubmit={handlePay} className="space-y-4 pt-4 text-center">
+        <form onSubmit={handlePay} className="space-y-4 pt-4 text-center" noValidate>
           {method === 'vietqr' ? (
             <div className="bg-zinc-900 border border-dark-border p-5 rounded-2xl max-w-sm mx-auto text-left space-y-2.5">
               <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">

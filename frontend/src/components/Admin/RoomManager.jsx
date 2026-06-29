@@ -203,10 +203,10 @@ export const RoomManager = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-dark-border pb-4 gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-200 pb-4 gap-4">
         <div>
-          <h3 className="text-lg font-black text-zinc-200">Rạp & Phòng Chiếu</h3>
-          <p className="text-xs text-zinc-500 mt-1">Cấu hình cụm rạp và tạo sơ đồ ghế ngồi vật lý.</p>
+          <h3 className="text-lg font-black text-gray-800">Rạp & Phòng Chiếu</h3>
+          <p className="text-xs text-gray-500 mt-1">Cấu hình cụm rạp và tạo sơ đồ ghế ngồi vật lý.</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -220,11 +220,11 @@ export const RoomManager = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex space-x-4 border-b border-dark-border/40 pb-2">
+      <div className="flex space-x-4 border-b border-gray-200 pb-2">
         <button
           onClick={() => setActiveTab('rooms')}
           className={`pb-2 font-bold text-sm border-b-2 transition-all ${
-            activeTab === 'rooms' ? 'border-brand text-brand' : 'border-transparent text-zinc-500 hover:text-zinc-300'
+            activeTab === 'rooms' ? 'border-brand text-brand' : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
           Phòng Chiếu ({rooms.length})
@@ -232,7 +232,7 @@ export const RoomManager = () => {
         <button
           onClick={() => setActiveTab('theaters')}
           className={`pb-2 font-bold text-sm border-b-2 transition-all ${
-            activeTab === 'theaters' ? 'border-brand text-brand' : 'border-transparent text-zinc-500 hover:text-zinc-300'
+            activeTab === 'theaters' ? 'border-brand text-brand' : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
           Cụm Rạp ({theaters.length})
@@ -243,26 +243,26 @@ export const RoomManager = () => {
       {activeTab === 'rooms' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {rooms.length === 0 ? (
-            <div className="col-span-full py-12 text-center text-zinc-500 italic border border-dashed border-dark-border rounded-3xl bg-dark-card/20">
+            <div className="col-span-full py-12 text-center text-gray-400 italic border border-dashed border-gray-200 rounded-3xl bg-white">
               Chưa có phòng chiếu nào được đăng ký. Hãy thêm phòng chiếu ở trên!
             </div>
           ) : (
             rooms.map((rm) => (
-              <div key={rm._id} className="bg-dark-card border border-dark-border p-5 rounded-3xl space-y-3 shadow-sm hover:border-zinc-800 transition-colors relative group">
+              <div key={rm._id} className="bg-white border border-gray-200 p-5 rounded-3xl space-y-3 shadow-sm hover:border-gray-300 transition-colors relative group">
                 <div className="flex items-start justify-between pr-12">
                   <div>
-                    <h4 className="font-bold text-zinc-200 text-sm flex items-center gap-2">
+                    <h4 className="font-bold text-gray-800 text-sm flex items-center gap-2">
                       <DoorOpen size={16} className="text-brand" /> {rm.name}
                     </h4>
-                    <span className="text-[10px] text-zinc-500 font-semibold uppercase">{rm.theater?.name || 'Không xác định'}</span>
+                    <span className="text-[10px] text-gray-400 font-semibold uppercase">{rm.theater?.name || 'Không xác định'}</span>
                   </div>
-                  <span className="bg-zinc-900 border border-zinc-850 px-2 py-0.5 rounded text-[9px] uppercase font-bold text-zinc-400 shrink-0">
+                  <span className="bg-gray-50 border border-gray-200 px-2 py-0.5 rounded text-[9px] uppercase font-bold text-gray-500 shrink-0">
                     {rm.type}
                   </span>
                 </div>
-                <div className="text-xs font-semibold text-zinc-500 border-t border-dark-border/40 pt-2 flex justify-between items-center">
+                <div className="text-xs font-semibold text-gray-500 border-t border-gray-200/80 pt-2 flex justify-between items-center">
                   <span>Sơ đồ sức chứa</span>
-                  <span className="text-zinc-300">{rm.capacity} Ghế đã tạo</span>
+                  <span className="text-gray-700">{rm.capacity} Ghế đã tạo</span>
                 </div>
 
                 <button
@@ -277,14 +277,14 @@ export const RoomManager = () => {
                 <div className="absolute top-2 right-4 flex space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => handleOpenEditRoom(rm)}
-                    className="p-1.5 bg-zinc-900 border border-dark-border hover:border-brand/40 text-zinc-400 hover:text-zinc-200 rounded-lg transition-all"
+                    className="p-1.5 bg-gray-50 border border-gray-200 hover:border-brand/40 text-gray-500 hover:text-gray-700 rounded-lg transition-all"
                     title="Sửa phòng chiếu"
                   >
                     <Edit2 size={12} />
                   </button>
                   <button
                     onClick={() => handleDeleteRoom(rm._id)}
-                    className="p-1.5 bg-zinc-900 border border-dark-border hover:border-red-500/40 text-zinc-400 hover:text-red-400 rounded-lg transition-all"
+                    className="p-1.5 bg-gray-50 border border-gray-200 hover:border-red-500/40 text-gray-500 hover:text-red-500 rounded-lg transition-all"
                     title="Xóa phòng chiếu"
                   >
                     <Trash2 size={12} />
@@ -300,30 +300,30 @@ export const RoomManager = () => {
       {activeTab === 'theaters' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {theaters.length === 0 ? (
-            <div className="col-span-full py-12 text-center text-zinc-500 italic border border-dashed border-dark-border rounded-3xl bg-dark-card/20">
+            <div className="col-span-full py-12 text-center text-gray-400 italic border border-dashed border-gray-200 rounded-3xl bg-white">
               Chưa có cụm rạp nào được đăng ký. Hãy thêm cụm rạp ở trên!
             </div>
           ) : (
             theaters.map((th) => (
-              <div key={th._id} className="bg-dark-card border border-dark-border p-5 rounded-3xl space-y-3 shadow-sm relative group">
+              <div key={th._id} className="bg-white border border-gray-200 p-5 rounded-3xl space-y-3 shadow-sm relative group">
                 <div className="pr-12">
-                  <h4 className="font-bold text-zinc-200 text-sm">{th.name}</h4>
-                  <p className="text-xs text-zinc-400 mt-1">{th.address}, {th.city}</p>
-                  <p className="text-[10px] text-zinc-500 font-bold mt-0.5">Hotline: {th.phone}</p>
+                  <h4 className="font-bold text-gray-800 text-sm">{th.name}</h4>
+                  <p className="text-xs text-gray-500 mt-1">{th.address}, {th.city}</p>
+                  <p className="text-[10px] text-gray-400 font-bold mt-0.5">Hotline: {th.phone}</p>
                 </div>
 
                 {/* Floating Action Controls */}
                 <div className="absolute top-4 right-4 flex space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => handleOpenEditTheater(th)}
-                    className="p-1.5 bg-zinc-900 border border-dark-border hover:border-brand/40 text-zinc-400 hover:text-zinc-200 rounded-lg transition-all"
+                    className="p-1.5 bg-gray-50 border border-gray-200 hover:border-brand/40 text-gray-500 hover:text-gray-700 rounded-lg transition-all"
                     title="Chỉnh sửa cụm rạp"
                   >
                     <Edit2 size={12} />
                   </button>
                   <button
                     onClick={() => handleDeleteTheater(th._id)}
-                    className="p-1.5 bg-zinc-900 border border-dark-border hover:border-red-500/40 text-zinc-400 hover:text-red-400 rounded-lg transition-all"
+                    className="p-1.5 bg-gray-50 border border-gray-200 hover:border-red-500/40 text-gray-500 hover:text-red-500 rounded-lg transition-all"
                     title="Xóa cụm rạp"
                   >
                     <Trash2 size={12} />
@@ -353,7 +353,7 @@ export const RoomManager = () => {
             <Input name="phone" label="Hotline" placeholder="028 3822 3111" value={thForm.phone} onChange={handleThChange} required />
           </div>
 
-          <div className="flex justify-end gap-3 pt-3 border-t border-dark-border">
+          <div className="flex justify-end gap-3 pt-3 border-t border-gray-200">
             <Button onClick={() => setIsThOpen(false)} variant="secondary" className="px-5 py-2">
               Hủy
             </Button>
@@ -379,12 +379,12 @@ export const RoomManager = () => {
             
             {/* Lựa chọn Cụm rạp */}
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1.5 pl-0.5">Cụm Rạp</label>
+              <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Cụm Rạp</label>
               <select
                 name="theaterId"
                 value={rmForm.theaterId}
                 onChange={handleRmChange}
-                className="w-full bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer"
+                className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer"
                 required
                 disabled={!!editingRoom}
               >
@@ -400,12 +400,12 @@ export const RoomManager = () => {
           <div className="grid grid-cols-2 gap-4">
             {/* Định dạng chiếu */}
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1.5 pl-0.5">Định Dạng Chiếu</label>
+              <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Định Dạng Chiếu</label>
               <select
                 name="type"
                 value={rmForm.type}
                 onChange={handleRmChange}
-                className="w-full bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer"
+                className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer"
               >
                 <option value="2D">2D</option>
                 <option value="3D">3D</option>
@@ -421,25 +421,25 @@ export const RoomManager = () => {
 
           {!editingRoom ? (
             <>
-              <div className="grid grid-cols-3 gap-4 border-t border-dark-border/40 pt-4">
+              <div className="grid grid-cols-3 gap-4 border-t border-gray-200 pt-4">
                 <Input name="standardRows" type="number" label="Hàng ghế thường" placeholder="5" value={rmForm.standardRows} onChange={handleRmChange} required />
                 <Input name="vipRows" type="number" label="Hàng ghế VIP" placeholder="3" value={rmForm.vipRows} onChange={handleRmChange} required />
                 <Input name="coupleRows" type="number" label="Hàng ghế đôi" placeholder="1" value={rmForm.coupleRows} onChange={handleRmChange} required />
               </div>
 
-              <p className="text-[10px] text-zinc-500 font-bold bg-zinc-900/60 p-3 rounded-lg border border-dark-border flex items-center gap-2">
+              <p className="text-[10px] text-gray-500 font-bold bg-gray-50 p-3 rounded-lg border border-gray-200 flex items-center gap-2">
                 <RefreshCw size={12} className="animate-spin text-brand shrink-0" />
                 <span>Sơ đồ ghế sẽ được tạo tự động trong cơ sở dữ liệu dựa theo các chữ cái hàng (A-Z) và cấu hình giá tương ứng.</span>
               </p>
             </>
           ) : (
-            <p className="text-[11px] text-amber-500 font-bold bg-amber-500/5 p-3 rounded-lg border border-amber-500/20 flex items-center gap-2">
+            <p className="text-[11px] text-amber-600 font-bold bg-amber-500/5 p-3 rounded-lg border border-amber-500/20 flex items-center gap-2">
               <AlertCircle size={14} className="shrink-0" />
               <span>Cấu hình sơ đồ và sức chứa ghế bị khóa trong chế độ chỉnh sửa. Để thay đổi cấu trúc sơ đồ ghế, vui lòng tạo mới phòng chiếu.</span>
             </p>
           )}
 
-          <div className="flex justify-end gap-3 pt-3 border-t border-dark-border">
+          <div className="flex justify-end gap-3 pt-3 border-t border-gray-200">
             <Button onClick={() => setIsRmOpen(false)} variant="secondary" className="px-5 py-2">
               Hủy
             </Button>

@@ -258,7 +258,7 @@ const deleteConcession = async (req, res, next) => {
 };
 
 // ==========================================
-// 3. Showtime Management
+// 3. Showtime Management (Checked for overlap conflicts)
 // ==========================================
 const createShowtime = async (req, res, next) => {
   try {
@@ -275,18 +275,18 @@ const createShowtime = async (req, res, next) => {
     const end = new Date(start.getTime() + movie.duration * 60000 + 20 * 60000); // add 20 mins break time
 
     // Prevent showtime overlapping in the same room
+    // Sử dụng strict inequality: kự này bắt đầu trước khi kự kia kết thúc AND kự này kết thúc sau khi kự kia bắt đầu
     const overlappingShowtime = await Showtime.findOne({
       room: roomId,
-      $or: [
-        { startTime: { $gte: start, $lt: end } },
-        { endTime: { $gt: start, $lte: end } },
-        { startTime: { $lte: start }, endTime: { $gte: end } },
-      ],
+      startTime: { $lt: end },
+      endTime: { $gt: start },
     });
 
     if (overlappingShowtime) {
       res.status(400);
-      throw new Error(`Overlapping showtime! This room is occupied from ${overlappingShowtime.startTime.toLocaleTimeString()} to ${overlappingShowtime.endTime.toLocaleTimeString()}.`);
+      const existStart = overlappingShowtime.startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      const existEnd = overlappingShowtime.endTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      throw new Error(`⚠️ Lịch chiếu bị trùng! Phòng này đã có suất chiếu "${overlappingShowtime.movie ? (await Movie.findById(overlappingShowtime.movie).select('title'))?.title || 'Khác' : 'Khác'}" từ ${existStart} đến ${existEnd}. Vui lòng chọn giờ chiếu khác.`);
     }
 
     const showtime = await Showtime.create({
@@ -307,14 +307,55 @@ const createShowtime = async (req, res, next) => {
 
 const updateShowtime = async (req, res, next) => {
   try {
-    const showtime = await Showtime.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
-    if (!showtime) {
+    const showtimeId = req.params.id;
+    const existingShowtime = await Showtime.findById(showtimeId);
+    if (!existingShowtime) {
       res.status(404);
       throw new Error('Showtime not found');
     }
+
+    // Merge updates with existing data to calculate new times/room
+    const movieId = req.body.movieId || req.body.movie || existingShowtime.movie;
+    const roomId = req.body.roomId || req.body.room || existingShowtime.room;
+    const startTimeStr = req.body.startTime || existingShowtime.startTime;
+
+    const movie = await Movie.findById(movieId);
+    if (!movie) {
+      res.status(404);
+      throw new Error('Movie not found');
+    }
+
+    const start = new Date(startTimeStr);
+    const end = new Date(start.getTime() + movie.duration * 60000 + 20 * 60000); // add 20 mins break time
+
+    // Prevent showtime overlapping in the same room, excluding current showtime
+    const overlappingShowtime = await Showtime.findOne({
+      _id: { $ne: showtimeId },
+      room: roomId,
+      startTime: { $lt: end },
+      endTime: { $gt: start },
+    });
+
+    if (overlappingShowtime) {
+      res.status(400);
+      const existStart = overlappingShowtime.startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      const existEnd = overlappingShowtime.endTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      const existMovie = await Movie.findById(overlappingShowtime.movie).select('title');
+      throw new Error(`⚠️ Lịch chiếu bị trùng! Phòng này đã có suất chiếu "${existMovie?.title || 'Khác'}" từ ${existStart} đến ${existEnd}. Vui lòng chọn giờ chiếu khác.`);
+    }
+
+    const updateData = {
+      ...req.body,
+      endTime: end,
+    };
+    if (req.body.movieId) updateData.movie = req.body.movieId;
+    if (req.body.roomId) updateData.room = req.body.roomId;
+
+    const showtime = await Showtime.findByIdAndUpdate(showtimeId, updateData, {
+      new: true,
+      runValidators: true,
+    });
+
     res.json({ success: true, data: showtime });
   } catch (error) {
     next(error);
@@ -339,24 +380,69 @@ const deleteShowtime = async (req, res, next) => {
 // ==========================================
 const getDashboardStats = async (req, res, next) => {
   try {
-    const totalBookings = await Booking.countDocuments();
+    const { date, month, year } = req.query;
+    const isFiltered = date || month || year;
+
     const totalMovies = await Movie.countDocuments();
-    const totalUsers = await User.countDocuments({ role: 'user' });
-    const totalTheaters = await Theater.countDocuments();
+    let totalBookings = 0;
+    let totalUsers = 0;
+    let totalRevenue = 0;
+    let recentBookings = [];
 
-    // Total sales accumulation
-    const bookings = await Booking.find({ paymentStatus: 'paid' });
-    const totalRevenue = bookings.reduce((sum, b) => sum + b.totalPrice, 0);
+    const periodQuery = {};
+    if (date) {
+      const start = new Date(date);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+      periodQuery.bookingDate = { $gte: start, $lte: end };
+    } else if (month) {
+      const [y, m] = month.split('-').map(Number);
+      const start = new Date(y, m - 1, 1);
+      const end = new Date(y, m, 0, 23, 59, 59, 999);
+      periodQuery.bookingDate = { $gte: start, $lte: end };
+    } else if (year) {
+      const y = Number(year);
+      const start = new Date(y, 0, 1);
+      const end = new Date(y, 11, 31, 23, 59, 59, 999);
+      periodQuery.bookingDate = { $gte: start, $lte: end };
+    }
 
-    // Get recent bookings listing
-    const recentBookings = await Booking.find()
-      .populate('user', 'username email')
-      .populate({
-        path: 'showtime',
-        populate: [{ path: 'movie', select: 'title' }, { path: 'theater', select: 'name' }],
-      })
-      .sort({ createdAt: -1 })
-      .limit(5);
+    if (isFiltered) {
+      // Filter stats by chosen period
+      totalBookings = await Booking.countDocuments(periodQuery);
+
+      const paidBookings = await Booking.find({ ...periodQuery, paymentStatus: 'paid' });
+      totalRevenue = paidBookings.reduce((sum, b) => sum + b.totalPrice, 0);
+
+      const bookingsInPeriod = await Booking.find(periodQuery);
+      const userIds = new Set(bookingsInPeriod.map((b) => b.user?.toString()).filter(Boolean));
+      totalUsers = userIds.size;
+
+      recentBookings = await Booking.find(periodQuery)
+        .populate('user', 'username email')
+        .populate({
+          path: 'showtime',
+          populate: [{ path: 'movie', select: 'title' }, { path: 'theater', select: 'name' }],
+        })
+        .sort({ bookingDate: -1 });
+    } else {
+      // Default overall stats
+      totalBookings = await Booking.countDocuments();
+      totalUsers = await User.countDocuments({ role: 'user' });
+
+      const allPaidBookings = await Booking.find({ paymentStatus: 'paid' });
+      totalRevenue = allPaidBookings.reduce((sum, b) => sum + b.totalPrice, 0);
+
+      recentBookings = await Booking.find()
+        .populate('user', 'username email')
+        .populate({
+          path: 'showtime',
+          populate: [{ path: 'movie', select: 'title' }, { path: 'theater', select: 'name' }],
+        })
+        .sort({ createdAt: -1 })
+        .limit(5);
+    }
 
     res.json({
       success: true,
@@ -365,7 +451,6 @@ const getDashboardStats = async (req, res, next) => {
           totalBookings,
           totalMovies,
           totalUsers,
-          totalTheaters,
           totalRevenue,
         },
         recentBookings,

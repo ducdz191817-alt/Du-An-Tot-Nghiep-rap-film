@@ -178,10 +178,10 @@ export const ConcessionManager = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-dark-border pb-4 gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-200 pb-4 gap-4">
         <div>
-          <h3 className="text-lg font-black text-zinc-200">Quản Lý Bỏng Nước & Đồ Ăn</h3>
-          <p className="text-xs text-zinc-500 mt-1">Cấu hình danh mục thực đơn dịch vụ kèm theo của từng rạp chiếu.</p>
+          <h3 className="text-lg font-black text-gray-800">Quản Lý Bỏng Nước & Đồ Ăn</h3>
+          <p className="text-xs text-gray-500 mt-1">Cấu hình danh mục thực đơn dịch vụ kèm theo của từng rạp chiếu.</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -189,7 +189,7 @@ export const ConcessionManager = () => {
           <select
             value={selectedTheater}
             onChange={handleTheaterFilterChange}
-            className="bg-zinc-900 border border-zinc-800 text-zinc-300 text-sm font-semibold py-2 px-3 rounded-xl focus:border-brand outline-none cursor-pointer"
+            className="bg-gray-50 border border-gray-200 text-gray-700 text-sm font-semibold py-2 px-3 rounded-xl focus:border-brand outline-none cursor-pointer"
           >
             {theaters.map((th) => (
               <option key={th._id} value={th._id}>
@@ -207,18 +207,18 @@ export const ConcessionManager = () => {
       {/* Grid danh sách đồ ăn uống của rạp */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {concessions.length === 0 ? (
-          <div className="col-span-full py-12 text-center text-zinc-500 italic border border-dashed border-dark-border rounded-3xl bg-dark-card/20">
+          <div className="col-span-full py-12 text-center text-gray-400 italic border border-dashed border-gray-200 rounded-3xl bg-white">
             Chưa có đồ ăn/nước uống nào được đăng ký cho rạp này. Hãy thêm món mới!
           </div>
         ) : (
           concessions.map((item) => (
             <div
               key={item._id}
-              className="bg-dark-card border border-dark-border p-4 rounded-3xl space-y-4 shadow-sm hover:border-zinc-800 transition-colors relative group flex gap-4 items-center justify-between"
+              className="bg-white border border-gray-200 p-4 rounded-3xl space-y-4 shadow-sm hover:border-gray-300 transition-colors relative group flex gap-4 items-center justify-between"
             >
               {/* Hình ảnh & Chi tiết */}
               <div className="flex items-center gap-4 min-w-0">
-                <div className="w-20 h-20 rounded-2xl overflow-hidden bg-zinc-950 shrink-0 border border-dark-border">
+                <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gray-100 shrink-0 border border-gray-200">
                   <img
                     src={item.imageUrl}
                     alt={item.name}
@@ -226,12 +226,12 @@ export const ConcessionManager = () => {
                   />
                 </div>
                 <div className="min-w-0">
-                  <span className="inline-flex items-center gap-1 bg-zinc-900 border border-dark-border/40 text-[9px] uppercase tracking-wide font-black text-zinc-400 px-2 py-0.5 rounded-full mb-1">
+                  <span className="inline-flex items-center gap-1 bg-gray-50 border border-gray-200 text-[9px] uppercase tracking-wide font-black text-gray-500 px-2 py-0.5 rounded-full mb-1">
                     {getIcon(item.type)}
                     <span>{getTypeLabel(item.type)}</span>
                   </span>
-                  <h4 className="font-bold text-zinc-200 text-sm truncate">{item.name}</h4>
-                  <p className="text-[10px] text-zinc-500 line-clamp-2 mt-0.5 leading-snug">
+                  <h4 className="font-bold text-gray-800 text-sm truncate">{item.name}</h4>
+                  <p className="text-[10px] text-gray-500 line-clamp-2 mt-0.5 leading-snug">
                     {item.description}
                   </p>
                   <span className="text-xs font-black text-brand block mt-1.5">
@@ -244,14 +244,14 @@ export const ConcessionManager = () => {
               <div className="absolute top-3 right-3 flex space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => handleOpenEdit(item)}
-                  className="p-1.5 bg-zinc-900 border border-dark-border hover:border-brand/40 text-zinc-400 hover:text-zinc-200 rounded-lg transition-all"
+                  className="p-1.5 bg-gray-50 border border-gray-200 hover:border-brand/40 text-gray-500 hover:text-gray-700 rounded-lg transition-all"
                   title="Chỉnh sửa"
                 >
                   <Edit2 size={11} />
                 </button>
                 <button
                   onClick={() => handleDelete(item._id)}
-                  className="p-1.5 bg-zinc-900 border border-dark-border hover:border-red-500/40 text-zinc-400 hover:text-red-400 rounded-lg transition-all"
+                  className="p-1.5 bg-gray-50 border border-gray-200 hover:border-red-500/40 text-gray-500 hover:text-red-500 rounded-lg transition-all"
                   title="Xóa món"
                 >
                   <Trash2 size={11} />
@@ -277,12 +277,12 @@ export const ConcessionManager = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1.5 pl-0.5">Phân Loại Dịch Vụ</label>
+              <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Phân Loại Dịch Vụ</label>
               <select
                 name="type"
                 value={form.type}
                 onChange={handleChange}
-                className="w-full bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer"
+                className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer"
               >
                 <option value="food">Đồ Ăn (Bắp/Kẹo...)</option>
                 <option value="drink">Nước Uống (Pepsi/Nước khoáng...)</option>
@@ -301,12 +301,12 @@ export const ConcessionManager = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1.5 pl-0.5">Cụm Rạp Áp Dụng</label>
+            <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Cụm Rạp Áp Dụng</label>
             <select
               name="theaterId"
               value={form.theaterId}
               onChange={handleChange}
-              className="w-full bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer"
+              className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer"
               required
               disabled={!!editingConcession}
             >
@@ -329,7 +329,7 @@ export const ConcessionManager = () => {
             required
           />
 
-          <div className="flex justify-end gap-3 pt-3 border-t border-dark-border">
+          <div className="flex justify-end gap-3 pt-3 border-t border-gray-200">
             <Button onClick={() => setIsOpen(false)} variant="secondary" className="px-5 py-2">
               Hủy
             </Button>

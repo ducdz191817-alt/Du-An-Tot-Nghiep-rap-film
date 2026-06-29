@@ -46,7 +46,7 @@ const generateSeatsForRoom = async (
         row: rowLetter,
         number: num,
         type: 'vip',        // Loại ghế: VIP
-        price: 20000,       // Ghế VIP phụ thu thêm 20,000 VND
+        price: 5000,        // Ghế VIP phụ thu thêm 5,000 VND
       });
     }
   }
@@ -54,16 +54,15 @@ const generateSeatsForRoom = async (
   // 3. TẠO CÁC HÀNG GHẾ ĐÔI (Couple / Sweetbox)
   for (let i = 0; i < coupleRowsCount; i++) {
     const rowLetter = alphabet[rowIdx++]; // Lấy chữ cái tên hàng tiếp theo
-    // Ghế đôi to gấp đôi ghế thường, nên số lượng ghế đôi trong hàng thường bằng một nửa số ghế thường
-    const coupleSeatsCount = Math.floor(seatsPerRow / 2);
-    for (let num = 1; num <= coupleSeatsCount; num++) {
+    // Ghế đôi to gấp đôi ghế thường, chỉ tạo các số lẻ 1, 3, 5, 7...
+    for (let num = 1; num <= seatsPerRow; num += 2) {
       // Đẩy object thông tin ghế Đôi vào mảng tạm
       seats.push({
         room: roomId,
         row: rowLetter,
         number: num,
         type: 'couple',     // Loại ghế: Đôi
-        price: 40000,       // Ghế đôi phụ thu thêm 40,000 VND
+        price: 120000,      // Ghế đôi phụ thu thêm 120,000 VND
       });
     }
   }

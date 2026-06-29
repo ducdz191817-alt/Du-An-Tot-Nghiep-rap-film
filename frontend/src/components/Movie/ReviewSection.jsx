@@ -14,7 +14,7 @@ const StarDisplay = ({ rating, size = 16 }) => (
         className={`transition-colors ${
           star <= rating
             ? 'text-amber-400 fill-amber-400'
-            : 'text-zinc-700'
+            : 'text-gray-300'
         }`}
       />
     ))}
@@ -41,7 +41,7 @@ const StarRating = ({ rating, onRate }) => {
             className={`transition-all duration-150 ${
               star <= (hovered || rating)
                 ? 'text-amber-400 fill-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.4)]'
-                : 'text-zinc-600 hover:text-zinc-500'
+                : 'text-gray-300 hover:text-gray-400'
             }`}
           />
         </button>
@@ -78,14 +78,14 @@ const UserAvatar = ({ user }) => {
       <img
         src={avatarUrl}
         alt={username}
-        className="w-10 h-10 rounded-full object-cover border-2 border-white/10 shadow-md"
+        className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 shadow-md"
       />
     );
   }
 
   return (
     <div
-      className={`w-10 h-10 rounded-full bg-gradient-to-br ${colors[colorIndex]} flex items-center justify-center text-white font-black text-sm border-2 border-white/10 shadow-md`}
+      className={`w-10 h-10 rounded-full bg-gradient-to-br ${colors[colorIndex]} flex items-center justify-center text-white font-black text-sm border-2 border-gray-200 shadow-md`}
     >
       {initial}
     </div>
@@ -102,18 +102,18 @@ const ReviewCard = ({ review, currentUser, onEdit, onDelete, t }) => {
   });
 
   return (
-    <div className="group relative bg-dark-card/60 backdrop-blur-sm border border-white/5 rounded-2xl p-5 hover:border-white/10 transition-all duration-300">
+    <div className="group relative bg-white border border-gray-200 rounded-2xl p-5 hover:border-gray-300 transition-all duration-300 shadow-sm">
       {/* Header: Avatar + Username + Stars */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <UserAvatar user={review.user} />
           <div>
-            <h4 className="text-sm font-bold text-zinc-200">
+            <h4 className="text-sm font-bold text-gray-800">
               {review.user?.username || 'Ẩn danh'}
             </h4>
             <div className="flex items-center gap-2 mt-0.5">
               <StarDisplay rating={review.rating} size={13} />
-              <span className="text-[10px] text-zinc-600 font-semibold">{createdDate}</span>
+              <span className="text-[10px] text-gray-400 font-semibold">{createdDate}</span>
             </div>
           </div>
         </div>
@@ -123,14 +123,14 @@ const ReviewCard = ({ review, currentUser, onEdit, onDelete, t }) => {
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               onClick={() => onEdit(review)}
-              className="p-1.5 rounded-lg text-zinc-500 hover:text-amber-400 hover:bg-amber-400/10 transition-all"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-amber-500 hover:bg-amber-50 transition-all"
               title={t('review.edit')}
             >
               <Pencil size={14} />
             </button>
             <button
               onClick={() => onDelete(review._id)}
-              className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-400/10 transition-all"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
               title={t('review.delete')}
             >
               <Trash2 size={14} />
@@ -140,7 +140,7 @@ const ReviewCard = ({ review, currentUser, onEdit, onDelete, t }) => {
       </div>
 
       {/* Comment */}
-      <p className="mt-3 text-sm text-zinc-300 leading-relaxed font-medium">
+      <p className="mt-3 text-sm text-gray-700 leading-relaxed font-medium">
         {review.comment}
       </p>
     </div>
@@ -259,14 +259,14 @@ const ReviewSection = ({ movieId }) => {
   }));
 
   return (
-    <div className="space-y-6 bg-dark-card/60 backdrop-blur-xl border border-white/10 p-6 md:p-10 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] mt-12 relative overflow-hidden">
+    <div className="space-y-6 bg-white border border-gray-200 p-6 md:p-10 rounded-[2rem] shadow-lg mt-12 relative overflow-hidden">
       {/* Subtle glow */}
       <div className="absolute top-0 left-0 w-64 h-64 bg-amber-500/5 blur-[80px] rounded-full pointer-events-none" />
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-6 relative z-10">
-        <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-3 tracking-tight">
-          <span className="bg-amber-500/20 p-2 rounded-xl text-amber-400">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-6 relative z-10">
+        <h2 className="text-2xl md:text-3xl font-black text-gray-900 flex items-center gap-3 tracking-tight">
+          <span className="bg-amber-50 p-2 rounded-xl text-amber-500 border border-amber-200">
             <MessageSquare size={24} />
           </span>
           {t('review.title')}
@@ -288,12 +288,12 @@ const ReviewSection = ({ movieId }) => {
       {totalCount > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 relative z-10">
           {/* Điểm trung bình */}
-          <div className="md:col-span-4 flex flex-col items-center justify-center bg-white/[0.03] border border-white/5 rounded-2xl p-6 space-y-2">
-            <span className="text-5xl font-black text-white">
+          <div className="md:col-span-4 flex flex-col items-center justify-center bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-2">
+            <span className="text-5xl font-black text-gray-900">
               {averageRating}
             </span>
             <StarDisplay rating={Math.round(averageRating)} size={20} />
-            <span className="text-xs text-zinc-500 font-semibold">
+            <span className="text-xs text-gray-500 font-semibold">
               {totalCount} {t('review.reviews')}
             </span>
           </div>
@@ -302,15 +302,15 @@ const ReviewSection = ({ movieId }) => {
           <div className="md:col-span-8 space-y-2">
             {ratingDistribution.map(({ star, count, percentage }) => (
               <div key={star} className="flex items-center gap-3">
-                <span className="text-xs font-bold text-zinc-400 w-6 text-right">{star}</span>
+                <span className="text-xs font-bold text-gray-500 w-6 text-right">{star}</span>
                 <Star size={14} className="text-amber-400 fill-amber-400 shrink-0" />
-                <div className="flex-1 h-2.5 bg-zinc-800 rounded-full overflow-hidden">
+                <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-700 ease-out"
                     style={{ width: `${percentage}%` }}
                   />
                 </div>
-                <span className="text-[11px] text-zinc-500 font-semibold w-8 text-right">
+                <span className="text-[11px] text-gray-500 font-semibold w-8 text-right">
                   {count}
                 </span>
               </div>
@@ -323,15 +323,15 @@ const ReviewSection = ({ movieId }) => {
       {showForm && (
         <form
           onSubmit={handleSubmit}
-          className="relative z-10 bg-white/[0.03] border border-white/10 rounded-2xl p-6 space-y-5 animate-in slide-in-from-top-2 duration-300"
+          className="relative z-10 bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-5 animate-in slide-in-from-top-2 duration-300"
         >
-          <h3 className="text-lg font-bold text-white">
+          <h3 className="text-lg font-bold text-gray-900">
             {editingReview ? t('review.editTitle') : t('review.writeTitle')}
           </h3>
 
           {/* Star rating input */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
               {t('review.yourRating')}
             </label>
             <StarRating rating={formRating} onRate={setFormRating} />
@@ -339,7 +339,7 @@ const ReviewSection = ({ movieId }) => {
 
           {/* Comment input */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
               {t('review.yourComment')}
             </label>
             <textarea
@@ -348,16 +348,16 @@ const ReviewSection = ({ movieId }) => {
               placeholder={t('review.commentPlaceholder')}
               maxLength={500}
               rows={4}
-              className="w-full bg-dark-deep border border-white/10 rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 outline-none resize-none transition-all"
+              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 outline-none resize-none transition-all"
             />
-            <div className="text-right text-[10px] text-zinc-600 font-semibold">
+            <div className="text-right text-[10px] text-gray-400 font-semibold">
               {formComment.length}/500
             </div>
           </div>
 
           {/* Error */}
           {error && (
-            <div className="flex items-center gap-2 text-red-400 text-xs font-semibold bg-red-500/10 border border-red-500/20 px-4 py-2.5 rounded-xl">
+            <div className="flex items-center gap-2 text-red-600 text-xs font-semibold bg-red-50 border border-red-200 px-4 py-2.5 rounded-xl">
               <AlertCircle size={14} />
               {error}
             </div>
@@ -380,7 +380,7 @@ const ReviewSection = ({ movieId }) => {
             <button
               type="button"
               onClick={handleCancel}
-              className="text-zinc-400 hover:text-white font-bold text-sm px-4 py-2.5 rounded-xl border border-white/10 hover:border-white/20 transition-all"
+              className="text-gray-500 hover:text-gray-800 font-bold text-sm px-4 py-2.5 rounded-xl border border-gray-200 hover:border-gray-300 transition-all"
             >
               {t('review.cancelBtn')}
             </button>
@@ -390,9 +390,9 @@ const ReviewSection = ({ movieId }) => {
 
       {/* Thông báo cho người chưa đăng nhập */}
       {!isAuthenticated && (
-        <div className="relative z-10 text-center py-6 bg-white/[0.02] border border-dashed border-white/10 rounded-2xl">
-          <User size={24} className="text-zinc-600 mx-auto mb-2" />
-          <p className="text-zinc-500 text-sm font-semibold">
+        <div className="relative z-10 text-center py-6 bg-gray-50 border border-dashed border-gray-300 rounded-2xl">
+          <User size={24} className="text-gray-400 mx-auto mb-2" />
+          <p className="text-gray-600 text-sm font-semibold">
             {t('review.loginPrompt')}
           </p>
         </div>
@@ -400,8 +400,8 @@ const ReviewSection = ({ movieId }) => {
 
       {/* Thông báo cho admin */}
       {isAuthenticated && !isUser && !showForm && (
-        <div className="relative z-10 text-center py-4 bg-amber-500/5 border border-amber-500/10 rounded-2xl">
-          <p className="text-amber-500/80 text-xs font-semibold">
+        <div className="relative z-10 text-center py-4 bg-amber-50 border border-amber-200 rounded-2xl">
+          <p className="text-amber-600 text-xs font-semibold">
             {t('review.adminNotice')}
           </p>
         </div>
@@ -410,13 +410,13 @@ const ReviewSection = ({ movieId }) => {
       {/* Danh sách reviews */}
       <div className="relative z-10 space-y-3">
         {loading ? (
-          <div className="py-12 flex justify-center items-center gap-3 text-zinc-400 font-semibold">
+          <div className="py-12 flex justify-center items-center gap-3 text-gray-500 font-semibold">
             <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
             {t('review.loading')}
           </div>
         ) : reviews.length === 0 ? (
-          <div className="py-12 text-center text-zinc-500 font-medium bg-black/20 rounded-2xl border border-white/5">
-            <MessageSquare size={32} className="text-zinc-700 mx-auto mb-3" />
+          <div className="py-12 text-center text-gray-400 font-semibold bg-gray-50 rounded-2xl border border-gray-200">
+            <MessageSquare size={32} className="text-gray-300 mx-auto mb-3" />
             <p>{t('review.noReviews')}</p>
           </div>
         ) : (

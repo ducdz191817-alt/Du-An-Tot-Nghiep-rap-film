@@ -1,5 +1,6 @@
 const Showtime = require('../models/Showtime.model');
 const Seat = require('../models/Seat.model');
+const { checkAndExpirePendingBookings } = require('../utils/bookingCleanup');
 
 // @desc    Get showtimes for a movie grouped by theater and date
 // @route   GET /api/showtimes/movie/:movieId
@@ -44,6 +45,7 @@ const getShowtimesByMovie = async (req, res, next) => {
 // @access  Public
 const getShowtimeById = async (req, res, next) => {
   try {
+    await checkAndExpirePendingBookings();
     const showtime = await Showtime.findById(req.params.id)
       .populate('movie')
       .populate('theater')
