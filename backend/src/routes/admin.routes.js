@@ -47,10 +47,15 @@ router.route("/theaters/:id").put(updateTheater).delete(deleteTheater);
 // Rooms
 router.route("/rooms").get(listRooms).post(createRoom);
 router.route("/rooms/:id").put(updateRoom).delete(deleteRoom);
+router.get("/rooms/:id/seats", getRoomSeats);
+
+// Seats
+router.patch("/seats/bulk", bulkUpdateSeats);
+router.put("/seats/:id", updateSeat);
 
 // Concessions
 router.route("/concessions").get(listConcessions).post(createConcession);
-router.put("/concessions/:id", updateConcession);
+router.route("/concessions/:id").put(updateConcession).delete(deleteConcession);
 
 // Showtimes
 router.post("/showtimes", createShowtime);
