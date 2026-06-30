@@ -417,7 +417,7 @@ export const MovieManager = () => {
                       onClick={() => handleToggleGenre(genre)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${isSelected
                         ? 'bg-brand/10 border-brand/40 text-brand shadow-[0_2px_8px_rgba(168,85,247,0.15)]'
-                        : 'bg-zinc-800/40 border-zinc-700/40 text-zinc-400 hover:border-zinc-650 hover:text-zinc-200'
+                        : 'bg-gray-100 border-gray-200 text-gray-600 hover:border-gray-400 hover:text-gray-800'
                         }`}
                     >
                       {genre}
