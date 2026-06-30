@@ -8,7 +8,7 @@ const promotions = [
     id: 1,
     badge: 'HOT',
     badgeEN: 'HOT',
-    icon: <Flame size={22} className="text-red-400" />,
+    icon: <Flame size={22} className="text-red-600" />,
     title: 'Thứ Tư Vui Vẻ',
     titleEN: 'Happy Wednesday',
     subtitle: 'Giảm 30% tất cả loại vé',
@@ -24,17 +24,18 @@ const promotions = [
     validUntil: new Date(new Date().setDate(new Date().getDate() + 5)),
     tag: 'Mỗi Thứ Tư',
     tagEN: 'Every Wednesday',
-    gradient: 'from-red-900/40 via-dark-card to-dark-card',
-    glowColor: 'shadow-red-500/10',
-    borderColor: 'border-red-500/20',
-    accentColor: 'text-red-400',
-    bgAccent: 'bg-red-500/10',
+    gradient: 'from-red-500/5 via-white to-white',
+    glowColor: 'shadow-red-500/5',
+    borderColor: 'border-red-200',
+    accentColor: 'text-red-700',
+    bgAccent: 'bg-red-50',
+    badgeBg: 'bg-red-600',
   },
   {
     id: 2,
     badge: 'MỚI',
     badgeEN: 'NEW',
-    icon: <Gift size={22} className="text-brand" />,
+    icon: <Gift size={22} className="text-amber-600" />,
     title: 'Combo Cặp Đôi',
     titleEN: 'Couple Combo',
     subtitle: 'Mua 2 - Tặng 1 Combo Bắp Nước',
@@ -50,17 +51,18 @@ const promotions = [
     validUntil: new Date(new Date().setDate(new Date().getDate() + 12)),
     tag: 'Cuối tuần',
     tagEN: 'Weekend',
-    gradient: 'from-purple-900/40 via-dark-card to-dark-card',
-    glowColor: 'shadow-purple-500/10',
-    borderColor: 'border-purple-500/20',
-    accentColor: 'text-brand',
-    bgAccent: 'bg-brand/10',
+    gradient: 'from-amber-500/5 via-white to-white',
+    glowColor: 'shadow-amber-500/5',
+    borderColor: 'border-amber-200',
+    accentColor: 'text-amber-700',
+    bgAccent: 'bg-amber-50',
+    badgeBg: 'bg-[#f4d068] text-zinc-950',
   },
   {
     id: 3,
     badge: 'SỐC',
     badgeEN: 'FLASH',
-    icon: <Zap size={22} className="text-amber-400" />,
+    icon: <Zap size={22} className="text-orange-600" />,
     title: 'Flash Sale IMAX',
     titleEN: 'IMAX Flash Sale',
     subtitle: 'Vé IMAX chỉ 99,000đ',
@@ -76,17 +78,18 @@ const promotions = [
     validUntil: new Date(new Date().setDate(new Date().getDate() + 2)),
     tag: 'Suất sáng',
     tagEN: 'Morning slots',
-    gradient: 'from-amber-900/40 via-dark-card to-dark-card',
-    glowColor: 'shadow-amber-500/10',
-    borderColor: 'border-amber-500/20',
-    accentColor: 'text-amber-400',
-    bgAccent: 'bg-amber-500/10',
+    gradient: 'from-orange-500/5 via-white to-white',
+    glowColor: 'shadow-orange-500/5',
+    borderColor: 'border-orange-200',
+    accentColor: 'text-orange-700',
+    bgAccent: 'bg-orange-50',
+    badgeBg: 'bg-orange-600',
   },
   {
     id: 4,
     badge: 'VIP',
     badgeEN: 'VIP',
-    icon: <Star size={22} className="text-emerald-400" />,
+    icon: <Star size={22} className="text-emerald-600" />,
     title: 'Thành Viên Mới',
     titleEN: 'New Member',
     subtitle: 'Giảm 50K đơn đầu tiên',
@@ -102,17 +105,18 @@ const promotions = [
     validUntil: new Date(new Date().setDate(new Date().getDate() + 30)),
     tag: 'Không giới hạn',
     tagEN: 'No limits',
-    gradient: 'from-emerald-900/40 via-dark-card to-dark-card',
-    glowColor: 'shadow-emerald-500/10',
-    borderColor: 'border-emerald-500/20',
-    accentColor: 'text-emerald-400',
-    bgAccent: 'bg-emerald-500/10',
+    gradient: 'from-emerald-500/5 via-white to-white',
+    glowColor: 'shadow-emerald-500/5',
+    borderColor: 'border-emerald-200',
+    accentColor: 'text-emerald-700',
+    bgAccent: 'bg-emerald-50',
+    badgeBg: 'bg-emerald-600',
   },
   {
     id: 5,
     badge: 'SINH NHẬT',
     badgeEN: 'BIRTHDAY',
-    icon: <Percent size={22} className="text-pink-400" />,
+    icon: <Percent size={22} className="text-pink-600" />,
     title: 'Ưu Đãi Sinh Nhật',
     titleEN: 'Birthday Promo',
     subtitle: 'Giảm 40% trong tháng sinh nhật',
@@ -128,17 +132,18 @@ const promotions = [
     validUntil: new Date(new Date().setDate(new Date().getDate() + 60)),
     tag: 'Cả tháng',
     tagEN: 'Full month',
-    gradient: 'from-pink-900/40 via-dark-card to-dark-card',
-    glowColor: 'shadow-pink-500/10',
-    borderColor: 'border-pink-500/20',
-    accentColor: 'text-pink-400',
-    bgAccent: 'bg-pink-500/10',
+    gradient: 'from-pink-500/5 via-white to-white',
+    glowColor: 'shadow-pink-500/5',
+    borderColor: 'border-pink-200',
+    accentColor: 'text-pink-700',
+    bgAccent: 'bg-pink-50',
+    badgeBg: 'bg-pink-600',
   },
   {
     id: 6,
     badge: 'NHÓM',
     badgeEN: 'GROUP',
-    icon: <Gift size={22} className="text-sky-400" />,
+    icon: <Gift size={22} className="text-sky-600" />,
     title: 'Đặt Vé Nhóm',
     titleEN: 'Group Booking',
     subtitle: 'Từ 5 vé giảm 20% toàn bộ',
@@ -154,11 +159,12 @@ const promotions = [
     validUntil: new Date(new Date().setDate(new Date().getDate() + 90)),
     tag: 'Từ 5 vé',
     tagEN: '5+ tickets',
-    gradient: 'from-sky-900/40 via-dark-card to-dark-card',
-    glowColor: 'shadow-sky-500/10',
-    borderColor: 'border-sky-500/20',
-    accentColor: 'text-sky-400',
-    bgAccent: 'bg-sky-500/10',
+    gradient: 'from-sky-500/5 via-white to-white',
+    glowColor: 'shadow-sky-500/5',
+    borderColor: 'border-sky-200',
+    accentColor: 'text-sky-700',
+    bgAccent: 'bg-sky-50',
+    badgeBg: 'bg-sky-600',
   },
 ];
 
@@ -185,7 +191,7 @@ const useCountdown = (targetDate) => {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 const TimeBox = ({ value, label }) => (
   <div className="flex flex-col items-center">
-    <span className="text-lg font-black text-white tabular-nums leading-none">
+    <span className="text-lg font-black text-zinc-800 tabular-nums leading-none">
       {String(value).padStart(2, '0')}
     </span>
     <span className="text-[9px] text-zinc-500 uppercase tracking-wider mt-0.5">{label}</span>
@@ -197,14 +203,14 @@ const CountdownTimer = ({ validUntil }) => {
   const { t } = useLanguage();
   return (
     <div className="flex items-center gap-2">
-      <Clock size={13} className="text-zinc-500" />
+      <Clock size={13} className="text-zinc-400" />
       <div className="flex items-center gap-1.5">
         <TimeBox value={d} label={t('countdown.days')} />
-        <span className="text-zinc-500 font-bold text-sm leading-none pb-2">:</span>
+        <span className="text-zinc-400 font-bold text-sm leading-none pb-2">:</span>
         <TimeBox value={h} label={t('countdown.hours')} />
-        <span className="text-zinc-500 font-bold text-sm leading-none pb-2">:</span>
+        <span className="text-zinc-400 font-bold text-sm leading-none pb-2">:</span>
         <TimeBox value={m} label={t('countdown.minutes')} />
-        <span className="text-zinc-500 font-bold text-sm leading-none pb-2">:</span>
+        <span className="text-zinc-400 font-bold text-sm leading-none pb-2">:</span>
         <TimeBox value={s} label={t('countdown.seconds')} />
       </div>
     </div>
@@ -234,14 +240,14 @@ const PromoCard = ({ promo }) => {
       className={`
         relative group rounded-2xl border ${promo.borderColor}
         bg-gradient-to-br ${promo.gradient}
-        shadow-xl ${promo.glowColor}
-        hover:scale-[1.02] hover:shadow-2xl
+        shadow-[0_8px_30px_rgb(0,0,0,0.02)] ${promo.glowColor}
+        hover:scale-[1.02] hover:shadow-lg
         transition-all duration-300 overflow-hidden
         flex flex-col
       `}
     >
       {/* Glow orb */}
-      <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/[0.02] blur-2xl group-hover:bg-white/[0.04] transition-all duration-500 pointer-events-none" />
+      <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-black/[0.01] blur-2xl group-hover:bg-black/[0.02] transition-all duration-500 pointer-events-none" />
 
       {/* Header */}
       <div className="p-5 pb-0">
@@ -250,7 +256,7 @@ const PromoCard = ({ promo }) => {
             <div className={`p-2 rounded-xl ${promo.bgAccent}`}>
               {promo.icon}
             </div>
-            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md text-white ${promo.badgeColor} uppercase tracking-wider`}>
+            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md text-white ${promo.badgeBg || 'bg-brand'} uppercase tracking-wider`}>
               {displayBadge}
             </span>
           </div>
@@ -259,19 +265,19 @@ const PromoCard = ({ promo }) => {
           </div>
         </div>
 
-        <h3 className="text-base font-black text-white leading-tight">{displayTitle}</h3>
-        <p className={`text-sm font-semibold ${promo.accentColor} mt-0.5`}>{displaySubtitle}</p>
-        <p className="text-xs text-zinc-400 mt-2 leading-relaxed line-clamp-3">{displayDescription}</p>
+        <h3 className="text-base font-black text-zinc-900 leading-tight">{displayTitle}</h3>
+        <p className={`text-sm font-bold ${promo.accentColor} mt-0.5`}>{displaySubtitle}</p>
+        <p className="text-xs text-zinc-600 mt-2 leading-relaxed line-clamp-3 font-medium">{displayDescription}</p>
       </div>
 
       {/* Divider dashed */}
-      <div className="mx-5 my-4 border-t border-dashed border-dark-border/60" />
+      <div className="mx-5 my-4 border-t border-dashed border-zinc-200" />
 
       {/* Footer */}
       <div className="px-5 pb-5 space-y-3 mt-auto">
         {/* Info row */}
         <div className="flex items-center justify-between text-xs text-zinc-500">
-          <span>{t('promo.minOrderLabel')} <span className="text-zinc-300 font-semibold">{displayMinOrder}</span></span>
+          <span>{t('promo.minOrderLabel')} <span className="text-zinc-800 font-bold">{displayMinOrder}</span></span>
           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${promo.bgAccent} ${promo.accentColor}`}>
             {displayTag}
           </span>
@@ -285,21 +291,21 @@ const PromoCard = ({ promo }) => {
           onClick={handleCopy}
           className={`
             w-full flex items-center justify-between
-            bg-dark-deep/60 hover:bg-dark-deep/90
+            bg-zinc-50 hover:bg-zinc-100
             border border-dashed ${promo.borderColor}
             rounded-xl px-4 py-2.5
-            transition-all duration-200 group/btn
+            transition-all duration-200 group/btn cursor-pointer
           `}
         >
           <span className={`font-black text-sm tracking-widest ${promo.accentColor}`}>
             {promo.code}
           </span>
           {copied ? (
-            <span className="text-[11px] text-emerald-400 font-black flex items-center gap-1">
+            <span className="text-[11px] text-emerald-600 font-black flex items-center gap-1">
               <CheckCheck size={14} /> {t('promo.copied')}
             </span>
           ) : (
-            <Copy size={14} className="text-zinc-500 group-hover/btn:text-zinc-300 transition-colors" />
+            <Copy size={14} className="text-zinc-400 group-hover/btn:text-zinc-600 transition-colors" />
           )}
         </button>
       </div>
@@ -314,14 +320,14 @@ const PromotionsPage = () => {
   return (
     <div className="space-y-10 pb-16">
       {/* Hero */}
-      <div className="relative rounded-3xl overflow-hidden border border-brand/20 bg-gradient-to-br from-brand-dark/30 via-dark-card to-dark-deep p-8 md:p-14 text-center">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(168,85,247,0.12),transparent_70%)] pointer-events-none" />
+      <div className="relative rounded-3xl overflow-hidden border border-[#e0d5c3] bg-gradient-to-br from-[#fcfbf9] to-[#f5efe6] p-8 md:p-14 text-center shadow-sm">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(244,208,104,0.12),transparent_70%)] pointer-events-none" />
         <div className="relative z-10 space-y-3">
-          <div className="inline-flex items-center gap-2 bg-brand/10 border border-brand/20 text-brand px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest">
-            <Tag size={12} />
+          <div className="inline-flex items-center gap-2 bg-brand/10 border border-brand/20 text-zinc-700 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest">
+            <Tag size={12} className="text-brand" />
             {t('promo.specialOffer')}
           </div>
-          <h1 className="text-3xl md:text-5xl font-black text-white leading-tight">
+          <h1 className="text-3xl md:text-5xl font-black text-zinc-900 leading-tight">
             {language === 'en' ? (
               <>
                 Exciting <span className="text-brand">Promotions</span>
@@ -332,7 +338,7 @@ const PromotionsPage = () => {
               </>
             )}
           </h1>
-          <p className="text-zinc-400 max-w-lg mx-auto text-sm leading-relaxed">
+          <p className="text-zinc-600 max-w-lg mx-auto text-sm leading-relaxed font-medium">
             {t('promo.subtitle')}
           </p>
         </div>
@@ -342,20 +348,20 @@ const PromotionsPage = () => {
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: t('promo.activeCodes'), value: promotions.length, icon: <Tag size={18} className="text-brand" /> },
-          { label: t('promo.maxSavings'), value: '50%', icon: <Percent size={18} className="text-emerald-400" /> },
-          { label: t('promo.weeklyUpdate'), value: language === 'en' ? '7 days' : '7 ngày', icon: <Clock size={18} className="text-amber-400" /> },
+          { label: t('promo.maxSavings'), value: '50%', icon: <Percent size={18} className="text-emerald-600" /> },
+          { label: t('promo.weeklyUpdate'), value: language === 'en' ? '7 days' : '7 ngày', icon: <Clock size={18} className="text-amber-500" /> },
         ].map((s, i) => (
-          <div key={i} className="bg-dark-card border border-dark-border rounded-2xl p-4 flex flex-col items-center gap-1 text-center">
+          <div key={i} className="bg-white border border-zinc-200 rounded-2xl p-4 flex flex-col items-center gap-1 text-center shadow-sm">
             {s.icon}
-            <span className="text-xl font-black text-white">{s.value}</span>
-            <span className="text-[11px] text-zinc-500">{s.label}</span>
+            <span className="text-xl font-black text-zinc-900">{s.value}</span>
+            <span className="text-[11px] text-zinc-500 font-semibold">{s.label}</span>
           </div>
         ))}
       </div>
 
       {/* Promotions grid */}
       <div>
-        <h2 className="text-xl font-black text-white mb-5 flex items-center gap-2">
+        <h2 className="text-xl font-black text-zinc-800 mb-5 flex items-center gap-2">
           <Flame size={20} className="text-brand" /> {t('promo.allOffers')}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -366,8 +372,8 @@ const PromotionsPage = () => {
       </div>
 
       {/* How to use */}
-      <div className="bg-dark-card border border-dark-border rounded-3xl p-8">
-        <h3 className="text-lg font-black text-white mb-6 text-center">{t('promo.howToUse')}</h3>
+      <div className="bg-white border border-zinc-200 rounded-3xl p-8 shadow-sm">
+        <h3 className="text-lg font-black text-zinc-800 mb-6 text-center">{t('promo.howToUse')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[
             {
@@ -392,11 +398,11 @@ const PromotionsPage = () => {
             },
           ].map((item) => (
             <div key={item.step} className="text-center space-y-2">
-              <div className="w-10 h-10 rounded-full bg-brand/10 border border-brand/20 text-brand font-black text-sm flex items-center justify-center mx-auto">
+              <div className="w-10 h-10 rounded-full bg-brand/10 border border-brand/20 text-zinc-700 font-black text-sm flex items-center justify-center mx-auto">
                 {item.step}
               </div>
-              <p className="text-sm font-bold text-white">{item.title}</p>
-              <p className="text-xs text-zinc-500 leading-relaxed">{item.desc}</p>
+              <p className="text-sm font-bold text-zinc-800">{item.title}</p>
+              <p className="text-xs text-zinc-500 leading-relaxed font-semibold">{item.desc}</p>
             </div>
           ))}
         </div>

@@ -40,6 +40,11 @@ export const MovieManager = () => {
   const [editingMovie, setEditingMovie] = useState(null);
   const [viewingMovie, setViewingMovie] = useState(null);
 
+  // Filter States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [genreFilter, setGenreFilter] = useState('all');
+
   // TMDB Search States
   const [tmdbOpen, setTmdbOpen] = useState(false);
   const [tmdbQuery, setTmdbQuery] = useState('');
@@ -249,6 +254,27 @@ export const MovieManager = () => {
 
   if (loading) return <Loading />;
 
+  // Client-side movie filters
+  const filteredMovies = movies.filter((m) => {
+    const query = searchQuery.trim().toLowerCase();
+    const matchesSearch = 
+      query === '' ||
+      m.title.toLowerCase().includes(query) ||
+      (m.titleEN && m.titleEN.toLowerCase().includes(query)) ||
+      (m.director && m.director.toLowerCase().includes(query)) ||
+      (m.cast && m.cast.some(c => c.toLowerCase().includes(query)));
+
+    const matchesStatus = 
+      statusFilter === 'all' || 
+      m.status === statusFilter;
+
+    const matchesGenre = 
+      genreFilter === 'all' || 
+      (m.genre && m.genre.includes(genreFilter));
+
+    return matchesSearch && matchesStatus && matchesGenre;
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between border-b border-gray-200 pb-4">
@@ -263,6 +289,60 @@ export const MovieManager = () => {
           <Button onClick={handleOpenAdd} variant="primary" className="py-2 px-4 text-sm" icon={<Plus size={16} />}>
             Thêm Thủ Công
           </Button>
+        </div>
+      </div>
+
+      {/* Filter Bar */}
+      <div className="bg-white border border-gray-200 rounded-3xl p-4 flex flex-col md:flex-row gap-4 items-center justify-between shadow-sm">
+        {/* Search */}
+        <div className="relative w-full md:w-72">
+          <input
+            type="text"
+            placeholder="Tìm theo tên phim, đạo diễn, diễn viên..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-xs font-semibold rounded-2xl bg-zinc-50 border border-zinc-200 text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-brand transition-colors"
+          />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+        </div>
+
+        {/* Filters Dropdowns */}
+        <div className="flex flex-wrap w-full md:w-auto items-center gap-3 justify-end">
+          {/* Status Select */}
+          <div className="flex items-center gap-1.5 w-full sm:w-auto">
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Trạng thái</span>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-1.5 text-xs font-bold rounded-2xl bg-zinc-50 border border-zinc-200 text-zinc-700 focus:outline-none focus:border-brand cursor-pointer transition-colors"
+            >
+              <option value="all">Tất cả</option>
+              <option value="now-showing">Đang chiếu</option>
+              <option value="coming-soon">Sắp chiếu</option>
+              <option value="ended">Đã kết thúc</option>
+              <option value="suspended">Tạm hoãn</option>
+              <option value="stopped">Ngừng chiếu</option>
+              <option value="cancelled">Hủy phát hành</option>
+              <option value="pre-release">Sắp ra mắt</option>
+              <option value="preview">Chiếu sớm</option>
+              <option value="hidden">Ẩn / Bảo trì</option>
+            </select>
+          </div>
+
+          {/* Genre Select */}
+          <div className="flex items-center gap-1.5 w-full sm:w-auto">
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Thể loại</span>
+            <select
+              value={genreFilter}
+              onChange={(e) => setGenreFilter(e.target.value)}
+              className="px-3 py-1.5 text-xs font-bold rounded-2xl bg-zinc-50 border border-zinc-200 text-zinc-700 focus:outline-none focus:border-brand cursor-pointer transition-colors"
+            >
+              <option value="all">Tất cả</option>
+              {AVAILABLE_GENRES.map((g) => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -287,8 +367,14 @@ export const MovieManager = () => {
                     Chưa có phim nào được thêm vào hệ thống. Hãy tạo phim mới ở trên!
                   </td>
                 </tr>
+              ) : filteredMovies.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="py-12 text-center text-gray-400 italic">
+                    Không tìm thấy phim nào khớp với bộ lọc hiện tại.
+                  </td>
+                </tr>
               ) : (
-                movies.map((m) => (
+                filteredMovies.map((m) => (
                   <tr key={m._id} className="hover:bg-gray-50 transition-colors">
                     <td className="py-3 pl-6 flex items-center gap-3">
                       <div className="w-10 h-14 rounded overflow-hidden bg-gray-100 shrink-0 border border-gray-200">

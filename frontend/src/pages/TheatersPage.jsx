@@ -35,18 +35,7 @@ const theatersData = [
 
 
 
-// ─── SubComponents ────────────────────────────────────────────────────────────
-const RoomBadge = ({ room }) => (
-  <div className={`inline-flex items-center gap-1.5 border rounded-lg px-2 py-1 text-xs font-semibold ${room.color}`}>
-    {room.icon}
-    <span>{room.type}</span>
-    <span className="text-zinc-500 font-normal">({room.seats} ghế)</span>
-  </div>
-);
-
-const TheaterCard = ({ theater }) => {
-  const [expanded, setExpanded] = useState(false);
-
+const TheatersPage = () => {
   return (
     <div className="bg-dark-card border border-dark-border rounded-3xl overflow-hidden group hover:border-brand/30 hover:shadow-xl hover:shadow-brand/5 transition-all duration-300">
       {/* Image */}
@@ -73,6 +62,12 @@ const TheaterCard = ({ theater }) => {
             <MapPin size={11} /> {theater.city}
           </p>
         </div>
+        <h1 className="text-3xl md:text-5xl font-black text-zinc-900 leading-tight">
+          Nova Cinema <span className="text-brand">Hà Nội</span>
+        </h1>
+        <p className="text-zinc-600 max-w-xl mx-auto text-sm leading-relaxed font-semibold">
+          Trải nghiệm điện ảnh đỉnh cao tại chi nhánh Flagship với màn hình chuẩn chiếu phim IMAX, 3D cùng hệ thống âm thanh vòm đỉnh cao.
+        </p>
       </div>
 
       {/* Info */}
@@ -89,14 +84,19 @@ const TheaterCard = ({ theater }) => {
               {theater.phone}
             </a>
           </div>
-        </div>
 
-        {/* Room types */}
-        <div>
-          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Loại phòng chiếu</p>
-          <div className="flex flex-wrap gap-1.5">
-            {theater.rooms.map((room) => (
-              <RoomBadge key={room.name} room={room} />
+          {/* Quick Stats Row */}
+          <div className="grid grid-cols-3 gap-4 flex-1">
+            {[
+              { label: 'Cụm rạp duy nhất', value: 'Hà Nội', desc: '123 Hoàng Quốc Việt', color: 'text-brand' },
+              { label: 'Số phòng chiếu', value: '4 Phòng', desc: 'IMAX, 3D, 2D, VIP', color: 'text-sky-600' },
+              { label: 'Tổng ghế ngồi', value: '290 Ghế', desc: 'Chất lượng cao', color: 'text-purple-600' },
+            ].map((s, idx) => (
+              <div key={idx} className="bg-white border border-zinc-200 rounded-2xl p-4 flex flex-col justify-center text-center shadow-sm">
+                <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">{s.label}</span>
+                <p className={`text-base font-black ${s.color} mt-1`}>{s.value}</p>
+                <span className="text-[10px] text-zinc-500 font-semibold mt-0.5 leading-tight">{s.desc}</span>
+              </div>
             ))}
           </div>
         </div>
@@ -110,15 +110,12 @@ const TheaterCard = ({ theater }) => {
           {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </button>
 
-        {/* Expandable content */}
-        {expanded && (
-          <div className="space-y-4 pt-2 border-t border-dark-border animate-in fade-in slide-in-from-top-2 duration-200">
-            {/* Hours */}
-            <div>
-              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2 flex items-center gap-1">
-                <Clock size={11} /> Giờ hoạt động
-              </p>
-              <div className="space-y-1">
+            {/* Operating Hours */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-black text-zinc-800 border-b border-zinc-100 pb-2 uppercase tracking-wide flex items-center gap-1.5">
+                <Clock size={15} className="text-brand" /> Giờ hoạt động
+              </h3>
+              <div className="space-y-1.5">
                 {theater.hours.map((h) => (
                   <div key={h.day} className="flex items-center justify-between text-xs">
                     <span className="text-zinc-600 font-medium">{h.day}</span>
@@ -140,19 +137,20 @@ const TheaterCard = ({ theater }) => {
               </div>
             </div>
 
-            {/* Map */}
-            <div className="rounded-xl overflow-hidden border border-dark-border h-40">
-              <iframe
-                src={theater.mapEmbed}
-                className="w-full h-full"
-                style={{ border: 0 }}
-                allowFullScreen=""
-                loading="lazy"
-                title={`Bản đồ ${theater.name}`}
-              />
+            {/* Facilities checklist */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-black text-zinc-800 border-b border-zinc-100 pb-2 uppercase tracking-wide">
+                Tiện ích đi kèm
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {theater.facilities.map((f, i) => (
+                  <div key={i} className="flex items-center gap-1.5 text-xs text-zinc-600 font-bold">
+                    <Check size={14} className="text-green-600 shrink-0" />
+                    <span>{f}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
 
         {/* CTA */}
         <a
