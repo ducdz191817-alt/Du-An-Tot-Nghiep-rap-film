@@ -48,7 +48,7 @@ export const MovieFilter = ({ filters, onChange }) => {
     onChange({ ...filters, search: e.target.value });
   };
 
-  const selectedStatus = filters.status || 'now-showing';
+  const selectedStatus = filters.status || 'all';
   const selectedGenres = filters.genres || [];
   const selectedRating = filters.rating || '';
   const selectedDate = filters.date || '';
@@ -78,7 +78,7 @@ export const MovieFilter = ({ filters, onChange }) => {
       genres: [],
       rating: '',
       sortBy: 'newest',
-      status: 'now-showing',
+      status: 'all',
       date: '',
     });
   };
@@ -87,11 +87,12 @@ export const MovieFilter = ({ filters, onChange }) => {
     (filters.search && filters.search !== '') ||
     selectedGenres.length > 0 ||
     selectedRating !== '' ||
-    selectedStatus !== 'now-showing' ||
+    selectedStatus !== 'all' ||
     selectedDate !== '' ||
     selectedSortBy !== 'newest';
 
   const statusOptions = [
+    { value: 'all', label: t('filter.statusAll') },
     { value: 'now-showing', label: t('filter.nowShowing') },
     { value: 'coming-soon', label: t('filter.comingSoon') },
     { value: 'preview', label: t('filter.preview') },
@@ -103,12 +104,12 @@ export const MovieFilter = ({ filters, onChange }) => {
     for (let i = 0; i < 7; i++) {
       const d = new Date();
       d.setDate(d.getDate() + i);
-      
+
       const yyyy = d.getFullYear();
       const mm = String(d.getMonth() + 1).padStart(2, '0');
       const dd = String(d.getDate()).padStart(2, '0');
       const isoString = `${yyyy}-${mm}-${dd}`;
-      
+
       let label = '';
       if (i === 0) {
         label = language === 'vi' ? 'Hôm nay' : 'Today';
@@ -135,7 +136,7 @@ export const MovieFilter = ({ filters, onChange }) => {
     if (!selectedDate) return t('filter.dateAll');
     const matched = dateOptions.find((opt) => opt.value === selectedDate);
     if (matched) return matched.label;
-    
+
     try {
       const d = new Date(selectedDate);
       return d.toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', { day: 'numeric', month: 'numeric', year: 'numeric' });
@@ -166,42 +167,47 @@ export const MovieFilter = ({ filters, onChange }) => {
         {/* Status tabs */}
         <div className="flex flex-wrap items-center bg-gray-100 p-1.5 rounded-xl border border-gray-200 w-full lg:w-auto overflow-x-auto">
           <button
-            onClick={() => handleStatusChange('now-showing')}
-            className={`flex-1 lg:flex-none text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap ${
-              filters.status === 'now-showing'
+            onClick={() => handleStatusChange('all')}
+            className={`flex-1 lg:flex-none text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap ${filters.status === 'all'
                 ? 'bg-gray-900 text-white shadow-md'
                 : 'text-gray-500 hover:text-gray-700'
-            }`}
+              }`}
+          >
+            {t('filter.statusAll')}
+          </button>
+          <button
+            onClick={() => handleStatusChange('now-showing')}
+            className={`flex-1 lg:flex-none text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap ${filters.status === 'now-showing'
+                ? 'bg-gray-900 text-white shadow-md'
+                : 'text-gray-500 hover:text-gray-700'
+              }`}
           >
             {t('filter.nowShowing')}
           </button>
           <button
             onClick={() => handleStatusChange('coming-soon')}
-            className={`flex-1 lg:flex-none text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap ${
-              filters.status === 'coming-soon'
+            className={`flex-1 lg:flex-none text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap ${filters.status === 'coming-soon'
                 ? 'bg-gray-900 text-white shadow-md'
                 : 'text-gray-500 hover:text-gray-700'
-            }`}
+              }`}
           >
             {t('filter.comingSoon')}
           </button>
           <button
             onClick={() => handleStatusChange('preview')}
-            className={`flex-1 lg:flex-none text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap ${
-              filters.status === 'preview'
+            className={`flex-1 lg:flex-none text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap ${filters.status === 'preview'
                 ? 'bg-gray-900 text-white shadow-md'
                 : 'text-gray-500 hover:text-gray-700'
-            }`}
+              }`}
           >
             {t('filter.preview')}
           </button>
           <button
             onClick={() => handleStatusChange('pre-release')}
-            className={`flex-1 lg:flex-none text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap ${
-              filters.status === 'pre-release'
+            className={`flex-1 lg:flex-none text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap ${filters.status === 'pre-release'
                 ? 'bg-gray-900 text-white shadow-md'
                 : 'text-gray-500 hover:text-gray-700'
-            }`}
+              }`}
           >
             {t('filter.preRelease')}
           </button>
@@ -240,11 +246,10 @@ export const MovieFilter = ({ filters, onChange }) => {
             <button
               type="button"
               onClick={() => setIsStatusOpen(!isStatusOpen)}
-              className={`w-full sm:w-auto flex items-center justify-between gap-2 px-4 py-2.5 bg-gray-50 border text-sm rounded-xl transition-all hover:bg-gray-100 cursor-pointer ${
-                selectedStatus !== 'now-showing'
+              className={`w-full sm:w-auto flex items-center justify-between gap-2 px-4 py-2.5 bg-gray-50 border text-sm rounded-xl transition-all hover:bg-gray-100 cursor-pointer ${selectedStatus !== 'now-showing'
                   ? 'border-brand/40 text-brand font-semibold bg-brand/5'
                   : 'border-gray-200 text-gray-600 hover:text-gray-800'
-              }`}
+                }`}
             >
               <span className="flex items-center gap-1.5 truncate max-w-[140px]">
                 <Film size={13} className={selectedStatus !== 'now-showing' ? 'text-brand' : 'text-gray-400'} />
@@ -262,11 +267,10 @@ export const MovieFilter = ({ filters, onChange }) => {
                       handleStatusChange(opt.value);
                       setIsStatusOpen(false);
                     }}
-                    className={`w-full text-left px-3.5 py-2.5 text-xs sm:text-sm rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${
-                      selectedStatus === opt.value
+                    className={`w-full text-left px-3.5 py-2.5 text-xs sm:text-sm rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${selectedStatus === opt.value
                         ? 'text-brand bg-brand/5 font-semibold'
                         : 'text-gray-600 hover:text-gray-900'
-                    }`}
+                      }`}
                   >
                     <span>{opt.label}</span>
                     {selectedStatus === opt.value && <Check size={14} />}
@@ -281,18 +285,17 @@ export const MovieFilter = ({ filters, onChange }) => {
             <button
               type="button"
               onClick={() => setIsGenreOpen(!isGenreOpen)}
-              className={`w-full sm:w-auto flex items-center justify-between gap-2 px-4 py-2.5 bg-gray-50 border text-sm rounded-xl transition-all hover:bg-gray-100 cursor-pointer ${
-                selectedGenres.length > 0
+              className={`w-full sm:w-auto flex items-center justify-between gap-2 px-4 py-2.5 bg-gray-50 border text-sm rounded-xl transition-all hover:bg-gray-100 cursor-pointer ${selectedGenres.length > 0
                   ? 'border-brand/40 text-brand font-semibold bg-brand/5'
                   : 'border-gray-200 text-gray-600 hover:text-gray-800'
-              }`}
+                }`}
             >
               <span className="truncate max-w-[140px]">
                 {selectedGenres.length === 0
                   ? t('filter.allGenres')
                   : selectedGenres.length === 1
-                  ? t(selectedGenres[0])
-                  : `${selectedGenres.length} ${t('filter.selectedGenres')}`}
+                    ? t(selectedGenres[0])
+                    : `${selectedGenres.length} ${t('filter.selectedGenres')}`}
               </span>
               <ChevronDown size={14} className={`transition-transform duration-300 shrink-0 ${isGenreOpen ? 'rotate-180' : ''}`} />
             </button>
@@ -316,11 +319,10 @@ export const MovieFilter = ({ filters, onChange }) => {
                           onChange={() => handleGenreToggle(g)}
                           className="sr-only"
                         />
-                        <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
-                          isChecked
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${isChecked
                             ? 'bg-brand border-brand text-white shadow-md shadow-brand/20'
                             : 'border-gray-300 bg-gray-50'
-                        }`}>
+                          }`}>
                           {isChecked && <Check size={11} strokeWidth={3.5} />}
                         </div>
                       </div>
@@ -336,11 +338,10 @@ export const MovieFilter = ({ filters, onChange }) => {
             <button
               type="button"
               onClick={() => setIsRatingOpen(!isRatingOpen)}
-              className={`w-full sm:w-auto flex items-center justify-between gap-2 px-4 py-2.5 bg-gray-50 border text-sm rounded-xl transition-all hover:bg-gray-100 cursor-pointer ${
-                selectedRating !== ''
+              className={`w-full sm:w-auto flex items-center justify-between gap-2 px-4 py-2.5 bg-gray-50 border text-sm rounded-xl transition-all hover:bg-gray-100 cursor-pointer ${selectedRating !== ''
                   ? 'border-amber-400/40 text-amber-600 font-semibold bg-amber-50'
                   : 'border-gray-200 text-gray-600 hover:text-gray-800'
-              }`}
+                }`}
             >
               <span className="flex items-center gap-1">
                 {selectedRating !== '' && <Star size={13} className="fill-amber-500 text-amber-500 shrink-0" />}
@@ -355,11 +356,10 @@ export const MovieFilter = ({ filters, onChange }) => {
                     key={opt.value}
                     type="button"
                     onClick={() => handleRatingSelect(opt.value)}
-                    className={`w-full text-left px-3.5 py-2.5 text-xs sm:text-sm rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${
-                      selectedRating === opt.value
+                    className={`w-full text-left px-3.5 py-2.5 text-xs sm:text-sm rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${selectedRating === opt.value
                         ? 'text-amber-600 bg-amber-50 font-semibold'
                         : 'text-gray-600 hover:text-gray-900'
-                    }`}
+                      }`}
                   >
                     <span>{opt.label}</span>
                     {selectedRating === opt.value && <Check size={14} />}
@@ -374,11 +374,10 @@ export const MovieFilter = ({ filters, onChange }) => {
             <button
               type="button"
               onClick={() => setIsDateOpen(!isDateOpen)}
-              className={`w-full sm:w-auto flex items-center justify-between gap-2 px-4 py-2.5 bg-gray-50 border text-sm rounded-xl transition-all hover:bg-gray-100 cursor-pointer ${
-                selectedDate !== ''
+              className={`w-full sm:w-auto flex items-center justify-between gap-2 px-4 py-2.5 bg-gray-50 border text-sm rounded-xl transition-all hover:bg-gray-100 cursor-pointer ${selectedDate !== ''
                   ? 'border-brand/40 text-brand font-semibold bg-brand/5'
                   : 'border-gray-200 text-gray-600 hover:text-gray-800'
-              }`}
+                }`}
             >
               <span className="flex items-center gap-1.5 truncate max-w-[160px]">
                 <Calendar size={13} className={selectedDate !== '' ? 'text-brand' : 'text-gray-400'} />
@@ -397,18 +396,17 @@ export const MovieFilter = ({ filters, onChange }) => {
                         onChange({ ...filters, date: opt.value });
                         setIsDateOpen(false);
                       }}
-                      className={`w-full text-left px-3.5 py-2.5 text-xs sm:text-sm rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${
-                        selectedDate === opt.value
+                      className={`w-full text-left px-3.5 py-2.5 text-xs sm:text-sm rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${selectedDate === opt.value
                           ? 'text-brand bg-brand/5 font-semibold'
                           : 'text-gray-600 hover:text-gray-900'
-                      }`}
+                        }`}
                     >
                       <span>{opt.label}</span>
                       {selectedDate === opt.value && <Check size={14} />}
                     </button>
                   ))}
                 </div>
-                
+
                 {/* Custom date input option */}
                 <div className="border-t border-gray-200 my-1 pt-1">
                   <button
@@ -418,11 +416,10 @@ export const MovieFilter = ({ filters, onChange }) => {
                         dateInputRef.current.showPicker();
                       }
                     }}
-                    className={`w-full text-left px-3.5 py-2.5 text-xs sm:text-sm rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${
-                      selectedDateIsCustom
+                    className={`w-full text-left px-3.5 py-2.5 text-xs sm:text-sm rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${selectedDateIsCustom
                         ? 'text-brand bg-brand/5 font-semibold'
                         : 'text-gray-600 hover:text-gray-900'
-                    }`}
+                      }`}
                   >
                     <span className="truncate max-w-[130px]">
                       {selectedDateIsCustom ? getFriendlyDateLabel() : t('filter.customDate')}
@@ -449,11 +446,10 @@ export const MovieFilter = ({ filters, onChange }) => {
             <button
               type="button"
               onClick={() => setIsSortOpen(!isSortOpen)}
-              className={`w-full sm:w-auto flex items-center justify-between gap-2 px-4 py-2.5 bg-gray-50 border text-sm rounded-xl transition-all hover:bg-gray-100 cursor-pointer ${
-                selectedSortBy !== 'newest'
+              className={`w-full sm:w-auto flex items-center justify-between gap-2 px-4 py-2.5 bg-gray-50 border text-sm rounded-xl transition-all hover:bg-gray-100 cursor-pointer ${selectedSortBy !== 'newest'
                   ? 'border-brand/40 text-brand font-semibold bg-brand/5'
                   : 'border-gray-200 text-gray-600 hover:text-gray-800'
-              }`}
+                }`}
             >
               <span className="truncate max-w-[140px]">
                 {t('filter.sortBy')}: {sortOptions.find((o) => o.value === selectedSortBy)?.label}
@@ -467,11 +463,10 @@ export const MovieFilter = ({ filters, onChange }) => {
                     key={opt.value}
                     type="button"
                     onClick={() => handleSortSelect(opt.value)}
-                    className={`w-full text-left px-3.5 py-2.5 text-xs sm:text-sm rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${
-                      selectedSortBy === opt.value
+                    className={`w-full text-left px-3.5 py-2.5 text-xs sm:text-sm rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-between ${selectedSortBy === opt.value
                         ? 'text-brand bg-brand/5 font-semibold'
                         : 'text-gray-600 hover:text-gray-900'
-                    }`}
+                      }`}
                   >
                     <span>{opt.label}</span>
                     {selectedSortBy === opt.value && <Check size={14} />}

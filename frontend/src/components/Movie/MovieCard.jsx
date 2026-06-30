@@ -20,22 +20,24 @@ export const MovieCard = ({ movie }) => {
   // Fallback poster image
   const fallbackPoster = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600"%3E%3Crect fill="%23f3f0eb" width="400" height="600"/%3E%3Ctext x="50%25" y="50%25" font-size="24" fill="%23a89888" text-anchor="middle" dominant-baseline="middle" font-family="Arial"%3EMovie Poster%3C/text%3E%3C/svg%3E';
 
-  // Get status label
-  const statusLabel = movie.status === 'now-showing' 
-    ? (language === 'vi' ? 'ĐANG CHIẾU' : 'NOW SHOWING')
-    : movie.status === 'coming-soon'
-    ? (language === 'vi' ? 'SẮP CHIẾU' : 'COMING SOON')
-    : movie.status === 'preview'
-    ? (language === 'vi' ? 'CHIẾU SỚM' : 'PREVIEW')
-    : (language === 'vi' ? 'SẮP RA MẮT' : 'PRE-RELEASE');
+  // Normalize legacy ended status to now-showing for display
+  const effectiveStatus = movie.status === 'ended' ? 'now-showing' : movie.status;
 
-  const statusColor = movie.status === 'now-showing'
+  const statusLabel = effectiveStatus === 'now-showing'
+    ? (language === 'vi' ? 'ĐANG CHIẾU' : 'NOW SHOWING')
+    : effectiveStatus === 'coming-soon'
+      ? (language === 'vi' ? 'SẮP CHIẾU' : 'COMING SOON')
+      : effectiveStatus === 'preview'
+        ? (language === 'vi' ? 'CHIẾU SỚM' : 'PREVIEW')
+        : (language === 'vi' ? 'SẮP RA MẮT' : 'PRE-RELEASE');
+
+  const statusColor = effectiveStatus === 'now-showing'
     ? 'bg-emerald-500'
-    : movie.status === 'coming-soon'
-    ? 'bg-blue-500'
-    : movie.status === 'preview'
-    ? 'bg-violet-500'
-    : 'bg-sky-500';
+    : effectiveStatus === 'coming-soon'
+      ? 'bg-blue-500'
+      : effectiveStatus === 'preview'
+        ? 'bg-violet-500'
+        : 'bg-sky-500';
 
   return (
     <div className="group relative bg-white border border-gray-100 rounded-2xl overflow-hidden hover:border-brand/30 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]">

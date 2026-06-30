@@ -23,7 +23,7 @@ const newMovies = [
     rating: 'T13',
     director: 'Jon Watts',
     cast: ['Tom Holland', 'Zendaya', 'Benedict Cumberbatch', 'Jacob Batalon'],
-    status: 'ended',
+    status: 'now-showing',
   },
   {
     title: 'Black Panther: Wakanda Forever',
@@ -39,7 +39,7 @@ const newMovies = [
     rating: 'T13',
     director: 'Ryan Coogler',
     cast: ['Letitia Wright', 'Lupita Nyong\'o', 'Danai Gurira', 'Winston Duke'],
-    status: 'ended',
+    status: 'now-showing',
   },
   {
     title: 'Thor: Love and Thunder',
@@ -55,7 +55,7 @@ const newMovies = [
     rating: 'T13',
     director: 'Taika Waititi',
     cast: ['Chris Hemsworth', 'Christian Bale', 'Tessa Thompson', 'Jaimie Alexander'],
-    status: 'ended',
+    status: 'now-showing',
   },
   {
     title: 'Shang-Chi and the Legend of the Ten Rings',
@@ -71,7 +71,7 @@ const newMovies = [
     rating: 'T13',
     director: 'Destin Daniel Cretton',
     cast: ['Simu Liu', 'Awkwafina', 'Tony Leung', 'Michelle Yeoh'],
-    status: 'ended',
+    status: 'now-showing',
   },
   {
     title: 'Eternals',
@@ -87,7 +87,7 @@ const newMovies = [
     rating: 'T13',
     director: 'Chloé Zhao',
     cast: ['Gemma Chan', 'Richard Madden', 'Kumail Nanjiani', 'Lia McHugh'],
-    status: 'ended',
+    status: 'now-showing',
   },
   {
     title: 'Encanto',
@@ -103,7 +103,7 @@ const newMovies = [
     rating: 'P',
     director: 'Jared Bush, Byron Howard',
     cast: ['Stephanie Beatriz', 'María Cecilia Botero', 'John Leguizamo', 'Mauro Castillo'],
-    status: 'ended',
+    status: 'now-showing',
   },
   {
     title: 'The Batman',
@@ -119,7 +119,7 @@ const newMovies = [
     rating: 'T16',
     director: 'Matt Reeves',
     cast: ['Robert Pattinson', 'Zoë Kravitz', 'Paul Dano', 'Jeffrey Wright'],
-    status: 'ended',
+    status: 'now-showing',
   },
   {
     title: 'Top Gun: Maverick',
@@ -135,7 +135,7 @@ const newMovies = [
     rating: 'T13',
     director: 'Joseph Kosinski',
     cast: ['Tom Cruise', 'Miles Teller', 'Jennifer Connelly', 'Jon Hamm'],
-    status: 'ended',
+    status: 'now-showing',
   },
   {
     title: 'Avatar: The Way of Water',
@@ -151,7 +151,7 @@ const newMovies = [
     rating: 'T13',
     director: 'James Cameron',
     cast: ['Sam Worthington', 'Zoe Saldana', 'Sigourney Weaver', 'Stephen Lang'],
-    status: 'ended',
+    status: 'now-showing',
   },
   {
     title: 'Fast X',
@@ -167,7 +167,7 @@ const newMovies = [
     rating: 'T16',
     director: 'Louis Leterrier',
     cast: ['Vin Diesel', 'Michelle Rodriguez', 'Tyrese Gibson', 'Ludacris'],
-    status: 'ended',
+    status: 'now-showing',
   },
   {
     title: 'Mission: Impossible – Dead Reckoning Part One',
@@ -183,7 +183,7 @@ const newMovies = [
     rating: 'T13',
     director: 'Christopher McQuarrie',
     cast: ['Tom Cruise', 'Hayley Atwell', 'Ving Rhames', 'Simon Pegg'],
-    status: 'ended',
+    status: 'now-showing',
   },
   {
     title: 'Guardians of the Galaxy Vol. 3',
@@ -199,7 +199,7 @@ const newMovies = [
     rating: 'T13',
     director: 'James Gunn',
     cast: ['Chris Pratt', 'Zoe Saldana', 'Dave Bautista', 'Karen Gillan'],
-    status: 'ended',
+    status: 'now-showing',
   },
   {
     title: 'Oppenheimer',
@@ -215,7 +215,7 @@ const newMovies = [
     rating: 'T18',
     director: 'Christopher Nolan',
     cast: ['Cillian Murphy', 'Emily Blunt', 'Matt Damon', 'Robert Downey Jr.'],
-    status: 'ended',
+    status: 'now-showing',
   },
   {
     title: 'Barbie',
@@ -231,7 +231,7 @@ const newMovies = [
     rating: 'T13',
     director: 'Greta Gerwig',
     cast: ['Margot Robbie', 'Ryan Gosling', 'America Ferrera', 'Kate McKinnon'],
-    status: 'ended',
+    status: 'now-showing',
   },
   {
     title: 'Inside Out 2',

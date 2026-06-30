@@ -10,10 +10,11 @@ import { getPosterUrl } from '../../utils/constants';
 
 // Helper: trả về config hiển thị cho từng trạng thái phim
 const getStatusConfig = (status) => {
+  const normalizedStatus = status === 'ended' ? 'now-showing' : status;
+
   const map = {
     'now-showing': { label: 'Đang chiếu', classes: 'bg-green-500/10 text-green-400 border border-green-500/20' },
     'coming-soon': { label: 'Sắp chiếu', classes: 'bg-amber-500/10 text-amber-400 border border-amber-500/20' },
-    'ended': { label: 'Đã kết thúc', classes: 'bg-zinc-800 text-zinc-500 border border-zinc-700' },
     'suspended': { label: 'Tạm hoãn', classes: 'bg-orange-500/10 text-orange-400 border border-orange-500/20' },
     'stopped': { label: 'Ngừng chiếu', classes: 'bg-red-500/10 text-red-400 border border-red-500/20' },
     'cancelled': { label: 'Hủy phát hành', classes: 'bg-rose-500/10 text-rose-400 border border-rose-500/20' },
@@ -21,7 +22,7 @@ const getStatusConfig = (status) => {
     'preview': { label: 'Chiếu sớm', classes: 'bg-violet-500/10 text-violet-400 border border-violet-500/20' },
     'hidden': { label: 'Ẩn / Bảo trì', classes: 'bg-zinc-900 text-zinc-600 border border-zinc-800' },
   };
-  return map[status] || { label: status, classes: 'bg-gray-100 text-gray-500 border border-gray-200' };
+  return map[normalizedStatus] || { label: normalizedStatus, classes: 'bg-gray-100 text-gray-500 border border-gray-200' };
 };
 
 const AVAILABLE_GENRES = [
@@ -375,7 +376,6 @@ export const MovieManager = () => {
                 <option value="coming-soon">🟡 Sắp chiếu</option>
                 <option value="pre-release">🔵 Sắp ra mắt</option>
                 <option value="preview">🟣 Chiếu sớm / Preview</option>
-                <option value="ended">⚫ Đã kết thúc</option>
                 <option value="suspended">🟠 Tạm hoãn</option>
                 <option value="stopped">🔴 Ngừng chiếu</option>
                 <option value="cancelled">❌ Hủy phát hành</option>

@@ -12,7 +12,7 @@ export const MoviesPage = () => {
   const { t, language } = useLanguage();
   const { movies, loading, error } = useSelector((state) => state.movie);
   const [filters, setFilters] = useState({
-    status: 'now-showing',
+    status: 'all',
     search: '',
     genres: [],
     rating: '',
@@ -40,8 +40,18 @@ export const MoviesPage = () => {
   };
 
   useEffect(() => {
-    dispatch(fetchMovies({ status: filters.status, search: filters.search, date: filters.date }));
-  }, [dispatch, filters.status, filters.search, filters.date]);
+    const params = {
+      status: filters.status,
+      search: filters.search,
+      date: filters.date,
+    };
+
+    if (filters.genres && filters.genres.length > 0) {
+      params.genres = filters.genres;
+    }
+
+    dispatch(fetchMovies(params));
+  }, [dispatch, filters.status, filters.search, filters.date, filters.genres]);
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
