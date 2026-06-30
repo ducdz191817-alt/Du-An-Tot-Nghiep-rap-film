@@ -51,7 +51,6 @@ const MovieSchema = new mongoose.Schema(
       enum: [
         'now-showing',    // Đang chiếu
         'coming-soon',    // Sắp chiếu
-        'ended',          // Đã kết thúc (theo kế hoạch)
         'suspended',      // Tạm hoãn (hoãn phát hành hoặc tạm ngừng chiếu)
         'stopped',        // Ngừng chiếu (khác với đã kết thúc theo kế hoạch)
         'cancelled',      // Hủy phát hành (không ra rạp nữa)

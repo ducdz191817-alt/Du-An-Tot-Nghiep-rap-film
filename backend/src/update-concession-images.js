@@ -9,11 +9,11 @@ const newImageUrls = {
   'Nachos Phô Mai': 'https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?auto=format&fit=crop&q=80&w=400',
   'Gà Cay Nova': 'https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?auto=format&fit=crop&q=80&w=400',
   'Coca-Cola size L': 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&q=80&w=400',
-  'Pepsi size L': 'https://images.unsplash.com/photo-1629203851020-904c04e5bc19?auto=format&fit=crop&q=80&w=400',
-  'Nước suối Lavie': 'https://images.unsplash.com/photo-1616118132261-edb26e47e58a?auto=format&fit=crop&q=80&w=400',
+  'Pepsi size L': 'https://images.pexels.com/photos/1292294/pexels-photo-1292294.jpeg?auto=compress&cs=tinysrgb&w=400',
+  'Nước suối Lavie': 'https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&q=80&w=400',
   'Trà sữa trân châu': 'https://images.unsplash.com/photo-1541658016709-82535e94bc69?auto=format&fit=crop&q=80&w=400',
   'Combo Đôi Classic': 'https://images.unsplash.com/photo-1606787366850-de6330128bfc?auto=format&fit=crop&q=80&w=400',
-  'Combo Gia Đình': 'https://images.unsplash.com/photo-1536098579074-406eacab074e?auto=format&fit=crop&q=80&w=400',
+  'Combo Gia Đình': 'https://images.pexels.com/photos/33129/popcorn-movie-party-entertainment.jpg?auto=compress&cs=tinysrgb&w=400',
   'Combo Cặp Đôi VIP': 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&q=80&w=400'
 };
 

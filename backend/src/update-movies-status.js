@@ -1,6 +1,6 @@
 /**
  * update-movies-status.js
- * Cập nhật tất cả phim "ended" sang các status hợp lý với ngày chiếu thực tế.
+ * Cập nhật tất cả phim quá khứ sang các status hợp lý với ngày chiếu thực tế.
  * Chạy: node src/update-movies-status.js
  */
 require('dotenv').config();

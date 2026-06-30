@@ -41,10 +41,10 @@ const values = [
 ];
 
 const milestones = [
-  { year: '2019', title: 'Thành lập', desc: 'Nova Cinema ra đời tại TP. Hồ Chí Minh với cụm rạp đầu tiên ở Quận 1, mang theo giấc mơ điện ảnh đẳng cấp.' },
-  { year: '2020', title: 'Mở rộng ra Hà Nội', desc: 'Vượt qua thách thức của dịch bệnh, chúng tôi vẫn kiên định mở rạp thứ hai tại thủ đô, phục vụ khán giả miền Bắc.' },
+  { year: '2019', title: 'Thành lập', desc: 'Nova Cinema ra đời tại Hà Nội với cụm rạp đầu tiên ở Cầu Giấy, mang theo giấc mơ điện ảnh đẳng cấp.' },
+  { year: '2020', title: 'Vượt qua thử thách', desc: 'Vượt qua thách thức của dịch bệnh, chúng tôi vẫn kiên định với sứ mệnh phục vụ khán giả thủ đô.' },
   { year: '2022', title: 'Ra mắt ứng dụng', desc: 'Nền tảng đặt vé trực tuyến chính thức ra mắt, giúp khách hàng đặt vé mọi lúc mọi nơi chỉ với vài chạm.' },
-  { year: '2023', title: 'Đà Nẵng & IMAX', desc: 'Khai trương cụm rạp miền Trung và nâng cấp màn hình IMAX đầu tiên tại Việt Nam thuộc hệ thống tư nhân.' },
+  { year: '2023', title: 'Nâng cấp IMAX', desc: 'Nâng cấp màn hình IMAX đầu tiên tại Việt Nam thuộc hệ thống tư nhân tại cụm rạp Hà Nội.' },
   { year: '2024', title: '500K khách hàng', desc: 'Cột mốc nửa triệu khách hàng trung thành, khẳng định vị thế thương hiệu điện ảnh hàng đầu tại Việt Nam.' },
 ];
 

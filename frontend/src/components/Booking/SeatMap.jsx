@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { SEAT_TYPES } from '../../utils/constants';
+import Toast from '../common/Toast';
 
 export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], heldSeatsByOthers = [], onSeatClick }) => {
+  const [toastMsg, setToastMsg] = useState('');
+  
   // Nhóm ghế theo hàng (chữ cái)
   const groupedSeats = seats.reduce((acc, seat) => {
     const row = seat.row;
@@ -104,7 +107,7 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
 
     // Nếu tạo ra một khoảng trống đúng 1 ghế mới (mà trước đó không có) -> Chặn!
     if ((hasOrphan1 && !hadOrphan1) || (hasOrphan2 && !hadOrphan2)) {
-      alert("Không được để trống đúng 1 ghế (so le) ở giữa 2 ghế khác. Vui lòng chọn liền kề.");
+      setToastMsg("Không được để trống đúng 1 ghế (so le) ở giữa 2 ghế khác. Vui lòng chọn ghế liền kề.");
       return;
     }
 
@@ -113,7 +116,8 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
   };
 
   return (
-    <div className="space-y-12 overflow-x-auto py-6">
+    <div className="space-y-12 overflow-x-auto py-6 relative">
+      <Toast message={toastMsg} type="warning" onClose={() => setToastMsg('')} />
       {/* 1. Chỉ báo màn hình cong */}
       <div className="w-full max-w-xl mx-auto flex flex-col items-center select-none">
         <div className="h-2 w-full bg-brand rounded-full shadow-[0_0_20px_rgba(229,9,20,0.8)]" />

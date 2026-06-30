@@ -23,16 +23,16 @@ export const HomePage = () => {
   const dispatch = useDispatch();
   const { t, language } = useLanguage();
   const { movies, bestSellers = [], loading, error } = useSelector((state) => state.movie);
-  
+
   const [filters, setFilters] = useState({
-    status: 'now-showing',
+    status: 'all',
     search: '',
     genres: [],
     rating: '',
     date: '',
     sortBy: 'newest',
   });
-  
+
   const [bannerImageError, setBannerImageError] = useState({});
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
@@ -72,7 +72,7 @@ export const HomePage = () => {
   };
 
   const nowShowingMovies = movies.filter((m) => m.status === 'now-showing');
-  
+
   // Lấy top 5 phim nổi bật cho banner carousel
   const bannerMovies = useMemo(() => {
     const topMovies = nowShowingMovies.length > 0 ? nowShowingMovies : movies;
@@ -149,7 +149,7 @@ export const HomePage = () => {
         // Upcoming movies go below, sorted by earliest releaseDate first.
         const releasedA = isMovieReleased(a);
         const releasedB = isMovieReleased(b);
-        
+
         if (releasedA && !releasedB) return -1;
         if (!releasedA && releasedB) return 1;
         if (releasedA && releasedB) {
@@ -205,12 +205,12 @@ export const HomePage = () => {
           {/* Gradients - warm light overlays */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#faf7f2] via-[#faf7f2]/40 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#faf7f2] via-[#faf7f2]/50 to-transparent" />
-          
+
           {/* Golden sparkle decorations */}
           <div className="absolute top-1/4 right-1/3 w-2 h-2 bg-amber-400 rotate-45 opacity-60 animate-pulse" />
           <div className="absolute top-1/3 right-1/4 w-1.5 h-1.5 bg-amber-300 rotate-45 opacity-40 animate-pulse" style={{ animationDelay: '1s' }} />
           <div className="absolute top-1/2 left-1/2 w-1 h-1 bg-amber-400 rotate-45 opacity-50 animate-pulse" style={{ animationDelay: '2s' }} />
- 
+
           {/* Banner Content overlay */}
           <div className="absolute inset-0 flex flex-col justify-center px-6 sm:px-12 md:px-16 max-w-2xl space-y-4">
             <span className="text-xs font-black bg-brand px-3.5 py-1.5 rounded-md text-white tracking-widest uppercase w-max select-none shadow-md">

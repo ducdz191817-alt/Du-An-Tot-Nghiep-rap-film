@@ -17,9 +17,9 @@
     "paymentStatus": "paid",
     "paymentMethod": "cash",
     "bookingDate": "2026-06-17T05:10:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.116Z",
-    "updatedAt": "2026-06-20T11:24:13.116Z"
+    "updatedAt": "2026-06-20T11:24:13.116Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef4491688",
@@ -33,9 +33,9 @@
     "paymentStatus": "paid",
     "paymentMethod": "card",
     "bookingDate": "2026-06-17T09:43:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.116Z",
-    "updatedAt": "2026-06-20T11:24:13.116Z"
+    "updatedAt": "2026-06-20T11:24:13.116Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef4491689",
@@ -50,9 +50,9 @@
     "paymentStatus": "paid",
     "paymentMethod": "vnpay",
     "bookingDate": "2026-06-16T23:21:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.116Z",
-    "updatedAt": "2026-06-20T11:24:13.116Z"
+    "updatedAt": "2026-06-20T11:24:13.116Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef449168a",
@@ -72,9 +72,9 @@
     "paymentStatus": "paid",
     "paymentMethod": "momo",
     "bookingDate": "2026-06-17T02:43:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.116Z",
-    "updatedAt": "2026-06-20T11:24:13.116Z"
+    "updatedAt": "2026-06-20T11:24:13.116Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef449168c",
@@ -88,9 +88,9 @@
     "paymentStatus": "pending",
     "paymentMethod": "cash",
     "bookingDate": "2026-06-17T12:22:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.116Z",
-    "updatedAt": "2026-06-20T11:24:13.116Z"
+    "updatedAt": "2026-06-20T11:24:13.116Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef449168d",
@@ -106,9 +106,9 @@
     "paymentStatus": "refunded",
     "paymentMethod": "card",
     "bookingDate": "2026-06-17T08:51:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.116Z",
-    "updatedAt": "2026-06-20T11:24:13.116Z"
+    "updatedAt": "2026-06-20T11:24:13.116Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef449168e",
@@ -129,9 +129,9 @@
     "paymentStatus": "paid",
     "paymentMethod": "vnpay",
     "bookingDate": "2026-06-17T02:29:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.116Z",
-    "updatedAt": "2026-06-20T11:24:13.116Z"
+    "updatedAt": "2026-06-20T11:24:13.116Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef4491690",
@@ -146,9 +146,9 @@
     "paymentStatus": "paid",
     "paymentMethod": "momo",
     "bookingDate": "2026-06-17T05:34:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.116Z",
-    "updatedAt": "2026-06-20T11:24:13.116Z"
+    "updatedAt": "2026-06-20T11:24:13.116Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef4491691",
@@ -164,9 +164,9 @@
     "paymentStatus": "paid",
     "paymentMethod": "cash",
     "bookingDate": "2026-06-17T02:42:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.116Z",
-    "updatedAt": "2026-06-20T11:24:13.116Z"
+    "updatedAt": "2026-06-20T11:24:13.116Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef4491692",
@@ -187,9 +187,9 @@
     "paymentStatus": "paid",
     "paymentMethod": "card",
     "bookingDate": "2026-06-17T00:53:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.116Z",
-    "updatedAt": "2026-06-20T11:24:13.116Z"
+    "updatedAt": "2026-06-20T11:24:13.116Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef4491694",
@@ -204,9 +204,9 @@
     "paymentStatus": "pending",
     "paymentMethod": "vnpay",
     "bookingDate": "2026-06-17T06:43:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.116Z",
-    "updatedAt": "2026-06-20T11:24:13.116Z"
+    "updatedAt": "2026-06-20T11:24:13.116Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef4491695",
@@ -221,9 +221,9 @@
     "paymentStatus": "refunded",
     "paymentMethod": "momo",
     "bookingDate": "2026-06-17T09:20:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.116Z",
-    "updatedAt": "2026-06-20T11:24:13.116Z"
+    "updatedAt": "2026-06-20T11:24:13.116Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef4491696",
@@ -243,9 +243,9 @@
     "paymentStatus": "paid",
     "paymentMethod": "cash",
     "bookingDate": "2026-06-17T12:47:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.116Z",
-    "updatedAt": "2026-06-20T11:24:13.116Z"
+    "updatedAt": "2026-06-20T11:24:13.116Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef4491698",
@@ -260,9 +260,9 @@
     "paymentStatus": "paid",
     "paymentMethod": "card",
     "bookingDate": "2026-06-17T05:59:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.116Z",
-    "updatedAt": "2026-06-20T11:24:13.116Z"
+    "updatedAt": "2026-06-20T11:24:13.116Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef4491699",
@@ -278,9 +278,9 @@
     "paymentStatus": "paid",
     "paymentMethod": "vnpay",
     "bookingDate": "2026-06-17T03:01:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.116Z",
-    "updatedAt": "2026-06-20T11:24:13.116Z"
+    "updatedAt": "2026-06-20T11:24:13.116Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef449169a",
@@ -302,9 +302,9 @@
     "paymentStatus": "paid",
     "paymentMethod": "momo",
     "bookingDate": "2026-06-17T12:27:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.116Z",
-    "updatedAt": "2026-06-20T11:24:13.116Z"
+    "updatedAt": "2026-06-20T11:24:13.116Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef449169c",
@@ -318,9 +318,9 @@
     "paymentStatus": "pending",
     "paymentMethod": "cash",
     "bookingDate": "2026-06-16T23:17:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.116Z",
-    "updatedAt": "2026-06-20T11:24:13.116Z"
+    "updatedAt": "2026-06-20T11:24:13.116Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef449169d",
@@ -336,9 +336,9 @@
     "paymentStatus": "refunded",
     "paymentMethod": "card",
     "bookingDate": "2026-06-17T11:28:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.116Z",
-    "updatedAt": "2026-06-20T11:24:13.116Z"
+    "updatedAt": "2026-06-20T11:24:13.116Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef449169e",
@@ -358,9 +358,9 @@
     "paymentStatus": "paid",
     "paymentMethod": "vnpay",
     "bookingDate": "2026-06-17T00:21:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.116Z",
-    "updatedAt": "2026-06-20T11:24:13.116Z"
+    "updatedAt": "2026-06-20T11:24:13.116Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef44916a0",
@@ -375,9 +375,9 @@
     "paymentStatus": "paid",
     "paymentMethod": "momo",
     "bookingDate": "2026-06-17T00:03:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.116Z",
-    "updatedAt": "2026-06-20T11:24:13.116Z"
+    "updatedAt": "2026-06-20T11:24:13.116Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef44916a1",
@@ -391,9 +391,9 @@
     "paymentStatus": "paid",
     "paymentMethod": "cash",
     "bookingDate": "2026-06-17T02:43:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.116Z",
-    "updatedAt": "2026-06-20T11:24:13.116Z"
+    "updatedAt": "2026-06-20T11:24:13.116Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef44916a2",
@@ -414,9 +414,9 @@
     "paymentStatus": "paid",
     "paymentMethod": "card",
     "bookingDate": "2026-06-17T11:48:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.117Z",
-    "updatedAt": "2026-06-20T11:24:13.117Z"
+    "updatedAt": "2026-06-20T11:24:13.117Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef44916a4",
@@ -430,9 +430,9 @@
     "paymentStatus": "pending",
     "paymentMethod": "vnpay",
     "bookingDate": "2026-06-17T08:08:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.117Z",
-    "updatedAt": "2026-06-20T11:24:13.117Z"
+    "updatedAt": "2026-06-20T11:24:13.117Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef44916a5",
@@ -446,9 +446,9 @@
     "paymentStatus": "refunded",
     "paymentMethod": "momo",
     "bookingDate": "2026-06-17T03:50:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.117Z",
-    "updatedAt": "2026-06-20T11:24:13.117Z"
+    "updatedAt": "2026-06-20T11:24:13.117Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef44916a6",
@@ -470,9 +470,9 @@
     "paymentStatus": "paid",
     "paymentMethod": "cash",
     "bookingDate": "2026-06-17T05:08:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.117Z",
-    "updatedAt": "2026-06-20T11:24:13.117Z"
+    "updatedAt": "2026-06-20T11:24:13.117Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef44916a8",
@@ -487,9 +487,9 @@
     "paymentStatus": "paid",
     "paymentMethod": "card",
     "bookingDate": "2026-06-17T11:31:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.117Z",
-    "updatedAt": "2026-06-20T11:24:13.117Z"
+    "updatedAt": "2026-06-20T11:24:13.117Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef44916a9",
@@ -505,9 +505,9 @@
     "paymentStatus": "paid",
     "paymentMethod": "vnpay",
     "bookingDate": "2026-06-17T02:31:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.117Z",
-    "updatedAt": "2026-06-20T11:24:13.117Z"
+    "updatedAt": "2026-06-20T11:24:13.117Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef44916aa",
@@ -528,9 +528,9 @@
     "paymentStatus": "paid",
     "paymentMethod": "momo",
     "bookingDate": "2026-06-17T00:34:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.117Z",
-    "updatedAt": "2026-06-20T11:24:13.117Z"
+    "updatedAt": "2026-06-20T11:24:13.117Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef44916ac",
@@ -545,9 +545,9 @@
     "paymentStatus": "pending",
     "paymentMethod": "cash",
     "bookingDate": "2026-06-17T08:38:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.117Z",
-    "updatedAt": "2026-06-20T11:24:13.117Z"
+    "updatedAt": "2026-06-20T11:24:13.117Z",
+    "__v": 0
   },
   {
     "_id": "6a36785d8605c13ef44916ad",
@@ -561,8 +561,8 @@
     "paymentStatus": "refunded",
     "paymentMethod": "card",
     "bookingDate": "2026-06-17T06:53:00.000Z",
-    "__v": 0,
     "createdAt": "2026-06-20T11:24:13.117Z",
-    "updatedAt": "2026-06-20T11:24:13.117Z"
+    "updatedAt": "2026-06-20T11:24:13.117Z",
+    "__v": 0
   }
 ]
