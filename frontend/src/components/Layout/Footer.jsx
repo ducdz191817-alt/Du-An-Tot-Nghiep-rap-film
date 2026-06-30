@@ -28,10 +28,10 @@ export const Footer = () => {
         <div>
           <h4 className="text-gray-100 font-extrabold mb-4 uppercase tracking-wider text-sm">{t('footer.explore')}</h4>
           <ul className="space-y-2.5 text-sm">
-            <li><a href="#" className="hover:text-gray-300 transition-colors">{t('footer.nowShowing')}</a></li>
-            <li><a href="#" className="hover:text-gray-300 transition-colors">{t('footer.comingSoon')}</a></li>
-            <li><a href="#" className="hover:text-gray-300 transition-colors">{t('footer.theaters')}</a></li>
-            <li><a href="#" className="hover:text-gray-300 transition-colors">{t('footer.promotions')}</a></li>
+            <li><Link to="/movies" className="hover:text-gray-300 transition-colors">{t('footer.nowShowing')}</Link></li>
+            <li><Link to="/movies" className="hover:text-gray-300 transition-colors">{t('footer.comingSoon')}</Link></li>
+            <li><Link to="/theaters" className="hover:text-gray-300 transition-colors">{t('footer.theaters')}</Link></li>
+            <li><Link to="/promotions" className="hover:text-gray-300 transition-colors">{t('footer.promotions')}</Link></li>
           </ul>
         </div>
 
@@ -39,10 +39,10 @@ export const Footer = () => {
         <div>
           <h4 className="text-gray-100 font-extrabold mb-4 uppercase tracking-wider text-sm">{t('footer.support')}</h4>
           <ul className="space-y-2.5 text-sm">
-            <li><a href="#" className="hover:text-gray-300 transition-colors">{t('footer.terms')}</a></li>
-            <li><a href="#" className="hover:text-gray-300 transition-colors">{t('footer.refund')}</a></li>
-            <li><a href="#" className="hover:text-gray-300 transition-colors">{t('footer.faq')}</a></li>
-            <li><a href="#" className="hover:text-gray-300 transition-colors">{t('footer.privacy')}</a></li>
+            <li><Link to="/about" className="hover:text-gray-300 transition-colors">{t('footer.terms')}</Link></li>
+            <li><Link to="/about" className="hover:text-gray-300 transition-colors">{t('footer.refund')}</Link></li>
+            <li><Link to="/about" className="hover:text-gray-300 transition-colors">{t('footer.faq')}</Link></li>
+            <li><Link to="/about" className="hover:text-gray-300 transition-colors">{t('footer.privacy')}</Link></li>
           </ul>
         </div>
 
