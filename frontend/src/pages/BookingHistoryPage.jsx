@@ -62,7 +62,7 @@ export const BookingHistoryPage = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-8 pb-16">
       <div>
-        <h1 className="text-2xl md:text-4xl font-black text-white flex items-center gap-2">
+        <h1 className="text-2xl md:text-4xl font-black text-zinc-900 flex items-center gap-2">
           <Receipt className="text-brand" size={28} /> {t('history.title')}
         </h1>
         <p className="text-xs text-zinc-500 mt-1">

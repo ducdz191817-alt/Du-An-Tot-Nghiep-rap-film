@@ -273,15 +273,6 @@ export const HomePage = () => {
             </div>
           </div>
 
-          {/* Dark mode / Light mode toggle icons (decorative) */}
-          <div className="absolute top-6 right-6 flex items-center gap-2">
-            <button className="w-10 h-10 rounded-full bg-white/70 backdrop-blur border border-gray-200 flex items-center justify-center text-gray-500 hover:text-brand transition-colors shadow-sm">
-              <Sparkles size={16} />
-            </button>
-            <button className="w-10 h-10 rounded-full bg-white/70 backdrop-blur border border-gray-200 flex items-center justify-center text-gray-500 hover:text-brand transition-colors shadow-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-            </button>
-          </div>
 
           {/* Carousel Arrows */}
           {bannerMovies.length > 1 && (
