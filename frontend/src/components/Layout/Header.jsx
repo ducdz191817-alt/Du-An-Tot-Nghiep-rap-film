@@ -101,24 +101,24 @@ export const Header = () => {
         </Link>
 
         {/* Navigation */}
-        <nav className="hidden md:flex items-center space-x-8 text-base font-bold">
-          <Link to="/" className={`${isActive('/')} transition-colors`}>
+        <nav className="hidden md:flex items-center space-x-4 lg:space-x-8 text-base font-bold">
+          <Link to="/" className={`${isActive('/')} transition-colors whitespace-nowrap`}>
             {t('nav.home')}
           </Link>
-          <Link to="/movies" className={`${isActive('/movies')} transition-colors`}>
+          <Link to="/movies" className={`${isActive('/movies')} transition-colors whitespace-nowrap`}>
             {t('nav.movies')}
           </Link>
-          <Link to="/promotions" className={`${isActive('/promotions')} transition-colors`}>
+          <Link to="/promotions" className={`${isActive('/promotions')} transition-colors whitespace-nowrap`}>
             {t('nav.promotions')}
           </Link>
-          <Link to="/theaters" className={`${isActive('/theaters')} transition-colors`}>
+          <Link to="/theaters" className={`${isActive('/theaters')} transition-colors whitespace-nowrap`}>
             {t('nav.theaters')}
           </Link>
-          <Link to="/about" className={`${isActive('/about')} transition-colors`}>
+          <Link to="/about" className={`${isActive('/about')} transition-colors whitespace-nowrap`}>
             {t('nav.about')}
           </Link>
           {isAuthenticated && (
-            <Link to="/history" className={`${isActive('/history')} flex items-center gap-1.5 transition-colors`}>
+            <Link to="/history" className={`${isActive('/history')} flex items-center gap-1.5 transition-colors whitespace-nowrap`}>
               <History size={16} /> {t('nav.myTickets')}
             </Link>
           )}

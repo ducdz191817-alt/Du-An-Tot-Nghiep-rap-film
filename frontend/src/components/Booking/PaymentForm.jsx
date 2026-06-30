@@ -175,7 +175,7 @@ export const PaymentForm = ({ onSubmit, loading, pricing }) => {
         </form>
       )}
 
-      {/* E-wallet & QR simulations */}
+      {/* E-wallet & QR flows */}
       {method !== 'card' && (
         <form onSubmit={handlePay} className="space-y-4 pt-4 text-center" noValidate>
           {method === 'vietqr' ? (
@@ -188,16 +188,57 @@ export const PaymentForm = ({ onSubmit, loading, pricing }) => {
                 Sau khi nhấn nút phía dưới, mã QR động chứa thông tin số tài khoản ngân hàng, số tiền và nội dung chuyển khoản tự động sẽ hiển thị. Hệ thống sẽ tự động quét trạng thái giao dịch để duyệt vé cho bạn.
               </p>
             </div>
-          ) : (
-            <div className="bg-zinc-900 border border-dark-border p-6 rounded-2xl max-w-sm mx-auto space-y-4">
-              <div className="w-32 h-32 bg-white p-2 rounded-xl mx-auto flex items-center justify-center border border-zinc-200">
-                <div className="w-full h-full bg-zinc-950 flex flex-wrap items-center justify-center p-3 text-[10px] text-zinc-500 font-bold uppercase select-none tracking-widest leading-normal text-center rounded">
-                  MÔ PHỎNG MÃ QR
+          ) : method === 'vnpay' ? (
+            <div className="bg-gradient-to-b from-blue-950/40 to-zinc-900 border border-blue-500/20 p-6 rounded-2xl max-w-sm mx-auto space-y-5">
+              {/* VNPay icon */}
+              <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mx-auto shadow-[0_0_20px_rgba(59,130,246,0.15)]">
+                <CreditCard size={28} className="text-blue-400" />
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-black text-white">Cổng thanh toán VNPay</h4>
+                <p className="text-xs text-zinc-400 font-semibold leading-relaxed">
+                  Bạn sẽ được chuyển hướng sang trang thanh toán bảo mật của VNPay để hoàn tất giao dịch.
+                </p>
+              </div>
+
+              {/* Steps */}
+              <div className="space-y-2.5 text-left">
+                <div className="flex items-start gap-3">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 text-[10px] font-black flex items-center justify-center mt-0.5">1</span>
+                  <p className="text-xs text-zinc-400 font-semibold">Nhấn nút <span className="text-blue-400 font-bold">"Thanh toán qua VNPay"</span> bên dưới</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 text-[10px] font-black flex items-center justify-center mt-0.5">2</span>
+                  <p className="text-xs text-zinc-400 font-semibold">Chọn ngân hàng và nhập thông tin thẻ trên trang VNPay</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 text-[10px] font-black flex items-center justify-center mt-0.5">3</span>
+                  <p className="text-xs text-zinc-400 font-semibold">Xác nhận OTP và tự động quay lại nhận vé</p>
                 </div>
               </div>
-              <p className="text-xs text-zinc-400 font-semibold leading-relaxed">
-                Quét mã QR này bằng ứng dụng <span className="capitalize font-black text-white">{method}</span> của bạn để thanh toán.
-              </p>
+
+              {/* Security badge */}
+              <div className="flex items-center justify-center gap-2 text-[10px] text-zinc-500 font-bold uppercase tracking-widest pt-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Giao dịch được mã hóa & bảo mật bởi VNPay</span>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-gradient-to-b from-pink-950/30 to-zinc-900 border border-pink-500/20 p-6 rounded-2xl max-w-sm mx-auto space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center mx-auto shadow-[0_0_20px_rgba(236,72,153,0.15)]">
+                <Wallet size={28} className="text-pink-400" />
+              </div>
+              <div className="space-y-2">
+                <h4 className="text-sm font-black text-white">Ví điện tử MoMo</h4>
+                <p className="text-xs text-zinc-400 font-semibold leading-relaxed">
+                  Bạn sẽ được chuyển hướng sang ứng dụng MoMo hoặc quét mã QR để hoàn tất giao dịch an toàn.
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-2 text-[10px] text-zinc-500 font-bold uppercase tracking-widest pt-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Giao dịch bảo mật bởi MoMo</span>
+              </div>
             </div>
           )}
 
@@ -209,9 +250,9 @@ export const PaymentForm = ({ onSubmit, loading, pricing }) => {
           >
             {method === 'vietqr'
               ? `Tiến hành chuyển khoản VietQR`
-              : method === 'momo'
-              ? `Tiến hành thanh toán MoMo`
-              : `Tôi đã hoàn tất thanh toán`}
+              : method === 'vnpay'
+              ? `Thanh toán qua VNPay — ${pricing.grandTotal.toLocaleString()} VND`
+              : `Tiến hành thanh toán MoMo`}
           </Button>
         </form>
       )}

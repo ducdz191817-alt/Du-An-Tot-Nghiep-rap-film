@@ -10,25 +10,26 @@ import { getPosterUrl } from '../../utils/constants';
 
 // Helper: trả về config hiển thị cho từng trạng thái phim
 const getStatusConfig = (status) => {
+  const normalizedStatus = status === 'ended' ? 'now-showing' : status;
+
   const map = {
-    'now-showing':  { label: 'Đang chiếu',    classes: 'bg-green-50 text-green-700 border border-green-200' },
-    'coming-soon':  { label: 'Sắp chiếu',     classes: 'bg-amber-50 text-amber-700 border border-amber-200' },
-    'ended':        { label: 'Đã kết thúc',    classes: 'bg-gray-100 text-gray-500 border border-gray-200' },
-    'suspended':    { label: 'Tạm hoãn',       classes: 'bg-orange-50 text-orange-700 border border-orange-200' },
-    'stopped':      { label: 'Ngừng chiếu',    classes: 'bg-red-50 text-red-700 border border-red-200' },
-    'cancelled':    { label: 'Hủy phát hành',  classes: 'bg-rose-50 text-rose-700 border border-rose-200' },
-    'pre-release':  { label: 'Sắp ra mắt',    classes: 'bg-sky-50 text-sky-700 border border-sky-200' },
-    'preview':      { label: 'Chiếu sớm',      classes: 'bg-violet-50 text-violet-700 border border-violet-200' },
-    'hidden':       { label: 'Ẩn / Bảo trì',  classes: 'bg-gray-100 text-gray-400 border border-gray-200' },
+    'now-showing': { label: 'Đang chiếu', classes: 'bg-green-500/10 text-green-400 border border-green-500/20' },
+    'coming-soon': { label: 'Sắp chiếu', classes: 'bg-amber-500/10 text-amber-400 border border-amber-500/20' },
+    'suspended': { label: 'Tạm hoãn', classes: 'bg-orange-500/10 text-orange-400 border border-orange-500/20' },
+    'stopped': { label: 'Ngừng chiếu', classes: 'bg-red-500/10 text-red-400 border border-red-500/20' },
+    'cancelled': { label: 'Hủy phát hành', classes: 'bg-rose-500/10 text-rose-400 border border-rose-500/20' },
+    'pre-release': { label: 'Sắp ra mắt', classes: 'bg-sky-500/10 text-sky-400 border border-sky-500/20' },
+    'preview': { label: 'Chiếu sớm', classes: 'bg-violet-500/10 text-violet-400 border border-violet-500/20' },
+    'hidden': { label: 'Ẩn / Bảo trì', classes: 'bg-zinc-900 text-zinc-600 border border-zinc-800' },
   };
-  return map[status] || { label: status, classes: 'bg-gray-100 text-gray-500 border border-gray-200' };
+  return map[normalizedStatus] || { label: normalizedStatus, classes: 'bg-gray-100 text-gray-500 border border-gray-200' };
 };
 
 const AVAILABLE_GENRES = [
-  'Action', 'Adventure', 'Animation', 'Anime', 'Biography', 'Comedy', 
-  'Crime', 'Disaster', 'Documentary', 'Drama', 'Family', 'Fantasy', 
-  'History', 'Horror', 'Martial Arts', 'Music', 'Musical', 'Mystery', 
-  'Psychological', 'Romance', 'Sci-Fi', 'Sport', 'Supernatural', 
+  'Action', 'Adventure', 'Animation', 'Anime', 'Biography', 'Comedy',
+  'Crime', 'Disaster', 'Documentary', 'Drama', 'Family', 'Fantasy',
+  'History', 'Horror', 'Martial Arts', 'Music', 'Musical', 'Mystery',
+  'Psychological', 'Romance', 'Sci-Fi', 'Sport', 'Supernatural',
   'Thriller', 'War', 'Western'
 ];
 
@@ -307,11 +308,13 @@ export const MovieManager = () => {
                       {m.genre.join(', ')}
                     </td>
                     <td className="py-3">
-                      {(() => { const cfg = getStatusConfig(m.status); return (
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ${cfg.classes}`}>
-                          {cfg.label}
-                        </span>
-                      ); })()}
+                      {(() => {
+                        const cfg = getStatusConfig(m.status); return (
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ${cfg.classes}`}>
+                            {cfg.label}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="py-3 max-w-[200px] truncate text-gray-600 font-medium" title={m.description}>
                       {m.description || 'Chưa cập nhật'}
@@ -373,7 +376,6 @@ export const MovieManager = () => {
                 <option value="coming-soon">🟡 Sắp chiếu</option>
                 <option value="pre-release">🔵 Sắp ra mắt</option>
                 <option value="preview">🟣 Chiếu sớm / Preview</option>
-                <option value="ended">⚫ Đã kết thúc</option>
                 <option value="suspended">🟠 Tạm hoãn</option>
                 <option value="stopped">🔴 Ngừng chiếu</option>
                 <option value="cancelled">❌ Hủy phát hành</option>
@@ -413,11 +415,10 @@ export const MovieManager = () => {
                       key={genre}
                       type="button"
                       onClick={() => handleToggleGenre(genre)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
-                        isSelected
-                          ? 'bg-brand/10 border-brand/40 text-brand shadow-[0_2px_8px_rgba(168,85,247,0.15)]'
-                          : 'bg-gray-100 border-gray-200 text-gray-500 hover:border-gray-350 hover:text-gray-700'
-                      }`}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${isSelected
+                        ? 'bg-brand/10 border-brand/40 text-brand shadow-[0_2px_8px_rgba(168,85,247,0.15)]'
+                        : 'bg-zinc-800/40 border-zinc-700/40 text-white hover:border-zinc-650 hover:text-white'
+                        }`}
                     >
                       {genre}
                     </button>
@@ -479,11 +480,14 @@ export const MovieManager = () => {
                   <span className="bg-brand/10 border border-brand/20 text-brand px-3 py-1 rounded-xl font-black text-xs">
                     Độ tuổi: {viewingMovie.rating}
                   </span>
-                  {(() => { const cfg = getStatusConfig(viewingMovie.status); return (
-                    <span className={`px-3 py-1 rounded-full text-xs uppercase font-bold tracking-wider ${cfg.classes}`}>
-                      {cfg.label}
-                    </span>
-                  ); })()}
+                  <span className={`px-3 py-1 rounded-full text-xs uppercase font-bold tracking-wider ${viewingMovie.status === 'now-showing'
+                    ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                    : viewingMovie.status === 'coming-soon'
+                      ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                      : 'bg-zinc-800 text-zinc-500 border border-zinc-700'
+                    }`}>
+                    {viewingMovie.status === 'now-showing' ? 'Đang chiếu' : viewingMovie.status === 'coming-soon' ? 'Sắp chiếu' : 'Đã kết thúc'}
+                  </span>
                 </div>
               </div>
 

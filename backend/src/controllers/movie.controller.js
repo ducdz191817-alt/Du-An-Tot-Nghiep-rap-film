@@ -5,41 +5,20 @@ const Movie = require('../models/Movie.model');
 // @access  Public
 const getMovies = async (req, res, next) => {
   try {
-    const { status, search, genre, rating, date } = req.query;
-
-    // Automatically transition movies with only past showtimes to "ended"
-    try {
-      const Showtime = require('../models/Showtime.model');
-      const activeMovies = await Movie.find({ status: { $in: ['now-showing', 'preview'] } });
-      
-      for (const movie of activeMovies) {
-        const showtimesCount = await Showtime.countDocuments({ movie: movie._id });
-        if (showtimesCount > 0) {
-          const futureShowtimesCount = await Showtime.countDocuments({
-            movie: movie._id,
-            startTime: { $gte: new Date() },
-          });
-          
-          if (futureShowtimesCount === 0) {
-            movie.status = 'ended';
-            await movie.save();
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Error auto-ending movies:', err);
-    }
+    const { status, search, genre, genres, rating, date } = req.query;
 
     const query = {};
 
     // Filter by status ('now-showing', 'coming-soon', 'preview', 'pre-release', etc.)
     if (status) {
-      if (status !== 'all') {
+      if (status === 'all') {
+        query.status = { $nin: ['hidden', 'suspended', 'cancelled', 'stopped'] };
+      } else {
         query.status = status;
       }
     } else {
-      // Default: only show public-facing statuses to customers
-      query.status = { $in: ['now-showing', 'coming-soon', 'pre-release', 'preview'] };
+      // Default: do not show admin-only statuses
+      query.status = { $nin: ['hidden', 'suspended', 'cancelled', 'stopped'] };
     }
 
     // Filter by title / description search query
@@ -73,9 +52,19 @@ const getMovies = async (req, res, next) => {
       }
     }
 
-    // Filter by genre
-    if (genre) {
-      query.genre = { $in: [genre] };
+    // Filter by genre or multi-genre selection
+    const genreValues = genres || genre;
+    if (genreValues) {
+      const genreList = Array.isArray(genreValues)
+        ? genreValues
+        : String(genreValues)
+          .split(',')
+          .map((g) => g.trim())
+          .filter((g) => g !== '');
+
+      if (genreList.length > 0) {
+        query.genre = { $in: genreList };
+      }
     }
 
     // Filter by rating
@@ -135,26 +124,6 @@ const getMovieById = async (req, res, next) => {
     if (!movie) {
       res.status(404);
       throw new Error('Movie not found');
-    }
-
-    // Automatically transition to "ended" if it has only past showtimes
-    if (['now-showing', 'preview'].includes(movie.status)) {
-      try {
-        const Showtime = require('../models/Showtime.model');
-        const showtimesCount = await Showtime.countDocuments({ movie: movie._id });
-        if (showtimesCount > 0) {
-          const futureShowtimesCount = await Showtime.countDocuments({
-            movie: movie._id,
-            startTime: { $gte: new Date() },
-          });
-          if (futureShowtimesCount === 0) {
-            movie.status = 'ended';
-            await movie.save();
-          }
-        }
-      } catch (err) {
-        console.error('Error auto-ending movie in getMovieById:', err);
-      }
     }
 
     res.json({
@@ -262,7 +231,7 @@ const getBestSellers = async (req, res, next) => {
     if (movies.length < 4) {
       const existingIds = movies.map(m => m._id.toString());
       const mongoose = require('mongoose');
-      
+
       // Convert existingIds string to ObjectIds
       const existingObjectIds = existingIds.map(id => {
         try {
@@ -273,11 +242,11 @@ const getBestSellers = async (req, res, next) => {
       }).filter(Boolean);
 
       const fallbackMovies = await Movie.aggregate([
-        { 
-          $match: { 
+        {
+          $match: {
             _id: { $nin: existingObjectIds },
             status: { $in: ['now-showing', 'preview'] }
-          } 
+          }
         },
         {
           $lookup: {

@@ -4,6 +4,8 @@ const Seat = require('../models/Seat.model');
 const Concession = require('../models/Concession.model');
 const Payment = require('../models/Payment.model');
 const sendEmail = require('../utils/sendEmail');
+const { checkAndExpirePendingBookings } = require('../utils/bookingCleanup');
+const { confirmBookingClearHolds } = require('../sockets/seatSocket');
 
 // @desc    Create a new booking and process payment
 // @route   POST /api/bookings
