@@ -53,6 +53,7 @@ const MovieSchema = new mongoose.Schema(
         'coming-soon',    // Sắp chiếu
         'suspended',      // Tạm hoãn (hoãn phát hành hoặc tạm ngừng chiếu)
         'stopped',        // Ngừng chiếu (khác với đã kết thúc theo kế hoạch)
+        'ended',          // Đã kết thúc chiếu (Được khôi phục)
         'cancelled',      // Hủy phát hành (không ra rạp nữa)
         'pre-release',    // Sắp ra mắt (tách riêng với Sắp chiếu)
         'preview',        // Chiếu sớm / Preview (suất chiếu đặc biệt)
