@@ -30,31 +30,6 @@ const theatersData = [
     badge: 'Flagship',
     badgeColor: 'bg-brand text-white',
     image: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=800&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 2,
-    name: 'Nova Cinema TP. Hồ Chí Minh',
-    slug: 'hcm',
-    city: 'Hồ Chí Minh',
-    address: '456 Lê Lợi, Phường Bến Nghé, Quận 1, TP.HCM',
-    phone: '1900 9091',
-    hotline: '1900 9091',
-    lat: 10.7769,
-    lng: 106.7009,
-    mapEmbed:
-      'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.4602!2d106.7009!3d10.7769!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTDCsDQ2JzM2LjgiTiAxMDbCsDQyJzAzLjIiRQ!5e0!3m2!1sen!2s!4v0',
-    hours: [
-      { day: 'Thứ 2 – Thứ 6', time: '08:30 – 23:30' },
-      { day: 'Thứ 7 – Chủ Nhật', time: '08:00 – 02:00' },
-    ],
-    rooms: [
-      { name: 'Phòng 1', type: 'IMAX', seats: 150, icon: <Zap size={14} />, color: 'text-amber-400 bg-amber-400/10 border-amber-400/20' },
-      { name: 'Phòng 2', type: '2D', seats: 90, icon: <MonitorPlay size={14} />, color: 'text-zinc-400 bg-zinc-400/10 border-zinc-400/20' },
-    ],
-    facilities: ['Trung tâm thương mại', 'Trà sữa', 'Bãi xe ô tô'],
-    badge: 'Premium',
-    badgeColor: 'bg-amber-500 text-white',
-    image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&auto=format&fit=crop&q=80',
   }
 ];
 
