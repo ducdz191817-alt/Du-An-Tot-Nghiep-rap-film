@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Phone, Clock, ChevronDown, ChevronUp, Tv2, Star, Zap, MonitorPlay, Navigation, Loader2 } from 'lucide-react';
+import { MapPin, Phone, Clock, ChevronDown, ChevronUp, Tv2, Star, Zap, MonitorPlay, Navigation, Loader2, Check } from 'lucide-react';
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 const theatersData = [
@@ -35,7 +35,9 @@ const theatersData = [
 
 
 
-const TheatersPage = () => {
+const TheaterCard = ({ theater }) => {
+  const [expanded, setExpanded] = useState(false);
+
   return (
     <div className="bg-dark-card border border-dark-border rounded-3xl overflow-hidden group hover:border-brand/30 hover:shadow-xl hover:shadow-brand/5 transition-all duration-300">
       {/* Image */}

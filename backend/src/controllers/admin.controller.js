@@ -38,13 +38,16 @@ const updateMovie = async (req, res, next) => {
 
 const deleteMovie = async (req, res, next) => {
   try {
-    const movie = await Movie.findByIdAndDelete(req.params.id);
+    const movie = await Movie.findByIdAndUpdate(
+      req.params.id, 
+      { status: 'hidden' }, 
+      { new: true }
+    );
     if (!movie) {
       res.status(404);
       throw new Error('Movie not found');
     }
-    // Set associated showtimes' status / clean up
-    await Showtime.deleteMany({ movie: req.params.id });
+    // We do NOT delete showtimes so that existing bookings and showtimes retain the movie reference.
     res.json({ success: true, data: {} });
   } catch (error) {
     next(error);
