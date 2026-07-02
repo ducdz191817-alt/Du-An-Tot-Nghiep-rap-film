@@ -165,6 +165,11 @@ const getTMDBMovieDetail = async (tmdbId) => {
   return response;
 };
 
+const getTMDBTrending = async () => {
+  const response = await api.get('/admin/tmdb/trending');
+  return response;
+};
+
 const adminService = {
   createMovie,
   updateMovie,
@@ -196,6 +201,7 @@ const adminService = {
   deleteUser,
   searchTMDB,
   getTMDBMovieDetail,
+  getTMDBTrending,
 };
 
 export default adminService;

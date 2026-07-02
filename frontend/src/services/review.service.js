@@ -24,6 +24,18 @@ const reviewService = {
     const response = await api.delete(`/reviews/${reviewId}`);
     return response;
   },
+
+  // Gửi phản hồi (admin)
+  replyReview: async (reviewId, comment) => {
+    const response = await api.post(`/reviews/${reviewId}/reply`, { comment });
+    return response;
+  },
+
+  // Xóa phản hồi (admin)
+  deleteReply: async (reviewId) => {
+    const response = await api.delete(`/reviews/${reviewId}/reply`);
+    return response;
+  },
 };
 
 export default reviewService;

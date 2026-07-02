@@ -93,13 +93,34 @@ const UserAvatar = ({ user }) => {
 };
 
 // ─── Component một review card ───────────────────────────────────────────────
-const ReviewCard = ({ review, currentUser, onEdit, onDelete, t }) => {
+// ─── Component một review card ───────────────────────────────────────────────
+const ReviewCard = ({ review, currentUser, onEdit, onDelete, onReply, onDeleteReply, t }) => {
   const isOwner = currentUser && currentUser._id === review.user?._id;
+  const isAdmin = currentUser && currentUser.role === 'admin';
   const createdDate = new Date(review.createdAt).toLocaleDateString('vi-VN', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
   });
+
+  const [showReplyForm, setShowReplyForm] = useState(false);
+  const [replyText, setReplyText] = useState(review.adminReply?.comment || '');
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+
+  const handleReplySubmit = async (e) => {
+    e.preventDefault();
+    if (!replyText.trim()) return;
+
+    setIsSubmittingReply(true);
+    try {
+      await onReply(review._id, replyText.trim());
+      setShowReplyForm(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmittingReply(false);
+    }
+  };
 
   return (
     <div className="group relative bg-white border border-gray-200 rounded-2xl p-5 hover:border-gray-300 transition-all duration-300 shadow-sm">
@@ -118,31 +139,137 @@ const ReviewCard = ({ review, currentUser, onEdit, onDelete, t }) => {
           </div>
         </div>
 
-        {/* Nút sửa/xóa cho chủ sở hữu */}
-        {isOwner && (
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Nút sửa/xóa cho chủ sở hữu, trả lời cho admin */}
+        <div className="flex items-center gap-2">
+          {isAdmin && !review.adminReply?.comment && (
             <button
-              onClick={() => onEdit(review)}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-amber-500 hover:bg-amber-50 transition-all"
-              title={t('review.edit')}
+              onClick={() => setShowReplyForm(true)}
+              className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-amber-500 hover:text-white hover:bg-amber-500 border border-amber-300 rounded-xl transition-all"
             >
-              <Pencil size={14} />
+              <MessageSquare size={13} />
+              {t('review.reply')}
             </button>
-            <button
-              onClick={() => onDelete(review._id)}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
-              title={t('review.delete')}
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
-        )}
+          )}
+
+          {isOwner && (
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={() => onEdit(review)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-amber-500 hover:bg-amber-50 transition-all"
+                title={t('review.edit')}
+              >
+                <Pencil size={14} />
+              </button>
+              <button
+                onClick={() => onDelete(review._id)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                title={t('review.delete')}
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Comment */}
       <p className="mt-3 text-sm text-gray-700 leading-relaxed font-medium">
         {review.comment}
       </p>
+
+      {/* Admin Reply rendering */}
+      {review.adminReply?.comment && (
+        <div className="mt-4 ml-6 p-4 bg-zinc-50 border border-zinc-200/80 rounded-xl relative">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-white font-black text-xs border border-gray-200 shadow-sm">
+                A
+              </div>
+              <div>
+                <h5 className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                  {review.adminReply.repliedBy?.username || t('review.replyTitle')}
+                  <span className="bg-red-50 text-red-600 text-[9px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider border border-red-200">
+                    Admin
+                  </span>
+                </h5>
+                {review.adminReply.repliedAt && (
+                  <span className="text-[9px] text-gray-400 font-semibold">
+                    {new Date(review.adminReply.repliedAt).toLocaleDateString('vi-VN', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </span>
+                )}
+              </div>
+            </div>
+            {isAdmin && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    setReplyText(review.adminReply.comment);
+                    setShowReplyForm(true);
+                  }}
+                  className="p-1 rounded text-zinc-400 hover:text-amber-500 transition-colors"
+                  title={t('review.edit')}
+                >
+                  <Pencil size={12} />
+                </button>
+                <button
+                  onClick={() => onDeleteReply(review._id)}
+                  className="p-1 rounded text-zinc-400 hover:text-red-500 transition-colors"
+                  title={t('review.deleteReply')}
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            )}
+          </div>
+          <p className="mt-2 text-xs text-gray-700 font-semibold leading-relaxed">
+            {review.adminReply.comment}
+          </p>
+        </div>
+      )}
+
+      {/* Reply input form */}
+      {showReplyForm && (
+        <form onSubmit={handleReplySubmit} className="mt-4 ml-6 p-4 bg-zinc-50 border border-zinc-200 rounded-xl space-y-3">
+          <h5 className="text-xs font-bold text-gray-800">
+            {review.adminReply?.comment ? t('review.editTitle') : t('review.replyTitle')}
+          </h5>
+          <textarea
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+            placeholder={t('review.replyPlaceholder')}
+            maxLength={500}
+            rows={2}
+            className="w-full bg-white border border-zinc-200 rounded-lg p-2.5 text-xs text-gray-800 placeholder-zinc-400 focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 outline-none resize-none transition-all"
+            required
+          />
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] text-zinc-400">{replyText.length}/500</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="submit"
+                disabled={isSubmittingReply}
+                className="px-3 py-1 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white font-bold text-xs rounded-md shadow-sm transition-all"
+              >
+                {isSubmittingReply ? '...' : t('review.replyBtn')}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowReplyForm(false);
+                  setReplyText(review.adminReply?.comment || '');
+                }}
+                className="px-3 py-1 bg-white hover:bg-zinc-100 text-zinc-600 font-bold text-xs rounded-md border border-zinc-200 transition-all"
+              >
+                {t('review.cancelBtn')}
+              </button>
+            </div>
+          </div>
+        </form>
+      )}
     </div>
   );
 };
@@ -239,6 +366,28 @@ const ReviewSection = ({ movieId }) => {
       await fetchReviews();
     } catch (err) {
       alert(err.message);
+    }
+  };
+
+  // Trả lời đánh giá (admin)
+  const handleReply = async (reviewId, comment) => {
+    try {
+      await reviewService.replyReview(reviewId, comment);
+      await fetchReviews();
+    } catch (err) {
+      alert(err.message || t('review.errorGeneral'));
+      throw err;
+    }
+  };
+
+  // Xóa phản hồi (admin)
+  const handleDeleteReply = async (reviewId) => {
+    if (!window.confirm(t('review.confirmDeleteReply'))) return;
+    try {
+      await reviewService.deleteReply(reviewId);
+      await fetchReviews();
+    } catch (err) {
+      alert(err.message || t('review.errorGeneral'));
     }
   };
 
@@ -427,6 +576,8 @@ const ReviewSection = ({ movieId }) => {
               currentUser={user}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onReply={handleReply}
+              onDeleteReply={handleDeleteReply}
               t={t}
             />
           ))

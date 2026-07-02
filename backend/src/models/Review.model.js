@@ -28,6 +28,12 @@ const ReviewSchema = new mongoose.Schema(
       trim: true,
       maxlength: [500, 'Bình luận không được vượt quá 500 ký tự'],
     },
+    // Phản hồi từ admin
+    adminReply: {
+      comment: { type: String, trim: true, maxlength: 500 },
+      repliedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      repliedAt: { type: Date },
+    },
   },
   {
     timestamps: true,

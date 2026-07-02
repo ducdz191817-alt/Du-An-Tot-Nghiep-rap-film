@@ -115,7 +115,63 @@ const searchTMDB = async (req, res, next) => {
 };
 
 // ==========================================
-// 2. Lấy chi tiết phim từ TMDB theo ID
+// 2. Lấy danh sách phim trending/mới nhất từ TMDB
+// GET /api/admin/tmdb/trending?page=1
+// ==========================================
+const getTMDBTrending = async (req, res, next) => {
+  try {
+    const { page = 1 } = req.query;
+
+    if (!TMDB_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        message: 'TMDB API Key chưa được cấu hình',
+      });
+    }
+
+    // Lấy phim đang trending trong tuần + phim đang chiếu tại rạp
+    const [trendingRes, nowPlayingRes] = await Promise.all([
+      axios.get(`${TMDB_BASE_URL}/trending/movie/week`, {
+        params: { api_key: TMDB_API_KEY, language: 'vi-VN', page },
+      }),
+      axios.get(`${TMDB_BASE_URL}/movie/now_playing`, {
+        params: { api_key: TMDB_API_KEY, language: 'vi-VN', page, region: 'VN' },
+      }),
+    ]);
+
+    // Gộp 2 danh sách, loại trùng theo ID, ưu tiên trending trước
+    const seen = new Set();
+    const combined = [];
+
+    for (const movie of [...trendingRes.data.results, ...nowPlayingRes.data.results]) {
+      if (!seen.has(movie.id)) {
+        seen.add(movie.id);
+        combined.push({
+          tmdbId: movie.id,
+          title: movie.title,
+          originalTitle: movie.original_title,
+          posterUrl: movie.poster_path ? `${TMDB_IMG_BASE}${movie.poster_path}` : '',
+          releaseDate: movie.release_date || '',
+          overview: movie.overview || '',
+          voteAverage: movie.vote_average || 0,
+          genreIds: movie.genre_ids || [],
+          genres: (movie.genre_ids || []).map(id => TMDB_GENRE_MAP[id]).filter(Boolean),
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      data: combined.slice(0, 20), // Trả tối đa 20 phim
+    });
+  } catch (error) {
+    console.error('TMDB Trending Error:', error.message);
+    next(error);
+  }
+};
+
+// ==========================================
+// 3. Lấy chi tiết phim từ TMDB theo ID
 // GET /api/admin/tmdb/movie/:tmdbId
 // ==========================================
 const getTMDBMovieDetail = async (req, res, next) => {
@@ -246,4 +302,5 @@ const getTMDBMovieDetail = async (req, res, next) => {
 module.exports = {
   searchTMDB,
   getTMDBMovieDetail,
+  getTMDBTrending,
 };

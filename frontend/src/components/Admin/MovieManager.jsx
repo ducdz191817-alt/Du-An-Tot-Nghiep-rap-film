@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Edit2, Trash2, X, AlertCircle, Eye, Search, Sparkles, Star, Calendar, Clock, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, AlertCircle, Eye, Search, Sparkles, Star, Calendar, Clock, Loader2, TrendingUp, Flame } from 'lucide-react';
 import movieService from '../../services/movie.service';
 import adminService from '../../services/admin.service';
 import Input from '../common/Input';
 import Button from '../common/Button';
 import Loading from '../common/Loading';
 import Modal from '../common/Modal';
+import Toast from '../common/Toast';
 import { getPosterUrl } from '../../utils/constants';
 
 // Helper: trả về config hiển thị cho từng trạng thái phim
@@ -52,6 +53,8 @@ export const MovieManager = () => {
   const [tmdbLoading, setTmdbLoading] = useState(false);
   const [tmdbError, setTmdbError] = useState('');
   const [tmdbDetailLoading, setTmdbDetailLoading] = useState(null);
+  const [trendingMovies, setTrendingMovies] = useState([]);
+  const [trendingLoading, setTrendingLoading] = useState(false);
 
   const initialForm = {
     title: '',
@@ -70,6 +73,7 @@ export const MovieManager = () => {
   };
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState({ message: '', type: 'success' });
 
   const fetchMoviesList = async () => {
     setLoading(true);
@@ -122,6 +126,22 @@ export const MovieManager = () => {
     setTmdbResults([]);
     setTmdbError('');
     setTmdbOpen(true);
+    // Tải danh sách phim trending khi mở modal
+    if (trendingMovies.length === 0) {
+      fetchTrendingMovies();
+    }
+  };
+
+  const fetchTrendingMovies = async () => {
+    setTrendingLoading(true);
+    try {
+      const result = await adminService.getTMDBTrending();
+      setTrendingMovies(result.data || []);
+    } catch (err) {
+      console.error('Lỗi tải phim trending:', err);
+    } finally {
+      setTrendingLoading(false);
+    }
   };
 
   const handleSearchTMDB = useCallback(async (query) => {
@@ -207,9 +227,10 @@ export const MovieManager = () => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa bộ phim này không? Các lịch chiếu liên quan cũng sẽ bị xóa.')) return;
     try {
       await adminService.deleteMovie(id);
+      setToast({ message: 'Đã xóa phim thành công!', type: 'success' });
       fetchMoviesList();
     } catch (err) {
-      alert(err.message);
+      setToast({ message: err.message || 'Lỗi khi xóa phim', type: 'error' });
     }
   };
 
@@ -242,13 +263,16 @@ export const MovieManager = () => {
     try {
       if (editingMovie) {
         await adminService.updateMovie(editingMovie._id, payload);
+        setToast({ message: `Đã cập nhật phim "${form.title}" thành công!`, type: 'success' });
       } else {
         await adminService.createMovie(payload);
+        setToast({ message: `Đã thêm phim "${form.title}" thành công!`, type: 'success' });
       }
       setIsOpen(false);
       fetchMoviesList();
     } catch (err) {
       setError(err.message);
+      setToast({ message: err.message || 'Có lỗi xảy ra', type: 'error' });
     }
   };
 
@@ -741,14 +765,90 @@ export const MovieManager = () => {
           </div>
 
           {!tmdbQuery && (
-            <div className="text-center py-6">
-              <Sparkles size={32} className="mx-auto text-gray-300 mb-2" />
-              <p className="text-gray-500 text-sm">Nhập tên phim để tìm kiếm trên TMDB</p>
-              <p className="text-gray-400 text-xs mt-1">Dữ liệu sẽ tự động điền vào form tạo phim</p>
+            <div className="space-y-4">
+              {/* Header */}
+              <div className="flex items-center gap-2 pt-1">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-full">
+                  <Flame size={13} className="text-orange-500" />
+                  <span className="text-xs font-black text-orange-600 uppercase tracking-wider">Đang Hot</span>
+                </div>
+                <span className="text-[11px] text-gray-400">Phim trending & đang chiếu tại rạp</span>
+              </div>
+
+              {trendingLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 size={22} className="text-brand animate-spin" />
+                  <span className="ml-2 text-sm text-gray-400">Đang tải gợi ý...</span>
+                </div>
+              ) : trendingMovies.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[50vh] overflow-y-auto custom-scrollbar pr-1">
+                  {trendingMovies.map((movie) => (
+                    <button
+                      key={movie.tmdbId}
+                      onClick={() => handleSelectTMDBMovie(movie.tmdbId)}
+                      disabled={tmdbDetailLoading === movie.tmdbId}
+                      className="group relative flex flex-col bg-white border border-gray-200 hover:border-brand/40 rounded-2xl overflow-hidden transition-all hover:shadow-md text-left"
+                    >
+                      {/* Poster */}
+                      <div className="relative aspect-[2/3] w-full bg-gray-100">
+                        {movie.posterUrl ? (
+                          <img src={getPosterUrl(movie.posterUrl)} alt={movie.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">N/A</div>
+                        )}
+                        {/* Overlay khi hover */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                          <span className="text-white text-[10px] font-bold">Nhấn để chọn</span>
+                        </div>
+                        {/* Loading overlay */}
+                        {tmdbDetailLoading === movie.tmdbId && (
+                          <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
+                            <Loader2 size={20} className="text-brand animate-spin" />
+                          </div>
+                        )}
+                        {/* Rating badge */}
+                        {movie.voteAverage > 0 && (
+                          <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded-lg">
+                            <Star size={9} className="text-amber-400 fill-amber-400" />
+                            <span className="text-[10px] font-bold text-white">{movie.voteAverage.toFixed(1)}</span>
+                          </div>
+                        )}
+                      </div>
+                      {/* Info */}
+                      <div className="p-2 flex-1">
+                        <h4 className="text-[11px] font-bold text-gray-800 line-clamp-2 leading-snug group-hover:text-brand transition-colors">
+                          {movie.title}
+                        </h4>
+                        <div className="flex items-center gap-1 mt-1 text-[10px] text-gray-400">
+                          {movie.releaseDate && (
+                            <span className="flex items-center gap-0.5">
+                              <Calendar size={9} />
+                              {movie.releaseDate.slice(0, 4)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <Sparkles size={32} className="mx-auto text-gray-300 mb-2" />
+                  <p className="text-gray-500 text-sm">Nhập tên phim để tìm kiếm trên TMDB</p>
+                  <p className="text-gray-400 text-xs mt-1">Dữ liệu sẽ tự động điền vào form tạo phim</p>
+                </div>
+              )}
             </div>
           )}
         </div>
       </Modal>
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast({ message: '', type: 'success' })}
+      />
     </div>
   );
 };
