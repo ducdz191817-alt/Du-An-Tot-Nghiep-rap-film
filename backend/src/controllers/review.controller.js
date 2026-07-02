@@ -61,6 +61,7 @@ const getReviewsByMovie = async (req, res, next) => {
 
     const reviews = await Review.find({ movie: movieId })
       .populate('user', 'username email avatar')
+      .populate('adminReply.repliedBy', 'username email avatar')
       .sort({ createdAt: -1 });
 
     // Tính điểm trung bình
@@ -104,10 +105,9 @@ const updateReview = async (req, res, next) => {
     review.comment = comment || review.comment;
     await review.save();
 
-    const populatedReview = await Review.findById(review._id).populate(
-      'user',
-      'username email avatar'
-    );
+    const populatedReview = await Review.findById(review._id)
+      .populate('user', 'username email avatar')
+      .populate('adminReply.repliedBy', 'username email avatar');
 
     res.json({
       success: true,
@@ -150,9 +150,86 @@ const deleteReview = async (req, res, next) => {
   }
 };
 
+// @desc    Admin phản hồi đánh giá phim
+// @route   POST /api/reviews/:id/reply
+// @access  Private (chỉ admin)
+const replyReview = async (req, res, next) => {
+  try {
+    const { comment } = req.body;
+    const reviewId = req.params.id;
+
+    if (req.user.role !== 'admin') {
+      res.status(403);
+      throw new Error('Chỉ tài khoản admin mới có thể phản hồi đánh giá');
+    }
+
+    if (!comment || !comment.trim()) {
+      res.status(400);
+      throw new Error('Vui lòng nhập nội dung phản hồi');
+    }
+
+    const review = await Review.findById(reviewId);
+    if (!review) {
+      res.status(404);
+      throw new Error('Đánh giá không tồn tại');
+    }
+
+    review.adminReply = {
+      comment: comment.trim(),
+      repliedBy: req.user._id,
+      repliedAt: new Date(),
+    };
+
+    await review.save();
+
+    const populatedReview = await Review.findById(review._id)
+      .populate('user', 'username email avatar')
+      .populate('adminReply.repliedBy', 'username email avatar');
+
+    res.json({
+      success: true,
+      data: populatedReview,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Admin xóa phản hồi đánh giá phim
+// @route   DELETE /api/reviews/:id/reply
+// @access  Private (chỉ admin)
+const deleteReply = async (req, res, next) => {
+  try {
+    const reviewId = req.params.id;
+
+    if (req.user.role !== 'admin') {
+      res.status(403);
+      throw new Error('Chỉ tài khoản admin mới có thể xóa phản hồi');
+    }
+
+    const review = await Review.findById(reviewId);
+    if (!review) {
+      res.status(404);
+      throw new Error('Đánh giá không tồn tại');
+    }
+
+    review.adminReply = undefined;
+    await review.save();
+
+    res.json({
+      success: true,
+      message: 'Đã xóa phản hồi thành công',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createReview,
   getReviewsByMovie,
   updateReview,
   deleteReview,
+  replyReview,
+  deleteReply,
 };
