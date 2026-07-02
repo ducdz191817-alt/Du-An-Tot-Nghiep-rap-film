@@ -5,6 +5,8 @@ const {
   getReviewsByMovie,
   updateReview,
   deleteReview,
+  replyReview,
+  deleteReply,
 } = require('../controllers/review.controller');
 const { protect } = require('../middleware/auth.middleware');
 
@@ -16,5 +18,10 @@ router.post('/', protect, createReview);
 router.route('/:id')
   .put(protect, updateReview)
   .delete(protect, deleteReview);
+
+// Admin replies
+router.route('/:id/reply')
+  .post(protect, replyReview)
+  .delete(protect, deleteReply);
 
 module.exports = router;
