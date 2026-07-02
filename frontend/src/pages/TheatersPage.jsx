@@ -24,7 +24,9 @@ const theater = {
   facilities: ['Bắp rang bơ Nova', 'Cocktail bar', 'Ghế massage VIP', 'Bãi xe ô tô miễn phí'],
 };
 
-const TheatersPage = () => {
+const TheaterCard = ({ theater }) => {
+  const [expanded, setExpanded] = useState(false);
+
   return (
     <div className="space-y-10 pb-16">
       {/* Header */}
