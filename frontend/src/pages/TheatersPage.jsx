@@ -1,324 +1,190 @@
-import React, { useState, useEffect } from 'react';
-import { MapPin, Phone, Clock, ChevronDown, ChevronUp, Tv2, Star, Zap, MonitorPlay, Navigation, Loader2 } from 'lucide-react';
+import React from 'react';
+import { MapPin, Phone, Clock, Star, Zap, Tv2, MonitorPlay, Check } from 'lucide-react';
 
-// ─── Data ────────────────────────────────────────────────────────────────────
-const theatersData = [
-  {
-    id: 1,
-    name: 'Nova Cinema Hà Nội',
-    slug: 'hanoi',
-    city: 'Hà Nội',
-    address: '123 Hoàng Quốc Việt, Phường Cầu Giấy, Quận Cầu Giấy, Hà Nội',
-    phone: '1900 9090',
-    hotline: '1900 9090',
-    lat: 21.0464,
-    lng: 105.7963,
-    mapEmbed:
-      'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3723.8638!2d105.7958!3d21.0381!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjHCsDAyJzE3LjIiTiAxMDXCsDQ3JzQ0LjkiRQ!5e0!3m2!1sen!2s!4v0',
-    hours: [
-      { day: 'Thứ 2 – Thứ 6', time: '08:30 – 23:30' },
-      { day: 'Thứ 7 – Chủ Nhật', time: '08:00 – 00:00' },
-      { day: 'Lễ & Tết', time: '07:30 – 00:30' },
-    ],
-    rooms: [
-      { name: 'Phòng 1', type: 'IMAX', seats: 120, icon: <Zap size={14} />, color: 'text-amber-400 bg-amber-400/10 border-amber-400/20' },
-      { name: 'Phòng 2', type: '3D', seats: 80, icon: <Tv2 size={14} />, color: 'text-blue-400 bg-blue-400/10 border-blue-400/20' },
-      { name: 'Phòng 3', type: '2D', seats: 60, icon: <MonitorPlay size={14} />, color: 'text-zinc-400 bg-zinc-400/10 border-zinc-400/20' },
-      { name: 'Phòng 4', type: 'GOLDCLASS', seats: 30, icon: <Star size={14} />, color: 'text-purple-400 bg-purple-400/10 border-purple-400/20' },
-    ],
-    facilities: ['Bắp rang bơ Nova', 'Cocktail bar', 'Ghế massage VIP', 'Bãi xe miễn phí'],
-    badge: 'Flagship',
-    badgeColor: 'bg-brand text-white',
-    image: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=800&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 2,
-    name: 'Nova Cinema TP. Hồ Chí Minh',
-    slug: 'hcm',
-    city: 'Hồ Chí Minh',
-    address: '456 Lê Lợi, Phường Bến Nghé, Quận 1, TP.HCM',
-    phone: '1900 9091',
-    hotline: '1900 9091',
-    lat: 10.7769,
-    lng: 106.7009,
-    mapEmbed:
-      'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.4602!2d106.7009!3d10.7769!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTDCsDQ2JzM2LjgiTiAxMDbCsDQyJzAzLjIiRQ!5e0!3m2!1sen!2s!4v0',
-    hours: [
-      { day: 'Thứ 2 – Thứ 6', time: '08:30 – 23:30' },
-      { day: 'Thứ 7 – Chủ Nhật', time: '08:00 – 02:00' },
-    ],
-    rooms: [
-      { name: 'Phòng 1', type: 'IMAX', seats: 150, icon: <Zap size={14} />, color: 'text-amber-400 bg-amber-400/10 border-amber-400/20' },
-      { name: 'Phòng 2', type: '2D', seats: 90, icon: <MonitorPlay size={14} />, color: 'text-zinc-400 bg-zinc-400/10 border-zinc-400/20' },
-    ],
-    facilities: ['Trung tâm thương mại', 'Trà sữa', 'Bãi xe ô tô'],
-    badge: 'Premium',
-    badgeColor: 'bg-amber-500 text-white',
-    image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&auto=format&fit=crop&q=80',
-  }
-];
-
-// Helper: Tính khoảng cách Haversine giữa 2 tọa độ (km)
-const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371; // Bán kính trái đất (km)
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; // Khoảng cách theo km
+const theater = {
+  name: 'Nova Cinema Hà Nội',
+  badge: 'Flagship Store',
+  city: 'Hà Nội',
+  address: '123 Hoàng Quốc Việt, Phường Cầu Giấy, Quận Cầu Giấy, Hà Nội',
+  phone: '1900 9090',
+  mapEmbed:
+    'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3723.8638!2d105.7958!3d21.0381!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjHCsDAyJzE3LjIiTiAxMDXCsDQ3JzQ0LjkiRQ!5e0!3m2!1sen!2s!4v0',
+  image: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=1200&auto=format&fit=crop&q=80',
+  hours: [
+    { day: 'Thứ 2 – Thứ 6', time: '08:30 – 23:30' },
+    { day: 'Thứ 7 – Chủ Nhật', time: '08:00 – 00:00' },
+    { day: 'Lễ & Tết', time: '07:30 – 00:30' },
+  ],
+  rooms: [
+    { name: 'Phòng 1', type: 'IMAX',      seats: 120, icon: <Zap size={15} className="text-amber-600" />,  bg: 'bg-amber-50' },
+    { name: 'Phòng 2', type: '3D',        seats: 80,  icon: <Tv2 size={15} className="text-blue-600" />,   bg: 'bg-blue-50' },
+    { name: 'Phòng 3', type: '2D',        seats: 60,  icon: <MonitorPlay size={15} className="text-zinc-600" />, bg: 'bg-zinc-50' },
+    { name: 'Phòng 4', type: 'GOLDCLASS', seats: 30,  icon: <Star size={15} className="text-purple-600" />, bg: 'bg-purple-50' },
+  ],
+  facilities: ['Bắp rang bơ Nova', 'Cocktail bar', 'Ghế massage VIP', 'Bãi xe ô tô miễn phí'],
 };
 
-// ─── SubComponents ────────────────────────────────────────────────────────────
-const RoomBadge = ({ room }) => (
-  <div className={`inline-flex items-center gap-1.5 border rounded-lg px-2 py-1 text-xs font-semibold ${room.color}`}>
-    {room.icon}
-    <span>{room.type}</span>
-    <span className="text-zinc-500 font-normal">({room.seats} ghế)</span>
-  </div>
-);
-
-const TheaterCard = ({ theater }) => {
-  const [expanded, setExpanded] = useState(false);
-
+const TheatersPage = () => {
   return (
-    <div className="bg-dark-card border border-dark-border rounded-3xl overflow-hidden group hover:border-brand/30 hover:shadow-xl hover:shadow-brand/5 transition-all duration-300">
-      {/* Image */}
-      <div className="relative h-48 overflow-hidden">
-        <img
-          src={theater.image}
-          alt={theater.name}
-          className="w-full h-full object-cover opacity-60 group-hover:opacity-75 group-hover:scale-105 transition-all duration-700"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-dark-card via-dark-card/40 to-transparent" />
-        <div className="absolute top-4 left-4 flex flex-col gap-2 items-start">
-          <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-md ${theater.badgeColor}`}>
-            {theater.badge}
-          </span>
-          {theater.distance !== undefined && (
-            <span className="text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-md bg-green-500/90 text-white flex items-center gap-1">
-              <Navigation size={10} /> Cách bạn {theater.distance.toFixed(1)} km
-            </span>
-          )}
+    <div className="space-y-10 pb-16">
+      {/* Header */}
+      <div className="text-center space-y-3">
+        <div className="inline-flex items-center gap-2 bg-brand/10 border border-brand/20 text-zinc-700 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mx-auto">
+          <MapPin size={12} className="text-brand" />
+          Hệ thống rạp chiếu phim
         </div>
-        <div className="absolute bottom-4 left-4">
-          <h3 className="text-lg font-black text-white drop-shadow-lg leading-tight">{theater.name}</h3>
-          <p className="text-xs text-zinc-400 flex items-center gap-1 mt-0.5">
-            <MapPin size={11} /> {theater.city}
-          </p>
-        </div>
+        <h1 className="text-3xl md:text-5xl font-black text-zinc-900 leading-tight">
+          Nova Cinema <span className="text-brand">Hà Nội</span>
+        </h1>
+        <p className="text-zinc-600 max-w-xl mx-auto text-sm leading-relaxed font-semibold">
+          Trải nghiệm điện ảnh đỉnh cao tại chi nhánh Flagship với màn hình chuẩn chiếu phim IMAX, 3D cùng hệ thống âm thanh vòm đỉnh cao.
+        </p>
       </div>
 
-      {/* Info */}
-      <div className="p-5 space-y-4">
-        {/* Address & Phone */}
-        <div className="space-y-2">
-          <div className="flex items-start gap-2 text-xs text-zinc-400">
-            <MapPin size={13} className="mt-0.5 shrink-0 text-brand" />
-            <span>{theater.address}</span>
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-6xl mx-auto items-stretch">
+        {/* Left: Image + Stats */}
+        <div className="lg:col-span-7 flex flex-col gap-6">
+          <div className="relative h-[300px] md:h-[400px] rounded-3xl overflow-hidden border border-zinc-200 shadow-md group shrink-0">
+            <img
+              src={theater.image}
+              alt={theater.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/80 via-zinc-950/20 to-transparent" />
+            <div className="absolute top-4 left-4">
+              <span className="bg-brand text-zinc-950 text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-wider shadow-md">
+                {theater.badge}
+              </span>
+            </div>
+            <div className="absolute bottom-6 left-6 space-y-1.5 text-white">
+              <h2 className="text-xl md:text-2xl font-black">{theater.name}</h2>
+              <p className="text-xs text-zinc-300 flex items-center gap-1 font-medium">
+                <MapPin size={13} className="text-brand" /> {theater.address}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-xs text-zinc-400">
-            <Phone size={13} className="shrink-0 text-brand" />
-            <a href={`tel:${theater.phone.replace(/\s/g, '')}`} className="hover:text-white transition-colors font-semibold">
-              {theater.phone}
-            </a>
-          </div>
-        </div>
 
-        {/* Room types */}
-        <div>
-          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Loại phòng chiếu</p>
-          <div className="flex flex-wrap gap-1.5">
-            {theater.rooms.map((room) => (
-              <RoomBadge key={room.name} room={room} />
+          {/* Stats Row */}
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { label: 'Khu vực',        value: 'Hà Nội',   desc: '123 Hoàng Quốc Việt', color: 'text-brand' },
+              { label: 'Số phòng chiếu', value: '4 Phòng',  desc: 'IMAX, 3D, 2D, VIP',   color: 'text-sky-600' },
+              { label: 'Tổng ghế ngồi',  value: '290 Ghế',  desc: 'Chất lượng cao',       color: 'text-purple-600' },
+            ].map((s, idx) => (
+              <div key={idx} className="bg-white border border-zinc-200 rounded-2xl p-4 flex flex-col justify-center text-center shadow-sm">
+                <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">{s.label}</span>
+                <p className={`text-base font-black ${s.color} mt-1`}>{s.value}</p>
+                <span className="text-[10px] text-zinc-500 font-semibold mt-0.5 leading-tight">{s.desc}</span>
+              </div>
             ))}
           </div>
         </div>
 
-        {/* Expand toggle */}
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="w-full flex items-center justify-between text-xs font-semibold text-zinc-400 hover:text-white transition-colors py-1"
-        >
-          <span>Xem thêm thông tin</span>
-          {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-        </button>
+        {/* Right: Detail Card */}
+        <div className="lg:col-span-5">
+          <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-sm flex flex-col gap-6 h-full">
+            {/* Contact */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-black text-zinc-800 border-b border-zinc-100 pb-2 uppercase tracking-wide">
+                Thông tin liên hệ
+              </h3>
+              <div className="flex items-start gap-3">
+                <MapPin size={16} className="text-brand shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs text-zinc-800 font-bold">Địa chỉ chi nhánh</p>
+                  <p className="text-[11px] text-zinc-500 leading-relaxed font-semibold mt-0.5">{theater.address}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Phone size={16} className="text-brand shrink-0" />
+                <div>
+                  <p className="text-xs text-zinc-800 font-bold">Hotline liên hệ</p>
+                  <a href={`tel:${theater.phone.replace(/\s/g, '')}`} className="text-[11px] text-brand hover:underline font-black">
+                    {theater.phone} (Đặt vé & giải đáp)
+                  </a>
+                </div>
+              </div>
+            </div>
 
-        {/* Expandable content */}
-        {expanded && (
-          <div className="space-y-4 pt-2 border-t border-dark-border animate-in fade-in slide-in-from-top-2 duration-200">
             {/* Hours */}
-            <div>
-              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2 flex items-center gap-1">
-                <Clock size={11} /> Giờ hoạt động
-              </p>
-              <div className="space-y-1">
+            <div className="space-y-3">
+              <h3 className="text-sm font-black text-zinc-800 border-b border-zinc-100 pb-2 uppercase tracking-wide flex items-center gap-1.5">
+                <Clock size={15} className="text-brand" /> Giờ hoạt động
+              </h3>
+              <div className="space-y-1.5">
                 {theater.hours.map((h) => (
-                  <div key={h.day} className="flex items-center justify-between text-xs">
-                    <span className="text-zinc-400">{h.day}</span>
-                    <span className="text-white font-semibold">{h.time}</span>
+                  <div key={h.day} className="flex items-center justify-between text-xs font-semibold">
+                    <span className="text-zinc-500">{h.day}</span>
+                    <span className="text-zinc-800 font-bold">{h.time}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Rooms */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-black text-zinc-800 border-b border-zinc-100 pb-2 uppercase tracking-wide">
+                Các loại phòng chiếu
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {theater.rooms.map((room) => (
+                  <div key={room.name} className="flex items-center gap-2 p-2 rounded-xl border border-zinc-100 bg-zinc-50/50">
+                    <div className={`p-1.5 rounded-lg ${room.bg}`}>
+                      {room.icon}
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-zinc-800 leading-none">{room.type}</p>
+                      <p className="text-[10px] text-zinc-400 font-bold mt-1">{room.seats} ghế</p>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Facilities */}
-            <div>
-              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Tiện ích</p>
-              <div className="flex flex-wrap gap-1.5">
-                {theater.facilities.map((f) => (
-                  <span key={f} className="text-[10px] bg-dark-deep border border-dark-border text-zinc-400 rounded-lg px-2 py-1">
-                    {f}
-                  </span>
+            <div className="space-y-3">
+              <h3 className="text-sm font-black text-zinc-800 border-b border-zinc-100 pb-2 uppercase tracking-wide">
+                Tiện ích đi kèm
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {theater.facilities.map((f, i) => (
+                  <div key={i} className="flex items-center gap-1.5 text-xs text-zinc-600 font-bold">
+                    <Check size={14} className="text-green-600 shrink-0" />
+                    <span>{f}</span>
+                  </div>
                 ))}
               </div>
             </div>
 
-            {/* Map */}
-            <div className="rounded-xl overflow-hidden border border-dark-border h-40">
-              <iframe
-                src={theater.mapEmbed}
-                className="w-full h-full"
-                style={{ border: 0 }}
-                allowFullScreen=""
-                loading="lazy"
-                title={`Bản đồ ${theater.name}`}
-              />
+            {/* CTA */}
+            <div className="pt-2">
+              <a
+                href="/movies"
+                className="block w-full text-center bg-[#f4d068] hover:bg-[#f3c647] text-zinc-950 text-xs font-bold py-3.5 rounded-2xl transition-all shadow-lg shadow-[#f4d068]/20 active:scale-95"
+              >
+                Đặt vé xem phim tại đây
+              </a>
             </div>
-          </div>
-        )}
-
-        {/* CTA */}
-        <a
-          href="/movies"
-          className="block w-full text-center bg-brand hover:bg-brand-dark text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow-lg shadow-brand/20 active:scale-95"
-        >
-          Xem lịch chiếu tại đây
-        </a>
-      </div>
-    </div>
-  );
-};
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
-const TheatersPage = () => {
-  const [theaters, setTheaters] = useState(theatersData);
-  const [isLocating, setIsLocating] = useState(false);
-  const [locationError, setLocationError] = useState('');
-
-  const totalSeats = theaters.flatMap((t) => t.rooms).reduce((a, r) => a + r.seats, 0);
-
-  const handleFindNearest = () => {
-    if (!navigator.geolocation) {
-      setLocationError('Trình duyệt của bạn không hỗ trợ định vị GPS.');
-      return;
-    }
-
-    setIsLocating(true);
-    setLocationError('');
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        
-        // Tính khoảng cách cho từng rạp
-        const theatersWithDistance = theatersData.map(t => {
-          const distance = calculateDistance(latitude, longitude, t.lat, t.lng);
-          return { ...t, distance };
-        });
-
-        // Sắp xếp rạp gần nhất lên đầu
-        theatersWithDistance.sort((a, b) => a.distance - b.distance);
-        
-        setTheaters(theatersWithDistance);
-        setIsLocating(false);
-      },
-      (error) => {
-        setIsLocating(false);
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            setLocationError('Bạn đã từ chối quyền truy cập vị trí. Vui lòng cấp quyền trong cài đặt trình duyệt.');
-            break;
-          case error.POSITION_UNAVAILABLE:
-            setLocationError('Thông tin vị trí hiện không khả dụng.');
-            break;
-          case error.TIMEOUT:
-            setLocationError('Yêu cầu định vị đã hết thời gian (Timeout).');
-            break;
-          default:
-            setLocationError('Đã xảy ra lỗi không xác định khi lấy định vị.');
-            break;
-        }
-      }
-    );
-  };
-
-  return (
-    <div className="space-y-10 pb-16">
-      {/* Hero */}
-      <div className="relative rounded-3xl overflow-hidden border border-dark-border bg-gradient-to-br from-zinc-900 via-dark-card to-dark-deep p-8 md:p-14 text-center">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(168,85,247,0.08),transparent_70%)] pointer-events-none" />
-        <div className="relative z-10 space-y-3">
-          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 text-zinc-300 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest">
-            <MapPin size={12} />
-            Hệ thống rạp chiếu phim
-          </div>
-          <h1 className="text-3xl md:text-5xl font-black text-white leading-tight">
-            Rạp <span className="text-brand">Nova Cinema</span>
-          </h1>
-          <p className="text-zinc-400 max-w-lg mx-auto text-sm leading-relaxed">
-            Rạp chiếu phim hiện đại với màn hình IMAX, 3D và trải nghiệm âm thanh đỉnh cao.
-          </p>
-          
-          <div className="pt-6">
-            <button
-              onClick={handleFindNearest}
-              disabled={isLocating}
-              className="inline-flex items-center gap-2 bg-white text-zinc-900 hover:bg-zinc-200 px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-xl active:scale-95 disabled:opacity-70"
-            >
-              {isLocating ? (
-                <>
-                  <Loader2 size={18} className="animate-spin text-brand" />
-                  Đang quét vị trí...
-                </>
-              ) : (
-                <>
-                  <Navigation size={18} className="text-brand" />
-                  Tìm rạp gần tôi nhất
-                </>
-              )}
-            </button>
-            {locationError && (
-              <p className="text-red-400 text-xs mt-3 bg-red-500/10 inline-block px-3 py-1.5 rounded-lg border border-red-500/20">
-                ⚠ {locationError}
-              </p>
-            )}
           </div>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        {[
-          { label: 'Cụm rạp', value: theatersData.length, icon: <MapPin size={18} className="text-brand" /> },
-          { label: 'Phòng chiếu', value: theatersData.flatMap((t) => t.rooms).length, icon: <Tv2 size={18} className="text-sky-400" /> },
-          { label: 'Tổng ghế ngồi', value: totalSeats.toLocaleString(), icon: <Star size={18} className="text-amber-400" /> },
-        ].map((s, i) => (
-          <div key={i} className="bg-dark-card border border-dark-border rounded-2xl p-4 flex flex-col items-center gap-1 text-center">
-            {s.icon}
-            <span className="text-xl font-black text-white">{s.value}</span>
-            <span className="text-[11px] text-zinc-500">{s.label}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Theater Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 max-w-5xl mx-auto gap-6">
-        {theaters.map((theater) => (
-          <TheaterCard key={theater.id} theater={theater} />
-        ))}
+      {/* Map */}
+      <div className="max-w-6xl mx-auto space-y-3">
+        <h3 className="text-sm font-black text-zinc-800 uppercase tracking-wide px-1">
+          Bản đồ đường đi đến rạp
+        </h3>
+        <div className="rounded-3xl overflow-hidden border border-zinc-200 h-[300px] shadow-sm">
+          <iframe
+            src={theater.mapEmbed}
+            className="w-full h-full"
+            style={{ border: 0 }}
+            allowFullScreen=""
+            loading="lazy"
+            title={`Bản đồ ${theater.name}`}
+          />
+        </div>
       </div>
     </div>
   );

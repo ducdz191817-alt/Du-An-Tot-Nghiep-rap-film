@@ -20,6 +20,12 @@ export const ShowtimeManager = () => {
   const [editingShowtime, setEditingShowtime] = useState(null);
 
   const [selectedTheater, setSelectedTheater] = useState('');
+  
+  // States for filtering
+  const [filterDate, setFilterDate] = useState('');
+  const [filterMovie, setFilterMovie] = useState('');
+  const [filterRoom, setFilterRoom] = useState('');
+
   const [form, setForm] = useState({
     movieId: '',
     theaterId: '',
@@ -161,6 +167,9 @@ export const ShowtimeManager = () => {
     setSelectedTheater(thId);
     setRooms([]);
     setShowtimes([]);
+    setFilterDate('');
+    setFilterMovie('');
+    setFilterRoom('');
     reloadShowtimesAndRooms(thId);
   };
 
@@ -284,96 +293,169 @@ export const ShowtimeManager = () => {
         </div>
       </div>
 
-      {/* Danh sách dạng lưới theo các phòng đang hoạt động */}
-      {rooms.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-          <Building2 size={40} className="mb-3 opacity-30" />
-          <p className="text-sm">Rạp này chưa có phòng chiếu nào. Hãy tạo phòng trong tab "Phòng Chiếu".</p>
+      {/* BỘ LỌC */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+        <div>
+          <label className="block text-xs font-bold text-gray-700 mb-1">Lọc theo Phim</label>
+          <select
+            value={filterMovie}
+            onChange={(e) => setFilterMovie(e.target.value)}
+            className="w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm py-2 px-3 rounded-xl focus:border-brand outline-none cursor-pointer"
+          >
+            <option value="">Tất cả các phim</option>
+            {movies.map((m) => (
+              <option key={m._id} value={m._id}>
+                {m.title}
+              </option>
+            ))}
+          </select>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {rooms.map((room) => (
-            <div key={room._id} className="bg-white border border-gray-200 p-5 rounded-3xl space-y-4 shadow-sm">
-              <div className="flex justify-between items-center border-b border-gray-200 pb-2.5">
-                <h4 className="font-bold text-gray-800 text-sm">{room.name}</h4>
-                <span className="text-[10px] uppercase tracking-wider font-extrabold text-gray-500 bg-gray-50 px-2 py-0.5 border border-gray-200 rounded">
-                  {room.type}
-                </span>
-              </div>
 
-              {/* Danh sách lịch chiếu của phòng */}
-              {(() => {
-                const roomShowtimes = showtimes.filter(
-                  (s) => s.room?._id === room._id || s.room === room._id
-                );
-                if (roomShowtimes.length === 0) {
-                  return (
-                    <p className="text-xs text-gray-400 italic">
-                      Chưa có lịch chiếu. Nhấn "Tạo Lịch Chiếu" để thêm.
-                    </p>
-                  );
-                }
-                return (
-                  <div className="space-y-2.5">
-                    {roomShowtimes.map((st) => {
-                      const startFmt = new Date(st.startTime).toLocaleString('vi-VN', {
-                        weekday: 'short',
-                        month: 'numeric',
-                        day: 'numeric',
+        <div>
+          <label className="block text-xs font-bold text-gray-700 mb-1">Lọc theo Phòng</label>
+          <select
+            value={filterRoom}
+            onChange={(e) => setFilterRoom(e.target.value)}
+            className="w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm py-2 px-3 rounded-xl focus:border-brand outline-none cursor-pointer"
+          >
+            <option value="">Tất cả các phòng</option>
+            {rooms.map((r) => (
+              <option key={r._id} value={r._id}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-gray-700 mb-1">Lọc theo Ngày</label>
+          <select
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm py-2 px-3 rounded-xl focus:border-brand outline-none cursor-pointer"
+          >
+            <option value="">Tất cả các ngày</option>
+            {Array.from(new Set(showtimes.map(st => new Date(st.startTime).toLocaleDateString('vi-VN')))).map(dateStr => (
+              <option key={dateStr} value={dateStr}>
+                {dateStr}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Danh sách lịch chiếu được nhóm theo ngày */}
+      {(() => {
+        // Lọc showtimes
+        const filteredShowtimes = showtimes.filter(st => {
+          const matchMovie = filterMovie ? (st.movie?._id === filterMovie || st.movie === filterMovie) : true;
+          const matchRoom = filterRoom ? (st.room?._id === filterRoom || st.room === filterRoom) : true;
+          const dateStr = new Date(st.startTime).toLocaleDateString('vi-VN');
+          const matchDate = filterDate ? (dateStr === filterDate) : true;
+          return matchMovie && matchRoom && matchDate;
+        });
+
+        if (filteredShowtimes.length === 0) {
+          return (
+            <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+              <Calendar size={40} className="mb-3 opacity-30" />
+              <p className="text-sm">Không tìm thấy lịch chiếu nào phù hợp với bộ lọc.</p>
+            </div>
+          );
+        }
+
+        // Nhóm theo ngày
+        const groupedShowtimes = filteredShowtimes.reduce((acc, st) => {
+          const dateStr = new Date(st.startTime).toLocaleDateString('vi-VN');
+          if (!acc[dateStr]) acc[dateStr] = [];
+          acc[dateStr].push(st);
+          return acc;
+        }, {});
+
+        // Sắp xếp các ngày từ cũ đến mới
+        const sortedDates = Object.keys(groupedShowtimes).sort((a, b) => {
+          const [d1, m1, y1] = a.split('/');
+          const [d2, m2, y2] = b.split('/');
+          return new Date(y1, m1 - 1, d1) - new Date(y2, m2 - 1, d2);
+        });
+
+        return (
+          <div className="space-y-6">
+            {sortedDates.map((dateStr) => {
+              // Sắp xếp suất chiếu trong cùng 1 ngày theo giờ
+              const dailyShowtimes = groupedShowtimes[dateStr].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+
+              return (
+                <div key={dateStr} className="bg-white border border-gray-200 p-5 rounded-3xl space-y-4 shadow-sm">
+                  <div className="flex items-center gap-2 border-b border-gray-200 pb-2.5">
+                    <Calendar className="text-brand" size={18} />
+                    <h4 className="font-bold text-gray-800 text-md">Ngày {dateStr}</h4>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {dailyShowtimes.map((st) => {
+                      const startFmt = new Date(st.startTime).toLocaleTimeString('vi-VN', {
                         hour: '2-digit',
                         minute: '2-digit',
                       });
-                      const endFmt = new Date(st.endTime).toLocaleString('vi-VN', {
+                      const endFmt = new Date(st.endTime).toLocaleTimeString('vi-VN', {
                         hour: '2-digit',
                         minute: '2-digit',
                       });
+
+                      const roomName = st.room?.name || 'Phòng không xác định';
+
                       return (
                         <div
                           key={st._id}
-                          className="flex items-center justify-between bg-gray-50/50 border border-gray-100 p-3 rounded-2xl gap-3"
+                          className="flex flex-col bg-gray-50/50 border border-gray-100 p-3.5 rounded-2xl gap-2 hover:border-brand/30 transition-all"
                         >
-                          <div className="min-w-0 flex-grow">
-                            <div className="font-bold text-gray-800 text-xs truncate">
+                          <div className="flex justify-between items-start gap-2">
+                            <div className="font-bold text-gray-800 text-sm leading-tight">
                               {st.movie?.title || 'Phim đã bị xóa'}
                             </div>
-                            <div className="text-[10px] text-gray-500 flex items-center gap-1.5 mt-0.5">
-                              <Calendar size={10} className="text-brand" />
-                              <span>{startFmt}</span>
-                              <span>→</span>
-                              <span>{endFmt}</span>
-                              <span>&bull;</span>
-                              <span className="text-gray-650 font-extrabold">{st.format}</span>
-                            </div>
-                            <div className="text-[10px] text-brand font-black mt-0.5">
-                              {st.ticketPrice.toLocaleString()} VND
+                            <div className="flex gap-1 shrink-0">
+                              <button
+                                onClick={() => handleOpenEditShowtime(st)}
+                                className="p-1.5 bg-white border border-gray-200 hover:border-brand/40 text-gray-500 hover:text-brand rounded-lg transition-all"
+                                title="Chỉnh sửa"
+                              >
+                                <Edit2 size={12} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteShowtime(st._id)}
+                                className="p-1.5 bg-white border border-gray-200 hover:border-red-500/40 text-gray-500 hover:text-red-500 rounded-lg transition-all"
+                                title="Xóa"
+                              >
+                                <Trash2 size={12} />
+                              </button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <button
-                              onClick={() => handleOpenEditShowtime(st)}
-                              className="p-1.5 bg-white border border-gray-200 hover:border-brand/40 text-gray-500 hover:text-brand rounded-lg transition-all"
-                              title="Chỉnh sửa lịch chiếu"
-                            >
-                              <Edit2 size={12} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteShowtime(st._id)}
-                              className="p-1.5 bg-white border border-gray-200 hover:border-red-500/40 text-gray-500 hover:text-red-500 rounded-lg transition-all"
-                              title="Xóa lịch chiếu"
-                            >
-                              <Trash2 size={12} />
-                            </button>
+
+                          <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-100 border-dashed">
+                            <div className="flex flex-col">
+                              <span className="text-xs font-semibold text-gray-600">{startFmt} - {endFmt}</span>
+                              <span className="text-[10px] text-gray-400">{roomName}</span>
+                            </div>
+                            <div className="flex flex-col items-end">
+                              <span className="text-[10px] uppercase tracking-wider font-extrabold text-gray-500 bg-white px-2 py-0.5 border border-gray-200 rounded">
+                                {st.format}
+                              </span>
+                              <span className="text-[10px] text-brand font-black mt-1">
+                                {st.ticketPrice.toLocaleString()} VNĐ
+                              </span>
+                            </div>
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                );
-              })()}
-            </div>
-          ))}
-        </div>
-      )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {/* ───── Modal tạo / chỉnh sửa lịch chiếu ───── */}
       <Modal

@@ -23,7 +23,7 @@ export const RoomManager = () => {
   const [editingRoom, setEditingRoom] = useState(null);
 
   // Forms states
-  const [thForm, setThForm] = useState({ name: '', address: '', city: 'Hồ Chí Minh', phone: '' });
+  const [thForm, setThForm] = useState({ name: '', address: '', city: 'Hà Nội', phone: '' });
   const [rmForm, setRmForm] = useState({
     name: '',
     theaterId: '',
@@ -66,7 +66,7 @@ export const RoomManager = () => {
   // Open Handlers
   const handleOpenAddTheater = () => {
     setEditingTheater(null);
-    setThForm({ name: '', address: '', city: 'Hồ Chí Minh', phone: '' });
+    setThForm({ name: '', address: '', city: 'Hà Nội', phone: '' });
     setError('');
     setIsThOpen(true);
   };
@@ -126,7 +126,7 @@ export const RoomManager = () => {
         await adminService.createTheater(thForm);
       }
       setIsThOpen(false);
-      setThForm({ name: '', address: '', city: 'Hồ Chí Minh', phone: '' });
+      setThForm({ name: '', address: '', city: 'Hà Nội', phone: '' });
       setEditingTheater(null);
       loadData();
     } catch (err) {
