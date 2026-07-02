@@ -6,6 +6,7 @@ import Input from '../common/Input';
 import Button from '../common/Button';
 import Loading from '../common/Loading';
 import Modal from '../common/Modal';
+import Toast from '../common/Toast';
 import { getPosterUrl } from '../../utils/constants';
 
 // Helper: trả về config hiển thị cho từng trạng thái phim
@@ -72,6 +73,7 @@ export const MovieManager = () => {
   };
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState({ message: '', type: 'success' });
 
   const fetchMoviesList = async () => {
     setLoading(true);
@@ -225,9 +227,10 @@ export const MovieManager = () => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa bộ phim này không? Các lịch chiếu liên quan cũng sẽ bị xóa.')) return;
     try {
       await adminService.deleteMovie(id);
+      setToast({ message: 'Đã xóa phim thành công!', type: 'success' });
       fetchMoviesList();
     } catch (err) {
-      alert(err.message);
+      setToast({ message: err.message || 'Lỗi khi xóa phim', type: 'error' });
     }
   };
 
@@ -260,13 +263,16 @@ export const MovieManager = () => {
     try {
       if (editingMovie) {
         await adminService.updateMovie(editingMovie._id, payload);
+        setToast({ message: `Đã cập nhật phim "${form.title}" thành công!`, type: 'success' });
       } else {
         await adminService.createMovie(payload);
+        setToast({ message: `Đã thêm phim "${form.title}" thành công!`, type: 'success' });
       }
       setIsOpen(false);
       fetchMoviesList();
     } catch (err) {
       setError(err.message);
+      setToast({ message: err.message || 'Có lỗi xảy ra', type: 'error' });
     }
   };
 
@@ -836,6 +842,13 @@ export const MovieManager = () => {
           )}
         </div>
       </Modal>
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast({ message: '', type: 'success' })}
+      />
     </div>
   );
 };

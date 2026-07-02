@@ -37,7 +37,7 @@ const seedData = async () => {
   try {
     console.log('🔌 Connecting to MongoDB...');
     await mongoose.connect(
-      process.env.MONGO_URI || 'mongodb://localhost:27017/movie-ticket-booking'
+      process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/movie-ticket-booking'
     );
     console.log('✅ Connected!\n');
 
