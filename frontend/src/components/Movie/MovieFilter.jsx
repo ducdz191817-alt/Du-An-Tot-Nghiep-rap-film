@@ -5,6 +5,7 @@ import { useLanguage } from '../../context/LanguageContext';
 
 export const MovieFilter = ({ filters, onChange }) => {
   const { t, language } = useLanguage();
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [isGenreOpen, setIsGenreOpen] = useState(false);
   const [isRatingOpen, setIsRatingOpen] = useState(false);
@@ -227,15 +228,20 @@ export const MovieFilter = ({ filters, onChange }) => {
               className="w-full bg-gray-50 border border-gray-200 text-gray-800 pl-10 pr-4 py-2.5 text-sm rounded-xl focus:border-brand/60 focus:bg-white outline-none transition-all duration-300"
             />
           </div>
-          <button className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-500 hover:text-brand hover:border-brand/30 transition-all shrink-0">
+          <button 
+            type="button"
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all shrink-0 ${showAdvancedFilters ? 'bg-brand/10 border-brand/40 text-brand' : 'bg-gray-50 border-gray-200 text-gray-500 hover:text-brand hover:border-brand/30'}`}
+          >
             <SlidersHorizontal size={16} />
           </button>
         </div>
       </div>
 
       {/* Row 2: Status Dropdown, Genre Dropdown, Rating Dropdown, Date Dropdown, Sort Dropdown & Clear Filters */}
-      <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-gray-100">
-        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
+      {showAdvancedFilters && (
+        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-gray-100 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
           <div className="flex items-center gap-1.5 text-gray-400 text-xs font-bold uppercase tracking-wider pr-1">
             <SlidersHorizontal size={13} className="text-gray-400" />
             <span>{t('filter.sortBy').split(':')[0]}:</span>
@@ -488,7 +494,8 @@ export const MovieFilter = ({ filters, onChange }) => {
             <span>{t('filter.clearAll')}</span>
           </button>
         )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
