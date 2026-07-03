@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "seed": "node src/seed.js",
+    "seed": "node src/seed.js && node src/refresh-showtimes.js && node src/seed-coupons.js",
     "db:export": "node src/db-sync.js --export",
     "db:import": "node src/db-sync.js --import"
   },
