@@ -15,6 +15,7 @@ const reviewRoutes = require('./routes/review.routes');
 const momoRoutes = require('./routes/momo.routes');
 const vnpayRoutes = require('./routes/vnpay.routes');
 const tmdbRoutes = require('./routes/tmdb.routes');
+const couponRoutes = require('./routes/coupon.routes');
 
 // Connect to MongoDB
 connectDB();
@@ -51,6 +52,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/payments/momo', momoRoutes);
 app.use('/api/payments/vnpay', vnpayRoutes);
 app.use('/api/admin/tmdb', tmdbRoutes);
+app.use('/api/coupons', couponRoutes);
 
 // Base route status check
 app.get('/api/status', (req, res) => {

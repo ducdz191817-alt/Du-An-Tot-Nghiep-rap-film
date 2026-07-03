@@ -42,6 +42,15 @@ const BookingSchema = new mongoose.Schema(
       enum: ['cash', 'card', 'vnpay', 'momo', 'vietqr'],
       default: 'card',
     },
+    coupon: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Coupon',
+      default: null,
+    },
+    discountAmount: {
+      type: Number,
+      default: 0,
+    },
     bookingDate: {
       type: Date,
       default: Date.now,

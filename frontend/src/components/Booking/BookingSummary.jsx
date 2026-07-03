@@ -13,6 +13,7 @@ export const BookingSummary = ({
   disabled = false,
   loading = false,
   onRemoveConcession, // optional callback to clear concession
+  appliedCoupon = null, // optional applied coupon info
 }) => {
   if (!showtime) return null;
 
@@ -52,6 +53,9 @@ export const BookingSummary = ({
       return seatCode;
     });
   };
+
+  const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+  const finalTotal = Math.max(0, pricing.grandTotal - discountAmount);
 
   return (
     <div className="bg-dark-card border border-dark-border p-6 rounded-3xl space-y-6 shadow-xl sticky top-24">
@@ -115,13 +119,21 @@ export const BookingSummary = ({
             </div>
           </div>
         )}
+
+        {/* Mã giảm giá */}
+        {appliedCoupon && (
+          <div className="border-t border-zinc-900 pt-3 flex justify-between text-emerald-400">
+            <span>Giảm giá ({appliedCoupon.code})</span>
+            <span>-{discountAmount.toLocaleString()} VND</span>
+          </div>
+        )}
       </div>
 
       {/* Tổng cộng */}
       <div className="border-t-2 border-dashed border-dark-border pt-4 flex items-center justify-between">
         <span className="text-sm font-black text-zinc-300">Tổng tiền thanh toán</span>
         <span className="text-xl font-black text-brand tracking-tight">
-          {pricing.grandTotal.toLocaleString()} VND
+          {finalTotal.toLocaleString()} VND
         </span>
       </div>
 

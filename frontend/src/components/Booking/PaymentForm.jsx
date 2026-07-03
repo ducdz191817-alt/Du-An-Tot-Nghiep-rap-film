@@ -3,7 +3,14 @@ import { CreditCard, Wallet, QrCode } from 'lucide-react';
 import Input from '../common/Input';
 import Button from '../common/Button';
 
-export const PaymentForm = ({ onSubmit, loading, pricing }) => {
+export const PaymentForm = ({
+  onSubmit,
+  loading,
+  pricing,
+  appliedCoupon = null,
+  onApplyCoupon,
+  onRemoveCoupon,
+}) => {
   const [method, setMethod] = useState('card');
   const [cardData, setCardData] = useState({
     holder: '',
@@ -12,6 +19,31 @@ export const PaymentForm = ({ onSubmit, loading, pricing }) => {
     cvv: '',
   });
   const [errors, setErrors] = useState({});
+  const [couponInput, setCouponInput] = useState('');
+  const [couponError, setCouponError] = useState('');
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return;
+    setCouponError('');
+    setValidatingCoupon(true);
+    try {
+      await onApplyCoupon(couponInput.trim().toUpperCase());
+    } catch (err) {
+      setCouponError(err.message || 'Mã giảm giá không hợp lệ hoặc đã hết hạn');
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    onRemoveCoupon();
+    setCouponInput('');
+    setCouponError('');
+  };
+
+  const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+  const finalTotal = Math.max(0, pricing.grandTotal - discountAmount);
 
   const validate = () => {
     if (method !== 'card') return true;
@@ -116,6 +148,66 @@ export const PaymentForm = ({ onSubmit, loading, pricing }) => {
         </button>
       </div>
 
+      {/* Coupon input section */}
+      <div className="border-t border-dark-border pt-5 space-y-3">
+        <h4 className="text-xs font-black text-zinc-400 uppercase tracking-wider pl-1">
+          Mã giảm giá / Voucher
+        </h4>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Nhập mã giảm giá (Ví dụ: NOVA20)"
+            value={couponInput}
+            onChange={(e) => setCouponInput(e.target.value)}
+            disabled={appliedCoupon || loading}
+            className="flex-1 bg-zinc-950 border border-zinc-800 text-zinc-200 placeholder-zinc-650 rounded-2xl px-4 py-2.5 text-sm outline-none focus:border-brand disabled:opacity-50 transition-colors uppercase font-mono tracking-wider"
+          />
+          {appliedCoupon ? (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleRemoveCoupon}
+              className="px-4 py-2.5 rounded-2xl text-xs font-bold border-red-950/40 text-red-400 hover:bg-red-950/20 shrink-0"
+            >
+              Hủy áp dụng
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleApplyCoupon}
+              loading={validatingCoupon}
+              disabled={!couponInput.trim() || loading}
+              className="px-4 py-2.5 rounded-2xl text-xs font-bold border-brand-dark/30 text-brand hover:bg-brand/10 shrink-0"
+            >
+              Áp dụng
+            </Button>
+          )}
+        </div>
+
+        {couponError && (
+          <p className="text-xs text-red-500 font-semibold pl-1">
+            {couponError}
+          </p>
+        )}
+
+        {appliedCoupon && (
+          <div className="bg-emerald-950/20 border border-emerald-800/30 text-emerald-400 px-4 py-3 rounded-2xl text-xs font-semibold flex items-center justify-between animate-in fade-in slide-in-from-top-1 duration-200">
+            <div>
+              <span>Đã áp dụng mã: <strong className="font-mono">{appliedCoupon.code}</strong></span>
+              <p className="text-[10px] text-zinc-400 mt-0.5 font-medium">
+                {appliedCoupon.discountType === 'percentage'
+                  ? `Giảm ${appliedCoupon.discountValue}% (tối đa ${appliedCoupon.maxDiscountAmount?.toLocaleString('vi-VN')} đ)`
+                  : `Giảm ${appliedCoupon.discountValue?.toLocaleString('vi-VN')} đ`}
+              </p>
+            </div>
+            <span className="font-extrabold text-sm text-emerald-400 shrink-0">
+              -{discountAmount.toLocaleString('vi-VN')} đ
+            </span>
+          </div>
+        )}
+      </div>
+
       {/* Card Details fields */}
       {method === 'card' && (
         <form onSubmit={handlePay} className="space-y-4 pt-2" noValidate>
@@ -170,7 +262,7 @@ export const PaymentForm = ({ onSubmit, loading, pricing }) => {
             loading={loading}
             className="w-full mt-4 py-3.5 rounded-2xl font-black text-sm"
           >
-            Xác nhận & Thanh toán {pricing.grandTotal.toLocaleString()} VND
+            Xác nhận & Thanh toán {finalTotal.toLocaleString()} VND
           </Button>
         </form>
       )}
@@ -251,7 +343,7 @@ export const PaymentForm = ({ onSubmit, loading, pricing }) => {
             {method === 'vietqr'
               ? `Tiến hành chuyển khoản VietQR`
               : method === 'vnpay'
-              ? `Thanh toán qua VNPay — ${pricing.grandTotal.toLocaleString()} VND`
+              ? `Thanh toán qua VNPay — ${finalTotal.toLocaleString()} VND`
               : `Tiến hành thanh toán MoMo`}
           </Button>
         </form>

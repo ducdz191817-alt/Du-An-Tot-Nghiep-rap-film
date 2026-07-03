@@ -103,7 +103,7 @@ export const useBooking = () => {
     };
   };
 
-  const submitBooking = async (paymentMethod = 'card') => {
+  const submitBooking = async (paymentMethod = 'card', couponCode = null) => {
     if (!selectedShowtime || selectedSeats.length === 0) {
       throw new Error('Please select showtime and seats before booking');
     }
@@ -136,6 +136,10 @@ export const useBooking = () => {
         concessions: concessionsPayload,
         paymentMethod,
       };
+
+      if (couponCode) {
+        payload.couponCode = couponCode;
+      }
 
       const result = await bookingService.createBooking(payload);
       dispatch(setBookingSuccess(result));

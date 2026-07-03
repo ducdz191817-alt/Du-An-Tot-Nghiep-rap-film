@@ -69,6 +69,11 @@ router.get("/dashboard/revenue", getRevenueReport);
 router.get('/bookings', listBookings);
 router.delete('/bookings/:id', deleteBooking);
 
+// Coupon Management (Admin)
+const { listCoupons, createCoupon, updateCoupon, deleteCoupon } = require("../controllers/coupon.controller");
+router.route("/coupons").get(listCoupons).post(createCoupon);
+router.route("/coupons/:id").put(updateCoupon).delete(deleteCoupon);
+
 // User Management
 router.get('/users', listUsers);
 router.put('/users/:id/role', updateUserRole);
