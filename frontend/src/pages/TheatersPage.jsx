@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { MapPin, Phone, Clock, Star, Zap, Tv2, MonitorPlay, Check } from 'lucide-react';
 
 const theater = {
@@ -24,7 +24,7 @@ const theater = {
   facilities: ['Bắp rang bơ Nova', 'Cocktail bar', 'Ghế massage VIP', 'Bãi xe ô tô miễn phí'],
 };
 
-const TheaterCard = ({ theater }) => {
+const TheatersPage = () => {
   const [expanded, setExpanded] = useState(false);
 
   return (
