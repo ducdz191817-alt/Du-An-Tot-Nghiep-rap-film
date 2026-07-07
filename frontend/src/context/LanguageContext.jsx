@@ -260,7 +260,15 @@ const translations = {
     'review.noReviews': 'Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá phim này!',
     'review.loading': 'Đang tải đánh giá...',
     'review.loginPrompt': 'Đăng nhập để viết đánh giá phim',
-    'review.adminNotice': 'Tài khoản quản trị viên không thể viết đánh giá. Chỉ người dùng thường mới có quyền đánh giá phim.',
+    'review.adminNotice': 'Tài khoản quản trị viên không thể viết đánh giá trực tiếp, nhưng có thể phản hồi bình luận của người dùng bên dưới.',
+    'review.reply': 'Phản hồi',
+    'review.replyTitle': 'Phản hồi từ Ban Quản Trị',
+    'review.replyPlaceholder': 'Nhập phản hồi của bạn...',
+    'review.replyBtn': 'Gửi phản hồi',
+    'review.deleteReply': 'Xóa phản hồi',
+    'review.confirmDeleteReply': 'Bạn có chắc chắn muốn xóa phản hồi này?',
+    'review.replySuccess': 'Đã phản hồi đánh giá thành công!',
+    'review.deleteReplySuccess': 'Đã xóa phản hồi thành công!',
 
     // Booking History Page (My Tickets)
     'history.title': 'Lịch sử đặt vé',
@@ -605,7 +613,15 @@ const translations = {
     'review.noReviews': 'No reviews yet. Be the first to review this movie!',
     'review.loading': 'Loading reviews...',
     'review.loginPrompt': 'Log in to write a movie review',
-    'review.adminNotice': 'Admin accounts cannot write reviews. Only regular users can review movies.',
+    'review.adminNotice': 'Admin accounts cannot write reviews directly, but can reply to user reviews below.',
+    'review.reply': 'Reply',
+    'review.replyTitle': 'Management Reply',
+    'review.replyPlaceholder': 'Enter your reply...',
+    'review.replyBtn': 'Submit Reply',
+    'review.deleteReply': 'Delete reply',
+    'review.confirmDeleteReply': 'Are you sure you want to delete this reply?',
+    'review.replySuccess': 'Review replied successfully!',
+    'review.deleteReplySuccess': 'Reply deleted successfully!',
 
     // Booking History Page (My Tickets)
     'history.title': 'Booking History',
