@@ -13,7 +13,7 @@ const { confirmBookingClearHolds } = require('../sockets/seatSocket');
 const createBooking = async (req, res, next) => {
   try {
     await checkAndExpirePendingBookings();
-    const { showtimeId, seats, concessions = [], paymentMethod = 'card' } = req.body;
+    const { showtimeId, seats, concessions = [], paymentMethod = 'card', couponCode } = req.body;
     const userId = req.user._id;
 
     if (!seats || seats.length === 0) {
@@ -127,7 +127,56 @@ const createBooking = async (req, res, next) => {
       }
     }
 
-    const totalPrice = seatPriceSum + concessionPriceSum;
+    let totalPrice = seatPriceSum + concessionPriceSum;
+
+    // 5.5 Process Coupon if provided
+    let discountAmount = 0;
+    let couponId = null;
+    if (couponCode) {
+      const Coupon = require('../models/Coupon.model');
+      const couponDoc = await Coupon.findOne({ code: couponCode.trim().toUpperCase() });
+      if (!couponDoc) {
+        res.status(404);
+        throw new Error('Mã giảm giá không tồn tại');
+      }
+      if (!couponDoc.isActive) {
+        res.status(400);
+        throw new Error('Mã giảm giá đã bị vô hiệu hóa');
+      }
+      const now = new Date();
+      if (couponDoc.startDate && now < couponDoc.startDate) {
+        res.status(400);
+        throw new Error('Mã giảm giá chưa đến thời gian áp dụng');
+      }
+      if (couponDoc.endDate && now > couponDoc.endDate) {
+        res.status(400);
+        throw new Error('Mã giảm giá đã hết hạn sử dụng');
+      }
+      if (couponDoc.usageLimit !== null && couponDoc.usageCount >= couponDoc.usageLimit) {
+        res.status(400);
+        throw new Error('Mã giảm giá đã hết lượt sử dụng');
+      }
+      if (totalPrice < couponDoc.minOrderAmount) {
+        res.status(400);
+        throw new Error(`Đơn hàng chưa đạt giá trị tối thiểu ${couponDoc.minOrderAmount.toLocaleString('vi-VN')} đ để áp dụng mã này`);
+      }
+
+      if (couponDoc.discountType === 'percentage') {
+        discountAmount = totalPrice * (couponDoc.discountValue / 100);
+        if (couponDoc.maxDiscountAmount !== null) {
+          discountAmount = Math.min(discountAmount, couponDoc.maxDiscountAmount);
+        }
+      } else if (couponDoc.discountType === 'fixed') {
+        discountAmount = couponDoc.discountValue;
+      }
+
+      discountAmount = Math.min(discountAmount, totalPrice);
+      totalPrice = totalPrice - discountAmount;
+      couponId = couponDoc._id;
+
+      // Update coupon usage count
+      await Coupon.findByIdAndUpdate(couponDoc._id, { $inc: { usageCount: 1 } });
+    }
 
     // 6. Register/Book the seats in the Showtime document atomically to avoid race conditions
     const updatedShowtime = await Showtime.findOneAndUpdate(
@@ -165,6 +214,8 @@ const createBooking = async (req, res, next) => {
       totalPrice,
       paymentStatus: isPendingPayment ? 'pending' : 'paid',
       paymentMethod,
+      coupon: couponId,
+      discountAmount,
     });
 
     // 8. Create Payment Transaction

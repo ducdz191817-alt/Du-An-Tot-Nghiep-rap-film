@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Film, Calendar, Building2, Coffee,
   Ticket, BarChart3, LogOut, Menu, ChevronRight,
   Clapperboard, Zap, Bell, ChevronDown, Activity, Users,
-  Hourglass, X, AlertCircle,
+  Hourglass, X, AlertCircle, Tag,
 } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 import adminService from '../../services/admin.service';
@@ -29,6 +29,7 @@ const NAV_ITEMS = [
     group: 'Giao dịch',
     items: [
       { key: 'bookings', label: 'Đặt vé',           icon: Ticket },
+      { key: 'coupons',  label: 'Mã giảm giá',      icon: Tag },
       { key: 'revenue',  label: 'Báo cáo doanh thu', icon: BarChart3 },
     ]
   },

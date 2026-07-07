@@ -4,6 +4,7 @@ import { ChevronLeft, Clock, Copy, AlertTriangle, RefreshCw } from 'lucide-react
 import useBooking from '../hooks/useBooking';
 import bookingService from '../services/booking.service';
 import paymentService from '../services/payment.service';
+import couponService from '../services/coupon.service';
 import PaymentForm from '../components/Booking/PaymentForm';
 import BookingSummary from '../components/Booking/BookingSummary';
 import BookingSuccessModal from '../components/Booking/BookingSuccessModal';
@@ -41,6 +42,9 @@ export const PaymentPage = () => {
   // Snapshot showtime & seats trước khi clear (để hiển thị trong modal)
   const [snapshotShowtime, setSnapshotShowtime] = useState(null);
   const [snapshotSeats, setSnapshotSeats] = useState([]);
+
+  // Trạng thái mã giảm giá
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
 
   useEffect(() => {
     // Nếu đang hiển thị modal thành công thì không chuyển hướng an toàn về trang chủ
@@ -119,6 +123,26 @@ export const PaymentPage = () => {
   }, [showQRScreen, showMomoScreen, bookingId]);
 
   const pricing = calculateTotal(concessionsList);
+  const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+  const finalTotal = Math.max(0, pricing.grandTotal - discountAmount);
+
+  const handleApplyCoupon = async (code) => {
+    try {
+      const result = await couponService.validateCoupon(code, pricing.grandTotal);
+      if (result.success && result.data) {
+        setAppliedCoupon(result.data);
+      } else {
+        throw new Error('Mã giảm giá không hợp lệ');
+      }
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || err.message || 'Mã giảm giá không hợp lệ hoặc đã hết hạn';
+      throw new Error(errorMsg);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+  };
 
   const handlePaymentSubmit = async (paymentMethod) => {
     setLoading(true);
@@ -127,7 +151,7 @@ export const PaymentPage = () => {
       setSnapshotShowtime(selectedShowtime);
       setSnapshotSeats([...selectedSeats]);
 
-      const result = await submitBooking(paymentMethod);
+      const result = await submitBooking(paymentMethod, appliedCoupon?.code);
       const bookingIdFromResult = result.booking._id;
       setBookingId(bookingIdFromResult);
 
@@ -365,7 +389,7 @@ export const PaymentPage = () => {
                       <span className="text-zinc-500 font-semibold">Số tiền</span>
                       <div className="flex items-center gap-2">
                         <span className="text-brand font-black text-base">
-                          {pricing.grandTotal.toLocaleString()} VND
+                          {finalTotal.toLocaleString()} VND
                         </span>
                         <button
                           onClick={() => copyToClipboard(pricing.grandTotal, 'Số tiền')}
@@ -466,7 +490,14 @@ export const PaymentPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           {/* Form thanh toán bên trái */}
           <div className="lg:col-span-2">
-            <PaymentForm onSubmit={handlePaymentSubmit} loading={loading} pricing={pricing} />
+            <PaymentForm
+              onSubmit={handlePaymentSubmit}
+              loading={loading}
+              pricing={pricing}
+              appliedCoupon={appliedCoupon}
+              onApplyCoupon={handleApplyCoupon}
+              onRemoveCoupon={handleRemoveCoupon}
+            />
           </div>
 
           {/* Chi tiết hóa đơn bên phải */}
@@ -478,6 +509,7 @@ export const PaymentPage = () => {
               concessionsList={concessionsList}
               pricing={pricing}
               onProceed={null} // Chế độ chỉ đọc
+              appliedCoupon={appliedCoupon}
             />
           </div>
         </div>
