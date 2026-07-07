@@ -19,6 +19,14 @@ const tmdbRoutes = require('./routes/tmdb.routes');
 // Connect to MongoDB
 connectDB();
 
+// Auto-update movie statuses after DB is ready
+const { autoUpdateMovieStatus } = require('./utils/autoUpdateMovieStatus');
+// Delay slightly to let the DB connection settle, then run immediately and every hour
+setTimeout(async () => {
+  await autoUpdateMovieStatus();
+  setInterval(autoUpdateMovieStatus, 60 * 60 * 1000); // every 1 hour
+}, 3000);
+
 const app = express();
 
 // Middlewares

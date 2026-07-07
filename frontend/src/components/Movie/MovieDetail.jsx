@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Film, User, Clock, Calendar, Ticket, ChevronRight, Play, ShieldAlert } from 'lucide-react';
+import { Film, User, Clock, Calendar, Ticket, ChevronRight, Play, ShieldAlert, Bell, CalendarClock } from 'lucide-react';
 import bookingService from '../../services/booking.service';
 import Button from '../common/Button';
 import { useLanguage } from '../../context/LanguageContext';
@@ -20,6 +20,8 @@ export const MovieDetail = ({ movie }) => {
   const [trailerError, setTrailerError] = useState(false);
   const [sortBy, setSortBy] = useState('earliest');
   const [formatFilter, setFormatFilter] = useState('');
+  const [dateAvailability, setDateAvailability] = useState({});
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
 
   // ── Lấy title / description / language theo ngôn ngữ trực tiếp từ DB ──────
   // Nếu phim có titleEN/descriptionEN thì dùng, không thì fallback về bản gốc.
@@ -57,11 +59,33 @@ export const MovieDetail = ({ movie }) => {
     };
   });
 
+  // Fetch availability for all 4 days in parallel, then auto-select nearest available
   useEffect(() => {
-    if (dateTabs.length > 0 && !selectedDate) {
-      setSelectedDate(dateTabs[0].isoString);
-    }
-  }, []);
+    if (!movie?._id || dateTabs.length === 0) return;
+    const checkAllDates = async () => {
+      setCheckingAvailability(true);
+      try {
+        const results = await Promise.all(
+          dateTabs.map((tab) =>
+            bookingService.getShowtimesByMovie(movie._id, tab.isoString)
+              .then((data) => ({ date: tab.isoString, hasShowtimes: Array.isArray(data) && data.length > 0 }))
+              .catch(() => ({ date: tab.isoString, hasShowtimes: false }))
+          )
+        );
+        const availability = {};
+        results.forEach(({ date, hasShowtimes }) => { availability[date] = hasShowtimes; });
+        setDateAvailability(availability);
+        // Auto-select first date that has showtimes
+        const firstAvailable = results.find((r) => r.hasShowtimes);
+        setSelectedDate(firstAvailable ? firstAvailable.date : dateTabs[0].isoString);
+      } catch {
+        setSelectedDate(dateTabs[0].isoString);
+      } finally {
+        setCheckingAvailability(false);
+      }
+    };
+    checkAllDates();
+  }, [movie?._id]);
 
   // Lấy lịch chiếu khi phim hoặc ngày thay đổi
   useEffect(() => {
@@ -257,7 +281,62 @@ export const MovieDetail = ({ movie }) => {
         </div>
       )}
 
-      {/* 3. Bảng đặt vé theo lịch chiếu */}
+      {/* 3. Banner Sắp chiếu / Sắp ra mắt cho phim chưa/không có lịch chiếu */}
+      {(movie.status === 'coming-soon' || movie.status === 'pre-release') && (
+        <div className="bg-white border border-gray-200 p-8 md:p-12 rounded-[2rem] shadow-lg mt-12 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-brand/3 via-transparent to-sky-50/50 pointer-events-none" />
+          <div className="absolute -top-16 -right-16 w-64 h-64 bg-brand/5 blur-[60px] rounded-full pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col sm:flex-row items-center gap-8">
+            {/* Icon */}
+            <div className={`shrink-0 flex items-center justify-center w-20 h-20 rounded-3xl shadow-lg ${
+              movie.status === 'pre-release'
+                ? 'bg-gradient-to-br from-purple-500 to-indigo-600'
+                : 'bg-gradient-to-br from-brand to-brand-dark'
+            }`}>
+              {movie.status === 'pre-release'
+                ? <Bell size={36} className="text-white" />
+                : <CalendarClock size={36} className="text-white" />}
+            </div>
+
+            {/* Text */}
+            <div className="flex-1 text-center sm:text-left">
+              <span className={`inline-block text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-3 ${
+                movie.status === 'pre-release'
+                  ? 'bg-purple-100 text-purple-700'
+                  : 'bg-brand/10 text-brand'
+              }`}>
+                {movie.status === 'pre-release' ? 'Sắp Ra Mắt' : 'Sắp Chiếu'}
+              </span>
+              <h3 className="text-2xl font-black text-gray-900 tracking-tight">
+                {movie.status === 'pre-release'
+                  ? 'Phim chưa có lịch chiếu'
+                  : 'Lịch chiếu sắp được mở'}
+              </h3>
+              <p className="text-gray-500 text-sm font-medium mt-2 leading-relaxed max-w-lg">
+                {movie.status === 'pre-release'
+                  ? 'Phim này chưa được lên lịch chiếu. Quay lại sau để xem lịch chiếu được cập nhật mới nhất.'
+                  : 'Phim có lịch chiếu trong thời gian tới. Lịch chiếu hôm nay sẽ tự động mở khi đến ngày chiếu.'}
+              </p>
+
+              {/* Release date */}
+              {movie.releaseDate && (
+                <div className="mt-4 inline-flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-2xl px-5 py-3">
+                  <Calendar size={16} className="text-brand shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Ngày khởi chiếu dự kiến</p>
+                    <p className="text-sm font-black text-gray-900">
+                      {new Date(movie.releaseDate).toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Bảng đặt vé theo lịch chiếu */}
       {(movie.status === 'now-showing' || movie.status === 'preview') && (
         <div className="space-y-6 bg-white border border-gray-200 p-6 md:p-10 rounded-[2rem] shadow-lg mt-12 relative overflow-hidden">
           {/* Subtle glow in background */}
@@ -273,23 +352,46 @@ export const MovieDetail = ({ movie }) => {
 
             {/* Date selection tabs */}
             <div className="flex items-center gap-3 overflow-x-auto pb-2 sm:pb-0 scrollbar-none snap-x">
-              {dateTabs.map((tab) => {
-                const isSelected = selectedDate === tab.isoString;
-                return (
-                  <button
-                    key={tab.isoString}
-                    onClick={() => setSelectedDate(tab.isoString)}
-                    className={`flex flex-col items-center px-5 py-2.5 rounded-2xl transition-all duration-300 shrink-0 transform active:scale-95 snap-center border ${
-                      isSelected
-                        ? 'bg-gradient-to-br from-brand to-brand-dark text-white border-transparent shadow-[0_10px_20px_rgba(200,135,43,0.3)]'
-                        : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100 hover:text-gray-800'
-                    }`}
-                  >
-                    <span className="text-[11px] uppercase font-bold tracking-widest opacity-80">{tab.dayName}</span>
-                    <span className="text-base font-black mt-0.5">{tab.dateLabel}</span>
-                  </button>
-                );
-              })}
+              {checkingAvailability
+                ? dateTabs.map((tab) => (
+                    <div key={tab.isoString} className="flex flex-col items-center px-5 py-2.5 rounded-2xl border border-gray-200 bg-gray-50 shrink-0 animate-pulse">
+                      <span className="text-[11px] uppercase font-bold tracking-widest text-gray-300">{tab.dayName}</span>
+                      <span className="text-base font-black mt-0.5 text-gray-300">{tab.dateLabel}</span>
+                    </div>
+                  ))
+                : dateTabs.map((tab) => {
+                    const isSelected = selectedDate === tab.isoString;
+                    const hasShowtimes = dateAvailability[tab.isoString];
+                    const availabilityKnown = tab.isoString in dateAvailability;
+                    return (
+                      <button
+                        key={tab.isoString}
+                        onClick={() => setSelectedDate(tab.isoString)}
+                        className={`relative flex flex-col items-center px-5 py-2.5 rounded-2xl transition-all duration-300 shrink-0 transform active:scale-95 snap-center border ${
+                          isSelected
+                            ? 'bg-gradient-to-br from-brand to-brand-dark text-white border-transparent shadow-[0_10px_20px_rgba(200,135,43,0.3)]'
+                            : availabilityKnown && !hasShowtimes
+                              ? 'bg-gray-50 text-gray-300 border-gray-100 hover:bg-gray-100 hover:text-gray-400 cursor-pointer'
+                              : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100 hover:text-gray-800'
+                        }`}
+                      >
+                        <span className="text-[11px] uppercase font-bold tracking-widest opacity-80">{tab.dayName}</span>
+                        <span className="text-base font-black mt-0.5">{tab.dateLabel}</span>
+                        {/* Availability dot indicator */}
+                        {availabilityKnown && (
+                          <span
+                            className={`mt-1.5 w-1.5 h-1.5 rounded-full ${
+                              isSelected
+                                ? 'bg-white/70'
+                                : hasShowtimes
+                                  ? 'bg-green-500'
+                                  : 'bg-gray-300'
+                            }`}
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
             </div>
           </div>
 
