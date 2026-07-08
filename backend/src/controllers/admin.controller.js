@@ -469,7 +469,13 @@ const getRevenueReport = async (req, res, next) => {
     const bookings = await Booking.find({ paymentStatus: 'paid' })
       .populate({
         path: 'showtime',
-        populate: [{ path: 'movie', select: 'title genre' }, { path: 'theater', select: 'name' }],
+        populate: [
+          // Lấy thêm posterUrl, thời lượng (duration) và thể loại (genre) để hiển thị giao diện Top Movies
+          { path: 'movie', select: 'title genre duration posterUrl' }, 
+          { path: 'theater', select: 'name' },
+          // Lấy sức chứa (capacity) của phòng chiếu để tính phần trăm ghế đã bán (Occupancy)
+          { path: 'room', select: 'capacity' }
+        ],
       });
 
     // 1. Group revenue by movie
@@ -489,8 +495,33 @@ const getRevenueReport = async (req, res, next) => {
       const date = new Date(booking.bookingDate);
       const monthYear = date.toLocaleString('en-US', { month: 'short', year: '2-digit' });
 
-      // Aggregate Movie
-      movieSales[movieTitle] = (movieSales[movieTitle] || 0) + booking.totalPrice;
+      // Aggregate Movie - Tính toán dữ liệu cho từng bộ phim
+      if (!movieSales[movieTitle]) {
+        movieSales[movieTitle] = {
+          name: movieTitle,
+          revenue: 0,           // Tổng doanh thu
+          tickets: 0,           // Tổng số vé bán ra
+          capacity: 0,          // Tổng số ghế có thể bán của các suất chiếu
+          posterUrl: showtime.movie ? showtime.movie.posterUrl : null,
+          genre: showtime.movie ? showtime.movie.genre : [],
+          duration: showtime.movie ? showtime.movie.duration : 0,
+          uniqueShowtimes: new Set() // Dùng Set để lưu ID suất chiếu, tránh cộng dồn sức chứa (capacity) nhiều lần nếu 1 suất chiếu có nhiều booking
+        };
+      }
+      
+      // Cộng dồn doanh thu và số vé bán được của từng booking
+      movieSales[movieTitle].revenue += booking.totalPrice;
+      movieSales[movieTitle].tickets += (booking.seats ? booking.seats.length : 0);
+      
+      // Tính tổng số ghế (capacity) của tất cả suất chiếu của phim này
+      // Chỉ cộng capacity nếu suất chiếu này chưa được cộng trước đó
+      const showtimeId = showtime._id.toString();
+      if (!movieSales[movieTitle].uniqueShowtimes.has(showtimeId)) {
+         movieSales[movieTitle].uniqueShowtimes.add(showtimeId);
+         if (showtime.room && showtime.room.capacity) {
+            movieSales[movieTitle].capacity += showtime.room.capacity;
+         }
+      }
 
       // Aggregate Theater
       theaterSales[theaterName] = (theaterSales[theaterName] || 0) + booking.totalPrice;
@@ -500,7 +531,25 @@ const getRevenueReport = async (req, res, next) => {
     });
 
     const formatObjectToArray = (obj) => {
-      return Object.keys(obj).map((key) => ({ name: key, value: obj[key] }));
+      return Object.keys(obj).map((key) => {
+        if (typeof obj[key] === 'object' && obj[key] !== null) {
+          // Xử lý riêng cho đối tượng Movie để tính toán thêm % lấp đầy (Occupancy)
+          const item = { ...obj[key] };
+          item.value = item.revenue; // Gán value = revenue để code cũ không bị lỗi khi render biểu đồ (nếu có)
+          
+          // Tính % ghế đã bán (Occupancy = Tickets / Capacity * 100)
+          if (item.capacity > 0) {
+             item.occupancy = Math.round((item.tickets / item.capacity) * 100);
+             if (item.occupancy > 100) item.occupancy = 100; // Đảm bảo tối đa 100%
+          } else {
+             item.occupancy = 0;
+          }
+          // Xóa biến tạm uniqueShowtimes trước khi gửi về frontend
+          delete item.uniqueShowtimes;
+          return item;
+        }
+        return { name: key, value: obj[key] };
+      });
     };
 
     res.json({
