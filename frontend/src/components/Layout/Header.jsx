@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Film, User, LogOut, LayoutDashboard, History, Bell, X, Hourglass, CreditCard } from 'lucide-react';
+import { Film, User, LogOut, LayoutDashboard, History, Bell, X, Hourglass, CreditCard, Sun, Moon } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
 import bookingService from '../../services/booking.service';
 import myLogo from '../../assets/images/logo.png';
 
@@ -44,6 +45,7 @@ const USFlag = () => (
 export const Header = () => {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const { language, setLanguage, t } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -80,7 +82,7 @@ export const Header = () => {
   };
 
   const isActive = (path) => {
-    return location.pathname === path ? 'text-brand font-bold' : 'text-gray-600 hover:text-gray-900';
+    return location.pathname === path ? 'text-brand font-bold' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white';
   };
 
   const selectLanguage = (lang) => {
@@ -89,14 +91,14 @@ export const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white/90 backdrop-blur-md border-b border-gray-200/80 shadow-sm">
+    <header className="sticky top-0 z-40 w-full bg-white/90 dark:bg-[#0b0f19]/90 backdrop-blur-md border-b border-gray-200/80 dark:border-gray-800/80 shadow-sm transition-colors duration-300">
       <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4 xl:gap-8">
         {/* Logo */}
         <Link to="/" className="flex items-center group">
           <img 
             src={myLogo} 
             alt="Nova Cinematic Logo" 
-            className="h-16 w-auto object-contain group-hover:scale-105 transition-transform brightness-50 contrast-150" 
+            className="h-16 w-auto object-contain group-hover:scale-105 transition-transform dark:brightness-200 dark:contrast-100 brightness-50 contrast-150" 
           />
         </Link>
 
@@ -144,8 +146,8 @@ export const Header = () => {
                   onClick={() => setBellOpen(!bellOpen)}
                   className={`relative p-2 rounded-xl transition-all ${
                     pendingBookings.length > 0
-                      ? 'text-amber-500 hover:bg-amber-50'
-                      : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                      ? 'text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/30'
+                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1a2035]'
                   }`}
                   title="Thông báo"
                 >
@@ -159,17 +161,17 @@ export const Header = () => {
 
                 {/* Dropdown */}
                 {bellOpen && (
-                  <div className="absolute right-0 top-[calc(100%+10px)] w-80 bg-white border border-gray-200 rounded-2xl shadow-[0_20px_48px_rgba(0,0,0,0.12)] z-50 overflow-hidden">
+                  <div className="absolute right-0 top-[calc(100%+10px)] w-80 bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-[0_20px_48px_rgba(0,0,0,0.12)] z-50 overflow-hidden">
                     {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                      <p className="text-sm font-bold text-gray-800">Thông báo</p>
-                      <button onClick={() => setBellOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                      <p className="text-sm font-bold text-gray-800 dark:text-gray-100">Thông báo</p>
+                      <button onClick={() => setBellOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
                         <X size={14} />
                       </button>
                     </div>
 
                     {/* List */}
-                    <div className="max-h-72 overflow-y-auto divide-y divide-gray-100">
+                    <div className="max-h-72 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
                       {pendingBookings.length > 0 ? (
                         pendingBookings.map((b) => {
                           const movie = b.showtime?.movie || {};
@@ -177,16 +179,16 @@ export const Header = () => {
                           return (
                             <div
                               key={b._id}
-                              className="px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer"
+                              className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-[#1a2035] transition-colors cursor-pointer"
                               onClick={() => { navigate('/history'); setBellOpen(false); }}
                             >
                               <div className="flex items-start gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
+                                <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/50 flex items-center justify-center shrink-0">
                                   <CreditCard size={13} className="text-amber-500" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-bold text-gray-800 truncate">Thanh toán vé phim {movie.title || 'Phim'}</p>
-                                  <p className="text-[10px] text-gray-400 mt-0.5">
+                                  <p className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate">Thanh toán vé phim {movie.title || 'Phim'}</p>
+                                  <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
                                     {startTime ? startTime.toLocaleDateString('vi-VN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                                   </p>
                                   <p className="text-[11px] font-black text-amber-600 mt-1">
@@ -211,11 +213,11 @@ export const Header = () => {
               </div>
 
               {/* User Dropdown Profile mock */}
-              <div className="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-200">
+              <div className="flex items-center space-x-2 bg-gray-50 dark:bg-[#151a28] px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-800">
                 <div className="w-6 h-6 rounded-full bg-brand/20 flex items-center justify-center text-brand font-black text-xs uppercase">
                   {user.username.charAt(0)}
                 </div>
-                <span className="text-sm font-semibold text-gray-700 hidden sm:inline">{user.username}</span>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 hidden sm:inline">{user.username}</span>
               </div>
 
               <button
@@ -227,8 +229,8 @@ export const Header = () => {
               </button>
             </div>
           ) : (
-            <div className="flex items-center space-x-1.5 text-gray-600 text-sm font-bold">
-              <User size={18} strokeWidth={2} className="text-gray-700 shrink-0" />
+            <div className="flex items-center space-x-1.5 text-gray-600 dark:text-gray-400 text-sm font-bold">
+              <User size={18} strokeWidth={2} className="text-gray-700 dark:text-gray-300 shrink-0" />
               <div className="flex items-center uppercase tracking-wide">
                 <Link
                   to="/login"
@@ -247,27 +249,36 @@ export const Header = () => {
             </div>
           )}
 
+          {/* Theme Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className="flex items-center justify-center p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1a2035] transition-colors focus:outline-none"
+            title={theme === 'dark' ? 'Chế độ sáng' : 'Chế độ tối'}
+          >
+            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+
           {/* Language Selector Dropdown (Vietnam & English) */}
           <div className="relative" ref={dropdownRef}>
             <button 
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center space-x-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none"
+              className="flex items-center space-x-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#1a2035] transition-colors focus:outline-none"
             >
               {language === 'vi' ? <VNFlag /> : <USFlag />}
-              <span className="text-sm font-bold text-gray-700 uppercase tracking-wider">{language === 'vi' ? 'VN' : 'ENG'}</span>
+              <span className="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider">{language === 'vi' ? 'VN' : 'ENG'}</span>
               <svg className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path>
               </svg>
             </button>
             
             {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-28 rounded-xl bg-white border border-gray-200 shadow-[0_10px_30px_rgba(0,0,0,0.1)] p-1 z-50 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col gap-1">
+              <div className="absolute right-0 mt-2 w-28 rounded-xl bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 shadow-[0_10px_30px_rgba(0,0,0,0.1)] p-1 z-50 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col gap-1">
                 <button
                   onClick={() => selectLanguage('vi')}
                   className={`flex items-center space-x-2 w-full px-3 py-2 rounded-lg text-left transition-all ${
                     language === 'vi' 
                       ? 'bg-red-500 text-white font-black shadow-[0_2px_8px_rgba(220,38,38,0.3)]' 
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-[#1a2035]'
                   }`}
                 >
                   <VNFlag />
@@ -278,7 +289,7 @@ export const Header = () => {
                   className={`flex items-center space-x-2 w-full px-3 py-2 rounded-lg text-left transition-all ${
                     language === 'en' 
                       ? 'bg-blue-500 text-white font-black shadow-[0_2px_8px_rgba(37,99,235,0.3)]' 
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-[#1a2035]'
                   }`}
                 >
                   <USFlag />

@@ -193,7 +193,7 @@ export const HomePage = () => {
     <div className="space-y-12 pb-16 relative">
       {/* 1. Banner giới thiệu phim nổi bật */}
       {featured && (
-        <div className="relative w-full aspect-[21/9] min-h-[350px] md:min-h-[500px] rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.12)] bg-gradient-to-br from-[#f5efe6] to-[#ede4d4] border border-[#e0d5c3]/60 group">
+        <div className="relative w-full aspect-[21/9] min-h-[350px] md:min-h-[500px] rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.12)] bg-gradient-to-br from-[#f5efe6] to-[#ede4d4] dark:from-[#111622] dark:to-[#1a2035] border border-[#e0d5c3]/60 dark:border-gray-800/60 group">
           {!bannerImageError[currentBannerIndex] && (
             <img
               src={getPosterUrl(featured.posterUrl)}
@@ -203,8 +203,8 @@ export const HomePage = () => {
             />
           )}
           {/* Gradients - warm light overlays */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#faf7f2] via-[#faf7f2]/40 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#faf7f2] via-[#faf7f2]/50 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#faf7f2] via-[#faf7f2]/40 to-transparent dark:from-[#0b0f19] dark:via-[#0b0f19]/40" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#faf7f2] via-[#faf7f2]/50 to-transparent dark:from-[#0b0f19] dark:via-[#0b0f19]/50" />
 
           {/* Golden sparkle decorations */}
           <div className="absolute top-1/4 right-1/3 w-2 h-2 bg-amber-400 rotate-45 opacity-60 animate-pulse" />
@@ -216,10 +216,10 @@ export const HomePage = () => {
             <span className="text-xs font-black bg-brand px-3.5 py-1.5 rounded-md text-white tracking-widest uppercase w-max select-none shadow-md">
               {t('home.featured')}
             </span>
-            <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-gray-900 leading-[0.95] tracking-tighter drop-shadow-sm">
+            <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-gray-900 dark:text-gray-100 leading-[0.95] tracking-tighter drop-shadow-sm">
               {featuredTitle}
             </h1>
-            <p className="text-base sm:text-lg text-gray-600 leading-relaxed font-semibold line-clamp-3 md:line-clamp-4 max-w-2xl">
+            <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 leading-relaxed font-semibold line-clamp-3 md:line-clamp-4 max-w-2xl">
               {featuredDescription}
             </p>
             <div className="flex items-center gap-4 pt-2">
@@ -251,7 +251,7 @@ export const HomePage = () => {
               <Link to={`/movies/${featured._id}`}>
                 <Button
                   variant="glass"
-                  className="py-2.5 px-5 font-bold text-sm bg-white/80 hover:bg-white text-gray-700 rounded-xl flex items-center gap-2 border border-gray-200 active:scale-95 transition-all shadow-sm"
+                  className="py-2.5 px-5 font-bold text-sm bg-white/80 dark:bg-[#1a2035]/80 hover:bg-white dark:hover:bg-[#1a2035] text-gray-700 dark:text-gray-200 rounded-xl flex items-center gap-2 border border-gray-200 dark:border-gray-700 active:scale-95 transition-all shadow-sm"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -279,13 +279,13 @@ export const HomePage = () => {
             <>
               <button
                 onClick={() => goToBanner('prev')}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/70 backdrop-blur border border-gray-200 flex items-center justify-center text-gray-600 hover:text-brand hover:bg-white transition-all shadow-md z-10"
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/70 dark:bg-[#1a2035]/70 backdrop-blur border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-brand hover:bg-white dark:hover:bg-[#1a2035] transition-all shadow-md z-10"
               >
                 <ChevronLeft size={20} />
               </button>
               <button
                 onClick={() => goToBanner('next')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/70 backdrop-blur border border-gray-200 flex items-center justify-center text-gray-600 hover:text-brand hover:bg-white transition-all shadow-md z-10"
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/70 dark:bg-[#1a2035]/70 backdrop-blur border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-brand hover:bg-white dark:hover:bg-[#1a2035] transition-all shadow-md z-10"
               >
                 <ChevronRight size={20} />
               </button>
@@ -297,8 +297,8 @@ export const HomePage = () => {
 
       {/* 2. Thanh bộ lọc điều hướng tương tác */}
       <div className="space-y-6">
-        <div className="flex items-center justify-between border-b border-gray-200 pb-4">
-          <h2 className="text-2xl md:text-4xl font-black text-gray-900 flex items-center gap-2 tracking-tight">
+        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-4">
+          <h2 className="text-2xl md:text-4xl font-black text-gray-900 dark:text-gray-100 flex items-center gap-2 tracking-tight">
             <Compass className="text-brand" size={24} /> {t('home.discover')}
           </h2>
         </div>

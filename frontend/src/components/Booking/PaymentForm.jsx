@@ -86,9 +86,9 @@ export const PaymentForm = ({
   };
 
   return (
-    <div className="bg-dark-card border border-dark-border p-6 rounded-3xl space-y-6 shadow-xl">
+    <div className="bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 p-6 rounded-3xl space-y-6 shadow-xl">
       <div>
-        <h3 className="text-lg font-black text-zinc-200 border-b border-dark-border pb-3">
+        <h3 className="text-lg font-black text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800 pb-3">
           Chọn phương thức thanh toán
         </h3>
       </div>
@@ -101,7 +101,7 @@ export const PaymentForm = ({
           className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-xs font-bold transition-all ${
             method === 'card'
               ? 'border-brand bg-brand/5 text-brand shadow-sm'
-              : 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-zinc-200'
+              : 'border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
           }`}
         >
           <CreditCard size={20} className="mb-2" />
@@ -114,7 +114,7 @@ export const PaymentForm = ({
           className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-xs font-bold transition-all ${
             method === 'vietqr'
               ? 'border-emerald-600 bg-emerald-600/5 text-emerald-400 shadow-sm'
-              : 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-zinc-200'
+              : 'border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
           }`}
         >
           <QrCode size={20} className="mb-2 text-emerald-500" />
@@ -127,7 +127,7 @@ export const PaymentForm = ({
           className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-xs font-bold transition-all ${
             method === 'momo'
               ? 'border-pink-600 bg-pink-600/5 text-pink-400 shadow-sm'
-              : 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-zinc-200'
+              : 'border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
           }`}
         >
           <Wallet size={20} className="mb-2 text-pink-500" />
@@ -140,7 +140,7 @@ export const PaymentForm = ({
           className={`flex flex-col items-center justify-center p-3 rounded-2xl border text-xs font-bold transition-all ${
             method === 'vnpay'
               ? 'border-blue-600 bg-blue-600/5 text-blue-400 shadow-sm'
-              : 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-zinc-200'
+              : 'border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
           }`}
         >
           <Wallet size={20} className="mb-2 text-blue-500" />
@@ -149,8 +149,8 @@ export const PaymentForm = ({
       </div>
 
       {/* Coupon input section */}
-      <div className="border-t border-dark-border pt-5 space-y-3">
-        <h4 className="text-xs font-black text-zinc-400 uppercase tracking-wider pl-1">
+      <div className="border-t border-gray-200 dark:border-gray-800 pt-5 space-y-3">
+        <h4 className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider pl-1">
           Mã giảm giá / Voucher
         </h4>
         <div className="flex gap-2">
@@ -160,7 +160,7 @@ export const PaymentForm = ({
             value={couponInput}
             onChange={(e) => setCouponInput(e.target.value)}
             disabled={appliedCoupon || loading}
-            className="flex-1 bg-zinc-950 border border-zinc-800 text-zinc-200 placeholder-zinc-650 rounded-2xl px-4 py-2.5 text-sm outline-none focus:border-brand disabled:opacity-50 transition-colors uppercase font-mono tracking-wider"
+            className="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 rounded-2xl px-4 py-2.5 text-sm outline-none focus:border-brand disabled:opacity-50 transition-colors uppercase font-mono tracking-wider"
           />
           {appliedCoupon ? (
             <Button

@@ -172,7 +172,7 @@ export const MovieDetail = ({ movie }) => {
 
         {/* Left: Poster */}
         <div className="md:col-span-4 lg:col-span-3">
-          <div className="aspect-[2/3] w-full rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shadow-[0_20px_40px_rgba(0,0,0,0.1)] relative group">
+          <div className="aspect-[2/3] w-full rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-800 shadow-[0_20px_40px_rgba(0,0,0,0.1)] relative group">
             <img
               src={getPosterUrl(movie.posterUrl)}
               alt={displayTitle}
@@ -194,64 +194,64 @@ export const MovieDetail = ({ movie }) => {
                   {movie.rating === 'P' ? 'Mọi lứa tuổi (P)' : `Yêu cầu từ ${movie.rating.match(/\d+/)?.[0] || '0'} tuổi trở lên`}
                 </span>
               )}
-              <span className="text-gray-600 font-bold text-sm flex items-center gap-1.5 bg-gray-50 px-3.5 py-1.5 rounded-full border border-gray-200">
+              <span className="text-gray-600 dark:text-gray-300 font-bold text-sm flex items-center gap-1.5 bg-gray-50 dark:bg-gray-800 px-3.5 py-1.5 rounded-full border border-gray-200 dark:border-gray-700">
                 <Clock size={14} className="text-brand" /> {movie.duration} {language === 'vi' ? 'phút' : 'min'}
               </span>
-              <span className="text-gray-600 font-bold text-sm flex items-center gap-1.5 bg-gray-50 px-3.5 py-1.5 rounded-full border border-gray-200">
+              <span className="text-gray-600 dark:text-gray-300 font-bold text-sm flex items-center gap-1.5 bg-gray-50 dark:bg-gray-800 px-3.5 py-1.5 rounded-full border border-gray-200 dark:border-gray-700">
                 <Calendar size={14} className="text-brand" /> {new Date(movie.releaseDate).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
               </span>
             </div>
-            <h1 className="text-4xl md:text-6xl font-black text-gray-900 tracking-tighter leading-tight">
+            <h1 className="text-4xl md:text-6xl font-black text-gray-900 dark:text-gray-100 tracking-tighter leading-tight">
               {displayTitle}
             </h1>
             <div className="flex flex-wrap gap-2 pt-2">
               {movie.genre.map((g) => (
-                <span key={g} className="text-xs font-bold bg-gray-100 border border-gray-200 text-gray-700 px-4 py-1.5 rounded-full hover:bg-gray-200 transition-colors cursor-default shadow-sm">
+                <span key={g} className="text-xs font-bold bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 px-4 py-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-default shadow-sm">
                   {t(g)}
                 </span>
               ))}
             </div>
           </div>
 
-          <div className="bg-white border border-gray-200 p-6 rounded-2xl shadow-lg space-y-4">
-            <h3 className="text-xl font-extrabold text-gray-900 mb-2">{t('movie.synopsis')}</h3>
-            <p className="text-gray-700 leading-relaxed text-sm md:text-base font-semibold">
+          <div className="bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 p-6 rounded-2xl shadow-lg space-y-4">
+            <h3 className="text-xl font-extrabold text-gray-900 dark:text-gray-100 mb-2">{t('movie.synopsis')}</h3>
+            <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm md:text-base font-semibold">
               {displayDescription}
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 text-sm pt-4 border-t border-gray-200 mt-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 text-sm pt-4 border-t border-gray-200 dark:border-gray-800 mt-4">
               <div className="space-y-1.5">
-                <p className="text-gray-400 uppercase tracking-wider text-[11px] font-black">{t('movie.director')}</p>
-                <p className="text-gray-800 font-bold">{movie.director || 'N/A'}</p>
+                <p className="text-gray-400 dark:text-gray-500 uppercase tracking-wider text-[11px] font-black">{t('movie.director')}</p>
+                <p className="text-gray-800 dark:text-gray-200 font-bold">{movie.director || 'N/A'}</p>
               </div>
               <div className="space-y-1.5">
-                <p className="text-gray-400 uppercase tracking-wider text-[11px] font-black">{t('movie.languageLabel')}</p>
-                <p className="text-gray-800 font-bold">{displayLanguage}</p>
+                <p className="text-gray-400 dark:text-gray-500 uppercase tracking-wider text-[11px] font-black">{t('movie.languageLabel')}</p>
+                <p className="text-gray-800 dark:text-gray-200 font-bold">{displayLanguage}</p>
               </div>
               <div className="space-y-1.5">
-                <p className="text-gray-400 uppercase tracking-wider text-[11px] font-black">Thời lượng</p>
-                <p className="text-gray-800 font-bold">{movie.duration} {language === 'vi' ? 'phút' : 'min'}</p>
+                <p className="text-gray-400 dark:text-gray-500 uppercase tracking-wider text-[11px] font-black">Thời lượng</p>
+                <p className="text-gray-800 dark:text-gray-200 font-bold">{movie.duration} {language === 'vi' ? 'phút' : 'min'}</p>
               </div>
               <div className="space-y-1.5">
-                <p className="text-gray-400 uppercase tracking-wider text-[11px] font-black">Khởi chiếu</p>
-                <p className="text-gray-800 font-bold">
+                <p className="text-gray-400 dark:text-gray-500 uppercase tracking-wider text-[11px] font-black">Khởi chiếu</p>
+                <p className="text-gray-800 dark:text-gray-200 font-bold">
                   {new Date(movie.releaseDate).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </p>
               </div>
               <div className="space-y-1.5">
-                <p className="text-gray-400 uppercase tracking-wider text-[11px] font-black">Quốc gia</p>
-                <p className="text-gray-800 font-bold">{movie.country || 'Chưa cập nhật'}</p>
+                <p className="text-gray-400 dark:text-gray-500 uppercase tracking-wider text-[11px] font-black">Quốc gia</p>
+                <p className="text-gray-800 dark:text-gray-200 font-bold">{movie.country || 'Chưa cập nhật'}</p>
               </div>
               <div className="space-y-1.5">
-                <p className="text-gray-400 uppercase tracking-wider text-[11px] font-black">Giới hạn tuổi</p>
-                <p className="text-gray-800 font-bold">
+                <p className="text-gray-400 dark:text-gray-500 uppercase tracking-wider text-[11px] font-black">Giới hạn tuổi</p>
+                <p className="text-gray-800 dark:text-gray-200 font-bold">
                   {movie.rating === 'P' ? 'Mọi lứa tuổi' : `Từ ${movie.rating.match(/\d+/)?.[0] || '0'} tuổi trở lên`}
                 </p>
               </div>
             </div>
             {movie.cast && movie.cast.length > 0 && (
               <div className="space-y-1.5 pt-4">
-                <p className="text-gray-400 uppercase tracking-wider text-[11px] font-black">{t('movie.cast')}</p>
-                <p className="text-gray-800 font-bold leading-relaxed">{movie.cast.join(', ')}</p>
+                <p className="text-gray-400 dark:text-gray-500 uppercase tracking-wider text-[11px] font-black">{t('movie.cast')}</p>
+                <p className="text-gray-800 dark:text-gray-200 font-bold leading-relaxed">{movie.cast.join(', ')}</p>
               </div>
             )}
           </div>
@@ -261,8 +261,8 @@ export const MovieDetail = ({ movie }) => {
       {/* 2. Trình phát video Youtube Trailer */}
       {movie.trailerUrl && movie.trailerUrl.trim() && (
         <div className="space-y-6 pt-6">
-          <div className="flex items-center justify-between border-b border-gray-200 pb-4">
-            <h2 className="text-2xl md:text-3xl font-black text-gray-900 flex items-center gap-3">
+          <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-4">
+            <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-100 flex items-center gap-3">
               <span className="bg-brand/20 p-2 rounded-xl text-brand">
                 <Play size={24} fill="currentColor" />
               </span>
@@ -283,7 +283,7 @@ export const MovieDetail = ({ movie }) => {
 
       {/* 3. Banner Sắp chiếu / Sắp ra mắt cho phim chưa/không có lịch chiếu */}
       {(movie.status === 'coming-soon' || movie.status === 'pre-release') && (
-        <div className="bg-white border border-gray-200 p-8 md:p-12 rounded-[2rem] shadow-lg mt-12 relative overflow-hidden">
+        <div className="bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 p-8 md:p-12 rounded-[2rem] shadow-lg mt-12 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-brand/3 via-transparent to-sky-50/50 pointer-events-none" />
           <div className="absolute -top-16 -right-16 w-64 h-64 bg-brand/5 blur-[60px] rounded-full pointer-events-none" />
 
@@ -308,12 +308,12 @@ export const MovieDetail = ({ movie }) => {
               }`}>
                 {movie.status === 'pre-release' ? 'Sắp Ra Mắt' : 'Sắp Chiếu'}
               </span>
-              <h3 className="text-2xl font-black text-gray-900 tracking-tight">
+              <h3 className="text-2xl font-black text-gray-900 dark:text-gray-100 tracking-tight">
                 {movie.status === 'pre-release'
                   ? 'Phim chưa có lịch chiếu'
                   : 'Lịch chiếu sắp được mở'}
               </h3>
-              <p className="text-gray-500 text-sm font-medium mt-2 leading-relaxed max-w-lg">
+              <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mt-2 leading-relaxed max-w-lg">
                 {movie.status === 'pre-release'
                   ? 'Phim này chưa được lên lịch chiếu. Quay lại sau để xem lịch chiếu được cập nhật mới nhất.'
                   : 'Phim có lịch chiếu trong thời gian tới. Lịch chiếu hôm nay sẽ tự động mở khi đến ngày chiếu.'}
@@ -321,11 +321,11 @@ export const MovieDetail = ({ movie }) => {
 
               {/* Release date */}
               {movie.releaseDate && (
-                <div className="mt-4 inline-flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-2xl px-5 py-3">
+                <div className="mt-4 inline-flex items-center gap-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-5 py-3">
                   <Calendar size={16} className="text-brand shrink-0" />
                   <div>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Ngày khởi chiếu dự kiến</p>
-                    <p className="text-sm font-black text-gray-900">
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">Ngày khởi chiếu dự kiến</p>
+                    <p className="text-sm font-black text-gray-900 dark:text-gray-100">
                       {new Date(movie.releaseDate).toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </p>
                   </div>
@@ -338,12 +338,12 @@ export const MovieDetail = ({ movie }) => {
 
       {/* 4. Bảng đặt vé theo lịch chiếu */}
       {(movie.status === 'now-showing' || movie.status === 'preview') && (
-        <div className="space-y-6 bg-white border border-gray-200 p-6 md:p-10 rounded-[2rem] shadow-lg mt-12 relative overflow-hidden">
+        <div className="space-y-6 bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 p-6 md:p-10 rounded-[2rem] shadow-lg mt-12 relative overflow-hidden">
           {/* Subtle glow in background */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand/5 blur-[80px] rounded-full pointer-events-none" />
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-gray-200 pb-6 relative z-10">
-            <h2 className="text-2xl md:text-3xl font-black text-gray-900 flex items-center gap-3 tracking-tight">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-gray-200 dark:border-gray-800 pb-6 relative z-10">
+            <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-100 flex items-center gap-3 tracking-tight">
               <span className="bg-brand/20 p-2 rounded-xl text-brand">
                 <Ticket size={24} />
               </span>
@@ -371,8 +371,8 @@ export const MovieDetail = ({ movie }) => {
                           isSelected
                             ? 'bg-gradient-to-br from-brand to-brand-dark text-white border-transparent shadow-[0_10px_20px_rgba(200,135,43,0.3)]'
                             : availabilityKnown && !hasShowtimes
-                              ? 'bg-gray-50 text-gray-300 border-gray-100 hover:bg-gray-100 hover:text-gray-400 cursor-pointer'
-                              : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100 hover:text-gray-800'
+                              ? 'bg-gray-50 dark:bg-gray-800/50 text-gray-300 dark:text-gray-600 border-gray-100 dark:border-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-400 dark:hover:text-gray-500 cursor-pointer'
+                              : 'bg-gray-50 dark:bg-gray-800/80 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-200'
                         }`}
                       >
                         <span className="text-[11px] uppercase font-bold tracking-widest opacity-80">{tab.dayName}</span>
@@ -397,14 +397,14 @@ export const MovieDetail = ({ movie }) => {
 
           {/* Sub-row: Sort and Format Filter */}
           {!loadingShowtimes && Object.keys(groupedShowtimes).length > 0 && (
-            <div className="flex flex-wrap items-center gap-6 py-4 border-b border-gray-200 relative z-10">
+            <div className="flex flex-wrap items-center gap-6 py-4 border-b border-gray-200 dark:border-gray-800 relative z-10">
               {/* Sort selector */}
               <div className="flex items-center gap-2.5">
                 <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('showtime.sortBy')}:</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="bg-gray-50 border border-gray-200 text-gray-700 hover:text-gray-900 pl-3.5 pr-9 py-2 text-xs rounded-xl focus:border-brand/60 outline-none cursor-pointer transition-colors"
+                  className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 pl-3.5 pr-9 py-2 text-xs rounded-xl focus:border-brand/60 outline-none cursor-pointer transition-colors"
                 >
                   <option value="earliest">{t('showtime.sort.earliest')}</option>
                   <option value="latest">{t('showtime.sort.latest')}</option>
@@ -417,7 +417,7 @@ export const MovieDetail = ({ movie }) => {
                 <select
                   value={formatFilter}
                   onChange={(e) => setFormatFilter(e.target.value)}
-                  className="bg-gray-50 border border-gray-200 text-gray-700 hover:text-gray-900 pl-3.5 pr-9 py-2 text-xs rounded-xl focus:border-brand/60 outline-none cursor-pointer transition-colors"
+                  className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 pl-3.5 pr-9 py-2 text-xs rounded-xl focus:border-brand/60 outline-none cursor-pointer transition-colors"
                 >
                   <option value="">{t('showtime.format.all')}</option>
                   <option value="2D">2D</option>
@@ -429,20 +429,20 @@ export const MovieDetail = ({ movie }) => {
 
           {/* Danh sách lịch chiếu được nhóm theo rạp */}
           {loadingShowtimes ? (
-            <div className="py-16 flex justify-center items-center gap-3 text-gray-500 font-semibold relative z-10">
+            <div className="py-16 flex justify-center items-center gap-3 text-gray-500 dark:text-gray-400 font-semibold relative z-10">
               <div className="w-5 h-5 border-2 border-brand border-t-transparent rounded-full animate-spin" />
               {t('movie.loadingShowtimes')}
             </div>
           ) : Object.keys(groupedShowtimes).length === 0 ? (
-            <div className="py-16 text-center text-gray-400 font-semibold relative z-10 bg-gray-50 rounded-2xl border border-gray-200 px-4">
+            <div className="py-16 text-center text-gray-400 dark:text-gray-500 font-semibold relative z-10 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 px-4">
               {t('movie.noShowtimes')}
             </div>
           ) : (
-            <div className="divide-y divide-gray-200 relative z-10">
+            <div className="divide-y divide-gray-200 dark:divide-gray-800 relative z-10">
               {Object.keys(groupedShowtimes).map((theaterName) => (
                 <div key={theaterName} className="py-8 flex flex-col md:flex-row md:items-start gap-6 md:gap-10">
                   <div className="w-full md:w-64 shrink-0">
-                    <h3 className="font-extrabold text-gray-900 text-lg tracking-tight">
+                    <h3 className="font-extrabold text-gray-900 dark:text-gray-100 text-lg tracking-tight">
                       {theaterName}
                     </h3>
                     <p className="text-xs text-gray-400 mt-1 font-semibold">{t('movie.formats')}</p>
@@ -464,15 +464,15 @@ export const MovieDetail = ({ movie }) => {
                           disabled={isPastShowtime}
                           className={`flex items-center space-x-3 px-5 py-3 rounded-2xl transition-all duration-300 text-left group border ${
                             isPastShowtime
-                              ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-70'
-                              : 'bg-gray-50 hover:bg-brand/10 border-gray-200 hover:border-brand/50 hover:-translate-y-1 active:scale-95 shadow-sm hover:shadow-[0_10px_20px_rgba(200,135,43,0.15)]'
+                              ? 'bg-gray-50 dark:bg-gray-800/30 border-gray-200 dark:border-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-70'
+                              : 'bg-gray-50 dark:bg-gray-800 hover:bg-brand/10 dark:hover:bg-brand/10 border-gray-200 dark:border-gray-700 hover:border-brand/50 dark:hover:border-brand/50 hover:-translate-y-1 active:scale-95 shadow-sm hover:shadow-[0_10px_20px_rgba(200,135,43,0.15)]'
                           }`}
                         >
                           <div className="flex-1">
-                            <span className={`text-gray-900 font-black text-base transition-colors ${isPastShowtime ? 'text-gray-400' : 'group-hover:text-brand'}`}>
+                            <span className={`text-gray-900 dark:text-gray-100 font-black text-base transition-colors ${isPastShowtime ? 'text-gray-400 dark:text-gray-600' : 'group-hover:text-brand'}`}>
                               {startTimeString}
                             </span>
-                            <span className="text-[11px] text-gray-500 font-bold block uppercase tracking-wider">
+                            <span className="text-[11px] text-gray-500 dark:text-gray-400 font-bold block uppercase tracking-wider">
                               {showtime.room?.name || 'Screen'} • {showtime.format}
                             </span>
                           </div>

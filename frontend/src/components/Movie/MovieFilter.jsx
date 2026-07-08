@@ -162,16 +162,16 @@ export const MovieFilter = ({ filters, onChange }) => {
   ];
 
   return (
-    <div className="space-y-4 bg-white border border-gray-200 p-4 sm:p-5 rounded-2xl shadow-sm">
+    <div className="space-y-4 bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 p-4 sm:p-5 rounded-2xl shadow-sm">
       {/* Row 1: Status tabs & Search */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
         {/* Status tabs */}
-        <div className="flex flex-wrap items-center bg-gray-100 p-1.5 rounded-xl border border-gray-200 w-full lg:w-auto overflow-x-auto">
+        <div className="flex flex-wrap items-center bg-gray-100 dark:bg-gray-800 p-1.5 rounded-xl border border-gray-200 dark:border-gray-700 w-full lg:w-auto overflow-x-auto">
           <button
             onClick={() => handleStatusChange('all')}
             className={`flex-1 lg:flex-none text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap ${filters.status === 'all'
                 ? 'bg-gray-900 text-white shadow-md'
-                : 'text-gray-500 hover:text-gray-700'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
           >
             {t('filter.statusAll')}
@@ -180,7 +180,7 @@ export const MovieFilter = ({ filters, onChange }) => {
             onClick={() => handleStatusChange('now-showing')}
             className={`flex-1 lg:flex-none text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap ${filters.status === 'now-showing'
                 ? 'bg-gray-900 text-white shadow-md'
-                : 'text-gray-500 hover:text-gray-700'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
           >
             {t('filter.nowShowing')}
@@ -189,7 +189,7 @@ export const MovieFilter = ({ filters, onChange }) => {
             onClick={() => handleStatusChange('coming-soon')}
             className={`flex-1 lg:flex-none text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap ${filters.status === 'coming-soon'
                 ? 'bg-gray-900 text-white shadow-md'
-                : 'text-gray-500 hover:text-gray-700'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
           >
             {t('filter.comingSoon')}
@@ -198,7 +198,7 @@ export const MovieFilter = ({ filters, onChange }) => {
             onClick={() => handleStatusChange('preview')}
             className={`flex-1 lg:flex-none text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap ${filters.status === 'preview'
                 ? 'bg-gray-900 text-white shadow-md'
-                : 'text-gray-500 hover:text-gray-700'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
           >
             {t('filter.preview')}
@@ -207,7 +207,7 @@ export const MovieFilter = ({ filters, onChange }) => {
             onClick={() => handleStatusChange('pre-release')}
             className={`flex-1 lg:flex-none text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap ${filters.status === 'pre-release'
                 ? 'bg-gray-900 text-white shadow-md'
-                : 'text-gray-500 hover:text-gray-700'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
           >
             {t('filter.preRelease')}
@@ -225,13 +225,13 @@ export const MovieFilter = ({ filters, onChange }) => {
               placeholder={t('filter.searchPlaceholder')}
               value={filters.search || ''}
               onChange={handleSearchChange}
-              className="w-full bg-gray-50 border border-gray-200 text-gray-800 pl-10 pr-4 py-2.5 text-sm rounded-xl focus:border-brand/60 focus:bg-white outline-none transition-all duration-300"
+              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 pl-10 pr-4 py-2.5 text-sm rounded-xl focus:border-brand/60 focus:bg-white dark:focus:bg-[#1a2035] outline-none transition-all duration-300"
             />
           </div>
           <button 
             type="button"
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all shrink-0 ${showAdvancedFilters ? 'bg-brand/10 border-brand/40 text-brand' : 'bg-gray-50 border-gray-200 text-gray-500 hover:text-brand hover:border-brand/30'}`}
+            className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all shrink-0 ${showAdvancedFilters ? 'bg-brand/10 border-brand/40 text-brand' : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 hover:text-brand hover:border-brand/30'}`}
           >
             <SlidersHorizontal size={16} />
           </button>

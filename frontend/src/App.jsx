@@ -5,6 +5,7 @@ import { store } from './store';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
 import { LanguageProvider } from './context/LanguageContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 // Pages
 import HomePage from './pages/HomePage';
@@ -23,7 +24,7 @@ import VNPayReturnPage from './pages/VNPayReturnPage';
 
 // Layout wrapper for public pages (with Header + Footer)
 const PublicLayout = ({ children }) => (
-  <div className="min-h-screen bg-[#faf7f2] text-gray-900 flex flex-col justify-between selection:bg-brand selection:text-white">
+  <div className="min-h-screen bg-white dark:bg-[#0b0f19] text-gray-900 dark:text-gray-100 flex flex-col justify-between selection:bg-brand selection:text-white transition-colors duration-300">
     <Header />
     <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in duration-300">
       {children}
@@ -35,9 +36,10 @@ const PublicLayout = ({ children }) => (
 function App() {
   return (
     <Provider store={store}>
-      <LanguageProvider>
-        <BrowserRouter>
-          <Routes>
+      <ThemeProvider>
+        <LanguageProvider>
+          <BrowserRouter>
+            <Routes>
             {/* ── Admin: full-screen standalone (no Header/Footer) ── */}
             <Route path="/admin" element={<AdminPage />} />
 
@@ -58,6 +60,7 @@ function App() {
           </Routes>
         </BrowserRouter>
       </LanguageProvider>
+      </ThemeProvider>
     </Provider>
   );
 }

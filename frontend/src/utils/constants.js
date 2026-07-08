@@ -25,23 +25,23 @@ export const CONTENT_RATINGS = {
 export const SEAT_TYPES = {
   standard: {
     label: 'Trống',
-    color: 'bg-[#2a2a35]/60 hover:bg-zinc-600/60 border border-zinc-700/50 text-zinc-400',
-    selectedColor: 'bg-brand border border-brand/50 text-white shadow-[0_0_12px_rgba(168,85,247,0.5)]',
-    bookedColor: 'bg-[#b91c1c]/20 border border-red-800/40 text-red-500/50 cursor-not-allowed',
+    color: 'bg-gray-200 hover:bg-gray-300 border border-gray-300 text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:border-gray-600 dark:text-gray-200',
+    selectedColor: 'bg-brand border border-brand/50 text-white shadow-[0_0_12px_rgba(200,135,43,0.5)]',
+    bookedColor: 'bg-gray-300 border border-gray-400 text-gray-500 cursor-not-allowed dark:bg-gray-800 dark:border-gray-700 dark:text-gray-500',
     extraPrice: 0,
   },
   vip: {
     label: 'Ghế VIP',
-    color: 'bg-[#6366f1]/20 hover:bg-[#6366f1]/40 border border-[#6366f1]/30 text-[#818cf8]',
-    selectedColor: 'bg-brand border border-brand/50 text-white shadow-[0_0_12px_rgba(168,85,247,0.5)]',
-    bookedColor: 'bg-[#b91c1c]/20 border border-red-800/40 text-red-500/50 cursor-not-allowed',
+    color: 'bg-indigo-100 hover:bg-indigo-200 border border-indigo-200 text-indigo-700 dark:bg-indigo-900/50 dark:hover:bg-indigo-800/50 dark:border-indigo-700 dark:text-indigo-300',
+    selectedColor: 'bg-brand border border-brand/50 text-white shadow-[0_0_12px_rgba(200,135,43,0.5)]',
+    bookedColor: 'bg-gray-300 border border-gray-400 text-gray-500 cursor-not-allowed dark:bg-gray-800 dark:border-gray-700 dark:text-gray-500',
     extraPrice: 5000,
   },
   couple: {
     label: 'Sweetbox',
-    color: 'bg-[#ec4899]/20 hover:bg-[#ec4899]/40 border border-[#ec4899]/30 text-[#f472b6]',
-    selectedColor: 'bg-brand border border-brand/50 text-white shadow-[0_0_12px_rgba(168,85,247,0.5)]',
-    bookedColor: 'bg-[#b91c1c]/20 border border-red-800/40 text-red-500/50 cursor-not-allowed',
+    color: 'bg-pink-100 hover:bg-pink-200 border border-pink-200 text-pink-700 dark:bg-pink-900/50 dark:hover:bg-pink-800/50 dark:border-pink-700 dark:text-pink-300',
+    selectedColor: 'bg-brand border border-brand/50 text-white shadow-[0_0_12px_rgba(200,135,43,0.5)]',
+    bookedColor: 'bg-gray-300 border border-gray-400 text-gray-500 cursor-not-allowed dark:bg-gray-800 dark:border-gray-700 dark:text-gray-500',
     extraPrice: 120000,
   },
 };

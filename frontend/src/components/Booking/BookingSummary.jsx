@@ -58,17 +58,17 @@ export const BookingSummary = ({
   const finalTotal = Math.max(0, pricing.grandTotal - discountAmount);
 
   return (
-    <div className="bg-dark-card border border-dark-border p-6 rounded-3xl space-y-6 shadow-xl sticky top-24">
+    <div className="bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 p-6 rounded-3xl space-y-6 shadow-xl sticky top-24">
       {/* Movie Details Invoice Header */}
-      <div className="space-y-2 border-b border-dark-border pb-4">
+      <div className="space-y-2 border-b border-gray-200 dark:border-gray-800 pb-4">
         <span className="text-[10px] font-black bg-brand px-2 py-0.5 rounded text-white tracking-wide uppercase">
           {movie.rating}
         </span>
-        <h3 className="text-xl font-black text-zinc-100 leading-snug">{movie.title}</h3>
-        <p className="text-xs text-zinc-400 font-semibold uppercase">
+        <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-100 leading-snug">{movie.title}</h3>
+        <p className="text-xs text-zinc-600 dark:text-zinc-400 font-semibold uppercase">
           {theater.name} &bull; {room.name} ({showtime.format})
         </p>
-        <p className="text-xs text-zinc-500 font-bold">
+        <p className="text-xs text-zinc-500 dark:text-zinc-500 font-bold">
           {dateString} &bull; {timeString}
         </p>
       </div>
@@ -78,23 +78,23 @@ export const BookingSummary = ({
         {/* Ticket Seats */}
         {selectedSeats.length > 0 ? (
           <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5 text-zinc-300">
+            <div className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
               <Ticket size={14} className="text-brand" />
               <span>Ghế: {formatSeatCodes(selectedSeats).join(', ')}</span>
             </div>
-            <div className="flex justify-between pl-5 text-zinc-500">
+            <div className="flex justify-between pl-5 text-zinc-600 dark:text-zinc-400">
               <span>{selectedSeats.length} Vé</span>
-              <span className="text-zinc-300 font-bold">{pricing.seatsTotal.toLocaleString()} VND</span>
+              <span className="text-zinc-800 dark:text-zinc-200 font-bold">{pricing.seatsTotal.toLocaleString()} VND</span>
             </div>
           </div>
         ) : (
-          <p className="text-zinc-500 italic">Chưa chọn ghế nào.</p>
+          <p className="text-zinc-500 dark:text-zinc-600 italic">Chưa chọn ghế nào.</p>
         )}
 
         {/* Bắp nước */}
         {Object.keys(selectedConcessions).length > 0 && (
-          <div className="space-y-1.5 border-t border-zinc-900 pt-3">
-            <div className="flex items-center gap-1.5 text-zinc-300">
+          <div className="space-y-1.5 border-t border-gray-200 dark:border-gray-800 pt-3">
+            <div className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
               <Popcorn size={14} className="text-brand" />
               <span>Đồ ăn uống đã chọn</span>
             </div>
@@ -104,17 +104,17 @@ export const BookingSummary = ({
                 const item = concessionsList.find((c) => c._id === id);
                 if (!item || qty === 0) return null;
                 return (
-                  <div key={id} className="flex justify-between text-zinc-500">
+                  <div key={id} className="flex justify-between text-zinc-600 dark:text-zinc-400">
                     <span>
                       {item.name} x {qty}
                     </span>
-                    <span className="text-zinc-400">{(item.price * qty).toLocaleString()} VND</span>
+                    <span className="text-zinc-500 dark:text-zinc-500">{(item.price * qty).toLocaleString()} VND</span>
                   </div>
                 );
               })}
-              <div className="flex justify-between pl-0 pt-1 text-zinc-500 border-t border-zinc-900/40">
+              <div className="flex justify-between pl-0 pt-1 text-zinc-600 dark:text-zinc-400 border-t border-gray-200 dark:border-gray-800">
                 <span>Tổng cộng đồ ăn uống</span>
-                <span className="text-zinc-300 font-bold">{pricing.concessionsTotal.toLocaleString()} VND</span>
+                <span className="text-zinc-800 dark:text-zinc-200 font-bold">{pricing.concessionsTotal.toLocaleString()} VND</span>
               </div>
             </div>
           </div>
@@ -122,7 +122,7 @@ export const BookingSummary = ({
 
         {/* Mã giảm giá */}
         {appliedCoupon && (
-          <div className="border-t border-zinc-900 pt-3 flex justify-between text-emerald-400">
+          <div className="border-t border-gray-200 dark:border-gray-800 pt-3 flex justify-between text-emerald-600 dark:text-emerald-500">
             <span>Giảm giá ({appliedCoupon.code})</span>
             <span>-{discountAmount.toLocaleString()} VND</span>
           </div>
@@ -130,8 +130,8 @@ export const BookingSummary = ({
       </div>
 
       {/* Tổng cộng */}
-      <div className="border-t-2 border-dashed border-dark-border pt-4 flex items-center justify-between">
-        <span className="text-sm font-black text-zinc-300">Tổng tiền thanh toán</span>
+      <div className="border-t-2 border-dashed border-gray-200 dark:border-gray-800 pt-4 flex items-center justify-between">
+        <span className="text-sm font-black text-zinc-800 dark:text-zinc-200">Tổng tiền thanh toán</span>
         <span className="text-xl font-black text-brand tracking-tight">
           {finalTotal.toLocaleString()} VND
         </span>

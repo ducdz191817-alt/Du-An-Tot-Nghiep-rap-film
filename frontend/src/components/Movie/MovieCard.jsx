@@ -40,9 +40,9 @@ export const MovieCard = ({ movie }) => {
         : 'bg-sky-500';
 
   return (
-    <div className="group relative bg-white border border-gray-100 rounded-2xl overflow-hidden hover:border-brand/30 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
+    <div className="group relative bg-white dark:bg-[#151a28] border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden hover:border-brand/30 dark:hover:border-brand/50 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
       {/* Vùng chứa hình ảnh */}
-      <div className="relative aspect-[4/5] w-full overflow-hidden bg-gray-100">
+      <div className="relative aspect-[4/5] w-full overflow-hidden bg-gray-100 dark:bg-gray-800">
         <img
           src={imageError ? fallbackPoster : getPosterUrl(movie.posterUrl)}
           alt={displayTitle}
@@ -71,16 +71,16 @@ export const MovieCard = ({ movie }) => {
 
         {/* Rating badge (góc trên bên phải) */}
         {movie.reviewsAverage > 0 && (
-          <span className="absolute top-3 right-3 flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg shadow-sm">
+          <span className="absolute top-3 right-3 flex items-center gap-1 bg-white/90 dark:bg-[#1a2035]/90 backdrop-blur-sm px-2 py-1 rounded-lg shadow-sm">
             <Star size={12} className="fill-amber-400 text-amber-400" />
-            <span className="text-xs font-black text-gray-800">{movie.reviewsAverage.toFixed(1)}</span>
+            <span className="text-xs font-black text-gray-800 dark:text-gray-200">{movie.reviewsAverage.toFixed(1)}</span>
           </span>
         )}
       </div>
 
       {/* Phần văn bản chi tiết */}
       <div className="p-4 space-y-2">
-        <h3 className="text-gray-900 font-extrabold truncate text-lg group-hover:text-brand transition-colors">
+        <h3 className="text-gray-900 dark:text-gray-100 font-extrabold truncate text-lg group-hover:text-brand transition-colors">
           <Link to={`/movies/${movie._id}`}>{displayTitle}</Link>
         </h3>
 
@@ -88,7 +88,7 @@ export const MovieCard = ({ movie }) => {
           {movie.genre.slice(0, 2).map((g, i) => (
             <React.Fragment key={g}>
               {i > 0 && <span>,</span>}
-              <span className="text-gray-500">{t(g)}</span>
+              <span className="text-gray-500 dark:text-gray-400">{t(g)}</span>
             </React.Fragment>
           ))}
         </div>
