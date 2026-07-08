@@ -12,9 +12,9 @@ export const ConcessionList = ({ concessions = [], selectedConcessions = {}, onQ
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 border-b border-dark-border pb-3">
+      <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-800 pb-3">
         <Popcorn className="text-brand" size={20} />
-        <h3 className="text-lg font-black text-zinc-200">Chọn đồ ăn nhẹ & nước uống</h3>
+        <h3 className="text-lg font-black text-gray-900 dark:text-gray-100">Chọn đồ ăn nhẹ & nước uống</h3>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -24,7 +24,7 @@ export const ConcessionList = ({ concessions = [], selectedConcessions = {}, onQ
           return (
             <div
               key={item._id}
-              className="flex bg-dark-card border border-dark-border hover:border-zinc-800 p-3 rounded-2xl gap-4 items-center justify-between transition-colors shadow-sm"
+              className="flex bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 hover:border-brand/30 p-3 rounded-2xl gap-4 items-center justify-between transition-colors shadow-sm"
             >
               {/* Hình ảnh & Chi tiết sản phẩm */}
               <div className="flex items-center gap-3 min-w-0">
@@ -36,8 +36,8 @@ export const ConcessionList = ({ concessions = [], selectedConcessions = {}, onQ
                   />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-sm font-bold text-zinc-200 truncate">{item.name}</h4>
-                  <p className="text-[10px] text-zinc-500 leading-snug line-clamp-2 mt-0.5">
+                  <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">{item.name}</h4>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-snug line-clamp-2 mt-0.5">
                     {item.description}
                   </p>
                   <span className="text-xs font-black text-brand block mt-1">
@@ -47,18 +47,18 @@ export const ConcessionList = ({ concessions = [], selectedConcessions = {}, onQ
               </div>
 
               {/* Nút Tăng/Giảm số lượng */}
-              <div className="flex items-center space-x-3 bg-zinc-900 border border-dark-border p-1 rounded-xl shrink-0">
+              <div className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-1 rounded-xl shrink-0">
                 <button
                   onClick={() => onQtyChange(item._id, qty - 1)}
                   disabled={qty <= 0}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-600 dark:text-gray-300 hover:text-brand hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                 >
                   <Minus size={14} />
                 </button>
-                <span className="w-5 text-center font-black text-sm text-zinc-200">{qty}</span>
+                <span className="w-5 text-center font-black text-sm text-gray-900 dark:text-gray-100">{qty}</span>
                 <button
                   onClick={() => onQtyChange(item._id, qty + 1)}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-all"
+                  className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-600 dark:text-gray-300 hover:text-brand hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
                 >
                   <Plus size={14} />
                 </button>

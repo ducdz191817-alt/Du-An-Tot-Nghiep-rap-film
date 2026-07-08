@@ -147,11 +147,11 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
                   
                   let activeBg = seatStyle.color;
                   if (seatInfo.isDisabled) {
-                    activeBg = 'bg-[#1f1f23]/40 border border-zinc-800/80 text-zinc-600/40 cursor-not-allowed';
+                    activeBg = 'bg-gray-200 border border-gray-300 text-gray-500 cursor-not-allowed';
                   } else if (seatInfo.isBooked) {
                     activeBg = seatStyle.bookedColor;
                   } else if (seatInfo.isHeld) {
-                    activeBg = 'bg-orange-500/20 border border-orange-500 text-orange-400 cursor-not-allowed';
+                    activeBg = 'bg-orange-100 border border-orange-300 text-orange-600 cursor-not-allowed';
                   } else if (isSelected) {
                     activeBg = seatStyle.selectedColor + ' shadow-[0_0_12px_rgba(168,85,247,0.6)] border-brand';
                   } else {

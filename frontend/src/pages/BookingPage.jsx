@@ -182,12 +182,12 @@ export const BookingPage = () => {
             <ShieldAlert size={36} />
           </div>
           <div className="space-y-2">
-            <h4 className="font-extrabold text-white text-base">Bạn chưa đủ tuổi xem phim</h4>
-            <p className="text-xs text-zinc-400 leading-relaxed font-semibold">
-              Phim <span className="text-zinc-200 font-bold">"{ageWarning.movieTitle}"</span> yêu cầu độ tuổi tối thiểu từ <span className="text-red-400 font-bold">{ageWarning.requiredAge} tuổi</span> trở lên.
+            <h4 className="font-extrabold text-zinc-900 dark:text-zinc-100 text-base">Bạn chưa đủ tuổi xem phim</h4>
+            <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed font-semibold">
+              Phim <span className="text-zinc-800 dark:text-zinc-200 font-bold">"{ageWarning.movieTitle}"</span> yêu cầu độ tuổi tối thiểu từ <span className="text-red-500 font-bold">{ageWarning.requiredAge} tuổi</span> trở lên.
             </p>
             <p className="text-[11px] text-zinc-500 font-medium">
-              Số tuổi tài khoản hiện tại của bạn: <span className="text-zinc-300 font-bold">{ageWarning.userAge} tuổi</span>.
+              Số tuổi tài khoản hiện tại của bạn: <span className="text-zinc-700 font-bold">{ageWarning.userAge} tuổi</span>.
             </p>
           </div>
           <Button
@@ -203,7 +203,7 @@ export const BookingPage = () => {
       {/* Nút quay lại chi tiết phim */}
       <button
         onClick={handleBackStep}
-        className="inline-flex items-center text-zinc-400 hover:text-white text-xs font-extrabold uppercase tracking-wider gap-1.5 transition-colors"
+        className="inline-flex items-center text-zinc-500 hover:text-brand text-xs font-extrabold uppercase tracking-wider gap-1.5 transition-colors"
       >
         <ChevronLeft size={16} /> Quay lại chi tiết phim
       </button>
@@ -211,24 +211,24 @@ export const BookingPage = () => {
       {/* Thanh chỉ báo tiến trình */}
       <div className="flex items-center justify-center space-x-4 select-none max-w-md mx-auto py-2">
         <span className={`text-xs font-extrabold px-3 py-1 rounded-full border ${
-          activeStep === 1 ? 'bg-brand text-white border-brand shadow' : 'bg-zinc-900 border-zinc-800 text-zinc-500'
+          activeStep === 1 ? 'bg-brand text-white border-brand shadow' : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400'
         }`}>1. Sơ đồ ghế</span>
-        <span className="h-0.5 w-12 bg-zinc-800" />
+        <span className="h-0.5 w-12 bg-gray-200 dark:bg-gray-800" />
         <span className={`text-xs font-extrabold px-3 py-1 rounded-full border ${
-          activeStep === 2 ? 'bg-brand text-white border-brand shadow' : 'bg-zinc-900 border-zinc-800 text-zinc-500'
+          activeStep === 2 ? 'bg-brand text-white border-brand shadow' : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400'
         }`}>2. Bắp nước</span>
       </div>
 
       {/* Lưới bố cục */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {/* Tùy chọn đặt chỗ bên trái */}
-        <div className="lg:col-span-2 space-y-8 bg-dark-card border border-dark-border p-6 rounded-3xl shadow-xl">
+        <div className="lg:col-span-2 space-y-8 bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 p-6 rounded-3xl shadow-xl">
           {activeStep === 1 ? (
             <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-dark-border pb-3">
+              <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-3">
                 <div className="flex items-center gap-2">
                   <Armchair className="text-brand" size={20} />
-                  <h3 className="text-lg font-black text-zinc-200">Chọn vị trí ghế ngồi</h3>
+                  <h3 className="text-lg font-black text-zinc-800 dark:text-zinc-100">Chọn vị trí ghế ngồi</h3>
                 </div>
                 
                 {selectedSeats.length > 0 && (
