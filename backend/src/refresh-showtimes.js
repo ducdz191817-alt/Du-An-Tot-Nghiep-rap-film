@@ -41,12 +41,12 @@ const run = async () => {
     );
     console.log('✅ Connected!\n');
 
-    // ── 1. Xóa tất cả suất chiếu cũ (trước hôm nay 00:00) ──────────────────
+    // ── 1. Không xóa suất chiếu cũ để giữ dữ liệu cho Báo cáo Doanh thu ──────
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    const deleted = await Showtime.deleteMany({ startTime: { $lt: startOfToday } });
-    console.log(`🗑️  Đã xóa ${deleted.deletedCount} suất chiếu cũ (trước ${startOfToday.toDateString()}).`);
+    // const deleted = await Showtime.deleteMany({ startTime: { $lt: startOfToday } });
+    // console.log(`🗑️  Đã xóa ${deleted.deletedCount} suất chiếu cũ (trước ${startOfToday.toDateString()}).`);
 
     // ── 2. Lấy TẤT CẢ phim đang hoạt động (không lọc theo releaseDate) ───────
     const PROTECTED_STATUSES = ['suspended', 'cancelled', 'hidden', 'stopped', 'ended'];
