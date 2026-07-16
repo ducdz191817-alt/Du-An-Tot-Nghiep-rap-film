@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, AlertCircle, Calendar, Edit2, Building2, Loader2 } from 'lucide-react';
+import { Plus, Trash2, AlertCircle, Calendar, Edit2, Loader2, Zap, Clock, CheckCircle2, X } from 'lucide-react';
 import movieService from '../../services/movie.service';
 import adminService from '../../services/admin.service';
 import bookingService from '../../services/booking.service';
@@ -8,49 +8,63 @@ import Button from '../common/Button';
 import Loading from '../common/Loading';
 import Modal from '../common/Modal';
 
+const DEFAULT_TIME_SLOTS = ['08:00', '10:30', '13:00', '15:30', '18:00', '20:30'];
+const DEFAULT_PRICES = { '2D': 80000, '3D': 90000, 'IMAX': 180000, 'GOLDCLASS': 300000 };
+
 export const ShowtimeManager = () => {
   const [theaters, setTheaters] = useState([]);
   const [movies, setMovies] = useState([]);
-  const [rooms, setRooms] = useState([]);           // Rooms for grid display (theo selectedTheater)
-  const [modalRooms, setModalRooms] = useState([]); // Rooms riêng cho modal (có thể khác)
+  const [rooms, setRooms] = useState([]);
+  const [modalRooms, setModalRooms] = useState([]);
   const [modalRoomsLoading, setModalRoomsLoading] = useState(false);
   const [showtimes, setShowtimes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isOpen, setIsOpen] = useState(false);
+
+  // ── Manual Modal ──
+  const [isManualOpen, setIsManualOpen] = useState(false);
   const [editingShowtime, setEditingShowtime] = useState(null);
 
+  // ── Auto Modal ──
+  const [isAutoOpen, setIsAutoOpen] = useState(false);
+  const [autoGenerating, setAutoGenerating] = useState(false);
+  const [autoResult, setAutoResult] = useState(null);
+  const [autoModalRooms, setAutoModalRooms] = useState([]);
+  const [autoModalRoomsLoading, setAutoModalRoomsLoading] = useState(false);
+
   const [selectedTheater, setSelectedTheater] = useState('');
-  
-  // States for filtering
   const [filterDate, setFilterDate] = useState('');
   const [filterMovie, setFilterMovie] = useState('');
   const [filterRoom, setFilterRoom] = useState('');
 
-  const [form, setForm] = useState({
+  // Manual form
+  const [form, setForm] = useState({ movieId: '', theaterId: '', roomId: '', startTime: '', ticketPrice: 80000, format: '2D' });
+  const [error, setError] = useState('');
+
+  // Auto generate form
+  const [autoForm, setAutoForm] = useState({
     movieId: '',
     theaterId: '',
-    roomId: '',
-    startTime: '',
-    ticketPrice: 80000,
+    roomIds: [],
+    startDate: '',
+    endDate: '',
+    timeSlots: [...DEFAULT_TIME_SLOTS],
     format: '2D',
+    ticketPrice: 80000,
   });
-  const [error, setError] = useState('');
+  const [autoError, setAutoError] = useState('');
+  const [newSlotInput, setNewSlotInput] = useState('');
+
 
   // ────────────────────────────────────────────────
   // Load danh sách phòng cho modal khi theaterId thay đổi
   // ────────────────────────────────────────────────
   const loadModalRooms = useCallback(async (theaterId) => {
-    if (!theaterId) {
-      setModalRooms([]);
-      return;
-    }
+    if (!theaterId) { setModalRooms([]); return; }
     setModalRoomsLoading(true);
     try {
       const rmRes = await adminService.getRooms(theaterId);
-      // API interceptor unwraps to response.data = { success, data: [...], count }
       const roomArr = Array.isArray(rmRes) ? rmRes : (Array.isArray(rmRes?.data) ? rmRes.data : []);
       setModalRooms(roomArr);
-      // Không tự động ghi đè roomId khi đang edit
       if (roomArr.length > 0 && !editingShowtime) {
         setForm((prev) => ({ ...prev, roomId: roomArr[0]._id }));
       } else if (roomArr.length === 0) {
@@ -63,6 +77,22 @@ export const ShowtimeManager = () => {
       setModalRoomsLoading(false);
     }
   }, [editingShowtime]);
+
+  const loadAutoModalRooms = useCallback(async (theaterId) => {
+    if (!theaterId) { setAutoModalRooms([]); return; }
+    setAutoModalRoomsLoading(true);
+    try {
+      const rmRes = await adminService.getRooms(theaterId);
+      const roomArr = Array.isArray(rmRes) ? rmRes : (Array.isArray(rmRes?.data) ? rmRes.data : []);
+      setAutoModalRooms(roomArr);
+      setAutoForm((prev) => ({ ...prev, roomIds: roomArr.map((r) => r._id) }));
+    } catch (err) {
+      console.error('Lỗi load phòng auto:', err);
+      setAutoModalRooms([]);
+    } finally {
+      setAutoModalRoomsLoading(false);
+    }
+  }, []);
 
   // ────────────────────────────────────────────────
   // Load lịch chiếu + phòng của rạp đang xem
@@ -142,22 +172,22 @@ export const ShowtimeManager = () => {
   // Khi form.theaterId thay đổi trong modal → reload modal rooms
   // ────────────────────────────────────────────────
   useEffect(() => {
-    if (isOpen && form.theaterId) {
+    if (isManualOpen && form.theaterId) {
       loadModalRooms(form.theaterId);
     }
-  }, [form.theaterId, isOpen, loadModalRooms]);
+  }, [form.theaterId, isManualOpen, loadModalRooms]);
+
+  useEffect(() => {
+    if (isAutoOpen && autoForm.theaterId) {
+      loadAutoModalRooms(autoForm.theaterId);
+    }
+  }, [autoForm.theaterId, isAutoOpen, loadAutoModalRooms]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => {
       const updated = { ...prev, [name]: value };
-      if (name === 'format') {
-        if (value === '3D') {
-          updated.ticketPrice = 90000;
-        } else if (value === '2D') {
-          updated.ticketPrice = 80000;
-        }
-      }
+      if (name === 'format') updated.ticketPrice = DEFAULT_PRICES[value] || 80000;
       return updated;
     });
   };
@@ -174,43 +204,22 @@ export const ShowtimeManager = () => {
   };
 
   const handleOpenAdd = () => {
-    const firstMovieId = movies[0]?._id || '';
-    const firstRoomId = rooms[0]?._id || '';
-
     setEditingShowtime(null);
     setError('');
-    setModalRooms([...rooms]); // Dùng rooms hiện tại làm điểm xuất phát
-    setForm({
-      movieId: firstMovieId,
-      theaterId: selectedTheater,
-      roomId: firstRoomId,
-      startTime: '',
-      ticketPrice: 80000,
-      format: '2D',
-    });
-    setIsOpen(true);
+    setModalRooms([...rooms]);
+    setForm({ movieId: movies[0]?._id || '', theaterId: selectedTheater, roomId: rooms[0]?._id || '', startTime: '', ticketPrice: 80000, format: '2D' });
+    setIsManualOpen(true);
   };
 
   const handleOpenEditShowtime = (st) => {
     setEditingShowtime(st);
     setError('');
-
-    // Convert to local datetime string (YYYY-MM-DDThh:mm)
     const date = new Date(st.startTime);
     const tzOffset = date.getTimezoneOffset() * 60000;
     const localTimeFormatted = new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
-
     const theaterId = st.theater?._id || st.theater || selectedTheater;
-
-    setForm({
-      movieId: st.movie?._id || st.movie,
-      theaterId,
-      roomId: st.room?._id || st.room,
-      startTime: localTimeFormatted,
-      ticketPrice: st.ticketPrice,
-      format: st.format,
-    });
-    setIsOpen(true);
+    setForm({ movieId: st.movie?._id || st.movie, theaterId, roomId: st.room?._id || st.room, startTime: localTimeFormatted, ticketPrice: st.ticketPrice, format: st.format });
+    setIsManualOpen(true);
   };
 
   const handleDeleteShowtime = async (id) => {
@@ -224,30 +233,16 @@ export const ShowtimeManager = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleManualSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    if (!form.movieId) {
-      setError('Vui lòng chọn phim');
-      return;
-    }
-    if (!form.startTime) {
-      setError('Vui lòng chọn ngày và giờ chiếu');
-      return;
-    }
-    if (!form.roomId) {
-      setError('Vui lòng chọn một phòng chiếu hợp lệ');
-      return;
-    }
-
+    if (!form.movieId) { setError('Vui lòng chọn phim'); return; }
+    if (!form.startTime) { setError('Vui lòng chọn ngày và giờ chiếu'); return; }
+    if (!form.roomId) { setError('Vui lòng chọn một phòng chiếu hợp lệ'); return; }
     try {
-      if (editingShowtime) {
-        await adminService.updateShowtime(editingShowtime._id, form);
-      } else {
-        await adminService.createShowtime(form);
-      }
-      setIsOpen(false);
+      if (editingShowtime) await adminService.updateShowtime(editingShowtime._id, form);
+      else await adminService.createShowtime(form);
+      setIsManualOpen(false);
       setEditingShowtime(null);
       alert(editingShowtime ? 'Cập nhật lịch chiếu thành công!' : 'Tạo lịch chiếu thành công!');
       await reloadShowtimesAndRooms(selectedTheater);
@@ -255,6 +250,67 @@ export const ShowtimeManager = () => {
       setError(err.message);
     }
   };
+
+  const handleOpenAutoGenerate = () => {
+    setAutoError('');
+    setAutoResult(null);
+    const today = new Date().toISOString().split('T')[0];
+    const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    setAutoForm({ movieId: movies[0]?._id || '', theaterId: selectedTheater, roomIds: rooms.map((r) => r._id), startDate: today, endDate: nextWeek, timeSlots: [...DEFAULT_TIME_SLOTS], format: '2D', ticketPrice: 80000 });
+    setAutoModalRooms([...rooms]);
+    setIsAutoOpen(true);
+  };
+
+  const handleAutoFormChange = (e) => {
+    const { name, value } = e.target;
+    setAutoForm((prev) => { const u = { ...prev, [name]: value }; if (name === 'format') u.ticketPrice = DEFAULT_PRICES[value] || 80000; return u; });
+  };
+
+  const handleToggleRoom = (roomId) => {
+    setAutoForm((prev) => ({ ...prev, roomIds: prev.roomIds.includes(roomId) ? prev.roomIds.filter((id) => id !== roomId) : [...prev.roomIds, roomId] }));
+  };
+
+  const handleRemoveSlot = (slot) => {
+    setAutoForm((prev) => ({ ...prev, timeSlots: prev.timeSlots.filter((s) => s !== slot) }));
+  };
+
+  const handleAddSlot = () => {
+    const trimmed = newSlotInput.trim();
+    if (!trimmed) return;
+    if (!/^\d{2}:\d{2}$/.test(trimmed)) { setAutoError('Dịnh dạng không hợp lệ. Dùng HH:mm (VD: 09:00)'); return; }
+    if (autoForm.timeSlots.includes(trimmed)) { setAutoError('Khung giờ này đã tồn tại'); return; }
+    setAutoError('');
+    setAutoForm((prev) => ({ ...prev, timeSlots: [...prev.timeSlots, trimmed].sort() }));
+    setNewSlotInput('');
+  };
+
+  const estimatedShowtimes = (() => {
+    if (!autoForm.startDate || !autoForm.endDate || !autoForm.roomIds.length || !autoForm.timeSlots.length) return 0;
+    const start = new Date(autoForm.startDate); const end = new Date(autoForm.endDate);
+    if (start > end) return 0;
+    const days = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    return days * autoForm.roomIds.length * autoForm.timeSlots.length;
+  })();
+
+  const handleAutoSubmit = async (e) => {
+    e.preventDefault(); setAutoError('');
+    if (!autoForm.movieId) { setAutoError('Vui lòng chọn phim'); return; }
+    if (!autoForm.roomIds.length) { setAutoError('Vui lòng chọn ít nhất một phòng chiếu'); return; }
+    if (!autoForm.startDate || !autoForm.endDate) { setAutoError('Vui lòng chọn ngày bắt đầu và kết thúc'); return; }
+    if (new Date(autoForm.startDate) > new Date(autoForm.endDate)) { setAutoError('Ngày bắt đầu phải trước ngày kết thúc'); return; }
+    if (!autoForm.timeSlots.length) { setAutoError('Vui lòng thêm ít nhất một khung giờ chiếu'); return; }
+    setAutoGenerating(true);
+    try {
+      const res = await adminService.autoGenerateShowtimes(autoForm);
+      setAutoResult(res.data || res);
+      await reloadShowtimesAndRooms(selectedTheater);
+    } catch (err) {
+      setAutoError(err.response?.data?.message || err.message);
+    } finally {
+      setAutoGenerating(false);
+    }
+  };
+
 
   if (loading) return <Loading />;
 
@@ -269,26 +325,32 @@ export const ShowtimeManager = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Lựa chọn bộ lọc rạp phim */}
           <select
             value={selectedTheater}
             onChange={handleTheaterChange}
             className="bg-gray-50 border border-gray-200 text-gray-700 text-sm font-semibold py-2 px-3 rounded-xl focus:border-brand outline-none cursor-pointer"
           >
             {theaters.map((th) => (
-              <option key={th._id} value={th._id}>
-                {th.name}
-              </option>
+              <option key={th._id} value={th._id}>{th.name}</option>
             ))}
           </select>
 
+          {/* Nút Tạo Tự Động */}
+          <button
+            onClick={handleOpenAutoGenerate}
+            className="flex items-center gap-1.5 py-2 px-4 text-sm font-bold rounded-xl border-2 border-amber-400 text-amber-600 bg-amber-50 hover:bg-amber-100 transition-all"
+          >
+            <Zap size={15} /> Tự Động
+          </button>
+
+          {/* Nút Tạo Thủ Công */}
           <Button
             onClick={handleOpenAdd}
             variant="primary"
             className="py-2 px-4 text-sm"
             icon={<Plus size={16} />}
           >
-            Tạo Lịch Chiếu
+            Tạo Thủ Công
           </Button>
         </div>
       </div>
@@ -457,155 +519,202 @@ export const ShowtimeManager = () => {
         );
       })()}
 
-      {/* ───── Modal tạo / chỉnh sửa lịch chiếu ───── */}
+      {/* ───── Modal Tạo Thủ Công ───── */}
       <Modal
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        title={editingShowtime ? 'Chỉnh Sửa Lịch Chiếu' : 'Tạo Suất Chiếu Mới'}
+        isOpen={isManualOpen}
+        onClose={() => setIsManualOpen(false)}
+        title={editingShowtime ? 'Chỉnh Sửa Lịch Chiếu' : 'Tạo Suất Chiếu Thủ Công'}
         size="md"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleManualSubmit} className="space-y-4">
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm flex items-center gap-2">
               <AlertCircle size={16} />
               <span>{error}</span>
             </div>
           )}
-
-          {/* Chọn phim */}
           <div>
-            <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">
-              Chọn Phim
-            </label>
-            <select
-              name="movieId"
-              value={form.movieId}
-              onChange={handleChange}
-              className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer"
-              required
-            >
-              {movies.length === 0 ? (
-                <option value="">Chưa có phim trong hệ thống</option>
-              ) : (
-                movies.map((m) => (
-                  <option key={m._id} value={m._id}>
-                    {m.title} ({m.status})
-                  </option>
-                ))
-              )}
+            <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Chọn Phim</label>
+            <select name="movieId" value={form.movieId} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer" required>
+              {movies.length === 0 ? <option value="">Chưa có phim trong hệ thống</option> : movies.map((m) => <option key={m._id} value={m._id}>{m.title} ({m.status})</option>)}
             </select>
           </div>
-
-          {/* Chọn rạp (trong modal) */}
           <div>
-            <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">
-              Rạp Chiếu
-            </label>
-            <select
-              name="theaterId"
-              value={form.theaterId}
-              onChange={handleChange}
-              className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer"
-              required
-            >
-              {theaters.map((th) => (
-                <option key={th._id} value={th._id}>
-                  {th.name}
-                </option>
-              ))}
+            <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Rạp Chiếu</label>
+            <select name="theaterId" value={form.theaterId} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer" required>
+              {theaters.map((th) => <option key={th._id} value={th._id}>{th.name}</option>)}
             </select>
           </div>
-
-          {/* Chọn phòng chiếu */}
           <div>
             <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">
-              Phòng Chiếu
-              {modalRoomsLoading && (
-                <Loader2 size={12} className="inline ml-2 animate-spin text-brand" />
-              )}
+              Phòng Chiếu {modalRoomsLoading && <Loader2 size={12} className="inline ml-2 animate-spin text-brand" />}
             </label>
-            <select
-              name="roomId"
-              value={form.roomId}
-              onChange={handleChange}
-              className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer disabled:opacity-50"
-              required
-              disabled={modalRoomsLoading}
-            >
-              {modalRoomsLoading ? (
-                <option value="">Đang tải danh sách phòng...</option>
-              ) : modalRooms.length === 0 ? (
-                <option value="">Rạp này chưa có phòng nào</option>
-              ) : (
-                modalRooms.map((r) => (
-                  <option key={r._id} value={r._id}>
-                    {r.name} ({r.type})
-                  </option>
-                ))
-              )}
+            <select name="roomId" value={form.roomId} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer disabled:opacity-50" required disabled={modalRoomsLoading}>
+              {modalRoomsLoading ? <option value="">Đang tải danh sách phòng...</option> : modalRooms.length === 0 ? <option value="">Rạp này chưa có phòng nào</option> : modalRooms.map((r) => <option key={r._id} value={r._id}>{r.name} ({r.type})</option>)}
             </select>
-            {!modalRoomsLoading && modalRooms.length === 0 && (
-              <p className="text-xs text-amber-600 mt-1.5 pl-0.5">
-                ⚠ Rạp này chưa có phòng chiếu. Hãy tạo phòng trong tab "Phòng Chiếu" trước.
-              </p>
-            )}
+            {!modalRoomsLoading && modalRooms.length === 0 && <p className="text-xs text-amber-600 mt-1.5 pl-0.5">⚠ Rạp này chưa có phòng chiếu. Hãy tạo phòng trong tab "Phòng Chiếu" trước.</p>}
           </div>
-
-          {/* Định dạng và giá vé */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">
-                Định Dạng Chiếu
-              </label>
-              <select
-                name="format"
-                value={form.format}
-                onChange={handleChange}
-                className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer"
-              >
-                <option value="2D">2D</option>
-                <option value="3D">3D</option>
-                <option value="IMAX">IMAX</option>
-                <option value="GOLDCLASS">GOLDCLASS</option>
+              <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Định Dạng Chiếu</label>
+              <select name="format" value={form.format} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer">
+                <option value="2D">2D</option><option value="3D">3D</option><option value="IMAX">IMAX</option><option value="GOLDCLASS">GOLDCLASS</option>
               </select>
             </div>
-
-            <Input
-              name="ticketPrice"
-              type="number"
-              label="Giá Vé Cơ Bản (VNĐ)"
-              value={form.ticketPrice}
-              onChange={handleChange}
-              required
-            />
+            <Input name="ticketPrice" type="number" label="Giá Vé Cơ Bản (VNĐ)" value={form.ticketPrice} onChange={handleChange} required />
           </div>
-
-          <Input
-            name="startTime"
-            type="datetime-local"
-            label="Ngày & Giờ Bắt Đầu"
-            value={form.startTime}
-            onChange={handleChange}
-            required
-          />
-
+          <Input name="startTime" type="datetime-local" label="Ngày & Giờ Bắt Đầu" value={form.startTime} onChange={handleChange} required />
           <div className="flex justify-end gap-3 pt-3 border-t border-gray-200">
-            <Button onClick={() => setIsOpen(false)} variant="secondary" className="px-5 py-2">
-              Hủy
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              className="px-6 py-2"
-              disabled={modalRoomsLoading || modalRooms.length === 0}
-            >
+            <Button onClick={() => setIsManualOpen(false)} variant="secondary" className="px-5 py-2">Hủy</Button>
+            <Button type="submit" variant="primary" className="px-6 py-2" disabled={modalRoomsLoading || modalRooms.length === 0}>
               {editingShowtime ? 'Cập Nhật' : 'Lưu Lịch Chiếu'}
             </Button>
           </div>
         </form>
       </Modal>
+
+      {/* ───── Modal Tạo Tự Động ───── */}
+      <Modal isOpen={isAutoOpen} onClose={() => { setIsAutoOpen(false); setAutoResult(null); }} title="⚡ Tạo Suất Chiếu Tự Động" size="lg">
+        {autoResult ? (
+          <div className="space-y-5">
+            <div className="flex flex-col items-center py-4">
+              <CheckCircle2 size={52} className="text-green-500 mb-3" />
+              <h3 className="text-lg font-black text-gray-800">Tạo Suất Chiếu Hoàn Tất!</h3>
+              <p className="text-sm text-gray-500 mt-1">Phim: <span className="font-semibold text-gray-700">{autoResult.movie}</span></p>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-green-50 border border-green-200 rounded-2xl p-4 text-center">
+                <p className="text-3xl font-black text-green-600">{autoResult.created}</p>
+                <p className="text-xs text-green-700 font-semibold mt-1">Tạo Thành Công</p>
+              </div>
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">
+                <p className="text-3xl font-black text-amber-600">{autoResult.skipped}</p>
+                <p className="text-xs text-amber-700 font-semibold mt-1">Bỏ Qua (Trùng Lịch)</p>
+              </div>
+              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-center">
+                <p className="text-3xl font-black text-gray-700">{autoResult.total}</p>
+                <p className="text-xs text-gray-600 font-semibold mt-1">Tổng Đã Xử Lý</p>
+              </div>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-3 text-xs text-gray-600 space-y-1">
+              <p>📅 <strong>{autoResult.days}</strong> ngày &nbsp;×&nbsp; 🏠 <strong>{autoResult.rooms}</strong> phòng &nbsp;×&nbsp; 🕐 <strong>{autoResult.slots}</strong> khung giờ</p>
+              {autoResult.skipped > 0 && <p className="text-amber-600">⚠ {autoResult.skipped} suất bị bỏ qua do trùng lịch hoặc vượt quá 23:59.</p>}
+            </div>
+            <div className="flex justify-end gap-3 pt-3 border-t border-gray-200">
+              <Button onClick={() => { setIsAutoOpen(false); setAutoResult(null); }} variant="secondary" className="px-5 py-2">Đóng</Button>
+              <Button onClick={() => setAutoResult(null)} variant="primary" className="px-5 py-2" icon={<Zap size={14} />}>Tạo Thêm</Button>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleAutoSubmit} className="space-y-4">
+            {autoError && (<div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm flex items-center gap-2"><AlertCircle size={16} /><span>{autoError}</span></div>)}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Chọn Phim</label>
+                <select name="movieId" value={autoForm.movieId} onChange={handleAutoFormChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer" required>
+                  {movies.map((m) => <option key={m._id} value={m._id}>{m.title}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Rạp Chiếu</label>
+                <select name="theaterId" value={autoForm.theaterId} onChange={handleAutoFormChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer" required>
+                  {theaters.map((th) => <option key={th._id} value={th._id}>{th.name}</option>)}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-800 mb-2 pl-0.5">
+                Phòng Chiếu {autoModalRoomsLoading && <Loader2 size={12} className="inline ml-2 animate-spin text-brand" />}
+                <span className="ml-2 text-xs font-normal text-gray-400">({autoForm.roomIds.length}/{autoModalRooms.length} đã chọn)</span>
+              </label>
+              {autoModalRoomsLoading ? (
+                <div className="flex items-center gap-2 text-gray-400 text-sm py-3"><Loader2 size={16} className="animate-spin" /> Đang tải...</div>
+              ) : autoModalRooms.length === 0 ? (
+                <p className="text-sm text-amber-600">⚠ Rạp này chưa có phòng chiếu.</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  {autoModalRooms.map((room) => (
+                    <label key={room._id} className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all text-sm ${autoForm.roomIds.includes(room._id) ? 'bg-brand/10 border-brand/30 text-brand font-semibold' : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                      <input type="checkbox" checked={autoForm.roomIds.includes(room._id)} onChange={() => handleToggleRoom(room._id)} className="accent-brand w-4 h-4 shrink-0" />
+                      <span>{room.name}</span>
+                      <span className="ml-auto text-[10px] uppercase font-bold opacity-60">{room.type}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Ngày Bắt Đầu</label>
+                <input type="date" name="startDate" value={autoForm.startDate} onChange={handleAutoFormChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none" required />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Ngày Kết Thúc</label>
+                <input type="date" name="endDate" value={autoForm.endDate} onChange={handleAutoFormChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none" required />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-800 mb-2 pl-0.5">
+                Khung Giờ Chiếu <span className="ml-2 text-xs font-normal text-gray-400">({autoForm.timeSlots.length} khung giờ)</span>
+              </label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {autoForm.timeSlots.map((slot) => (
+                  <span key={slot} className="flex items-center gap-1.5 bg-gray-100 border border-gray-200 text-gray-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+                    <Clock size={11} className="text-gray-500" />{slot}
+                    <button type="button" onClick={() => handleRemoveSlot(slot)} className="ml-0.5 text-gray-400 hover:text-red-500 transition-colors"><X size={12} /></button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2 items-center">
+                <input type="time" value={newSlotInput} onChange={(e) => setNewSlotInput(e.target.value)} className="bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg py-2 px-3 focus:border-brand outline-none" />
+                <button type="button" onClick={handleAddSlot} className="flex items-center gap-1.5 bg-gray-100 hover:bg-brand/10 border border-gray-200 hover:border-brand/30 text-gray-600 hover:text-brand text-xs font-semibold px-3 py-2 rounded-lg transition-all">
+                  <Plus size={13} /> Thêm Giờ
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Định Dạng Chiếu</label>
+                <select name="format" value={autoForm.format} onChange={handleAutoFormChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer">
+                  <option value="2D">2D</option><option value="3D">3D</option><option value="IMAX">IMAX</option><option value="GOLDCLASS">GOLDCLASS</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Giá Vé Cơ Bản (VNĐ)</label>
+                <input type="number" name="ticketPrice" value={autoForm.ticketPrice} onChange={handleAutoFormChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none" required min={0} />
+              </div>
+            </div>
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-3.5 flex items-center gap-3">
+              <Zap size={20} className="text-amber-500 shrink-0" />
+              <div className="flex-1">
+                <p className="text-xs text-amber-700 font-semibold">Dự Kiến Tạo</p>
+                <p className="text-sm text-amber-800 font-bold">
+                  ~{estimatedShowtimes} suất chiếu
+                  {autoForm.startDate && autoForm.endDate && (
+                    <span className="text-xs font-normal ml-1 text-amber-600">
+                      ({Math.floor((new Date(autoForm.endDate) - new Date(autoForm.startDate)) / (1000*60*60*24)) + 1} ngày × {autoForm.roomIds.length} phòng × {autoForm.timeSlots.length} khung giờ)
+                    </span>
+                  )}
+                </p>
+                {estimatedShowtimes > 0 && <p className="text-xs text-amber-600 mt-0.5">Số thực tế có thể ít hơn do bỏ qua các slot trùng lịch hoặc vượt 23:59.</p>}
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 pt-3 border-t border-gray-200">
+              <Button onClick={() => setIsAutoOpen(false)} variant="secondary" className="px-5 py-2">Hủy</Button>
+              <button
+                type="submit"
+                disabled={autoGenerating || !autoForm.roomIds.length || !autoForm.timeSlots.length}
+                className="flex items-center gap-2 px-6 py-2 text-sm font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {autoGenerating ? <Loader2 size={15} className="animate-spin" /> : <Zap size={15} />}
+                {autoGenerating ? 'Đang Tạo...' : 'Xác Nhận Tạo Tự Động'}
+              </button>
+            </div>
+          </form>
+        )}
+      </Modal>
     </div>
   );
 };
 
-export default ShowtimeManager;
+export default ShowtimeManager;

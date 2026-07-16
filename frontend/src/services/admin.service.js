@@ -90,6 +90,11 @@ const deleteShowtime = async (id) => {
   return response.data;
 };
 
+const autoGenerateShowtimes = async (data) => {
+  const response = await api.post('/admin/showtimes/auto-generate', data);
+  return response.data;
+};
+
 // Concessions
 const getConcessions = async (theaterId = '') => {
   const response = await api.get('/admin/concessions', {
@@ -188,6 +193,7 @@ const adminService = {
   createShowtime,
   updateShowtime,
   deleteShowtime,
+  autoGenerateShowtimes,
   getConcessions,
   createConcession,
   updateConcession,

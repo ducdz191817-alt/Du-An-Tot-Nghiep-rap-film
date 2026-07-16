@@ -22,6 +22,7 @@ const {
   createShowtime,
   updateShowtime,
   deleteShowtime,
+  autoGenerateShowtimes,
   getDashboardStats,
   getRevenueReport,
   listBookings,
@@ -58,6 +59,7 @@ router.route("/concessions").get(listConcessions).post(createConcession);
 router.route("/concessions/:id").put(updateConcession).delete(deleteConcession);
 
 // Showtimes
+router.post("/showtimes/auto-generate", autoGenerateShowtimes);
 router.post("/showtimes", createShowtime);
 router.route("/showtimes/:id").put(updateShowtime).delete(deleteShowtime);
 
