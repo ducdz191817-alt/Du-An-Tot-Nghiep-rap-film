@@ -280,7 +280,6 @@ const ReviewSection = ({ movieId }) => {
   const { t } = useLanguage();
 
   const [reviews, setReviews] = useState([]);
-  const [averageRating, setAverageRating] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -297,7 +296,6 @@ const ReviewSection = ({ movieId }) => {
     try {
       const result = await reviewService.getReviewsByMovie(movieId);
       setReviews(result.data || []);
-      setAverageRating(result.averageRating || 0);
       setTotalCount(result.count || 0);
     } catch (err) {
       console.error('Lỗi khi tải đánh giá:', err);
@@ -401,11 +399,6 @@ const ReviewSection = ({ movieId }) => {
   };
 
   // Phân phối số sao
-  const ratingDistribution = [5, 4, 3, 2, 1].map((star) => ({
-    star,
-    count: reviews.filter((r) => r.rating === star).length,
-    percentage: totalCount > 0 ? (reviews.filter((r) => r.rating === star).length / totalCount) * 100 : 0,
-  }));
 
   return (
     <div className="space-y-6 bg-white border border-gray-200 p-6 md:p-10 rounded-[2rem] shadow-lg mt-12 relative overflow-hidden">
@@ -414,14 +407,21 @@ const ReviewSection = ({ movieId }) => {
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-6 relative z-10">
-        <h2 className="text-2xl md:text-3xl font-black text-gray-900 flex items-center gap-3 tracking-tight">
-          <span className="bg-amber-50 p-2 rounded-xl text-amber-500 border border-amber-200">
-            <MessageSquare size={24} />
-          </span>
-          {t('review.title')}
-        </h2>
+        <div className="space-y-1">
+          <h2 className="text-2xl md:text-3xl font-black text-gray-900 flex items-center gap-3 tracking-tight">
+            <span className="bg-amber-50 p-2 rounded-xl text-amber-500 border border-amber-200">
+              <MessageSquare size={24} />
+            </span>
+            {t('review.title')}
+          </h2>
+          {totalCount > 0 && (
+            <p className="text-sm text-gray-500">
+              {totalCount} bình luận
+            </p>
+          )}
+        </div>
 
-        {/* Nút viết đánh giá */}
+        {/* Nút viết bình luận */}
         {isAuthenticated && isUser && !userReview && !showForm && (
           <button
             onClick={() => setShowForm(true)}
@@ -433,42 +433,7 @@ const ReviewSection = ({ movieId }) => {
         )}
       </div>
 
-      {/* Stats Overview */}
-      {totalCount > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 relative z-10">
-          {/* Điểm trung bình */}
-          <div className="md:col-span-4 flex flex-col items-center justify-center bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-2">
-            <span className="text-5xl font-black text-gray-900">
-              {averageRating}
-            </span>
-            <StarDisplay rating={Math.round(averageRating)} size={20} />
-            <span className="text-xs text-gray-500 font-semibold">
-              {totalCount} {t('review.reviews')}
-            </span>
-          </div>
-
-          {/* Biểu đồ phân phối sao */}
-          <div className="md:col-span-8 space-y-2">
-            {ratingDistribution.map(({ star, count, percentage }) => (
-              <div key={star} className="flex items-center gap-3">
-                <span className="text-xs font-bold text-gray-500 w-6 text-right">{star}</span>
-                <Star size={14} className="text-amber-400 fill-amber-400 shrink-0" />
-                <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-700 ease-out"
-                    style={{ width: `${percentage}%` }}
-                  />
-                </div>
-                <span className="text-[11px] text-gray-500 font-semibold w-8 text-right">
-                  {count}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Form viết / chỉnh sửa đánh giá */}
+      {/* Form viết / chỉnh sửa bình luận */}
       {showForm && (
         <form
           onSubmit={handleSubmit}
