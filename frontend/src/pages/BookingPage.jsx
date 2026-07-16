@@ -34,6 +34,7 @@ export const BookingPage = () => {
   const [activeStep, setActiveStep] = useState(1); // Bước 1: Ghế ngồi, Bước 2: Bắp nước
   const [heldSeatsByOthers, setHeldSeatsByOthers] = useState([]);
   const [ageWarning, setAgeWarning] = useState({ isOpen: false, movieTitle: '', requiredAge: 0, userAge: 0, movieId: '' });
+  const [hasOrphanError, setHasOrphanError] = useState(false);
   const socketRef = useRef(null);
 
   useEffect(() => {
@@ -247,6 +248,10 @@ export const BookingPage = () => {
                 selectedSeats={selectedSeats}
                 heldSeatsByOthers={heldSeatsByOthers}
                 onSeatClick={handleSeatClick}
+                // ==========================================
+                // FIX BUG 3 (UX): Lắng nghe lỗi ghế mồ côi từ SeatMap truyền lên
+                // ==========================================
+                onOrphanError={setHasOrphanError}
               />
 
               <SeatLegend />
@@ -270,7 +275,8 @@ export const BookingPage = () => {
             pricing={pricing}
             onProceed={handleProceed}
             proceedText={activeStep === 1 ? 'Xác nhận ghế' : 'Tiến hành thanh toán'}
-            disabled={selectedSeats.length === 0}
+            // Khóa nút thanh toán nếu (1) chưa chọn ghế nào hoặc (2) đang dính lỗi ghế mồ côi
+            disabled={selectedSeats.length === 0 || hasOrphanError}
           />
         </div>
       </div>
