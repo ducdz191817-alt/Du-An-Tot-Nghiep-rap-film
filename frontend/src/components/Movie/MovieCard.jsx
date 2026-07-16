@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Play, Calendar, Star } from 'lucide-react';
+import { Play, Calendar, Clock, Star } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { getPosterUrl } from '../../utils/constants';
 
@@ -38,6 +38,18 @@ export const MovieCard = ({ movie }) => {
       : effectiveStatus === 'preview'
         ? 'bg-violet-500'
         : 'bg-sky-500';
+
+  const releaseDateLabel = movie.releaseDate
+    ? new Date(movie.releaseDate).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      })
+    : '';
+
+  const durationLabel = movie.duration
+    ? `${parseInt(movie.duration, 10)} ${language === 'vi' ? 'phút' : 'min'}`
+    : '';
 
   return (
     <div className="group relative bg-white dark:bg-[#151a28] border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden hover:border-brand/30 dark:hover:border-brand/50 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
@@ -84,13 +96,32 @@ export const MovieCard = ({ movie }) => {
           <Link to={`/movies/${movie._id}`}>{displayTitle}</Link>
         </h3>
 
-        <div className="flex items-center text-sm text-gray-400 gap-1 font-medium">
-          {movie.genre.slice(0, 2).map((g, i) => (
-            <React.Fragment key={g}>
-              {i > 0 && <span>,</span>}
-              <span className="text-gray-500 dark:text-gray-400">{t(g)}</span>
-            </React.Fragment>
-          ))}
+        <div className="space-y-3">
+          <div className="flex items-center text-sm text-gray-400 gap-2 font-medium flex-wrap">
+            {movie.genre && movie.genre.length > 0 && (
+              <span className="text-gray-500 dark:text-gray-400">{movie.genre.slice(0, 2).map((g, i) => (
+                <React.Fragment key={g}>
+                  {i > 0 && ', '}
+                  {t(g)}
+                </React.Fragment>
+              ))}</span>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+            {durationLabel && (
+              <span className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-900 px-2 py-1 rounded-full">
+                <Clock size={14} />
+                {durationLabel}
+              </span>
+            )}
+            {releaseDateLabel && (
+              <span className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-900 px-2 py-1 rounded-full">
+                <Calendar size={14} />
+                {releaseDateLabel}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>

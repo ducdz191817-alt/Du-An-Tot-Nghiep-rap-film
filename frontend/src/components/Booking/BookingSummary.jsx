@@ -57,14 +57,30 @@ export const BookingSummary = ({
   const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
   const finalTotal = Math.max(0, pricing.grandTotal - discountAmount);
 
+  const releaseDateLabel = movie.releaseDate
+    ? new Date(movie.releaseDate).toLocaleDateString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      })
+    : null;
+
+  const durationLabel = movie.duration
+    ? `${parseInt(movie.duration, 10)} phút`
+    : null;
+
   return (
     <div className="bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 p-6 rounded-3xl space-y-6 shadow-xl sticky top-24">
       {/* Movie Details Invoice Header */}
-      <div className="space-y-2 border-b border-gray-200 dark:border-gray-800 pb-4">
+      <div className="space-y-3 border-b border-gray-200 dark:border-gray-800 pb-4">
         <span className="text-[10px] font-black bg-brand px-2 py-0.5 rounded text-white tracking-wide uppercase">
           {movie.rating}
         </span>
         <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-100 leading-snug">{movie.title}</h3>
+        <div className="flex flex-wrap gap-2 text-xs text-zinc-500 dark:text-zinc-400 font-semibold uppercase">
+          {releaseDateLabel && <span>Khởi chiếu: {releaseDateLabel}</span>}
+          {durationLabel && <span>{durationLabel}</span>}
+        </div>
         <p className="text-xs text-zinc-600 dark:text-zinc-400 font-semibold uppercase">
           {theater.name} &bull; {room.name} ({showtime.format})
         </p>
