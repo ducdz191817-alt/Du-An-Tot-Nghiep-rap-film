@@ -495,8 +495,6 @@ export const PaymentPage = () => {
               loading={loading}
               pricing={pricing}
               appliedCoupon={appliedCoupon}
-              onApplyCoupon={handleApplyCoupon}
-              onRemoveCoupon={handleRemoveCoupon}
             />
           </div>
 
@@ -510,6 +508,9 @@ export const PaymentPage = () => {
               pricing={pricing}
               onProceed={null} // Chế độ chỉ đọc
               appliedCoupon={appliedCoupon}
+              onApplyCoupon={handleApplyCoupon}
+              onRemoveCoupon={handleRemoveCoupon}
+              loading={loading}
             />
           </div>
         </div>

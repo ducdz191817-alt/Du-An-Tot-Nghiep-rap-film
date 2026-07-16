@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Ticket, Popcorn, ChevronRight, X } from 'lucide-react';
 import Button from '../common/Button';
 
@@ -14,7 +14,33 @@ export const BookingSummary = ({
   loading = false,
   onRemoveConcession, // optional callback to clear concession
   appliedCoupon = null, // optional applied coupon info
+  onApplyCoupon,
+  onRemoveCoupon,
 }) => {
+  const [couponInput, setCouponInput] = useState('');
+  const [couponError, setCouponError] = useState('');
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
+
+  const handleApplyCoupon = async () => {
+    if (!onApplyCoupon) return;
+    if (!couponInput.trim()) return;
+    setCouponError('');
+    setValidatingCoupon(true);
+    try {
+      await onApplyCoupon(couponInput.trim().toUpperCase());
+    } catch (err) {
+      setCouponError(err.message || 'Mã giảm giá không hợp lệ hoặc đã hết hạn');
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    if (!onRemoveCoupon) return;
+    onRemoveCoupon();
+    setCouponInput('');
+    setCouponError('');
+  };
   if (!showtime) return null;
 
   const movie = showtime.movie || {};
@@ -136,14 +162,69 @@ export const BookingSummary = ({
           </div>
         )}
 
-        {/* Mã giảm giá */}
-        {appliedCoupon && (
-          <div className="border-t border-gray-200 dark:border-gray-800 pt-3 flex justify-between text-emerald-600 dark:text-emerald-500">
-            <span>Giảm giá ({appliedCoupon.code})</span>
-            <span>-{discountAmount.toLocaleString()} VND</span>
-          </div>
-        )}
       </div>
+
+      {/* Coupon input section (Only render if onApplyCoupon is provided so it only appears on PaymentPage) */}
+      {onApplyCoupon && (
+        <div className="border-t border-gray-200 dark:border-gray-800 pt-5 space-y-3">
+          <h4 className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+            🏷️ Mã giảm giá / Voucher
+          </h4>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Nhập mã giảm giá"
+              value={couponInput}
+              onChange={(e) => setCouponInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && !appliedCoupon && handleApplyCoupon()}
+              disabled={!!appliedCoupon || loading}
+              className="flex-1 w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-50 transition-all uppercase font-mono tracking-wider shadow-sm min-w-0"
+            />
+            {appliedCoupon ? (
+              <button
+                type="button"
+                onClick={handleRemoveCoupon}
+                className="px-3 py-2 rounded-xl text-xs font-bold border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/40 transition-all shrink-0"
+              >
+                Hủy
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleApplyCoupon}
+                disabled={!couponInput.trim() || loading || validatingCoupon}
+                className="px-3 py-2 rounded-xl text-xs font-bold border border-brand/40 text-brand bg-brand/5 hover:bg-brand/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0 flex items-center gap-1"
+              >
+                {validatingCoupon ? (
+                  <><span className="w-3.5 h-3.5 border-2 border-brand border-t-transparent rounded-full animate-spin inline-block" /> ...</>
+                ) : 'Áp dụng'}
+              </button>
+            )}
+          </div>
+
+          {couponError && (
+            <div className="flex items-center gap-1.5 text-[11px] text-red-600 dark:text-red-400 font-semibold bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 rounded-lg px-2.5 py-1.5">
+              <span>⚠️</span> {couponError}
+            </div>
+          )}
+
+          {appliedCoupon && (
+            <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 text-emerald-700 dark:text-emerald-400 px-3 py-2 rounded-xl text-[11px] font-semibold flex items-center justify-between animate-in fade-in slide-in-from-top-1 duration-200">
+              <div>
+                <span>✅ Đã áp dụng: <strong className="font-mono text-emerald-800 dark:text-emerald-300">{appliedCoupon.code}</strong></span>
+                <p className="text-[10px] text-gray-500 dark:text-zinc-400 mt-0.5 font-medium">
+                  {appliedCoupon.discountType === 'percentage'
+                    ? `Giảm ${appliedCoupon.discountValue}% (tối đa ${appliedCoupon.maxDiscountAmount?.toLocaleString('vi-VN')} đ)`
+                    : `Giảm ${appliedCoupon.discountValue?.toLocaleString('vi-VN')} đ`}
+                </p>
+              </div>
+              <span className="font-extrabold text-sm text-emerald-700 dark:text-emerald-400 shrink-0 ml-2">
+                -{discountAmount.toLocaleString('vi-VN')} đ
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Tổng cộng */}
       <div className="border-t-2 border-dashed border-gray-200 dark:border-gray-800 pt-4 flex items-center justify-between">

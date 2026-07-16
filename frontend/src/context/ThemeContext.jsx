@@ -4,16 +4,10 @@ const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    // Check localStorage first
+    // Check localStorage first; default always light (ignore OS preference)
     const savedTheme = localStorage.getItem('nova_theme');
-    if (savedTheme) {
-      return savedTheme;
-    }
-    // Check system preference
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
-    return 'light'; // default to light
+    if (savedTheme === 'dark') return 'dark';
+    return 'light';
   });
 
   useEffect(() => {

@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Film, User, Clock, Calendar, Ticket, ChevronRight, Play, ShieldAlert, Bell, CalendarClock } from 'lucide-react';
+import { Film, User, Clock, Calendar, Ticket, ChevronRight, Play, ShieldAlert, Bell, CalendarClock, EyeOff, Eye } from 'lucide-react';
 import bookingService from '../../services/booking.service';
 import Button from '../common/Button';
 import { useLanguage } from '../../context/LanguageContext';
@@ -18,10 +18,12 @@ export const MovieDetail = ({ movie }) => {
   const [selectedDate, setSelectedDate] = useState('');
   const [loadingShowtimes, setLoadingShowtimes] = useState(false);
   const [trailerError, setTrailerError] = useState(false);
+  const [showTrailer, setShowTrailer] = useState(false);
   const [sortBy, setSortBy] = useState('earliest');
   const [formatFilter, setFormatFilter] = useState('');
   const [dateAvailability, setDateAvailability] = useState({});
   const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const showtimesSectionRef = useRef(null);
 
   // ── Lấy title / description / language theo ngôn ngữ trực tiếp từ DB ──────
   // Nếu phim có titleEN/descriptionEN thì dùng, không thì fallback về bản gốc.
@@ -129,6 +131,12 @@ export const MovieDetail = ({ movie }) => {
         return;
       }
     }
+
+    // Ẩn trailer và scroll xuống phần đặt vé
+    setShowTrailer(false);
+    setTimeout(() => {
+      showtimesSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
 
     navigate(`/booking/${showtimeId}`);
   };
@@ -260,7 +268,7 @@ export const MovieDetail = ({ movie }) => {
 
       {/* 2. Trình phát video Youtube Trailer */}
       {movie.trailerUrl && movie.trailerUrl.trim() && (
-        <div className="space-y-6 pt-6">
+        <div className="space-y-4 pt-6">
           <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-4">
             <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-100 flex items-center gap-3">
               <span className="bg-brand/20 p-2 rounded-xl text-brand">
@@ -268,15 +276,34 @@ export const MovieDetail = ({ movie }) => {
               </span>
               {t('movie.trailer')}
             </h2>
+            {/* Toggle trailer button */}
+            <button
+              onClick={() => setShowTrailer((v) => !v)}
+              className="flex items-center gap-2 px-4 py-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-brand/10 hover:border-brand/40 text-gray-600 dark:text-gray-300 hover:text-brand transition-all text-xs font-bold active:scale-95 shadow-sm"
+            >
+              {showTrailer ? (
+                <><EyeOff size={15} /> Ẩn trailer</>
+              ) : (
+                <><Eye size={15} /> Xem trailer</>
+              )}
+            </button>
           </div>
-          <div className="relative aspect-video w-full rounded-[2rem] overflow-hidden border border-gray-200 shadow-[0_30px_60px_rgba(0,0,0,0.15)] bg-black group">
-            <iframe
-              className="absolute inset-0 w-full h-full transition-transform duration-700 ease-in-out"
-              src={getEmbedUrl(movie.trailerUrl)}
-              title={`Trailer - ${displayTitle}`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+          {/* Collapsible trailer with smooth animation */}
+          <div
+            className="overflow-hidden transition-all duration-500 ease-in-out"
+            style={{ maxHeight: showTrailer ? '800px' : '0px', opacity: showTrailer ? 1 : 0 }}
+          >
+            <div className="relative aspect-video w-full rounded-[2rem] overflow-hidden border border-gray-200 shadow-[0_30px_60px_rgba(0,0,0,0.15)] bg-black group">
+              {showTrailer && (
+                <iframe
+                  className="absolute inset-0 w-full h-full transition-transform duration-700 ease-in-out"
+                  src={getEmbedUrl(movie.trailerUrl)}
+                  title={`Trailer - ${displayTitle}`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -338,7 +365,7 @@ export const MovieDetail = ({ movie }) => {
 
       {/* 4. Bảng đặt vé theo lịch chiếu */}
       {(movie.status === 'now-showing' || movie.status === 'preview') && (
-        <div className="space-y-6 bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 p-6 md:p-10 rounded-[2rem] shadow-lg mt-12 relative overflow-hidden">
+        <div ref={showtimesSectionRef} className="space-y-6 bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 p-6 md:p-10 rounded-[2rem] shadow-lg mt-12 relative overflow-hidden">
           {/* Subtle glow in background */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand/5 blur-[80px] rounded-full pointer-events-none" />
 
