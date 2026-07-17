@@ -100,7 +100,7 @@ const getMovies = async (req, res, next) => {
         },
       },
       {
-        $sort: { releaseDate: -1 },
+        $sort: { createdAt: -1 },
       },
     ]);
 

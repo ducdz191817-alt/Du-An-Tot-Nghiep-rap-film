@@ -30,6 +30,10 @@ const MovieSchema = new mongoose.Schema(
       type: [String],
       required: [true, 'Please provide movie genres'],
     },
+    availableFormats: {
+      type: [String],
+      default: ['2D'],
+    },
     language: {
       type: String,
       required: [true, 'Please provide movie language'],

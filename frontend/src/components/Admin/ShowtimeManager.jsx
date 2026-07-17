@@ -426,11 +426,17 @@ export const ShowtimeManager = () => {
           );
         }
 
-        // Nhóm theo ngày
+        // Nhóm 3 tầng: Ngày -> Phim -> Phòng -> Danh sách suất chiếu
         const groupedShowtimes = filteredShowtimes.reduce((acc, st) => {
           const dateStr = new Date(st.startTime).toLocaleDateString('vi-VN');
-          if (!acc[dateStr]) acc[dateStr] = [];
-          acc[dateStr].push(st);
+          const movieId = st.movie?._id || 'unknown';
+          const roomId = st.room?._id || 'unknown';
+
+          if (!acc[dateStr]) acc[dateStr] = {};
+          if (!acc[dateStr][movieId]) acc[dateStr][movieId] = { movie: st.movie, rooms: {} };
+          if (!acc[dateStr][movieId].rooms[roomId]) acc[dateStr][movieId].rooms[roomId] = { room: st.room, showtimes: [] };
+          
+          acc[dateStr][movieId].rooms[roomId].showtimes.push(st);
           return acc;
         }, {});
 
@@ -444,69 +450,88 @@ export const ShowtimeManager = () => {
         return (
           <div className="space-y-6">
             {sortedDates.map((dateStr) => {
-              // Sắp xếp suất chiếu trong cùng 1 ngày theo giờ
-              const dailyShowtimes = groupedShowtimes[dateStr].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+              const moviesOnDate = groupedShowtimes[dateStr];
 
               return (
-                <div key={dateStr} className="bg-white border border-gray-200 p-5 rounded-3xl space-y-4 shadow-sm">
+                <div key={dateStr} className="bg-white border border-gray-200 p-5 rounded-3xl space-y-5 shadow-sm">
                   <div className="flex items-center gap-2 border-b border-gray-200 pb-2.5">
                     <Calendar className="text-brand" size={18} />
                     <h4 className="font-bold text-gray-800 text-md">Ngày {dateStr}</h4>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {dailyShowtimes.map((st) => {
-                      const startFmt = new Date(st.startTime).toLocaleTimeString('vi-VN', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      });
-                      const endFmt = new Date(st.endTime).toLocaleTimeString('vi-VN', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      });
-
-                      const roomName = st.room?.name || 'Phòng không xác định';
-
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {Object.keys(moviesOnDate).map((movieId) => {
+                      const movieData = moviesOnDate[movieId];
+                      const movieTitle = movieData.movie?.title || 'Phim đã bị xóa';
+                      
                       return (
-                        <div
-                          key={st._id}
-                          className="flex flex-col bg-gray-50/50 border border-gray-100 p-3.5 rounded-2xl gap-2 hover:border-brand/30 transition-all"
-                        >
-                          <div className="flex justify-between items-start gap-2">
-                            <div className="font-bold text-gray-800 text-sm leading-tight">
-                              {st.movie?.title || 'Phim đã bị xóa'}
-                            </div>
-                            <div className="flex gap-1 shrink-0">
-                              <button
-                                onClick={() => handleOpenEditShowtime(st)}
-                                className="p-1.5 bg-white border border-gray-200 hover:border-brand/40 text-gray-500 hover:text-brand rounded-lg transition-all"
-                                title="Chỉnh sửa"
-                              >
-                                <Edit2 size={12} />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteShowtime(st._id)}
-                                className="p-1.5 bg-white border border-gray-200 hover:border-red-500/40 text-gray-500 hover:text-red-500 rounded-lg transition-all"
-                                title="Xóa"
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
+                        <div key={movieId} className="bg-gray-50/50 border border-gray-200 rounded-2xl p-4 space-y-4 hover:border-brand/30 transition-all">
+                          {/* Movie Header */}
+                          <div className="flex items-center gap-3">
+                            {movieData.movie?.posterUrl ? (
+                              <img src={movieData.movie.posterUrl} alt={movieTitle} className="w-10 h-14 object-cover rounded-md shadow-sm" />
+                            ) : (
+                              <div className="w-10 h-14 bg-gray-200 rounded-md flex items-center justify-center text-xl">🎬</div>
+                            )}
+                            <h5 className="font-extrabold text-gray-800 text-base">{movieTitle}</h5>
                           </div>
 
-                          <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-100 border-dashed">
-                            <div className="flex flex-col">
-                              <span className="text-xs font-semibold text-gray-600">{startFmt} - {endFmt}</span>
-                              <span className="text-[10px] text-gray-400">{roomName}</span>
-                            </div>
-                            <div className="flex flex-col items-end">
-                              <span className="text-[10px] uppercase tracking-wider font-extrabold text-gray-500 bg-white px-2 py-0.5 border border-gray-200 rounded">
-                                {st.format}
-                              </span>
-                              <span className="text-[10px] text-brand font-black mt-1">
-                                {st.ticketPrice.toLocaleString()} VNĐ
-                              </span>
-                            </div>
+                          {/* Rooms list */}
+                          <div className="space-y-3 pl-1">
+                            {Object.keys(movieData.rooms).map((roomId) => {
+                              const roomData = movieData.rooms[roomId];
+                              const roomName = roomData.room?.name || 'Phòng không xác định';
+                              
+                              // Sắp xếp suất chiếu theo giờ
+                              const sortedShowtimes = roomData.showtimes.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+
+                              return (
+                                <div key={roomId} className="flex flex-col sm:flex-row sm:items-center gap-2 border-l-2 border-brand/20 pl-3">
+                                  <div className="w-32 shrink-0">
+                                    <p className="text-xs font-bold text-gray-700">{roomName}</p>
+                                    <p className="text-[10px] text-gray-400 font-semibold uppercase">{roomData.room?.type || ''}</p>
+                                  </div>
+                                  
+                                  {/* Time Pills */}
+                                  <div className="flex flex-wrap gap-2">
+                                    {sortedShowtimes.map((st) => {
+                                      const startFmt = new Date(st.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                                      
+                                      // Màu sắc theo Format
+                                      let pillBg = 'bg-white hover:bg-brand/10 border-gray-200 hover:border-brand/40 text-gray-700';
+                                      if (st.format === 'IMAX') pillBg = 'bg-yellow-50 hover:bg-yellow-100 border-yellow-200 hover:border-yellow-400 text-yellow-800';
+                                      else if (st.format === '3D') pillBg = 'bg-blue-50 hover:bg-blue-100 border-blue-200 hover:border-blue-400 text-blue-800';
+                                      else if (st.format === 'GOLDCLASS') pillBg = 'bg-purple-50 hover:bg-purple-100 border-purple-200 hover:border-purple-400 text-purple-800';
+
+                                      return (
+                                        <div key={st._id} className="relative group">
+                                          <button
+                                            onClick={() => handleOpenEditShowtime(st)}
+                                            className={`px-3 py-1.5 rounded-lg border flex flex-col items-center justify-center transition-all min-w-[60px] shadow-sm ${pillBg}`}
+                                            title={`Sửa suất chiếu lúc ${startFmt} - Giá: ${st.ticketPrice.toLocaleString()} VNĐ`}
+                                          >
+                                            <span className="text-sm font-black tracking-wide">{startFmt}</span>
+                                            <span className="text-[9px] font-bold uppercase opacity-80">{st.format}</span>
+                                          </button>
+                                          
+                                          {/* Nút Xóa (Dấu X) hiện khi hover */}
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation(); // Ngăn mở modal edit
+                                              handleDeleteShowtime(st._id);
+                                            }}
+                                            className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
+                                            title="Xóa suất chiếu này"
+                                          >
+                                            <X size={10} strokeWidth={3} />
+                                          </button>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       );
