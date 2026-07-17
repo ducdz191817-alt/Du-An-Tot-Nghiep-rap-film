@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Ticket, Popcorn, ChevronRight, X } from 'lucide-react';
+import { Ticket, Popcorn, ChevronRight, Clock } from 'lucide-react';
 import Button from '../common/Button';
 
 export const BookingSummary = ({
@@ -8,6 +8,7 @@ export const BookingSummary = ({
   selectedConcessions = {},
   concessionsList = [],
   pricing,
+  timeLeft, // Nhận thêm prop timeLeft
   onProceed,
   proceedText = 'Tiến hành thanh toán',
   disabled = false,
@@ -114,6 +115,19 @@ export const BookingSummary = ({
           {dateString} &bull; {timeString}
         </p>
       </div>
+
+      {/* Thời gian giữ ghế (Chỉ hiện khi đã chọn ghế) */}
+      {selectedSeats.length > 0 && timeLeft !== undefined && (
+        <div className="flex items-center justify-between bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-xl px-4 py-3 shadow-inner">
+          <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+            <Clock size={18} className="animate-pulse" />
+            <span className="text-xs font-bold uppercase tracking-wider">Thời gian giữ ghế</span>
+          </div>
+          <span className="text-xl font-black text-red-600 dark:text-red-400 tabular-nums tracking-widest">
+            {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}
+          </span>
+        </div>
+      )}
 
       {/* Chi tiết đơn giá */}
       <div className="space-y-4 text-xs font-semibold">
