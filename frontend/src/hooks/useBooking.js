@@ -51,11 +51,16 @@ export const useBooking = () => {
 
     // Calculate seats price using actual seat type from DB
     let seatsTotal = 0;
+    // Group seats by type for breakdown display
+    const typeGroups = {}; // { 'standard': { seatCodes: [], unitPrice: X, count: N, subtotal: Y }, ... }
+
     selectedSeats.forEach((seatCode) => {
       const seat = seatMap[seatCode];
       let addition = 0;
+      let seatType = 'standard';
       if (seat) {
         addition = seat.price;
+        seatType = seat.type || 'standard';
       } else {
         // Fallback: guess from row letter if seat not found in list
         const match = seatCode.match(/^([A-Z]+)(\d+)$/);
@@ -64,6 +69,7 @@ export const useBooking = () => {
           const room = selectedShowtime?.room || {};
           if (room.type === 'GOLDCLASS') {
             addition = 120000;
+            seatType = 'couple';
           } else {
             const capacity = room.capacity || 0;
             const cols = capacity <= 30 ? 6 : capacity <= 60 ? 10 : 12;
@@ -73,16 +79,42 @@ export const useBooking = () => {
 
             if (row === lastRowLetter) {
               addition = 120000;
+              seatType = 'couple';
             } else if (row === 'A' || row === 'B') {
               addition = 0;
+              seatType = 'standard';
             } else {
               addition = 5000;
+              seatType = 'vip';
             }
           }
         }
       }
-      seatsTotal += basePrice + addition;
+      const ticketTotal = basePrice + addition;
+      seatsTotal += ticketTotal;
+
+      // Group by seat type
+      if (!typeGroups[seatType]) {
+        typeGroups[seatType] = { seatCodes: [], unitPrice: ticketTotal, count: 0, subtotal: 0 };
+      }
+      typeGroups[seatType].seatCodes.push(seatCode);
+      typeGroups[seatType].count += 1;
+      typeGroups[seatType].subtotal += ticketTotal;
     });
+
+    // Build seatBreakdown array sorted by type order
+    const typeOrder = { standard: 0, vip: 1, couple: 2 };
+    const typeLabels = { standard: 'Ghế thường', vip: 'Ghế VIP', couple: 'Ghế Đôi Sweetbox' };
+    const seatBreakdown = Object.keys(typeGroups)
+      .sort((a, b) => (typeOrder[a] || 0) - (typeOrder[b] || 0))
+      .map((type) => ({
+        type,
+        label: typeLabels[type] || type,
+        seatCodes: typeGroups[type].seatCodes,
+        unitPrice: typeGroups[type].unitPrice,
+        count: typeGroups[type].count,
+        subtotal: typeGroups[type].subtotal,
+      }));
 
     // Calculate concessions price
     let concessionsTotal = 0;
@@ -98,6 +130,7 @@ export const useBooking = () => {
 
     return {
       seatsTotal,
+      seatBreakdown,
       concessionsTotal,
       grandTotal,
     };

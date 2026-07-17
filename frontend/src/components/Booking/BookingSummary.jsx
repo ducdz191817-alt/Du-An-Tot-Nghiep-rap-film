@@ -117,17 +117,34 @@ export const BookingSummary = ({
 
       {/* Chi tiết đơn giá */}
       <div className="space-y-4 text-xs font-semibold">
-        {/* Ticket Seats */}
+        {/* Ticket Seats - Breakdown by type */}
         {selectedSeats.length > 0 ? (
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
-              <Ticket size={14} className="text-brand" />
-              <span>Ghế: {formatSeatCodes(selectedSeats).join(', ')}</span>
-            </div>
-            <div className="flex justify-between pl-5 text-zinc-600 dark:text-zinc-400">
-              <span>{selectedSeats.length} Vé</span>
-              <span className="text-zinc-800 dark:text-zinc-200 font-bold">{pricing.seatsTotal.toLocaleString()} VND</span>
-            </div>
+          <div className="space-y-2.5">
+            {pricing.seatBreakdown && pricing.seatBreakdown.length > 0 ? (
+              pricing.seatBreakdown.map((group) => (
+                <div key={group.type} className="space-y-1">
+                  <div className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
+                    <Ticket size={14} className="text-brand" />
+                    <span>{group.label}: {formatSeatCodes(group.seatCodes).join(', ')}</span>
+                  </div>
+                  <div className="flex justify-between pl-5 text-zinc-600 dark:text-zinc-400">
+                    <span>{group.count} Vé × {group.unitPrice.toLocaleString()}</span>
+                    <span className="text-zinc-800 dark:text-zinc-200 font-bold">{group.subtotal.toLocaleString()} VND</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
+                  <Ticket size={14} className="text-brand" />
+                  <span>Ghế: {formatSeatCodes(selectedSeats).join(', ')}</span>
+                </div>
+                <div className="flex justify-between pl-5 text-zinc-600 dark:text-zinc-400">
+                  <span>{selectedSeats.length} Vé</span>
+                  <span className="text-zinc-800 dark:text-zinc-200 font-bold">{pricing.seatsTotal.toLocaleString()} VND</span>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <p className="text-zinc-500 dark:text-zinc-600 italic">Chưa chọn ghế nào.</p>
