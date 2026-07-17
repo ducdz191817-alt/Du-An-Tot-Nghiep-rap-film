@@ -8,8 +8,6 @@ export const PaymentForm = ({
   loading,
   pricing,
   appliedCoupon = null,
-  onApplyCoupon,
-  onRemoveCoupon,
 }) => {
   const [method, setMethod] = useState('card');
   const [cardData, setCardData] = useState({
@@ -19,28 +17,6 @@ export const PaymentForm = ({
     cvv: '',
   });
   const [errors, setErrors] = useState({});
-  const [couponInput, setCouponInput] = useState('');
-  const [couponError, setCouponError] = useState('');
-  const [validatingCoupon, setValidatingCoupon] = useState(false);
-
-  const handleApplyCoupon = async () => {
-    if (!couponInput.trim()) return;
-    setCouponError('');
-    setValidatingCoupon(true);
-    try {
-      await onApplyCoupon(couponInput.trim().toUpperCase());
-    } catch (err) {
-      setCouponError(err.message || 'Mã giảm giá không hợp lệ hoặc đã hết hạn');
-    } finally {
-      setValidatingCoupon(false);
-    }
-  };
-
-  const handleRemoveCoupon = () => {
-    onRemoveCoupon();
-    setCouponInput('');
-    setCouponError('');
-  };
 
   const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
   const finalTotal = Math.max(0, pricing.grandTotal - discountAmount);
@@ -148,69 +124,9 @@ export const PaymentForm = ({
         </button>
       </div>
 
-      {/* Coupon input section */}
-      <div className="border-t border-gray-200 dark:border-gray-800 pt-5 space-y-3">
-        <h4 className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider pl-1">
-          Mã giảm giá / Voucher
-        </h4>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Nhập mã giảm giá (Ví dụ: NOVA20)"
-            value={couponInput}
-            onChange={(e) => setCouponInput(e.target.value)}
-            disabled={appliedCoupon || loading}
-            className="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 rounded-2xl px-4 py-2.5 text-sm outline-none focus:border-brand disabled:opacity-50 transition-colors uppercase font-mono tracking-wider"
-          />
-          {appliedCoupon ? (
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleRemoveCoupon}
-              className="px-4 py-2.5 rounded-2xl text-xs font-bold border-red-950/40 text-red-400 hover:bg-red-950/20 shrink-0"
-            >
-              Hủy áp dụng
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleApplyCoupon}
-              loading={validatingCoupon}
-              disabled={!couponInput.trim() || loading}
-              className="px-4 py-2.5 rounded-2xl text-xs font-bold border-brand-dark/30 text-brand hover:bg-brand/10 shrink-0"
-            >
-              Áp dụng
-            </Button>
-          )}
-        </div>
-
-        {couponError && (
-          <p className="text-xs text-red-500 font-semibold pl-1">
-            {couponError}
-          </p>
-        )}
-
-        {appliedCoupon && (
-          <div className="bg-emerald-950/20 border border-emerald-800/30 text-emerald-400 px-4 py-3 rounded-2xl text-xs font-semibold flex items-center justify-between animate-in fade-in slide-in-from-top-1 duration-200">
-            <div>
-              <span>Đã áp dụng mã: <strong className="font-mono">{appliedCoupon.code}</strong></span>
-              <p className="text-[10px] text-zinc-400 mt-0.5 font-medium">
-                {appliedCoupon.discountType === 'percentage'
-                  ? `Giảm ${appliedCoupon.discountValue}% (tối đa ${appliedCoupon.maxDiscountAmount?.toLocaleString('vi-VN')} đ)`
-                  : `Giảm ${appliedCoupon.discountValue?.toLocaleString('vi-VN')} đ`}
-              </p>
-            </div>
-            <span className="font-extrabold text-sm text-emerald-400 shrink-0">
-              -{discountAmount.toLocaleString('vi-VN')} đ
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Card Details fields */}
+      {/* Card Details flows */}
       {method === 'card' && (
-        <form onSubmit={handlePay} className="space-y-4 pt-2" noValidate>
+        <form onSubmit={handlePay} className="space-y-4 pt-4" noValidate>
           <Input
             name="holder"
             label="Tên chủ thẻ"
@@ -271,25 +187,25 @@ export const PaymentForm = ({
       {method !== 'card' && (
         <form onSubmit={handlePay} className="space-y-4 pt-4 text-center" noValidate>
           {method === 'vietqr' ? (
-            <div className="bg-zinc-900 border border-dark-border p-5 rounded-2xl max-w-sm mx-auto text-left space-y-2.5">
-              <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+            <div className="bg-emerald-50 dark:bg-zinc-900 border border-emerald-200 dark:border-emerald-900/30 p-5 rounded-2xl max-w-sm mx-auto text-left space-y-2.5">
+              <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-400 font-bold text-sm">
                 <QrCode size={16} />
                 <span>Thanh toán VietQR tiện lợi</span>
               </div>
-              <p className="text-xs text-zinc-400 leading-relaxed font-semibold">
+              <p className="text-xs text-emerald-700/80 dark:text-zinc-400 leading-relaxed font-semibold">
                 Sau khi nhấn nút phía dưới, mã QR động chứa thông tin số tài khoản ngân hàng, số tiền và nội dung chuyển khoản tự động sẽ hiển thị. Hệ thống sẽ tự động quét trạng thái giao dịch để duyệt vé cho bạn.
               </p>
             </div>
           ) : method === 'vnpay' ? (
-            <div className="bg-gradient-to-b from-blue-950/40 to-zinc-900 border border-blue-500/20 p-6 rounded-2xl max-w-sm mx-auto space-y-5">
+            <div className="bg-blue-50 dark:bg-gradient-to-b dark:from-blue-950/40 dark:to-zinc-900 border border-blue-200 dark:border-blue-500/20 p-6 rounded-2xl max-w-sm mx-auto space-y-5">
               {/* VNPay icon */}
-              <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mx-auto shadow-[0_0_20px_rgba(59,130,246,0.15)]">
-                <CreditCard size={28} className="text-blue-400" />
+              <div className="w-16 h-16 rounded-2xl bg-blue-100 dark:bg-blue-500/10 border border-blue-300 dark:border-blue-500/20 flex items-center justify-center mx-auto shadow-sm dark:shadow-[0_0_20px_rgba(59,130,246,0.15)]">
+                <CreditCard size={28} className="text-blue-600 dark:text-blue-400" />
               </div>
 
               <div className="space-y-2">
-                <h4 className="text-sm font-black text-white">Cổng thanh toán VNPay</h4>
-                <p className="text-xs text-zinc-400 font-semibold leading-relaxed">
+                <h4 className="text-sm font-black text-gray-900 dark:text-white">Cổng thanh toán VNPay</h4>
+                <p className="text-xs text-gray-500 dark:text-zinc-400 font-semibold leading-relaxed">
                   Bạn sẽ được chuyển hướng sang trang thanh toán bảo mật của VNPay để hoàn tất giao dịch.
                 </p>
               </div>
@@ -297,37 +213,37 @@ export const PaymentForm = ({
               {/* Steps */}
               <div className="space-y-2.5 text-left">
                 <div className="flex items-start gap-3">
-                  <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 text-[10px] font-black flex items-center justify-center mt-0.5">1</span>
-                  <p className="text-xs text-zinc-400 font-semibold">Nhấn nút <span className="text-blue-400 font-bold">"Thanh toán qua VNPay"</span> bên dưới</p>
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-500/15 border border-blue-300 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 text-[10px] font-black flex items-center justify-center mt-0.5">1</span>
+                  <p className="text-xs text-gray-600 dark:text-zinc-400 font-semibold">Nhấn nút <span className="text-blue-600 dark:text-blue-400 font-bold">"Thanh toán qua VNPay"</span> bên dưới</p>
                 </div>
                 <div className="flex items-start gap-3">
-                  <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 text-[10px] font-black flex items-center justify-center mt-0.5">2</span>
-                  <p className="text-xs text-zinc-400 font-semibold">Chọn ngân hàng và nhập thông tin thẻ trên trang VNPay</p>
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-500/15 border border-blue-300 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 text-[10px] font-black flex items-center justify-center mt-0.5">2</span>
+                  <p className="text-xs text-gray-600 dark:text-zinc-400 font-semibold">Chọn ngân hàng và nhập thông tin thẻ trên trang VNPay</p>
                 </div>
                 <div className="flex items-start gap-3">
-                  <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 text-[10px] font-black flex items-center justify-center mt-0.5">3</span>
-                  <p className="text-xs text-zinc-400 font-semibold">Xác nhận OTP và tự động quay lại nhận vé</p>
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-500/15 border border-blue-300 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 text-[10px] font-black flex items-center justify-center mt-0.5">3</span>
+                  <p className="text-xs text-gray-600 dark:text-zinc-400 font-semibold">Xác nhận OTP và tự động quay lại nhận vé</p>
                 </div>
               </div>
 
               {/* Security badge */}
-              <div className="flex items-center justify-center gap-2 text-[10px] text-zinc-500 font-bold uppercase tracking-widest pt-1">
+              <div className="flex items-center justify-center gap-2 text-[10px] text-gray-400 dark:text-zinc-500 font-bold uppercase tracking-widest pt-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <span>Giao dịch được mã hóa & bảo mật bởi VNPay</span>
               </div>
             </div>
           ) : (
-            <div className="bg-gradient-to-b from-pink-950/30 to-zinc-900 border border-pink-500/20 p-6 rounded-2xl max-w-sm mx-auto space-y-4">
-              <div className="w-16 h-16 rounded-2xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center mx-auto shadow-[0_0_20px_rgba(236,72,153,0.15)]">
-                <Wallet size={28} className="text-pink-400" />
+            <div className="bg-pink-50 dark:bg-gradient-to-b dark:from-pink-950/30 dark:to-zinc-900 border border-pink-200 dark:border-pink-500/20 p-6 rounded-2xl max-w-sm mx-auto space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-pink-100 dark:bg-pink-500/10 border border-pink-300 dark:border-pink-500/20 flex items-center justify-center mx-auto shadow-sm dark:shadow-[0_0_20px_rgba(236,72,153,0.15)]">
+                <Wallet size={28} className="text-pink-600 dark:text-pink-400" />
               </div>
               <div className="space-y-2">
-                <h4 className="text-sm font-black text-white">Ví điện tử MoMo</h4>
-                <p className="text-xs text-zinc-400 font-semibold leading-relaxed">
+                <h4 className="text-sm font-black text-gray-900 dark:text-white">Ví điện tử MoMo</h4>
+                <p className="text-xs text-gray-500 dark:text-zinc-400 font-semibold leading-relaxed">
                   Bạn sẽ được chuyển hướng sang ứng dụng MoMo hoặc quét mã QR để hoàn tất giao dịch an toàn.
                 </p>
               </div>
-              <div className="flex items-center justify-center gap-2 text-[10px] text-zinc-500 font-bold uppercase tracking-widest pt-1">
+              <div className="flex items-center justify-center gap-2 text-[10px] text-gray-400 dark:text-zinc-500 font-bold uppercase tracking-widest pt-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <span>Giao dịch bảo mật bởi MoMo</span>
               </div>

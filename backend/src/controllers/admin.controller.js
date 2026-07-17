@@ -790,6 +790,140 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
+// ==========================================
+// 6. Auto-Generate Showtimes
+// ==========================================
+/**
+ * Tự động tạo nhiều suất chiếu dựa trên:
+ * - movieId, theaterId, roomIds[], startDate, endDate
+ * - timeSlots[]: mảng string giờ chiếu VD: ["08:00", "10:30", "13:00"]
+ * - format, ticketPrice
+ *
+ * Logic:
+ * 1. Với mỗi ngày trong [startDate, endDate]
+ * 2. Với mỗi phòng trong roomIds
+ * 3. Với mỗi time slot
+ *    - Tính startTime, endTime (duration phim + 20 phút buffer)
+ *    - Kiểm tra trùng lịch trong DB
+ *    - Nếu không trùng → tạo mới
+ *    - Nếu trùng → bỏ qua, đếm vào skipped
+ * 4. Trả về { created, skipped, total }
+ */
+const autoGenerateShowtimes = async (req, res, next) => {
+  try {
+    const {
+      movieId,
+      theaterId,
+      roomIds,        // string[] – danh sách _id phòng chiếu
+      startDate,      // "YYYY-MM-DD"
+      endDate,        // "YYYY-MM-DD"
+      timeSlots,      // string[] – VD: ["08:00", "10:30", "13:00"]
+      format = '2D',
+      ticketPrice = 80000,
+    } = req.body;
+
+    // --- Validation ---
+    if (!movieId || !theaterId || !roomIds?.length || !startDate || !endDate || !timeSlots?.length) {
+      res.status(400);
+      throw new Error('Thiếu thông tin bắt buộc: movieId, theaterId, roomIds, startDate, endDate, timeSlots');
+    }
+
+    // Lấy thông tin phim để biết duration
+    const movie = await Movie.findById(movieId);
+    if (!movie) {
+      res.status(404);
+      throw new Error('Không tìm thấy phim');
+    }
+
+    const durationMs = movie.duration * 60000;   // phút → ms
+    const bufferMs   = 20 * 60000;               // 20 phút buffer
+
+    // Tạo danh sách các ngày trong khoảng [startDate, endDate]
+    const days = [];
+    const current = new Date(startDate);
+    const last    = new Date(endDate);
+    current.setHours(0, 0, 0, 0);
+    last.setHours(23, 59, 59, 999);
+
+    if (current > last) {
+      res.status(400);
+      throw new Error('Ngày bắt đầu phải trước hoặc bằng ngày kết thúc');
+    }
+
+    while (current <= last) {
+      days.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+    }
+
+    let created = 0;
+    let skipped = 0;
+
+    // Duyệt qua từng ngày → từng phòng → từng time slot
+    for (const day of days) {
+      for (const roomId of roomIds) {
+        for (const slot of timeSlots) {
+          // Phân tích "HH:mm"
+          const [hours, minutes] = slot.split(':').map(Number);
+          if (isNaN(hours) || isNaN(minutes)) continue;
+
+          const startTime = new Date(day);
+          startTime.setHours(hours, minutes, 0, 0);
+
+          const endTime = new Date(startTime.getTime() + durationMs + bufferMs);
+
+          // Kiểm tra giờ kết thúc không vượt quá 23:59
+          const endLimit = new Date(day);
+          endLimit.setHours(23, 59, 59, 999);
+          if (endTime > endLimit) {
+            skipped++;
+            continue; // Bỏ qua slot vượt quá thời gian hoạt động
+          }
+
+          // Kiểm tra trùng lịch
+          const conflict = await Showtime.findOne({
+            room: roomId,
+            startTime: { $lt: endTime },
+            endTime:   { $gt: startTime },
+          });
+
+          if (conflict) {
+            skipped++;
+            continue; // Bỏ qua – trùng lịch
+          }
+
+          // Tạo suất chiếu mới
+          await Showtime.create({
+            movie:       movieId,
+            theater:     theaterId,
+            room:        roomId,
+            startTime,
+            endTime,
+            ticketPrice: Number(ticketPrice),
+            format,
+          });
+
+          created++;
+        }
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      data: {
+        created,
+        skipped,
+        total: created + skipped,
+        movie: movie.title,
+        days: days.length,
+        rooms: roomIds.length,
+        slots: timeSlots.length,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createMovie,
   updateMovie,
@@ -812,6 +946,7 @@ module.exports = {
   createShowtime,
   updateShowtime,
   deleteShowtime,
+  autoGenerateShowtimes,
   getDashboardStats,
   getRevenueReport,
   listBookings,

@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Film, User, Clock, Calendar, Ticket, ChevronRight, Play, ShieldAlert, Bell, CalendarClock } from 'lucide-react';
+import { Film, User, Clock, Calendar, Ticket, ChevronRight, Play, ShieldAlert, Bell, CalendarClock, EyeOff, Eye, Sparkles } from 'lucide-react';
 import bookingService from '../../services/booking.service';
 import Button from '../common/Button';
 import { useLanguage } from '../../context/LanguageContext';
@@ -8,6 +8,17 @@ import useAuth from '../../hooks/useAuth';
 import Modal from '../common/Modal';
 import ReviewSection from './ReviewSection';
 import { getPosterUrl, getEmbedUrl } from '../../utils/constants';
+
+// Helper: Tính số ngày đến ngày khởi chiếu
+const getDaysUntilRelease = (releaseDate) => {
+  if (!releaseDate) return null;
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const release = new Date(releaseDate);
+  release.setHours(0, 0, 0, 0);
+  const diff = Math.ceil((release - now) / (1000 * 60 * 60 * 24));
+  return diff;
+};
 
 export const MovieDetail = ({ movie }) => {
   const navigate = useNavigate();
@@ -18,10 +29,12 @@ export const MovieDetail = ({ movie }) => {
   const [selectedDate, setSelectedDate] = useState('');
   const [loadingShowtimes, setLoadingShowtimes] = useState(false);
   const [trailerError, setTrailerError] = useState(false);
+  const [showTrailer, setShowTrailer] = useState(false);
   const [sortBy, setSortBy] = useState('earliest');
   const [formatFilter, setFormatFilter] = useState('');
   const [dateAvailability, setDateAvailability] = useState({});
   const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const showtimesSectionRef = useRef(null);
 
   // ── Lấy title / description / language theo ngôn ngữ trực tiếp từ DB ──────
   // Nếu phim có titleEN/descriptionEN thì dùng, không thì fallback về bản gốc.
@@ -130,6 +143,12 @@ export const MovieDetail = ({ movie }) => {
       }
     }
 
+    // Ẩn trailer và scroll xuống phần đặt vé
+    setShowTrailer(false);
+    setTimeout(() => {
+      showtimesSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+
     navigate(`/booking/${showtimeId}`);
   };
 
@@ -185,7 +204,7 @@ export const MovieDetail = ({ movie }) => {
         {/* Right: Text Information */}
         <div className="md:col-span-8 lg:col-span-9 space-y-8 flex flex-col justify-center">
           <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3">
               <span className="text-xs font-black bg-gray-900 text-white px-3 py-1.5 rounded-md tracking-widest uppercase shadow-md">
                 {movie.rating}
               </span>
@@ -197,9 +216,33 @@ export const MovieDetail = ({ movie }) => {
               <span className="text-gray-600 dark:text-gray-300 font-bold text-sm flex items-center gap-1.5 bg-gray-50 dark:bg-gray-800 px-3.5 py-1.5 rounded-full border border-gray-200 dark:border-gray-700">
                 <Clock size={14} className="text-brand" /> {movie.duration} {language === 'vi' ? 'phút' : 'min'}
               </span>
-              <span className="text-gray-600 dark:text-gray-300 font-bold text-sm flex items-center gap-1.5 bg-gray-50 dark:bg-gray-800 px-3.5 py-1.5 rounded-full border border-gray-200 dark:border-gray-700">
-                <Calendar size={14} className="text-brand" /> {new Date(movie.releaseDate).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-              </span>
+              {/* Badge ngày khởi chiếu */}
+              {movie.releaseDate && (() => {
+                const daysUntil = getDaysUntilRelease(movie.releaseDate);
+                const isUpcoming = (movie.status === 'coming-soon' || movie.status === 'pre-release') && daysUntil > 0;
+                if (isUpcoming) {
+                  return (
+                    <span className="inline-flex items-center gap-2 bg-gradient-to-r from-brand/10 to-amber-50 dark:from-brand/20 dark:to-amber-900/20 border border-brand/30 px-3.5 py-1.5 rounded-full animate-pulse">
+                      <Sparkles size={13} className="text-brand" />
+                      <span className="text-brand font-black text-xs">
+                        {daysUntil === 0
+                          ? (language === 'vi' ? 'Ra mắt hôm nay!' : 'Out Today!')
+                          : daysUntil === 1
+                            ? (language === 'vi' ? 'Ra mắt ngày mai' : 'Out Tomorrow')
+                            : language === 'vi'
+                              ? `Còn ${daysUntil} ngày ra mắt`
+                              : `${daysUntil} days to release`}
+                      </span>
+                    </span>
+                  );
+                }
+                return (
+                  <span className="text-gray-600 dark:text-gray-300 font-bold text-sm flex items-center gap-1.5 bg-gray-50 dark:bg-gray-800 px-3.5 py-1.5 rounded-full border border-gray-200 dark:border-gray-700">
+                    <Calendar size={14} className="text-brand" />
+                    {new Date(movie.releaseDate).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                  </span>
+                );
+              })()}
             </div>
             <h1 className="text-4xl md:text-6xl font-black text-gray-900 dark:text-gray-100 tracking-tighter leading-tight">
               {displayTitle}
@@ -232,10 +275,27 @@ export const MovieDetail = ({ movie }) => {
                 <p className="text-gray-800 dark:text-gray-200 font-bold">{movie.duration} {language === 'vi' ? 'phút' : 'min'}</p>
               </div>
               <div className="space-y-1.5">
-                <p className="text-gray-400 dark:text-gray-500 uppercase tracking-wider text-[11px] font-black">Khởi chiếu</p>
-                <p className="text-gray-800 dark:text-gray-200 font-bold">
+                <p className="text-gray-400 dark:text-gray-500 uppercase tracking-wider text-[11px] font-black">
+                  {language === 'vi' ? 'Ngày khởi chiếu' : 'Release Date'}
+                </p>
+                <p className="text-gray-800 dark:text-gray-200 font-bold flex items-center gap-1.5">
+                  <Calendar size={13} className="text-brand shrink-0" />
                   {new Date(movie.releaseDate).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </p>
+                {(() => {
+                  const daysUntil = getDaysUntilRelease(movie.releaseDate);
+                  const isUpcoming = (movie.status === 'coming-soon' || movie.status === 'pre-release') && daysUntil !== null && daysUntil > 0;
+                  if (!isUpcoming) return null;
+                  return (
+                    <span className="inline-block text-[10px] font-black text-brand bg-brand/10 border border-brand/20 px-2 py-0.5 rounded-full mt-0.5">
+                      {daysUntil === 1
+                        ? (language === 'vi' ? '⏳ Ngày mai!' : '⏳ Tomorrow!')
+                        : language === 'vi'
+                          ? `⏳ Còn ${daysUntil} ngày`
+                          : `⏳ ${daysUntil} days left`}
+                    </span>
+                  );
+                })()}
               </div>
               <div className="space-y-1.5">
                 <p className="text-gray-400 dark:text-gray-500 uppercase tracking-wider text-[11px] font-black">Quốc gia</p>
@@ -260,7 +320,7 @@ export const MovieDetail = ({ movie }) => {
 
       {/* 2. Trình phát video Youtube Trailer */}
       {movie.trailerUrl && movie.trailerUrl.trim() && (
-        <div className="space-y-6 pt-6">
+        <div className="space-y-4 pt-6">
           <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-4">
             <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-gray-100 flex items-center gap-3">
               <span className="bg-brand/20 p-2 rounded-xl text-brand">
@@ -268,15 +328,70 @@ export const MovieDetail = ({ movie }) => {
               </span>
               {t('movie.trailer')}
             </h2>
+            {/* Toggle trailer button */}
+            <button
+              onClick={() => setShowTrailer((v) => !v)}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl border transition-all text-sm font-bold active:scale-95 shadow-sm ${
+                showTrailer
+                  ? 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  : 'bg-gradient-to-r from-brand to-brand-dark border-brand/40 text-white hover:from-brand-dark hover:to-brand shadow-brand/20 shadow-md'
+              }`}
+            >
+              {showTrailer ? (
+                <><EyeOff size={16} /> <span>{language === 'vi' ? 'Ẩn trailer' : 'Hide Trailer'}</span></>
+              ) : (
+                <><Play size={16} fill="currentColor" /> <span>{language === 'vi' ? 'Xem trailer' : 'Watch Trailer'}</span></>
+              )}
+            </button>
           </div>
-          <div className="relative aspect-video w-full rounded-[2rem] overflow-hidden border border-gray-200 shadow-[0_30px_60px_rgba(0,0,0,0.15)] bg-black group">
-            <iframe
-              className="absolute inset-0 w-full h-full transition-transform duration-700 ease-in-out"
-              src={getEmbedUrl(movie.trailerUrl)}
-              title={`Trailer - ${displayTitle}`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+
+          {/* Preview thumbnail khi trailer đang ẩn */}
+          {!showTrailer && (
+            <button
+              onClick={() => setShowTrailer(true)}
+              className="w-full group relative aspect-video rounded-[2rem] overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-900 hover:border-brand/50 transition-all duration-300 shadow-lg hover:shadow-[0_20px_40px_rgba(0,0,0,0.2)] cursor-pointer"
+            >
+              {/* Poster as thumbnail background */}
+              <img
+                src={getPosterUrl(movie.posterUrl)}
+                alt={displayTitle}
+                className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-50 transition-opacity duration-500 scale-105 group-hover:scale-110 transition-transform duration-700"
+              />
+              {/* Dark gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+              {/* Play button */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+                <div className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-sm border-2 border-white/30 flex items-center justify-center group-hover:scale-110 group-hover:bg-brand/80 group-hover:border-brand transition-all duration-300 shadow-[0_0_40px_rgba(0,0,0,0.4)]">
+                  <Play size={36} fill="white" className="text-white ml-1" />
+                </div>
+                <div className="text-center">
+                  <p className="text-white font-black text-lg tracking-tight drop-shadow-lg">
+                    {language === 'vi' ? 'Xem trailer' : 'Watch Trailer'}
+                  </p>
+                  <p className="text-white/60 text-sm font-medium mt-1">{displayTitle}</p>
+                </div>
+              </div>
+              {/* Shimmer effect on hover */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 group-hover:translate-x-full transition-all duration-700 ease-in-out -translate-x-full" />
+            </button>
+          )}
+
+          {/* Collapsible trailer iframe with smooth animation */}
+          <div
+            className="overflow-hidden transition-all duration-500 ease-in-out"
+            style={{ maxHeight: showTrailer ? '800px' : '0px', opacity: showTrailer ? 1 : 0 }}
+          >
+            <div className="relative aspect-video w-full rounded-[2rem] overflow-hidden border border-gray-200 dark:border-gray-700 shadow-[0_30px_60px_rgba(0,0,0,0.2)] bg-black">
+              {showTrailer && (
+                <iframe
+                  className="absolute inset-0 w-full h-full"
+                  src={getEmbedUrl(movie.trailerUrl)}
+                  title={`Trailer - ${displayTitle}`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -338,7 +453,7 @@ export const MovieDetail = ({ movie }) => {
 
       {/* 4. Bảng đặt vé theo lịch chiếu */}
       {(movie.status === 'now-showing' || movie.status === 'preview') && (
-        <div className="space-y-6 bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 p-6 md:p-10 rounded-[2rem] shadow-lg mt-12 relative overflow-hidden">
+        <div ref={showtimesSectionRef} className="space-y-6 bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 p-6 md:p-10 rounded-[2rem] shadow-lg mt-12 relative overflow-hidden">
           {/* Subtle glow in background */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand/5 blur-[80px] rounded-full pointer-events-none" />
 
