@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { SEAT_TYPES } from '../../utils/constants';
 import Toast from '../common/Toast';
 
-export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], heldSeatsByOthers = [], onSeatClick }) => {
+export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], heldSeatsByOthers = [], onSeatClick, onOrphanError }) => {
   const [toastMsg, setToastMsg] = useState('');
   
   // Nhóm ghế theo hàng (chữ cái)
@@ -87,31 +87,38 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
     const block1 = rowSeatStates.filter(s => s.number <= 6);
     const block2 = rowSeatStates.filter(s => s.number >= 7);
 
-    // Helper: Xác định xem có ghế so le (orphan) không
-    // Ghế so le là khoảng trống có ĐÚNG 1 ghế và KHÔNG nằm ở rìa của block
-    const checkHasOrphan = (segments) => {
-      return segments.some(seg => seg.length === 1 && !seg.isEdge);
+    // ==========================================
+    // FIX BUG 3: THUẬT TOÁN CHỐNG GHẾ MỒ CÔI (ORPHAN SEAT)
+    // ==========================================
+    // Helper: Xác định xem có bao nhiêu "ghế mồ côi".
+    // Ghế mồ côi được định nghĩa là một khoảng trống có kích thước ĐÚNG BẰNG 1 GHẾ (seg.length === 1).
+    // Dù ở giữa hay ở mép lối đi, cứ hở ra đúng 1 ghế thì đều bị coi là mồ côi.
+    const getOrphanCount = (segments) => {
+      return segments.filter(seg => seg.length === 1).length;
     };
 
-    // Kiểm tra Block 1
-    const segments1 = getEmptySegments(block1, newSelected);
-    const hasOrphan1 = checkHasOrphan(segments1);
-    const oldSegments1 = getEmptySegments(block1, []); // Trạng thái gốc không tính selectedSeats
-    const hadOrphan1 = checkHasOrphan(oldSegments1);
+    // Đếm số lượng ghế mồ côi SAU KHI user chọn ghế mới
+    const orphanCount1 = getOrphanCount(getEmptySegments(block1, newSelected));
+    // Đếm số lượng ghế mồ côi TRƯỚC KHI user chọn (lấy làm chuẩn để so sánh)
+    const oldOrphanCount1 = getOrphanCount(getEmptySegments(block1, []));
 
-    // Kiểm tra Block 2
-    const segments2 = getEmptySegments(block2, newSelected);
-    const hasOrphan2 = checkHasOrphan(segments2);
-    const oldSegments2 = getEmptySegments(block2, []); // Trạng thái gốc
-    const hadOrphan2 = checkHasOrphan(oldSegments2);
+    const orphanCount2 = getOrphanCount(getEmptySegments(block2, newSelected));
+    const oldOrphanCount2 = getOrphanCount(getEmptySegments(block2, []));
 
-    // Nếu tạo ra một khoảng trống đúng 1 ghế mới (mà trước đó không có) -> Chặn!
-    if ((hasOrphan1 && !hadOrphan1) || (hasOrphan2 && !hadOrphan2)) {
-      setToastMsg("Không được để trống đúng 1 ghế (so le) ở giữa 2 ghế khác. Vui lòng chọn ghế liền kề.");
-      return;
+    // Nếu thao tác chọn ghế của user vô tình TẠO THÊM ghế mồ côi (làm số lượng tăng lên)
+    if (orphanCount1 > oldOrphanCount1 || orphanCount2 > oldOrphanCount2) {
+      setToastMsg("Đang để trống 1 ghế (so le). Vui lòng chọn lấp chỗ trống hoặc bỏ chọn.");
+      // Báo lỗi lên component cha (BookingPage) để KHÓA nút "Xác nhận ghế"
+      if (onOrphanError) onOrphanError(true);
+    } else {
+      setToastMsg("");
+      // Hết lỗi -> Mở khóa nút "Xác nhận ghế"
+      if (onOrphanError) onOrphanError(false);
     }
 
-    // Pass mảng các ghế mới được chọn lên cha
+    // CẢI TIẾN UX: Luôn cho phép mảng ghế cập nhật (để ghế đổi sang màu cam).
+    // Việc này giúp người dùng không bị "kẹt cứng" (bấm không ăn) khi đang dở tay chọn một chuỗi nhiều ghế.
+    // Nếu sai luật, họ chỉ bị khóa nút thanh toán chứ vẫn được phép click chọn/bỏ chọn tự do để sửa lỗi.
     onSeatClick(newSelected);
   };
 

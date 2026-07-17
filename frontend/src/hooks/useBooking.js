@@ -57,10 +57,18 @@ export const useBooking = () => {
     selectedSeats.forEach((seatCode) => {
       const seat = seatMap[seatCode];
       let addition = 0;
+      let multiplier = 1;
       let seatType = 'standard';
       if (seat) {
         addition = seat.price;
         seatType = seat.type || 'standard';
+        // ==========================================
+        // FIX BUG 2: TÍNH TIỀN GHẾ ĐÔI (SWEETBOX) Ở FRONTEND
+        // ==========================================
+        // Hệ số nhân (multiplier) mặc định là 1.
+        // Nếu là ghế đôi, hệ số nhân sẽ là 2 (vì vé dành cho 2 người).
+        // Công thức ở cuối vòng lặp: (basePrice * multiplier) + addition
+        if (seat.type === 'couple') multiplier = 2;
       } else {
         // Fallback: guess from row letter if seat not found in list
         const match = seatCode.match(/^([A-Z]+)(\d+)$/);
@@ -90,7 +98,8 @@ export const useBooking = () => {
           }
         }
       }
-      const ticketTotal = basePrice + addition;
+      
+      const ticketTotal = (basePrice * multiplier) + addition;
       seatsTotal += ticketTotal;
 
       // Group by seat type

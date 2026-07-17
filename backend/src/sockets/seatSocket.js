@@ -137,8 +137,34 @@ const confirmBookingClearHolds = (showtimeId, seatCodes, userId) => {
   }
 };
 
+// ==========================================
+// FIX BUG TỐT NGHIỆP: CHỐNG CƯỚP GHẾ (RACE CONDITION)
+// ==========================================
+// Hàm này dùng để kiểm tra xem trong danh sách các ghế mà khách đang muốn thanh toán,
+// có ghế nào ĐANG BỊ GIỮ bởi một người dùng KHÁC hay không.
+// Nếu có, trả về danh sách các ghế đang bị tranh chấp để Controller chặn thanh toán.
+const getConflictingHeldSeats = (showtimeId, seatCodes, userId) => {
+  const showtimeHolds = heldSeats.get(showtimeId);
+  if (!showtimeHolds) return []; // Nếu không có ai đang giữ ghế nào ở suất chiếu này -> An toàn
+  
+  const conflicting = [];
+  seatCodes.forEach(seatCode => {
+    // Nếu ghế này đang nằm trong danh sách "bị giữ" (màu cam)
+    if (showtimeHolds.has(seatCode)) {
+      const holdData = showtimeHolds.get(seatCode);
+      // Kiểm tra ID của người đang giữ ghế. Nếu KHÁC với ID của người đang cố thanh toán
+      // -> Đây là hành vi cướp ghế! Đưa vào danh sách vi phạm.
+      if (holdData.userId.toString() !== userId.toString()) {
+        conflicting.push(seatCode);
+      }
+    }
+  });
+  return conflicting;
+};
+
 module.exports = {
   initSocket,
   releaseSeat,
   confirmBookingClearHolds,
+  getConflictingHeldSeats,
 };

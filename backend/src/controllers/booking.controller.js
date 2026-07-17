@@ -5,7 +5,7 @@ const Concession = require('../models/Concession.model');
 const Payment = require('../models/Payment.model');
 const sendEmail = require('../utils/sendEmail');
 const { checkAndExpirePendingBookings } = require('../utils/bookingCleanup');
-const { confirmBookingClearHolds } = require('../sockets/seatSocket');
+const { confirmBookingClearHolds, getConflictingHeldSeats } = require('../sockets/seatSocket');
 
 // @desc    Create a new booking and process payment
 // @route   POST /api/bookings
@@ -76,6 +76,20 @@ const createBooking = async (req, res, next) => {
       );
     }
 
+    // ==========================================
+    // FIX BUG 1: KIỂM TRA RACE CONDITION (TRÁNH CƯỚP GHẾ)
+    // ==========================================
+    // Mặc dù ghế chưa ai mua (chưa nằm trong bookedSeatSet), nhưng có thể ĐANG ĐƯỢC GIỮ bởi người khác.
+    // Gọi hàm getConflictingHeldSeats để check chéo với Socket.
+    const heldConflicts = getConflictingHeldSeats(showtimeId, normalizedSeats, userId);
+    // Nếu mảng trả về có chứa ghế -> Có người khác đang giữ ghế này -> Chặn thanh toán ngay lập tức
+    if (heldConflicts.length > 0) {
+      res.status(400);
+      throw new Error(
+        `Ghế bạn chọn đang được người khác giữ: ${heldConflicts.join(', ')}. Vui lòng chọn lại ghế khác.`
+      );
+    }
+
     // 4. TÍNH TOÁN GIÁ VÉ & KIỂM TRA TRẠNG THÁI GHẾ (CÓ BỊ HỎNG/KHOÁ KHÔNG)
     // Truy vấn tất cả cấu hình ghế thực tế của phòng chiếu này từ database
     let seatPriceSum = 0;
@@ -97,8 +111,18 @@ const createBooking = async (req, res, next) => {
             throw new Error(`Ghế ${seatCode} hiện đang bảo trì và không thể đặt.`);
           }
 
-          // Tổng tiền = Giá vé gốc của lịch chiếu + Phụ thu riêng của loại ghế đó (VIP/Sweetbox)
-          seatPriceSum += showtime.ticketPrice + seatDetail.price;
+          // ==========================================
+          // FIX BUG 2: TÍNH TIỀN GHẾ ĐÔI (SWEETBOX) Ở BACKEND
+          // ==========================================
+          // Ghế đôi (couple) là ghế dành cho 2 người ngồi.
+          // Do đó, giá của 1 ghế đôi phải bằng: (Giá vé gốc x 2) + Tiền phụ thu ghế đôi
+          // Nếu không nhân 2 giá gốc, rạp sẽ bị lỗ vì 2 người xem nhưng chỉ thu tiền vé của 1 người.
+          if (seatDetail.type === 'couple') {
+            seatPriceSum += (showtime.ticketPrice * 2) + seatDetail.price;
+          } else {
+            // Đối với ghế thường hoặc VIP (chỉ 1 người ngồi): Giá vé gốc + Phụ thu
+            seatPriceSum += showtime.ticketPrice + seatDetail.price;
+          }
         } else {
           // Nếu không tìm thấy thông tin ghế trong DB, mặc định lấy giá vé gốc của lịch chiếu
           seatPriceSum += showtime.ticketPrice;

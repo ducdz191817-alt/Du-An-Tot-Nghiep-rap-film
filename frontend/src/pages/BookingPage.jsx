@@ -34,7 +34,10 @@ export const BookingPage = () => {
   const [activeStep, setActiveStep] = useState(1); // Bước 1: Ghế ngồi, Bước 2: Bắp nước
   const [heldSeatsByOthers, setHeldSeatsByOthers] = useState([]);
   const [ageWarning, setAgeWarning] = useState({ isOpen: false, movieTitle: '', requiredAge: 0, userAge: 0, movieId: '' });
+  const [hasOrphanError, setHasOrphanError] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(300); // 5 phút (300 giây)
   const socketRef = useRef(null);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     // Buộc chuyển hướng đăng nhập nếu người dùng đang đặt vé
@@ -132,6 +135,42 @@ export const BookingPage = () => {
       }
     };
   }, [showtimeId, user]);
+
+  // Quản lý đồng hồ đếm ngược 5 phút
+  useEffect(() => {
+    if (selectedSeats.length > 0) {
+      setTimeLeft(300); // Đặt lại 5 phút mỗi khi chọn lại ghế
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+      setTimeLeft(300);
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [selectedSeats]);
+
+  // Xử lý khi hết giờ
+  useEffect(() => {
+    if (selectedSeats.length > 0 && timeLeft === 0) {
+      alert('Thời gian giữ ghế đã hết (5 phút). Hệ thống sẽ hủy ghế bạn đã chọn.');
+      selectedSeats.forEach(seatCode => {
+        socketRef.current?.emit('release_seat', { showtimeId, seatCode, userId: user._id });
+      });
+      setSeats([]);
+      navigate(0); // Tải lại trang để dọn dẹp state
+    }
+  }, [timeLeft, selectedSeats, showtimeId, user, navigate, setSeats]);
 
   if (loading) return <Loading fullPage />;
 
@@ -247,6 +286,10 @@ export const BookingPage = () => {
                 selectedSeats={selectedSeats}
                 heldSeatsByOthers={heldSeatsByOthers}
                 onSeatClick={handleSeatClick}
+                // ==========================================
+                // FIX BUG 3 (UX): Lắng nghe lỗi ghế mồ côi từ SeatMap truyền lên
+                // ==========================================
+                onOrphanError={setHasOrphanError}
               />
 
               <SeatLegend />
@@ -268,9 +311,11 @@ export const BookingPage = () => {
             selectedConcessions={selectedConcessions}
             concessionsList={concessionsList}
             pricing={pricing}
+            timeLeft={timeLeft}
             onProceed={handleProceed}
             proceedText={activeStep === 1 ? 'Xác nhận ghế' : 'Tiến hành thanh toán'}
-            disabled={selectedSeats.length === 0}
+            // Khóa nút thanh toán nếu (1) chưa chọn ghế nào hoặc (2) đang dính lỗi ghế mồ côi
+            disabled={selectedSeats.length === 0 || hasOrphanError}
           />
         </div>
       </div>
