@@ -77,6 +77,12 @@ const MovieSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    // TMDB ID để kiểm tra trùng lặp khi import từ TMDB
+    tmdbId: {
+      type: Number,
+      default: null,
+      sparse: true,
+    },
   },
   {
     timestamps: true,

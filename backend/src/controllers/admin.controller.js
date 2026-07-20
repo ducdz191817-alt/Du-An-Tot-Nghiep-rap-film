@@ -13,6 +13,28 @@ const { generateSeatsForRoom } = require('../utils/generateSeats');
 // ==========================================
 const createMovie = async (req, res, next) => {
   try {
+    // === Kiểm tra trùng lặp phim ===
+    // 1. Kiểm tra trùng tmdbId (khi import từ TMDB)
+    if (req.body.tmdbId) {
+      const existingByTmdb = await Movie.findOne({ tmdbId: req.body.tmdbId });
+      if (existingByTmdb) {
+        res.status(400);
+        throw new Error(`Phim này (TMDB ID: ${req.body.tmdbId}) đã tồn tại trong hệ thống với tên "${existingByTmdb.title}".`);
+      }
+    }
+
+    // 2. Kiểm tra trùng tên phim (không phân biệt hoa thường)
+    const titleToCheck = (req.body.title || '').trim();
+    if (titleToCheck) {
+      const existingByTitle = await Movie.findOne({
+        title: { $regex: new RegExp(`^${titleToCheck.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
+      });
+      if (existingByTitle) {
+        res.status(400);
+        throw new Error(`Bộ phim với tên "${titleToCheck}" đã tồn tại trong hệ thống.`);
+      }
+    }
+
     const movie = await Movie.create(req.body);
     res.status(201).json({ success: true, data: movie });
   } catch (error) {
@@ -22,6 +44,19 @@ const createMovie = async (req, res, next) => {
 
 const updateMovie = async (req, res, next) => {
   try {
+    // Kiểm tra trùng tên phim khi cập nhật (loại trừ chính bộ phim đang sửa)
+    const titleToCheck = (req.body.title || '').trim();
+    if (titleToCheck) {
+      const existingByTitle = await Movie.findOne({
+        _id: { $ne: req.params.id },
+        title: { $regex: new RegExp(`^${titleToCheck.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
+      });
+      if (existingByTitle) {
+        res.status(400);
+        throw new Error(`Bộ phim với tên "${titleToCheck}" đã tồn tại trong hệ thống.`);
+      }
+    }
+
     const movie = await Movie.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,

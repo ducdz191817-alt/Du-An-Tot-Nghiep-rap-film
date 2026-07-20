@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Edit2, Trash2, X, AlertCircle, Eye, Search, Sparkles, Star, Calendar, Clock, Loader2, TrendingUp, Flame } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Plus, Edit2, Trash2, X, AlertCircle, Eye, Search, Sparkles, Star, Calendar, Clock, Loader2, TrendingUp, Flame, CheckCircle2 } from 'lucide-react';
 import movieService from '../../services/movie.service';
 import adminService from '../../services/admin.service';
 import Input from '../common/Input';
@@ -70,6 +70,7 @@ export const MovieManager = () => {
     director: '',
     cast: '',
     country: '',
+    tmdbId: null,
   };
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState('');
@@ -90,6 +91,26 @@ export const MovieManager = () => {
   useEffect(() => {
     fetchMoviesList();
   }, []);
+
+  // Helper: kiểm tra phim đã tồn tại trong hệ thống chưa (theo tmdbId hoặc title)
+  const existingMoviesMap = useMemo(() => {
+    const map = { byTmdbId: {}, byTitle: {} };
+    movies.forEach((m) => {
+      if (m.tmdbId) map.byTmdbId[m.tmdbId] = m;
+      if (m.title) map.byTitle[m.title.trim().toLowerCase()] = m;
+    });
+    return map;
+  }, [movies]);
+
+  const findExistingMovie = useCallback((tmdbId, title) => {
+    if (tmdbId && existingMoviesMap.byTmdbId[tmdbId]) {
+      return existingMoviesMap.byTmdbId[tmdbId];
+    }
+    if (title && existingMoviesMap.byTitle[title.trim().toLowerCase()]) {
+      return existingMoviesMap.byTitle[title.trim().toLowerCase()];
+    }
+    return null;
+  }, [existingMoviesMap]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -169,7 +190,16 @@ export const MovieManager = () => {
     return () => clearTimeout(timer);
   }, [tmdbQuery, tmdbOpen, handleSearchTMDB]);
 
-  const handleSelectTMDBMovie = async (tmdbId) => {
+  const handleSelectTMDBMovie = async (tmdbId, movieTitle) => {
+    // Kiểm tra phim đã tồn tại trước khi tải chi tiết
+    const existing = findExistingMovie(tmdbId, movieTitle);
+    if (existing) {
+      setToast({ message: `Bộ phim "${existing.title}" đã có trong danh mục của bạn! Đang mở chỉnh sửa...`, type: 'info' });
+      setTmdbOpen(false);
+      handleOpenEdit(existing);
+      return;
+    }
+
     setTmdbDetailLoading(tmdbId);
     try {
       const result = await adminService.getTMDBMovieDetail(tmdbId);
@@ -188,6 +218,7 @@ export const MovieManager = () => {
         director: m.director || '',
         cast: (m.cast || []).join(', '),
         country: m.country || '',
+        tmdbId: m.tmdbId || tmdbId,
       });
       setEditingMovie(null);
       setTmdbOpen(false);
@@ -253,11 +284,21 @@ export const MovieManager = () => {
       return;
     }
 
+    // Kiểm tra trùng tên phim ở client-side (thêm mới)
+    if (!editingMovie) {
+      const existingByTitle = findExistingMovie(form.tmdbId, form.title);
+      if (existingByTitle) {
+        setError(`Bộ phim "${form.title}" đã tồn tại trong hệ thống.`);
+        return;
+      }
+    }
+
     const payload = {
       ...form,
       duration: durationNum,
       genre: genreArray,
       cast: castArray,
+      tmdbId: form.tmdbId || undefined,
     };
 
     try {
@@ -720,24 +761,36 @@ export const MovieManager = () => {
             {!tmdbLoading && tmdbQuery.length >= 2 && tmdbResults.length === 0 && (
               <p className="text-center text-gray-500 py-8 text-sm">Không tìm thấy phim nào cho "{tmdbQuery}"</p>
             )}
-            {tmdbResults.map((movie) => (
+            {tmdbResults.map((movie) => {
+              const isExisting = !!findExistingMovie(movie.tmdbId, movie.title);
+              return (
               <button
                 key={movie.tmdbId}
-                onClick={() => handleSelectTMDBMovie(movie.tmdbId)}
+                onClick={() => handleSelectTMDBMovie(movie.tmdbId, movie.title)}
                 disabled={tmdbDetailLoading === movie.tmdbId}
-                className="w-full flex items-start gap-3 p-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-brand/30 rounded-xl transition-all text-left group"
+                className={`w-full flex items-start gap-3 p-3 border rounded-xl transition-all text-left group ${isExisting ? 'bg-green-50 border-green-200 hover:border-green-400' : 'bg-gray-50 hover:bg-gray-100 border-gray-200 hover:border-brand/30'}`}
               >
-                <div className="w-14 h-20 rounded-lg overflow-hidden bg-gray-100 shrink-0 border border-gray-200">
+                <div className="w-14 h-20 rounded-lg overflow-hidden bg-gray-100 shrink-0 border border-gray-200 relative">
                   {movie.posterUrl ? (
                     <img src={getPosterUrl(movie.posterUrl)} alt={movie.title} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-450 text-xs">N/A</div>
                   )}
+                  {isExisting && (
+                    <div className="absolute inset-0 bg-green-600/20 flex items-center justify-center">
+                      <CheckCircle2 size={20} className="text-green-600" />
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-bold text-gray-800 group-hover:text-brand transition-colors truncate">
-                    {movie.title}
-                  </h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className={`text-sm font-bold transition-colors truncate ${isExisting ? 'text-green-700' : 'text-gray-800 group-hover:text-brand'}`}>
+                      {movie.title}
+                    </h4>
+                    {isExisting && (
+                      <span className="shrink-0 px-1.5 py-0.5 bg-green-100 border border-green-300 text-green-700 rounded text-[9px] font-black uppercase tracking-wider">Đã có</span>
+                    )}
+                  </div>
                   {movie.originalTitle !== movie.title && (
                     <p className="text-[11px] text-gray-400 truncate">{movie.originalTitle}</p>
                   )}
@@ -757,11 +810,14 @@ export const MovieManager = () => {
                 </div>
                 {tmdbDetailLoading === movie.tmdbId ? (
                   <Loader2 size={16} className="text-brand animate-spin shrink-0 mt-2" />
+                ) : isExisting ? (
+                  <span className="text-[10px] text-green-600 font-bold shrink-0 mt-2">SỬA →</span>
                 ) : (
                   <span className="text-[10px] text-gray-400 group-hover:text-brand font-bold shrink-0 mt-2 transition-colors">CHỌN →</span>
                 )}
               </button>
-            ))}
+              );
+            })}
           </div>
 
           {!tmdbQuery && (
@@ -782,12 +838,14 @@ export const MovieManager = () => {
                 </div>
               ) : trendingMovies.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[50vh] overflow-y-auto custom-scrollbar pr-1">
-                  {trendingMovies.map((movie) => (
+                  {trendingMovies.map((movie) => {
+                    const isExisting = !!findExistingMovie(movie.tmdbId, movie.title);
+                    return (
                     <button
                       key={movie.tmdbId}
-                      onClick={() => handleSelectTMDBMovie(movie.tmdbId)}
+                      onClick={() => handleSelectTMDBMovie(movie.tmdbId, movie.title)}
                       disabled={tmdbDetailLoading === movie.tmdbId}
-                      className="group relative flex flex-col bg-white border border-gray-200 hover:border-brand/40 rounded-2xl overflow-hidden transition-all hover:shadow-md text-left"
+                      className={`group relative flex flex-col rounded-2xl overflow-hidden transition-all hover:shadow-md text-left ${isExisting ? 'bg-green-50 border-2 border-green-400 ring-2 ring-green-200' : 'bg-white border border-gray-200 hover:border-brand/40'}`}
                     >
                       {/* Poster */}
                       <div className="relative aspect-[2/3] w-full bg-gray-100">
@@ -798,12 +856,19 @@ export const MovieManager = () => {
                         )}
                         {/* Overlay khi hover */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                          <span className="text-white text-[10px] font-bold">Nhấn để chọn</span>
+                          <span className="text-white text-[10px] font-bold">{isExisting ? 'Nhấn để sửa' : 'Nhấn để chọn'}</span>
                         </div>
                         {/* Loading overlay */}
                         {tmdbDetailLoading === movie.tmdbId && (
                           <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
                             <Loader2 size={20} className="text-brand animate-spin" />
+                          </div>
+                        )}
+                        {/* 'Đã có' badge */}
+                        {isExisting && (
+                          <div className="absolute top-1.5 left-1.5 flex items-center gap-0.5 bg-green-600 px-1.5 py-0.5 rounded-lg">
+                            <CheckCircle2 size={9} className="text-white" />
+                            <span className="text-[9px] font-black text-white uppercase">Đã có</span>
                           </div>
                         )}
                         {/* Rating badge */}
@@ -816,7 +881,7 @@ export const MovieManager = () => {
                       </div>
                       {/* Info */}
                       <div className="p-2 flex-1">
-                        <h4 className="text-[11px] font-bold text-gray-800 line-clamp-2 leading-snug group-hover:text-brand transition-colors">
+                        <h4 className={`text-[11px] font-bold line-clamp-2 leading-snug transition-colors ${isExisting ? 'text-green-700' : 'text-gray-800 group-hover:text-brand'}`}>
                           {movie.title}
                         </h4>
                         <div className="flex items-center gap-1 mt-1 text-[10px] text-gray-400">
@@ -829,7 +894,8 @@ export const MovieManager = () => {
                         </div>
                       </div>
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-6">
