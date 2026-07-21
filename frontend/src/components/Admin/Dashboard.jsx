@@ -140,8 +140,9 @@ export const Dashboard = () => {
 
   const cards = [
     {
-      label: `Tổng doanh thu${getTimeSuffix()}`,
-      value: `${stats?.totalRevenue !== undefined && stats?.totalRevenue !== null ? stats.totalRevenue.toLocaleString() : 0} VND`,
+      label: `Doanh thu phim chiếu xong${getTimeSuffix()}`,
+      value: `${stats?.totalRevenue !== undefined && stats?.totalRevenue !== null ? stats.totalRevenue.toLocaleString('vi-VN') : 0} ₫`,
+      subtitle: stats?.upcomingRevenue ? `+${stats.upcomingRevenue.toLocaleString('vi-VN')} ₫ vé đặt trước` : 'Đã kết thúc suất chiếu',
       icon: <TrendingUp size={24} className="text-emerald-500" />,
       bg: 'from-emerald-500/10 to-emerald-500/0 border-emerald-500/20',
     },
@@ -251,6 +252,9 @@ export const Dashboard = () => {
                 {card.label}
               </span>
               <span className="text-xl md:text-2xl font-black text-gray-900 block">{card.value}</span>
+              {card.subtitle && (
+                <span className="text-[11px] font-semibold text-emerald-600 block">{card.subtitle}</span>
+              )}
             </div>
             <div className="bg-gray-50 border border-gray-200 p-3 rounded-2xl shrink-0">
               {card.icon}
