@@ -170,32 +170,36 @@ const PricePreview = ({ config }) => {
 
 // ── Main ────────────────────────────────────────────────────────────────────
 export const PricingManager = () => {
-  const [config, setConfig]   = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving]   = useState(false);
-  const [toast, setToast]     = useState(null);
+  const [config, setConfig]     = useState(null);
+  const [loading, setLoading]   = useState(true);
+  const [saving, setSaving]     = useState(false);
+  const [fetchError, setFetchError] = useState(null);
+  const [toast, setToast]       = useState(null);
   const [holidayInput, setHolidayInput] = useState('');
 
-  useEffect(() => {
-    adminService.getPricingConfig()
-      .then((res) => {
-        // api interceptor: response → response.data = {success, data}
-        // adminService: return response.data → returns the config object directly
-        console.log('[PricingManager] loaded config:', res);
-        const cfg = res?.data ?? res; // handle both shapes
-        if (cfg && (cfg.basePrice || cfg._id)) {
-          setConfig(cfg);
-        } else {
-          setToast({ type: 'error', msg: 'Dữ liệu bảng giá không hợp lệ từ server' });
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        console.error('[PricingManager] error:', err);
-        setToast({ type: 'error', msg: 'Lỗi tải bảng giá: ' + (err?.message || 'Không kết nối được backend') });
-      })
-      .finally(() => setLoading(false));
+  const loadConfig = useCallback(async () => {
+    setLoading(true);
+    setFetchError(null);
+    try {
+      const res = await adminService.getPricingConfig();
+      console.log('[PricingManager] loaded config:', res);
+      const cfg = res?.data ?? res;
+      if (cfg && (cfg.basePrice || cfg._id)) {
+        setConfig(cfg);
+      } else {
+        setFetchError('Dữ liệu bảng giá không đúng định dạng từ server.');
+      }
+    } catch (err) {
+      console.error('[PricingManager] load error:', err);
+      setFetchError(err?.message || 'Không kết nối được tới server backend.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadConfig();
+  }, [loadConfig]);
 
   const setField = (path, value) => {
     setConfig((prev) => {
@@ -212,7 +216,8 @@ export const PricingManager = () => {
     setSaving(true);
     try {
       const res = await adminService.updatePricingConfig(config);
-      setConfig(res.data);
+      const updated = res?.data ?? res;
+      setConfig(updated);
       setToast({ type: 'success', msg: 'Đã lưu bảng giá thành công!' });
     } catch (err) {
       setToast({ type: 'error', msg: err?.message || 'Lỗi khi lưu bảng giá' });
@@ -238,10 +243,29 @@ export const PricingManager = () => {
     </div>
   );
 
-  if (!config) return (
-    <div className="flex items-center justify-center py-24 gap-3 text-red-400 bg-red-50 rounded-2xl border border-red-200">
-      <AlertCircle size={20} />
-      <span className="text-sm font-semibold">Không thể tải bảng giá. Vui lòng kiểm tra backend.</span>
+  if (!config || fetchError) return (
+    <div className="flex flex-col items-center justify-center py-20 px-6 text-center bg-red-50/70 border border-red-200 rounded-3xl space-y-4 max-w-lg mx-auto my-12 shadow-sm">
+      <div className="p-3 bg-red-100 rounded-full text-red-500">
+        <AlertCircle size={28} />
+      </div>
+      <div>
+        <h4 className="font-extrabold text-red-700 text-base">Không thể tải bảng giá vé</h4>
+        <p className="text-xs text-red-600/90 mt-1 max-w-xs">{fetchError || 'Không kết nối được tới backend hoặc phiên đăng nhập đã hết hạn.'}</p>
+      </div>
+      <div className="flex items-center gap-3 pt-2">
+        <button
+          onClick={loadConfig}
+          className="px-4 py-2 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-700 transition-all shadow-sm active:scale-95"
+        >
+          Thử lại
+        </button>
+        <button
+          onClick={() => window.location.href = '/login'}
+          className="px-4 py-2 bg-white border border-red-200 text-red-600 rounded-xl text-xs font-bold hover:bg-red-50 transition-all active:scale-95"
+        >
+          Đăng nhập lại
+        </button>
+      </div>
     </div>
   );
 
