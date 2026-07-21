@@ -979,10 +979,26 @@ const getPricingConfig = async (req, res, next) => {
   try {
     let config = await PricingConfig.findOne();
     if (!config) {
-      // Tự khởi tạo bảng giá mặc định
       config = await PricingConfig.create({});
     }
-    res.json({ success: true, data: config });
+
+    const defaultWeekdaySurcharge = { sun: 30000, mon: 0, tue: 0, wed: 0, thu: 0, fri: 10000, sat: 30000 };
+    const defaultFormatSurcharge = { '2D': 0, '3D': 40000, 'IMAX': 90000, 'GOLDCLASS': 120000 };
+    const defaultTimeSlotSurcharge = { morning: 0, evening: 20000, latenight: 10000 };
+    const defaultRoomTypeSurcharge = { standard: 0, premium: 20000, dolby: 50000 };
+    const defaultSeatTypeSurcharge = { standard: 0, vip: 30000, couple: 100000 };
+    const defaultBasePrice = { weekday: 90000, weekend: 120000, holiday: 180000 };
+
+    const configObj = config.toObject();
+    configObj.basePrice = { ...defaultBasePrice, ...(configObj.basePrice || {}) };
+    configObj.weekdaySurcharge = { ...defaultWeekdaySurcharge, ...(configObj.weekdaySurcharge || {}) };
+    configObj.timeSlotSurcharge = { ...defaultTimeSlotSurcharge, ...(configObj.timeSlotSurcharge || {}) };
+    configObj.formatSurcharge = { ...defaultFormatSurcharge, ...(configObj.formatSurcharge || {}) };
+    configObj.roomTypeSurcharge = { ...defaultRoomTypeSurcharge, ...(configObj.roomTypeSurcharge || {}) };
+    configObj.seatTypeSurcharge = { ...defaultSeatTypeSurcharge, ...(configObj.seatTypeSurcharge || {}) };
+    configObj.holidays = configObj.holidays?.length ? configObj.holidays : ['2026-01-01', '2026-04-30', '2026-05-01', '2026-09-02'];
+
+    res.json({ success: true, data: configObj });
   } catch (error) {
     next(error);
   }
