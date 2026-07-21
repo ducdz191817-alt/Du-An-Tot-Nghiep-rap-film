@@ -619,7 +619,7 @@ const listBookings = async (req, res, next) => {
       .populate({
         path: 'showtime',
         populate: [
-          { path: 'movie', select: 'title' },
+          { path: 'movie', select: 'title posterUrl duration' },
           { path: 'theater', select: 'name' },
           { path: 'room', select: 'name' },
         ],
@@ -629,10 +629,145 @@ const listBookings = async (req, res, next) => {
       })
       .sort({ createdAt: -1 });
 
+    // Đảm bảo mọi bản ghi vé đều có ticketCode và ticketStatus
+    for (const b of bookings) {
+      if (!b.ticketCode) {
+        const d = b.bookingDate || b.createdAt || new Date();
+        const yy = String(d.getFullYear()).slice(-2);
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const suffix = String(b._id).slice(-4).toUpperCase();
+        b.ticketCode = `TKT-${yy}${mm}${dd}-${suffix}`;
+        if (b.paymentStatus === 'paid' && b.ticketStatus === 'pending') {
+          b.ticketStatus = b.isCheckedIn ? 'checked_in' : 'issued';
+        }
+        await b.save();
+      }
+    }
+
     res.json({
       success: true,
       count: bookings.length,
       data: bookings,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// CHỨC NĂNG: In vé (Cập nhật isPrinted = true, tăng printCount, lưu lịch sử in)
+const printTicket = async (req, res, next) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      res.status(404);
+      throw new Error('Không tìm thấy vé đặt');
+    }
+
+    booking.isPrinted = true;
+    booking.printCount = (booking.printCount || 0) + 1;
+    booking.printedAt = new Date();
+    booking.printLogs = booking.printLogs || [];
+    booking.printLogs.push({
+      printedAt: new Date(),
+      staffName: req.user?.username || 'Admin Cinema',
+      device: 'PC-01',
+    });
+
+    await booking.save();
+
+    const updated = await Booking.findById(booking._id)
+      .populate('user', 'username email phone')
+      .populate({
+        path: 'showtime',
+        populate: [
+          { path: 'movie', select: 'title posterUrl duration' },
+          { path: 'theater', select: 'name' },
+          { path: 'room', select: 'name' },
+        ],
+      })
+      .populate('concessions.concession');
+
+    res.json({ success: true, message: 'Đã cập nhật trạng thái in vé thành công', data: updated });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// CHỨC NĂNG: Check-in vé (Quét mã vé / QR Code)
+const checkInTicket = async (req, res, next) => {
+  try {
+    const { ticketCode, bookingId } = req.body;
+    let booking;
+
+    if (ticketCode) {
+      const cleanCode = ticketCode.trim().toUpperCase();
+      booking = await Booking.findOne({ ticketCode: cleanCode });
+      if (!booking && cleanCode.length === 24) {
+        booking = await Booking.findById(cleanCode);
+      }
+    } else if (bookingId) {
+      booking = await Booking.findById(bookingId);
+    }
+
+    if (!booking) {
+      res.status(404);
+      throw new Error('Không tìm thấy vé phù hợp với mã đã nhập');
+    }
+
+    const populated = await Booking.findById(booking._id)
+      .populate('user', 'username email phone')
+      .populate({
+        path: 'showtime',
+        populate: [
+          { path: 'movie', select: 'title posterUrl duration' },
+          { path: 'theater', select: 'name' },
+          { path: 'room', select: 'name' },
+        ],
+      })
+      .populate('concessions.concession');
+
+    // Trường hợp 1: Vé ĐÃ ĐƯỢC SỬ DỤNG trước đó
+    if (booking.isCheckedIn) {
+      return res.status(400).json({
+        success: false,
+        isAlreadyCheckedIn: true,
+        message: 'VÉ ĐÃ ĐƯỢC SỬ DỤNG',
+        data: populated,
+      });
+    }
+
+    // Trường hợp 2: Vé chưa thanh toán
+    if (booking.paymentStatus !== 'paid') {
+      res.status(400);
+      throw new Error('Vé này chưa hoàn tất thanh toán, không thể check-in');
+    }
+
+    // Trường hợp 3: Check-in thành công
+    booking.isCheckedIn = true;
+    booking.checkedInAt = new Date();
+    booking.checkedInBy = req.user?.username || 'Admin Cinema';
+    booking.ticketStatus = 'checked_in';
+
+    await booking.save();
+
+    const finalBooking = await Booking.findById(booking._id)
+      .populate('user', 'username email phone')
+      .populate({
+        path: 'showtime',
+        populate: [
+          { path: 'movie', select: 'title posterUrl duration' },
+          { path: 'theater', select: 'name' },
+          { path: 'room', select: 'name' },
+        ],
+      })
+      .populate('concessions.concession');
+
+    res.json({
+      success: true,
+      isCheckInSuccess: true,
+      message: 'CHECK-IN THÀNH CÔNG',
+      data: finalBooking,
     });
   } catch (error) {
     next(error);
@@ -1102,6 +1237,8 @@ module.exports = {
   getRevenueReport,
   listBookings,
   deleteBooking,
+  printTicket,
+  checkInTicket,
   listUsers,
   updateUserRole,
   deleteUser,

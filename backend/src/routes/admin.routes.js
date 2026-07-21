@@ -30,6 +30,8 @@ const {
   getRevenueReport,
   listBookings,
   deleteBooking,
+  printTicket,
+  checkInTicket,
   listUsers,
   updateUserRole,
   deleteUser,
@@ -77,6 +79,8 @@ router.get("/dashboard/revenue", getRevenueReport);
 // Booking Management
 router.get('/bookings', listBookings);
 router.delete('/bookings/:id', deleteBooking);
+router.post('/bookings/:id/print', printTicket);
+router.post('/bookings/check-in', checkInTicket);
 
 // Coupon Management (Admin)
 const { listCoupons, createCoupon, updateCoupon, deleteCoupon } = require("../controllers/coupon.controller");
