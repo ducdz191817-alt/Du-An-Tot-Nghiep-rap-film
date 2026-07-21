@@ -152,11 +152,13 @@ export const MovieDetail = ({ movie }) => {
     navigate(`/booking/${showtimeId}`);
   };
 
-  // Lọc và sắp xếp showtimes client-side
+  // Lọc và sắp xếp showtimes client-side (ẩn hẳn các suất đã kết thúc)
   const processedShowtimes = useMemo(() => {
     if (!showtimes) return [];
 
-    let filtered = [...showtimes];
+    // Ẩn các xuất chiếu đã kết thúc
+    let filtered = showtimes.filter((s) => new Date(s.startTime).getTime() > Date.now());
+
     if (formatFilter) {
       filtered = filtered.filter((s) => s.format === formatFilter);
     }
@@ -181,6 +183,16 @@ export const MovieDetail = ({ movie }) => {
       return acc;
     }, {});
   }, [processedShowtimes]);
+
+  // Phát hiện phim now-showing/preview nhưng không có lịch chiếu nào trong tất cả các ngày
+  const hasNoScheduleAtAll = useMemo(() => {
+    if (movie.status !== 'now-showing' && movie.status !== 'preview') return false;
+    if (checkingAvailability) return false;
+    // Nếu đã check xong tất cả ngày mà không ngày nào có suất
+    const datesChecked = Object.keys(dateAvailability);
+    if (datesChecked.length === 0) return false;
+    return datesChecked.every((date) => !dateAvailability[date]);
+  }, [movie.status, dateAvailability, checkingAvailability]);
 
   return (
     <div className="space-y-12">
@@ -397,7 +409,7 @@ export const MovieDetail = ({ movie }) => {
       )}
 
       {/* 3. Banner Sắp chiếu / Sắp ra mắt cho phim chưa/không có lịch chiếu */}
-      {(movie.status === 'coming-soon' || movie.status === 'pre-release') && (
+      {(movie.status === 'coming-soon' || movie.status === 'pre-release' || hasNoScheduleAtAll) && (
         <div className="bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 p-8 md:p-12 rounded-[2rem] shadow-lg mt-12 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-brand/3 via-transparent to-sky-50/50 pointer-events-none" />
           <div className="absolute -top-16 -right-16 w-64 h-64 bg-brand/5 blur-[60px] rounded-full pointer-events-none" />
@@ -405,11 +417,11 @@ export const MovieDetail = ({ movie }) => {
           <div className="relative z-10 flex flex-col sm:flex-row items-center gap-8">
             {/* Icon */}
             <div className={`shrink-0 flex items-center justify-center w-20 h-20 rounded-3xl shadow-lg ${
-              movie.status === 'pre-release'
+              movie.status === 'pre-release' || hasNoScheduleAtAll
                 ? 'bg-gradient-to-br from-purple-500 to-indigo-600'
                 : 'bg-gradient-to-br from-brand to-brand-dark'
             }`}>
-              {movie.status === 'pre-release'
+              {movie.status === 'pre-release' || hasNoScheduleAtAll
                 ? <Bell size={36} className="text-white" />
                 : <CalendarClock size={36} className="text-white" />}
             </div>
@@ -417,21 +429,25 @@ export const MovieDetail = ({ movie }) => {
             {/* Text */}
             <div className="flex-1 text-center sm:text-left">
               <span className={`inline-block text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-3 ${
-                movie.status === 'pre-release'
+                movie.status === 'pre-release' || hasNoScheduleAtAll
                   ? 'bg-purple-100 text-purple-700'
                   : 'bg-brand/10 text-brand'
               }`}>
-                {movie.status === 'pre-release' ? 'Sắp Ra Mắt' : 'Sắp Chiếu'}
+                {movie.status === 'pre-release' || hasNoScheduleAtAll ? 'Sắp Ra Mắt' : 'Sắp Chiếu'}
               </span>
               <h3 className="text-2xl font-black text-gray-900 dark:text-gray-100 tracking-tight">
-                {movie.status === 'pre-release'
+                {hasNoScheduleAtAll
                   ? 'Phim chưa có lịch chiếu'
-                  : 'Lịch chiếu sắp được mở'}
+                  : movie.status === 'pre-release'
+                    ? 'Phim chưa có lịch chiếu'
+                    : 'Lịch chiếu sắp được mở'}
               </h3>
               <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mt-2 leading-relaxed max-w-lg">
-                {movie.status === 'pre-release'
-                  ? 'Phim này chưa được lên lịch chiếu. Quay lại sau để xem lịch chiếu được cập nhật mới nhất.'
-                  : 'Phim có lịch chiếu trong thời gian tới. Lịch chiếu hôm nay sẽ tự động mở khi đến ngày chiếu.'}
+                {hasNoScheduleAtAll
+                  ? 'Phim này hiện chưa có suất chiếu nào. Quay lại sau để xem lịch chiếu được cập nhật mới nhất.'
+                  : movie.status === 'pre-release'
+                    ? 'Phim này chưa được lên lịch chiếu. Quay lại sau để xem lịch chiếu được cập nhật mới nhất.'
+                    : 'Phim có lịch chiếu trong thời gian tới. Lịch chiếu hôm nay sẽ tự động mở khi đến ngày chiếu.'}
               </p>
 
               {/* Release date */}
@@ -452,7 +468,7 @@ export const MovieDetail = ({ movie }) => {
       )}
 
       {/* 4. Bảng đặt vé theo lịch chiếu */}
-      {(movie.status === 'now-showing' || movie.status === 'preview') && (
+      {(movie.status === 'now-showing' || movie.status === 'preview') && !hasNoScheduleAtAll && (
         <div ref={showtimesSectionRef} className="space-y-6 bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 p-6 md:p-10 rounded-[2rem] shadow-lg mt-12 relative overflow-hidden">
           {/* Subtle glow in background */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand/5 blur-[80px] rounded-full pointer-events-none" />
@@ -565,8 +581,6 @@ export const MovieDetail = ({ movie }) => {
 
                   <div className="flex-1 flex flex-wrap gap-4">
                     {groupedShowtimes[theaterName].map((showtime) => {
-                      const showtimeTimestamp = new Date(showtime.startTime).getTime();
-                      const isPastShowtime = showtimeTimestamp <= Date.now();
                       const startTimeString = new Date(showtime.startTime).toLocaleTimeString(language === 'vi' ? 'vi-VN' : 'en-US', {
                         hour: '2-digit',
                         minute: '2-digit',
@@ -575,16 +589,11 @@ export const MovieDetail = ({ movie }) => {
                       return (
                         <button
                           key={showtime._id}
-                          onClick={() => handleShowtimeClick(showtime._id, isPastShowtime)}
-                          disabled={isPastShowtime}
-                          className={`flex items-center space-x-3 px-5 py-3 rounded-2xl transition-all duration-300 text-left group border ${
-                            isPastShowtime
-                              ? 'bg-gray-50 dark:bg-gray-800/30 border-gray-200 dark:border-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-70'
-                              : 'bg-gray-50 dark:bg-gray-800 hover:bg-brand/10 dark:hover:bg-brand/10 border-gray-200 dark:border-gray-700 hover:border-brand/50 dark:hover:border-brand/50 hover:-translate-y-1 active:scale-95 shadow-sm hover:shadow-[0_10px_20px_rgba(200,135,43,0.15)]'
-                          }`}
+                          onClick={() => handleShowtimeClick(showtime._id, false)}
+                          className="flex items-center space-x-3 px-5 py-3 rounded-2xl transition-all duration-300 text-left group border bg-gray-50 dark:bg-gray-800 hover:bg-brand/10 dark:hover:bg-brand/10 border-gray-200 dark:border-gray-700 hover:border-brand/50 dark:hover:border-brand/50 hover:-translate-y-1 active:scale-95 shadow-sm hover:shadow-[0_10px_20px_rgba(200,135,43,0.15)]"
                         >
                           <div className="flex-1">
-                            <span className={`text-gray-900 dark:text-gray-100 font-black text-base transition-colors ${isPastShowtime ? 'text-gray-400 dark:text-gray-600' : 'group-hover:text-brand'}`}>
+                            <span className="text-gray-900 dark:text-gray-100 font-black text-base transition-colors group-hover:text-brand">
                               {startTimeString}
                             </span>
                             <span className="text-[11px] text-gray-500 dark:text-gray-400 font-bold block uppercase tracking-wider">
@@ -592,11 +601,7 @@ export const MovieDetail = ({ movie }) => {
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
-                            {isPastShowtime ? (
-                              <span className="text-[10px] uppercase font-black tracking-wider text-red-500">{t('showtime.started')}</span>
-                            ) : (
-                              <ChevronRight size={16} className="text-gray-400 group-hover:text-brand transition-all" />
-                            )}
+                            <ChevronRight size={16} className="text-gray-400 group-hover:text-brand transition-all" />
                           </div>
                         </button>
                       );

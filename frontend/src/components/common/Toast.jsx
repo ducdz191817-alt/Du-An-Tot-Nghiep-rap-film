@@ -42,7 +42,7 @@ export const Toast = ({
 
   return (
     <div
-      className={`fixed bottom-5 right-5 z-50 flex items-center space-x-3 border px-4 py-3 rounded-xl backdrop-blur-md animate-in slide-in-from-bottom-5 fade-in duration-300 ${styles[type].bg} ${styles[type].glow}`}
+      className={`fixed top-5 left-1/2 -translate-x-1/2 z-50 flex items-center space-x-3 border px-4 py-3 rounded-xl backdrop-blur-md animate-in slide-in-from-top-5 fade-in duration-300 ${styles[type].bg} ${styles[type].glow}`}
     >
       <span>{styles[type].icon}</span>
       <p className="text-sm font-semibold max-w-[250px]">{message}</p>
