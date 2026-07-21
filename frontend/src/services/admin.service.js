@@ -124,8 +124,8 @@ const getDashboardStats = async (params = {}) => {
   return response.data;
 };
 
-const getRevenueReport = async () => {
-  const response = await api.get('/admin/dashboard/revenue');
+const getRevenueReport = async (params = {}) => {
+  const response = await api.get('/admin/dashboard/revenue', { params });
   return response.data;
 };
 

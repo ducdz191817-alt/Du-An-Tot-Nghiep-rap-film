@@ -407,13 +407,13 @@ const deleteShowtime = async (req, res, next) => {
 // ==========================================
 const getDashboardStats = async (req, res, next) => {
   try {
-    const { date, month, year } = req.query;
+    const { date, month, year, filter = 'ended' } = req.query;
     const isFiltered = date || month || year;
+    const now = new Date();
 
     const totalMovies = await Movie.countDocuments();
     let totalBookings = 0;
     let totalUsers = 0;
-    let totalRevenue = 0;
     let recentBookings = [];
 
     const periodQuery = {};
@@ -435,13 +435,25 @@ const getDashboardStats = async (req, res, next) => {
       periodQuery.bookingDate = { $gte: start, $lte: end };
     }
 
+    // Lấy tất cả đơn đặt vé đã thanh toán
+    const paidBookings = await Booking.find({ ...periodQuery, paymentStatus: 'paid' }).populate('showtime');
+
+    let completedRevenue = 0; // Doanh thu từ suất chiếu đã KẾT THÚC
+    let upcomingRevenue = 0;  // Doanh thu từ suất chiếu chưa kết thúc
+    let allPaidRevenue = 0;    // Tổng doanh thu đã thanh toán
+
+    paidBookings.forEach((b) => {
+      const isEnded = b.showtime && b.showtime.endTime ? new Date(b.showtime.endTime) <= now : true;
+      if (isEnded) {
+        completedRevenue += b.totalPrice;
+      } else {
+        upcomingRevenue += b.totalPrice;
+      }
+      allPaidRevenue += b.totalPrice;
+    });
+
     if (isFiltered) {
-      // Filter stats by chosen period
       totalBookings = await Booking.countDocuments(periodQuery);
-
-      const paidBookings = await Booking.find({ ...periodQuery, paymentStatus: 'paid' });
-      totalRevenue = paidBookings.reduce((sum, b) => sum + b.totalPrice, 0);
-
       const bookingsInPeriod = await Booking.find(periodQuery);
       const userIds = new Set(bookingsInPeriod.map((b) => b.user?.toString()).filter(Boolean));
       totalUsers = userIds.size;
@@ -454,12 +466,8 @@ const getDashboardStats = async (req, res, next) => {
         })
         .sort({ bookingDate: -1 });
     } else {
-      // Default overall stats
       totalBookings = await Booking.countDocuments();
       totalUsers = await User.countDocuments({ role: 'user' });
-
-      const allPaidBookings = await Booking.find({ paymentStatus: 'paid' });
-      totalRevenue = allPaidBookings.reduce((sum, b) => sum + b.totalPrice, 0);
 
       recentBookings = await Booking.find()
         .populate('user', 'username email')
@@ -471,6 +479,9 @@ const getDashboardStats = async (req, res, next) => {
         .limit(5);
     }
 
+    // totalRevenue hiển thị mặc định theo filter ('ended' = chỉ phim chiếu xong, 'all' = tất cả)
+    const displayRevenue = filter === 'all' ? allPaidRevenue : completedRevenue;
+
     res.json({
       success: true,
       data: {
@@ -478,7 +489,10 @@ const getDashboardStats = async (req, res, next) => {
           totalBookings,
           totalMovies,
           totalUsers,
-          totalRevenue,
+          totalRevenue: displayRevenue,
+          completedRevenue,
+          upcomingRevenue,
+          allPaidRevenue,
         },
         recentBookings,
       },
@@ -490,28 +504,43 @@ const getDashboardStats = async (req, res, next) => {
 
 const getRevenueReport = async (req, res, next) => {
   try {
+    const { status = 'ended' } = req.query; // 'ended' (mặc định: chỉ phim chiếu xong), 'all', 'upcoming'
+    const now = new Date();
+
     const bookings = await Booking.find({ paymentStatus: 'paid' })
       .populate({
         path: 'showtime',
         populate: [
-          // Lấy thêm posterUrl, thời lượng (duration) và thể loại (genre) để hiển thị giao diện Top Movies
-          { path: 'movie', select: 'title genre duration posterUrl' }, 
+          { path: 'movie', select: 'title genre duration posterUrl' },
           { path: 'theater', select: 'name' },
-          // Lấy sức chứa (capacity) của phòng chiếu để tính phần trăm ghế đã bán (Occupancy)
           { path: 'room', select: 'capacity' }
         ],
       });
 
-    // 1. Group revenue by movie
+    let completedRevenue = 0;
+    let upcomingRevenue = 0;
+    let totalRevenue = 0;
+
     const movieSales = {};
-    // 2. Group revenue by theater
     const theaterSales = {};
-    // 3. Group revenue by month
     const monthlySales = {};
 
     bookings.forEach((booking) => {
       const showtime = booking.showtime;
       if (!showtime) return;
+
+      const isEnded = showtime.endTime ? new Date(showtime.endTime) <= now : true;
+
+      if (isEnded) {
+        completedRevenue += booking.totalPrice;
+      } else {
+        upcomingRevenue += booking.totalPrice;
+      }
+      totalRevenue += booking.totalPrice;
+
+      // Lọc theo query status: 'ended' (chỉ phim đã kết thúc), 'upcoming', 'all'
+      if (status === 'ended' && !isEnded) return;
+      if (status === 'upcoming' && isEnded) return;
 
       const movieTitle = showtime.movie ? showtime.movie.title : 'Deleted Movie';
       const theaterName = showtime.theater ? showtime.theater.name : 'Deleted Theater';
@@ -519,26 +548,23 @@ const getRevenueReport = async (req, res, next) => {
       const date = new Date(booking.bookingDate);
       const monthYear = date.toLocaleString('en-US', { month: 'short', year: '2-digit' });
 
-      // Aggregate Movie - Tính toán dữ liệu cho từng bộ phim
+      // Aggregate Movie
       if (!movieSales[movieTitle]) {
         movieSales[movieTitle] = {
           name: movieTitle,
-          revenue: 0,           // Tổng doanh thu
-          tickets: 0,           // Tổng số vé bán ra
-          capacity: 0,          // Tổng số ghế có thể bán của các suất chiếu
+          revenue: 0,
+          tickets: 0,
+          capacity: 0,
           posterUrl: showtime.movie ? showtime.movie.posterUrl : null,
           genre: showtime.movie ? showtime.movie.genre : [],
           duration: showtime.movie ? showtime.movie.duration : 0,
-          uniqueShowtimes: new Set() // Dùng Set để lưu ID suất chiếu, tránh cộng dồn sức chứa (capacity) nhiều lần nếu 1 suất chiếu có nhiều booking
+          uniqueShowtimes: new Set()
         };
       }
       
-      // Cộng dồn doanh thu và số vé bán được của từng booking
       movieSales[movieTitle].revenue += booking.totalPrice;
       movieSales[movieTitle].tickets += (booking.seats ? booking.seats.length : 0);
       
-      // Tính tổng số ghế (capacity) của tất cả suất chiếu của phim này
-      // Chỉ cộng capacity nếu suất chiếu này chưa được cộng trước đó
       const showtimeId = showtime._id.toString();
       if (!movieSales[movieTitle].uniqueShowtimes.has(showtimeId)) {
          movieSales[movieTitle].uniqueShowtimes.add(showtimeId);
@@ -557,18 +583,14 @@ const getRevenueReport = async (req, res, next) => {
     const formatObjectToArray = (obj) => {
       return Object.keys(obj).map((key) => {
         if (typeof obj[key] === 'object' && obj[key] !== null) {
-          // Xử lý riêng cho đối tượng Movie để tính toán thêm % lấp đầy (Occupancy)
           const item = { ...obj[key] };
-          item.value = item.revenue; // Gán value = revenue để code cũ không bị lỗi khi render biểu đồ (nếu có)
-          
-          // Tính % ghế đã bán (Occupancy = Tickets / Capacity * 100)
+          item.value = item.revenue;
           if (item.capacity > 0) {
              item.occupancy = Math.round((item.tickets / item.capacity) * 100);
-             if (item.occupancy > 100) item.occupancy = 100; // Đảm bảo tối đa 100%
+             if (item.occupancy > 100) item.occupancy = 100;
           } else {
              item.occupancy = 0;
           }
-          // Xóa biến tạm uniqueShowtimes trước khi gửi về frontend
           delete item.uniqueShowtimes;
           return item;
         }
