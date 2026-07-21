@@ -11,6 +11,7 @@ import BookingManager from '../components/Admin/BookingManager';
 import RevenueReport from '../components/Admin/RevenueReport';
 import UserManager from '../components/Admin/UserManager';
 import CouponManager from '../components/Admin/CouponManager';
+import PricingManager from '../components/Admin/PricingManager';
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -35,6 +36,7 @@ const AdminPage = () => {
       case 'concessions': return <ConcessionManager />;
       case 'bookings':    return <BookingManager />;
       case 'coupons':     return <CouponManager />;
+      case 'pricing':     return <PricingManager />;
       case 'revenue':     return <RevenueReport />;
       case 'users':       return <UserManager />;
       default:            return <Dashboard />;
