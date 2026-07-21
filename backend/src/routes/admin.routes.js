@@ -23,6 +23,9 @@ const {
   updateShowtime,
   deleteShowtime,
   autoGenerateShowtimes,
+  getPricingConfig,
+  updatePricingConfig,
+  previewTicketPrice,
   getDashboardStats,
   getRevenueReport,
   listBookings,
@@ -62,6 +65,10 @@ router.route("/concessions/:id").put(updateConcession).delete(deleteConcession);
 router.post("/showtimes/auto-generate", autoGenerateShowtimes);
 router.post("/showtimes", createShowtime);
 router.route("/showtimes/:id").put(updateShowtime).delete(deleteShowtime);
+
+// Pricing Config
+router.route("/pricing").get(getPricingConfig).put(updatePricingConfig);
+router.post("/pricing/preview", previewTicketPrice);
 
 // Dashboard & Analytics
 router.get("/dashboard/stats", getDashboardStats);

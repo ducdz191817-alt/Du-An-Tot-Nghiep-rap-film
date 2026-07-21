@@ -26,6 +26,18 @@ const { autoUpdateMovieStatus } = require('./utils/autoUpdateMovieStatus');
 setTimeout(async () => {
   await autoUpdateMovieStatus();
   setInterval(autoUpdateMovieStatus, 60 * 60 * 1000); // every 1 hour
+
+  // Tự động khởi tạo bảng giá mặc định nếu chưa có
+  try {
+    const PricingConfig = require('./models/PricingConfig.model');
+    const existing = await PricingConfig.findOne();
+    if (!existing) {
+      await PricingConfig.create({});
+      console.log('[PricingConfig] Đã khởi tạo bảng giá mặc định.');
+    }
+  } catch (e) {
+    console.error('[PricingConfig] Lỗi khởi tạo bảng giá:', e.message);
+  }
 }, 3000);
 
 const app = express();

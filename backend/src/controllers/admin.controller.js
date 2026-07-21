@@ -6,7 +6,9 @@ const Showtime = require('../models/Showtime.model');
 const Booking = require('../models/Booking.model');
 const User = require('../models/User.model');
 const Concession = require('../models/Concession.model');
+const PricingConfig = require('../models/PricingConfig.model');
 const { generateSeatsForRoom } = require('../utils/generateSeats');
+const { calculateBaseShowtimePrice } = require('../utils/pricingEngine');
 
 // ==========================================
 // 1. Movie Management
@@ -292,13 +294,35 @@ const createShowtime = async (req, res, next) => {
       throw new Error(`⚠️ Lịch chiếu bị trùng! Phòng này đã có suất chiếu "${overlappingShowtime.movie ? (await Movie.findById(overlappingShowtime.movie).select('title'))?.title || 'Khác' : 'Khác'}" từ ${existStart} đến ${existEnd}. Vui lòng chọn giờ chiếu khác.`);
     }
 
+    // Lấy cấu hình giá hiện tại
+    const pricingConfig = await PricingConfig.findOne().lean();
+    if (!pricingConfig) {
+      res.status(400);
+      throw new Error('Chưa có bảng giá được cấu hình. Vui lòng thiết lập bảng giá trong mục “Bảng Giá” trước.');
+    }
+
+    // Lấy thông tin phòng để xác định roomType
+    const room = await Room.findById(roomId);
+    if (!room) {
+      res.status(404);
+      throw new Error('Không tìm thấy phòng chiếu');
+    }
+
+    // Tự động tính giá (giá ghế thường, chưa tính phụ thu loại ghế)
+    const autoPrice = calculateBaseShowtimePrice({
+      startTime: start,
+      format,
+      roomType: room.roomType || 'standard',
+      config: pricingConfig,
+    });
+
     const showtime = await Showtime.create({
       movie: movieId,
       theater: theaterId,
       room: roomId,
       startTime: start,
       endTime: end,
-      ticketPrice,
+      ticketPrice: autoPrice,
       format,
     });
 
@@ -819,7 +843,6 @@ const autoGenerateShowtimes = async (req, res, next) => {
       endDate,        // "YYYY-MM-DD"
       timeSlots,      // string[] – VD: ["08:00", "10:30", "13:00"]
       format = '2D',
-      ticketPrice = 80000,
     } = req.body;
 
     // --- Validation ---
@@ -827,6 +850,18 @@ const autoGenerateShowtimes = async (req, res, next) => {
       res.status(400);
       throw new Error('Thiếu thông tin bắt buộc: movieId, theaterId, roomIds, startDate, endDate, timeSlots');
     }
+
+    // Lấy bảng giá
+    const pricingConfig = await PricingConfig.findOne().lean();
+    if (!pricingConfig) {
+      res.status(400);
+      throw new Error('Chưa có bảng giá được cấu hình. Vui lòng thiết lập bảng giá trong mục “Bảng Giá” trước.');
+    }
+
+    // Lấy roomType của từng phòng trước
+    const roomDocs = await Room.find({ _id: { $in: roomIds } }).select('_id roomType').lean();
+    const roomTypeMap = {};
+    roomDocs.forEach((r) => { roomTypeMap[r._id.toString()] = r.roomType || 'standard'; });
 
     // Lấy thông tin phim để biết duration
     const movie = await Movie.findById(movieId);
@@ -891,6 +926,14 @@ const autoGenerateShowtimes = async (req, res, next) => {
             continue; // Bỏ qua – trùng lịch
           }
 
+          // Tự động tính giá theo ngày + giờ + format + roomType
+          const autoPrice = calculateBaseShowtimePrice({
+            startTime,
+            format,
+            roomType: roomTypeMap[roomId] || 'standard',
+            config: pricingConfig,
+          });
+
           // Tạo suất chiếu mới
           await Showtime.create({
             movie:       movieId,
@@ -898,7 +941,7 @@ const autoGenerateShowtimes = async (req, res, next) => {
             room:        roomId,
             startTime,
             endTime,
-            ticketPrice: Number(ticketPrice),
+            ticketPrice: autoPrice,
             format,
           });
 
@@ -919,6 +962,73 @@ const autoGenerateShowtimes = async (req, res, next) => {
         slots: timeSlots.length,
       },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ==========================================
+// 7. Pricing Config Management
+// ==========================================
+
+/**
+ * GET /api/admin/pricing
+ * Lấy bảng giá hiện tại (tự tạo mới với giá mặc định nếu chưa có)
+ */
+const getPricingConfig = async (req, res, next) => {
+  try {
+    let config = await PricingConfig.findOne();
+    if (!config) {
+      // Tự khởi tạo bảng giá mặc định
+      config = await PricingConfig.create({});
+    }
+    res.json({ success: true, data: config });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * PUT /api/admin/pricing
+ * Cập nhật bảng giá (upsert singleton)
+ */
+const updatePricingConfig = async (req, res, next) => {
+  try {
+    const config = await PricingConfig.findOneAndUpdate(
+      {},
+      { $set: req.body },
+      { new: true, upsert: true, runValidators: true }
+    );
+    res.json({ success: true, data: config });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/admin/pricing/preview
+ * Preview giá vé cho một tổ hợp tham số cụ thể
+ */
+const previewTicketPrice = async (req, res, next) => {
+  try {
+    const { startTime, format = '2D', roomType = 'standard', seatType = 'standard' } = req.body;
+    if (!startTime) {
+      res.status(400);
+      throw new Error('Thiếu startTime');
+    }
+
+    let config = await PricingConfig.findOne().lean();
+    if (!config) config = {};
+
+    const { getPriceBreakdown } = require('../utils/pricingEngine');
+    const result = getPriceBreakdown({
+      startTime: new Date(startTime),
+      format,
+      roomType,
+      seatType,
+      config,
+    });
+    res.json({ success: true, data: result });
   } catch (error) {
     next(error);
   }
@@ -947,6 +1057,9 @@ module.exports = {
   updateShowtime,
   deleteShowtime,
   autoGenerateShowtimes,
+  getPricingConfig,
+  updatePricingConfig,
+  previewTicketPrice,
   getDashboardStats,
   getRevenueReport,
   listBookings,

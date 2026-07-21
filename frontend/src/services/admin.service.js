@@ -157,6 +157,22 @@ const deleteUser = async (id) => {
   return response.data;
 };
 
+// Pricing Config
+const getPricingConfig = async () => {
+  const response = await api.get('/admin/pricing');
+  return response.data;
+};
+
+const updatePricingConfig = async (data) => {
+  const response = await api.put('/admin/pricing', data);
+  return response.data;
+};
+
+const previewTicketPrice = async (params) => {
+  const response = await api.post('/admin/pricing/preview', params);
+  return response.data;
+};
+
 // TMDB Integration
 const searchTMDB = async (query, page = 1) => {
   const response = await api.get('/admin/tmdb/search', {
@@ -208,6 +224,9 @@ const adminService = {
   searchTMDB,
   getTMDBMovieDetail,
   getTMDBTrending,
+  getPricingConfig,
+  updatePricingConfig,
+  previewTicketPrice,
 };
 
 export default adminService;
