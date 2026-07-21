@@ -139,6 +139,16 @@ const deleteBooking = async (id) => {
   return response.data;
 };
 
+const printTicket = async (id) => {
+  const response = await api.post(`/admin/bookings/${id}/print`);
+  return response;
+};
+
+const checkInTicket = async (data) => {
+  const response = await api.post('/admin/bookings/check-in', data);
+  return response;
+};
+
 // User Management
 const getUsers = async (role = '') => {
   const response = await api.get('/admin/users', {
@@ -218,6 +228,8 @@ const adminService = {
   getRevenueReport,
   getBookings,
   deleteBooking,
+  printTicket,
+  checkInTicket,
   getUsers,
   updateUserRole,
   deleteUser,
