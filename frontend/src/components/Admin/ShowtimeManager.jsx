@@ -312,6 +312,86 @@ export const ShowtimeManager = () => {
   };
 
 
+  // ── Helper: Sắp xếp danh sách phòng chiếu ưu tiên phòng khớp định dạng (form.format) ──
+  const sortedModalRooms = React.useMemo(() => {
+    if (!modalRooms || modalRooms.length === 0) return [];
+    return [...modalRooms].sort((a, b) => {
+      const aType = (a.type || a.roomType || '').toUpperCase();
+      const bType = (b.type || b.roomType || '').toUpperCase();
+      const fmt = (form.format || '').toUpperCase();
+      const aMatches = aType === fmt;
+      const bMatches = bType === fmt;
+      if (aMatches && !bMatches) return -1;
+      if (!aMatches && bMatches) return 1;
+      return 0;
+    });
+  }, [modalRooms, form.format]);
+
+  // ── Helper: Tính toán các khung giờ còn trống trong ngày của phòng ──
+  const availableSlotDetails = React.useMemo(() => {
+    if (!form.roomId) return { availableSlots: [], busyIntervals: [], selectedDateStr: '', movieDuration: 120 };
+
+    const selectedMovie = movies.find((m) => m._id === form.movieId);
+    const movieDuration = selectedMovie?.duration || 120;
+    const buffer = 20; // 20 phút vệ sinh phòng
+    const totalNeeded = movieDuration + buffer;
+
+    // Lấy ngày đã chọn (hoặc mặc định hôm nay nếu chưa chọn)
+    const selectedDateStr = form.startTime ? form.startTime.split('T')[0] : new Date().toISOString().split('T')[0];
+
+    // Lấy các suất chiếu đã có của phòng trong ngày đó (trừ suất đang edit)
+    const existingForRoom = showtimes.filter((st) => {
+      const isSameRoom = (st.room?._id || st.room) === form.roomId;
+      const isSameDate = new Date(st.startTime).toISOString().split('T')[0] === selectedDateStr;
+      const isNotEditing = editingShowtime ? st._id !== editingShowtime._id : true;
+      return isSameRoom && isSameDate && isNotEditing;
+    });
+
+    const busyIntervals = existingForRoom.map((st) => {
+      const s = new Date(st.startTime);
+      const e = new Date(st.endTime);
+      const startMin = s.getHours() * 60 + s.getMinutes();
+      const endMin = e.getHours() * 60 + e.getMinutes() + buffer;
+      const title = st.movie?.title || 'Phim khác';
+      return {
+        startMin,
+        endMin,
+        startFmt: s.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+        endFmt: e.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+        title,
+      };
+    }).sort((a, b) => a.startMin - b.startMin);
+
+    // Bắt đầu từ 08:00 (480 min) đến 23:00 (1380 min)
+    const availableSlots = [];
+    const openMin = 8 * 60;
+    const closeMin = 23 * 60 + 30;
+
+    let current = openMin;
+    while (current + movieDuration <= closeMin) {
+      const slotEnd = current + totalNeeded;
+      const hasOverlap = busyIntervals.some(
+        (b) => !(slotEnd <= b.startMin || current >= b.endMin)
+      );
+
+      if (!hasOverlap) {
+        const hh = String(Math.floor(current / 60)).padStart(2, '0');
+        const mm = String(current % 60).padStart(2, '0');
+        availableSlots.push(`${hh}:${mm}`);
+        current += 30;
+      } else {
+        const nextBusy = busyIntervals.find((b) => current < b.endMin && slotEnd > b.startMin);
+        if (nextBusy) {
+          current = Math.max(current + 30, nextBusy.endMin);
+        } else {
+          current += 30;
+        }
+      }
+    }
+
+    return { availableSlots: availableSlots.slice(0, 10), busyIntervals, selectedDateStr, movieDuration };
+  }, [form.roomId, form.startTime, form.movieId, movies, showtimes, editingShowtime]);
+
   if (loading) return <Loading />;
 
   return (
@@ -408,7 +488,6 @@ export const ShowtimeManager = () => {
 
       {/* Danh sách lịch chiếu được nhóm theo ngày */}
       {(() => {
-        // Lọc showtimes
         const filteredShowtimes = showtimes.filter(st => {
           const matchMovie = filterMovie ? (st.movie?._id === filterMovie || st.movie === filterMovie) : true;
           const matchRoom = filterRoom ? (st.room?._id === filterRoom || st.room === filterRoom) : true;
@@ -426,7 +505,6 @@ export const ShowtimeManager = () => {
           );
         }
 
-        // Nhóm theo ngày
         const groupedShowtimes = filteredShowtimes.reduce((acc, st) => {
           const dateStr = new Date(st.startTime).toLocaleDateString('vi-VN');
           if (!acc[dateStr]) acc[dateStr] = [];
@@ -434,7 +512,6 @@ export const ShowtimeManager = () => {
           return acc;
         }, {});
 
-        // Sắp xếp các ngày từ cũ đến mới
         const sortedDates = Object.keys(groupedShowtimes).sort((a, b) => {
           const [d1, m1, y1] = a.split('/');
           const [d2, m2, y2] = b.split('/');
@@ -444,7 +521,6 @@ export const ShowtimeManager = () => {
         return (
           <div className="space-y-6">
             {sortedDates.map((dateStr) => {
-              // Sắp xếp suất chiếu trong cùng 1 ngày theo giờ
               const dailyShowtimes = groupedShowtimes[dateStr].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
               return (
@@ -546,14 +622,29 @@ export const ShowtimeManager = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">
-              Phòng Chiếu {modalRoomsLoading && <Loader2 size={12} className="inline ml-2 animate-spin text-brand" />}
+            <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5 flex justify-between items-center">
+              <span>Phòng Chiếu {modalRoomsLoading && <Loader2 size={12} className="inline ml-2 animate-spin text-brand" />}</span>
+              <span className="text-[11px] font-normal text-gray-400">Đề xuất theo định dạng [{form.format}]</span>
             </label>
-            <select name="roomId" value={form.roomId} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer disabled:opacity-50" required disabled={modalRoomsLoading}>
-              {modalRoomsLoading ? <option value="">Đang tải danh sách phòng...</option> : modalRooms.length === 0 ? <option value="">Rạp này chưa có phòng nào</option> : modalRooms.map((r) => <option key={r._id} value={r._id}>{r.name} ({r.type})</option>)}
+            <select name="roomId" value={form.roomId} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer disabled:opacity-50 font-medium" required disabled={modalRoomsLoading}>
+              {modalRoomsLoading ? (
+                <option value="">Đang tải danh sách phòng...</option>
+              ) : sortedModalRooms.length === 0 ? (
+                <option value="">Rạp này chưa có phòng nào</option>
+              ) : (
+                sortedModalRooms.map((r) => {
+                  const isMatched = (r.type || r.roomType || '').toUpperCase() === (form.format || '').toUpperCase();
+                  return (
+                    <option key={r._id} value={r._id}>
+                      {r.name} ({r.type || 'Standard'}) {isMatched ? '⭐ Đề xuất (Khớp định dạng)' : ''}
+                    </option>
+                  );
+                })
+              )}
             </select>
             {!modalRoomsLoading && modalRooms.length === 0 && <p className="text-xs text-amber-600 mt-1.5 pl-0.5">⚠ Rạp này chưa có phòng chiếu. Hãy tạo phòng trong tab "Phòng Chiếu" trước.</p>}
           </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Định Dạng Chiếu</label>
@@ -563,7 +654,71 @@ export const ShowtimeManager = () => {
             </div>
             <Input name="ticketPrice" type="number" label="Giá Vé Cơ Bản (VNĐ)" value={form.ticketPrice} onChange={handleChange} required />
           </div>
+
           <Input name="startTime" type="datetime-local" label="Ngày & Giờ Bắt Đầu" value={form.startTime} onChange={handleChange} required />
+
+          {/* ── BẢNG TÍNH & GỢI Ý KHUNG GIỜ CÒN TRỐNG ── */}
+          {form.roomId && (
+            <div className="bg-gray-50 border border-gray-200/90 rounded-2xl p-3.5 space-y-2.5">
+              <div className="flex items-center justify-between border-b border-gray-200/70 pb-2">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-gray-800">
+                  <Clock size={14} className="text-brand" />
+                  Khung Giờ Trống Trong Ngày ({availableSlotDetails.selectedDateStr})
+                </div>
+                <span className="text-[10px] text-gray-400 font-semibold">
+                  Phim: {availableSlotDetails.movieDuration}m (+20m vệ sinh)
+                </span>
+              </div>
+
+              {/* Các nút gợi ý chọn nhanh khung giờ */}
+              {availableSlotDetails.availableSlots.length > 0 ? (
+                <div>
+                  <span className="text-[11px] text-gray-500 font-semibold block mb-1.5">
+                    Gợi ý giờ bắt đầu khả thi (Click để tự động chọn):
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {availableSlotDetails.availableSlots.map((slot) => {
+                      const fullDateTime = `${availableSlotDetails.selectedDateStr}T${slot}`;
+                      const isSelected = form.startTime === fullDateTime;
+                      return (
+                        <button
+                          key={slot}
+                          type="button"
+                          onClick={() => setForm((prev) => ({ ...prev, startTime: fullDateTime }))}
+                          className={`px-2.5 py-1 text-xs font-extrabold rounded-lg border transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-brand text-white border-brand shadow-xs'
+                              : 'bg-white border-gray-200 text-emerald-700 hover:border-emerald-400 hover:bg-emerald-50'
+                          }`}
+                        >
+                          + {slot}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-amber-600 font-semibold italic">
+                  ⚠️ Phòng này đã hết khung giờ trống khả thi trong ngày {availableSlotDetails.selectedDateStr}. Vui lòng chọn ngày hoặc phòng khác!
+                </p>
+              )}
+
+              {/* Suất chiếu đã có trong ngày */}
+              {availableSlotDetails.busyIntervals.length > 0 && (
+                <div className="pt-2 border-t border-gray-200/70 text-[11px]">
+                  <span className="font-bold text-gray-600 block mb-1">Suất chiếu đã xếp trong phòng:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {availableSlotDetails.busyIntervals.map((b, idx) => (
+                      <span key={idx} className="bg-amber-100/70 border border-amber-300/60 text-amber-900 px-2 py-0.5 rounded text-[10px] font-semibold" title={b.title}>
+                        {b.startFmt} - {b.endFmt} ({b.title})
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex justify-end gap-3 pt-3 border-t border-gray-200">
             <Button onClick={() => setIsManualOpen(false)} variant="secondary" className="px-5 py-2">Hủy</Button>
             <Button type="submit" variant="primary" className="px-6 py-2" disabled={modalRoomsLoading || modalRooms.length === 0}>
