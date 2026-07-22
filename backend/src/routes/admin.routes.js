@@ -13,6 +13,8 @@ const {
   deleteRoom,
   listRooms,
   getRoomSeats,
+  checkRoomEditable,
+  saveRoomLayout,
   updateSeat,
   bulkUpdateSeats,
   createConcession,
@@ -54,6 +56,8 @@ router.route("/theaters/:id").put(updateTheater).delete(deleteTheater);
 router.route("/rooms").get(listRooms).post(createRoom);
 router.route("/rooms/:id").put(updateRoom).delete(deleteRoom);
 router.get("/rooms/:id/seats", getRoomSeats);
+router.get("/rooms/:id/check-editable", checkRoomEditable);
+router.put("/rooms/:id/seats/layout", saveRoomLayout);
 
 // Seats
 router.patch("/seats/bulk", bulkUpdateSeats);

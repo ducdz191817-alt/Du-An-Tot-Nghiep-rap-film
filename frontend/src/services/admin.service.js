@@ -64,6 +64,16 @@ const getRoomSeats = async (roomId) => {
   return response.data;
 };
 
+const checkRoomEditable = async (roomId) => {
+  const response = await api.get(`/admin/rooms/${roomId}/check-editable`);
+  return response?.data || response;
+};
+
+const saveRoomLayout = async (roomId, seats) => {
+  const response = await api.put(`/admin/rooms/${roomId}/seats/layout`, { seats });
+  return response?.data || response;
+};
+
 const updateSeat = async (id, seatData) => {
   const response = await api.put(`/admin/seats/${id}`, seatData);
   return response.data;
@@ -214,6 +224,8 @@ const adminService = {
   updateRoom,
   deleteRoom,
   getRoomSeats,
+  checkRoomEditable,
+  saveRoomLayout,
   updateSeat,
   bulkUpdateSeats,
   createShowtime,
