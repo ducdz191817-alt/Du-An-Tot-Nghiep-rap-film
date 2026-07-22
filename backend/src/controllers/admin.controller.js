@@ -878,6 +878,154 @@ const bulkUpdateSeats = async (req, res, next) => {
   }
 };
 
+// CHỨC NĂNG: Kiểm tra phòng chiếu có được phép sửa sơ đồ ghế hay không (nếu có suất chiếu active thì khóa)
+const checkRoomEditable = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const room = await Room.findById(id);
+    if (!room) {
+      res.status(404);
+      throw new Error('Không tìm thấy phòng chiếu');
+    }
+
+    const now = new Date();
+    const activeShowtimes = await Showtime.find({
+      room: id,
+      endTime: { $gte: now },
+    });
+
+    if (activeShowtimes.length > 0) {
+      const reasonMsg = `Phòng chiếu này hiện đang có ${activeShowtimes.length} suất chiếu sắp hoặc đang diễn ra. Không thể thay đổi cấu trúc sơ đồ ghế để bảo vệ dữ liệu vé đã bán.`;
+      return res.json({
+        success: true,
+        editable: false,
+        activeShowtimesCount: activeShowtimes.length,
+        reason: reasonMsg,
+        data: {
+          editable: false,
+          activeShowtimesCount: activeShowtimes.length,
+          reason: reasonMsg,
+        },
+      });
+    }
+
+    res.json({
+      success: true,
+      editable: true,
+      activeShowtimesCount: 0,
+      data: {
+        editable: true,
+        activeShowtimesCount: 0,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// CHỨC NĂNG: Lưu toàn bộ cấu trúc sơ đồ ghế của phòng chiếu (thêm/xóa/sửa hàng và cột)
+const saveRoomLayout = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { seats: incomingSeats } = req.body;
+
+    const room = await Room.findById(id);
+    if (!room) {
+      res.status(404);
+      throw new Error('Không tìm thấy phòng chiếu');
+    }
+
+    const now = new Date();
+    const activeShowtimes = await Showtime.find({
+      room: id,
+      endTime: { $gte: now },
+    });
+
+    if (activeShowtimes.length > 0) {
+      res.status(400);
+      throw new Error(`Phòng chiếu này hiện đang có ${activeShowtimes.length} suất chiếu chưa kết thúc. Không thể thay đổi cấu trúc sơ đồ ghế.`);
+    }
+
+    if (!Array.isArray(incomingSeats)) {
+      res.status(400);
+      throw new Error('Dữ liệu sơ đồ ghế không hợp lệ');
+    }
+
+    // 1. Lấy tất cả các ghế đang có trong DB của phòng này
+    const existingSeats = await Seat.find({ room: id });
+    const existingMap = new Map(existingSeats.map((s) => [s._id.toString(), s]));
+
+    const incomingIds = new Set(
+      incomingSeats
+        .filter((s) => s._id && !String(s._id).startsWith('temp_'))
+        .map((s) => String(s._id))
+    );
+
+    // 2. Xác định các ghế bị xóa khỏi ma trận
+    const toDeleteIds = existingSeats
+      .filter((s) => !incomingIds.has(s._id.toString()))
+      .map((s) => s._id);
+
+    if (toDeleteIds.length > 0) {
+      await Seat.deleteMany({ _id: { $in: toDeleteIds } });
+    }
+
+    // 3. Phân loại ghế cần update và ghế mới cần insert
+    const bulkOps = [];
+    const newSeatsToInsert = [];
+
+    for (const seat of incomingSeats) {
+      const isExisting = seat._id && !String(seat._id).startsWith('temp_') && existingMap.has(String(seat._id));
+
+      if (isExisting) {
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: seat._id },
+            update: {
+              $set: {
+                row: seat.row,
+                number: seat.number,
+                type: seat.type || 'standard',
+                price: seat.price || 0,
+                isDisabled: seat.isDisabled ?? false,
+              },
+            },
+          },
+        });
+      } else {
+        newSeatsToInsert.push({
+          room: id,
+          row: seat.row,
+          number: seat.number,
+          type: seat.type || 'standard',
+          price: seat.price || 0,
+          isDisabled: seat.isDisabled ?? false,
+        });
+      }
+    }
+
+    if (bulkOps.length > 0) {
+      await Seat.bulkWrite(bulkOps);
+    }
+    if (newSeatsToInsert.length > 0) {
+      await Seat.insertMany(newSeatsToInsert);
+    }
+
+    // 4. Lấy lại danh sách ghế mới và cập nhật sức chứa (capacity) của phòng
+    const updatedSeats = await Seat.find({ room: id }).sort({ row: 1, number: 1 });
+    await Room.findByIdAndUpdate(id, { capacity: updatedSeats.length });
+
+    res.json({
+      success: true,
+      message: 'Lưu sơ đồ ghế thành công!',
+      count: updatedSeats.length,
+      data: updatedSeats,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // ==========================================
 // 6. Quản lý Người dùng (User Management)
 // ==========================================
@@ -1220,6 +1368,8 @@ module.exports = {
   deleteRoom,
   listRooms,
   getRoomSeats,
+  checkRoomEditable,
+  saveRoomLayout,
   updateSeat,
   bulkUpdateSeats,
   createConcession,
