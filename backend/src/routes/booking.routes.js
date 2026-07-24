@@ -7,10 +7,16 @@ const {
   getBookingStatus,
   simulatePayment,
   cancelBooking,
+  verifyTicket,
 } = require('../controllers/booking.controller');
 const { protect } = require('../middleware/auth.middleware');
 
-router.use(protect); // All booking routes require authentication
+// ── Public routes (no auth required) ─────────────────────────────────────────
+// Dùng cho nhân viên soát vé quét QR mà không cần đăng nhập hệ thống
+router.get('/verify/:ticketCode', verifyTicket);
+
+// ── Protected routes ──────────────────────────────────────────────────────────
+router.use(protect);
 
 router.post('/', createBooking);
 router.get('/my', getMyBookings);
