@@ -28,6 +28,10 @@ const sendBookingConfirmationEmail = async (booking) => {
       year: 'numeric',
     });
 
+    const ticketCode = booking.ticketCode || booking._id.toString().slice(-10).toUpperCase();
+    const appUrl = process.env.APP_URL || 'http://localhost:5173';
+    const verifyUrl = `${appUrl}/ticket/${ticketCode}`;
+
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #222; border-radius: 16px; padding: 25px; background-color: #13131c; color: #e4e4e7;">
         <div style="text-align: center; border-bottom: 1px solid #27272a; padding-bottom: 20px; margin-bottom: 20px;">
@@ -43,7 +47,7 @@ const sendBookingConfirmationEmail = async (booking) => {
           
           <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #d4d4d8; margin-top: 15px;">
             <tr>
-              <td style="padding: 6px 0; font-weight: bold; color: #a1a1aa; width: 120px;">Rạp chiếu:</td>
+              <td style="padding: 6px 0; font-weight: bold; color: #a1a1aa; width: 140px;">Rạp chiếu:</td>
               <td style="padding: 6px 0; color: #fff;">${booking.showtime.theater.name}</td>
             </tr>
             <tr>
@@ -70,18 +74,30 @@ const sendBookingConfirmationEmail = async (booking) => {
             ` : ''}
           </table>
           
-          <div style="border-top: 1px dashed #3f3f46; margin-top: 15px; padding-top: 15px; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-weight: bold; color: #a1a1aa;">Mã đặt vé:</span>
-            <span style="font-family: monospace; font-size: 14px; font-weight: bold; color: #fff; background-color: #09090b; padding: 4px 8px; border-radius: 6px; border: 1px solid #27272a;">${booking._id}</span>
+          <div style="border-top: 1px dashed #3f3f46; margin-top: 15px; padding-top: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="font-weight: bold; color: #a1a1aa;">Mã vé (ticketCode):</span>
+              <span style="font-family: monospace; font-size: 15px; font-weight: bold; color: #a855f7; background-color: #09090b; padding: 4px 10px; border-radius: 6px; border: 1px solid #3f3f46; letter-spacing: 1px;">${ticketCode}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: bold; color: #a1a1aa;">Mã đặt vé:</span>
+              <span style="font-family: monospace; font-size: 12px; color: #a1a1aa;">${booking._id}</span>
+            </div>
           </div>
           
           <div style="margin-top: 15px; padding-top: 10px; font-size: 16px; font-weight: bold; text-align: right; color: #fff;">
             Tổng thanh toán: <span style="color: #a855f7; font-size: 18px;">${booking.totalPrice.toLocaleString('vi-VN')} VND</span>
           </div>
         </div>
+
+        <div style="background-color: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; margin: 16px 0; text-align: center;">
+          <p style="color: #94a3b8; font-size: 13px; margin: 0 0 10px 0;">Quét mã QR hoặc nhấn nút để xem &amp; xác minh vé:</p>
+          <a href="${verifyUrl}" style="display: inline-block; background: linear-gradient(135deg, #7c3aed, #a855f7); color: white; font-weight: bold; font-size: 14px; text-decoration: none; padding: 10px 24px; border-radius: 8px;">Xem Vé Điện Tử</a>
+          <p style="color: #64748b; font-size: 11px; margin: 10px 0 0 0; word-break: break-all;">${verifyUrl}</p>
+        </div>
         
         <p style="font-size: 13px; color: #a1a1aa; line-height: 1.5;">
-          * <strong>Lưu ý:</strong> Vui lòng xuất trình mã đặt vé này tại quầy vé của rạp hoặc cây in vé tự động để nhận vé giấy ít nhất 15 phút trước giờ chiếu.
+          * <strong>Lưu ý:</strong> Vui lòng xuất trình mã vé <strong>${ticketCode}</strong> hoặc QR Code này cho nhân viên soát vé khi vào rạp. Mã vé có thể được nhập tay tại quầy nếu không quét được QR.
         </p>
         
         <div style="text-align: center; border-top: 1px solid #27272a; margin-top: 25px; padding-top: 15px; font-size: 11px; color: #71717a;">

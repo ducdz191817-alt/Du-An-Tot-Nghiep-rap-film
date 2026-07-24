@@ -277,55 +277,101 @@ const createBooking = async (req, res, next) => {
       });
     }
 
-    // 9. Send Confirmation Email
-    const dateFormatted = new Date(showtime.startTime).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-    const timeFormatted = new Date(showtime.startTime).toLocaleTimeString('en-US', {
+    // 9. Re-fetch booking để lấy ticketCode vừa được sinh ra bởi pre-save hook
+    const savedBooking = await Booking.findById(booking._id);
+
+    // 10. Send Confirmation Email
+    const timeFormatted = new Date(showtime.startTime).toLocaleTimeString('vi-VN', {
       hour: '2-digit',
       minute: '2-digit',
     });
+    const dateFormatted = new Date(showtime.startTime).toLocaleDateString('vi-VN', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'numeric',
+      year: 'numeric',
+    });
+    const ticketCode = savedBooking?.ticketCode || transactionId;
+    const appUrl = process.env.APP_URL || 'http://localhost:5173';
+    const verifyUrl = `${appUrl}/ticket/${ticketCode}`;
 
     const emailContentHtml = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-        <h2 style="color: #e50914; text-align: center;">Ticket Booking Confirmation</h2>
-        <p>Dear ${req.user.username},</p>
-        <p>Thank you for booking with us! Your ticket is confirmed. Details below:</p>
-        
-        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 15px 0;">
-          <h3 style="margin-top: 0; color: #333;">${showtime.movie.title}</h3>
-          <p><strong>Theater:</strong> ${showtime.theater.name}</p>
-          <p><strong>Hall / Room:</strong> ${showtime.room.name} (${showtime.format})</p>
-          <p><strong>Date:</strong> ${dateFormatted}</p>
-          <p><strong>Time:</strong> ${timeFormatted}</p>
-          <p><strong>Seats Booked:</strong> ${seats.join(', ')}</p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #222; border-radius: 16px; padding: 25px; background-color: #13131c; color: #e4e4e7;">
+        <div style="text-align: center; border-bottom: 1px solid #27272a; padding-bottom: 20px; margin-bottom: 20px;">
+          <h2 style="color: #a855f7; margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">Nova Cinematic</h2>
+          <p style="color: #a1a1aa; font-size: 14px; margin: 5px 0 0 0;">Vé Xem Phim Của Bạn Đã Sẵn Sàng!</p>
         </div>
 
-        ${concessionItems.length > 0 ? `
-          <div style="margin: 15px 0;">
-            <h4 style="margin-bottom: 5px; color: #333;">Concessions Selected:</h4>
-            <ul style="padding-left: 20px;">
-              ${concessionItems.map((item) => `<li>${item.name} x ${item.quantity} (${(item.price * item.quantity).toLocaleString()} VND)</li>`).join('')}
-            </ul>
+        <p>Xin chào <strong>${req.user.username}</strong>,</p>
+        <p>Cảm ơn bạn đã lựa chọn Nova Cinematic. Đặt vé và thanh toán của bạn đã hoàn tất thành công. Dưới đây là thông tin chi tiết:</p>
+
+        <div style="background-color: #1e1e2f; border-left: 4px solid #a855f7; padding: 20px; border-radius: 12px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #fff; font-size: 20px; font-weight: 800;">${showtime.movie.title}</h3>
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #d4d4d8; margin-top: 15px;">
+            <tr>
+              <td style="padding: 6px 0; font-weight: bold; color: #a1a1aa; width: 140px;">Rạp chiếu:</td>
+              <td style="padding: 6px 0; color: #fff;">${showtime.theater.name}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; font-weight: bold; color: #a1a1aa;">Phòng chiếu:</td>
+              <td style="padding: 6px 0; color: #fff;">${showtime.room.name} (${showtime.format})</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; font-weight: bold; color: #a1a1aa;">Thời gian:</td>
+              <td style="padding: 6px 0; color: #fff;">${timeFormatted} &bull; ${dateFormatted}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; font-weight: bold; color: #a1a1aa;">Ghế ngồi:</td>
+              <td style="padding: 6px 0; color: #a855f7; font-weight: bold; font-size: 16px;">${seats.join(', ')}</td>
+            </tr>
+            ${concessionItems.length > 0 ? `
+            <tr>
+              <td style="padding: 6px 0; font-weight: bold; color: #a1a1aa; vertical-align: top;">Đồ ăn uống:</td>
+              <td style="padding: 6px 0; color: #fff;">
+                <ul style="margin: 0; padding-left: 18px;">
+                  ${concessionItems.map(item => `<li>${item.name} x${item.quantity} (${(item.price * item.quantity).toLocaleString()} đ)</li>`).join('')}
+                </ul>
+              </td>
+            </tr>
+            ` : ''}
+          </table>
+
+          <div style="border-top: 1px dashed #3f3f46; margin-top: 15px; padding-top: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="font-weight: bold; color: #a1a1aa;">Mã vé (ticketCode):</span>
+              <span style="font-family: monospace; font-size: 15px; font-weight: bold; color: #a855f7; background-color: #09090b; padding: 4px 10px; border-radius: 6px; border: 1px solid #3f3f46; letter-spacing: 1px;">${ticketCode}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: bold; color: #a1a1aa;">Mã giao dịch:</span>
+              <span style="font-family: monospace; font-size: 12px; color: #a1a1aa;">${transactionId}</span>
+            </div>
           </div>
-        ` : ''}
 
-        <div style="border-top: 2px dashed #e0e0e0; padding-top: 15px; margin-top: 15px;">
-          <p style="font-size: 16px;"><strong>Total Price Paid:</strong> <span style="color: #e50914; font-size: 18px; font-weight: bold;">${totalPrice.toLocaleString()} VND</span></p>
-          <p><strong>Transaction ID:</strong> ${transactionId}</p>
+          <div style="margin-top: 15px; padding-top: 10px; font-size: 16px; font-weight: bold; text-align: right; color: #fff;">
+            Tổng thanh toán: <span style="color: #a855f7; font-size: 18px;">${totalPrice.toLocaleString('vi-VN')} VND</span>
+          </div>
         </div>
 
-        <p style="font-size: 12px; color: #777; margin-top: 30px; text-align: center;">Please show this email code at the ticket counter to claim your popcorn or enter the hall. Enjoy your movie!</p>
+        <div style="background-color: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; margin: 16px 0; text-align: center;">
+          <p style="color: #94a3b8; font-size: 13px; margin: 0 0 10px 0;">Quét mã QR hoặc nhấn nút để xem &amp; xác minh vé:</p>
+          <a href="${verifyUrl}" style="display: inline-block; background: linear-gradient(135deg, #7c3aed, #a855f7); color: white; font-weight: bold; font-size: 14px; text-decoration: none; padding: 10px 24px; border-radius: 8px;">Xem Vé Điện Tử</a>
+          <p style="color: #64748b; font-size: 11px; margin: 10px 0 0 0; word-break: break-all;">${verifyUrl}</p>
+        </div>
+
+        <p style="font-size: 13px; color: #a1a1aa; line-height: 1.5;">
+          * <strong>Lưu ý:</strong> Vui lòng xuất trình mã vé <strong>${ticketCode}</strong> hoặc QR Code này cho nhân viên soát vé khi vào rạp. Mã vé có thể được nhập tay tại quầy nếu không quét được QR.
+        </p>
+
+        <div style="text-align: center; border-top: 1px solid #27272a; margin-top: 25px; padding-top: 15px; font-size: 11px; color: #71717a;">
+          Email này được gửi tự động bởi hệ thống đặt vé Nova Cinematic. Vui lòng không trả lời trực tiếp email này.
+        </div>
       </div>
     `;
 
     try {
       await sendEmail({
         to: req.user.email,
-        subject: `Movie Ticket Confirmation: ${showtime.movie.title}`,
+        subject: `[Nova Cinematic] Xác nhận đặt vé thành công - ${showtime.movie.title}`,
         html: emailContentHtml,
       });
     } catch (emailErr) {
@@ -487,16 +533,22 @@ const simulatePayment = async (req, res, next) => {
       await payment.save();
     }
 
-    // 3. Send Confirmation Email
-    const dateFormatted = new Date(booking.showtime.startTime).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-    const timeFormatted = new Date(booking.showtime.startTime).toLocaleTimeString('en-US', {
+    // 3. Re-fetch to get ticketCode
+    const savedBooking = await Booking.findById(booking._id);
+    const ticketCode = savedBooking?.ticketCode || booking._id.toString().slice(-10).toUpperCase();
+    const appUrl = process.env.APP_URL || 'http://localhost:5173';
+    const verifyUrl = `${appUrl}/ticket/${ticketCode}`;
+
+    // 4. Build email data
+    const timeFormatted = new Date(booking.showtime.startTime).toLocaleTimeString('vi-VN', {
       hour: '2-digit',
       minute: '2-digit',
+    });
+    const dateFormatted = new Date(booking.showtime.startTime).toLocaleDateString('vi-VN', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'numeric',
+      year: 'numeric',
     });
 
     const concessionItems = [];
@@ -512,42 +564,57 @@ const simulatePayment = async (req, res, next) => {
     }
 
     const emailContentHtml = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-        <h2 style="color: #e50914; text-align: center;">Ticket Booking Confirmation (VietQR)</h2>
-        <p>Dear ${req.user.username},</p>
-        <p>Thank you for booking with us! Your ticket is confirmed. Details below:</p>
-        
-        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 15px 0;">
-          <h3 style="margin-top: 0; color: #333;">${booking.showtime.movie.title}</h3>
-          <p><strong>Theater:</strong> ${booking.showtime.theater.name}</p>
-          <p><strong>Hall / Room:</strong> ${booking.showtime.room.name} (${booking.showtime.format})</p>
-          <p><strong>Date:</strong> ${dateFormatted}</p>
-          <p><strong>Time:</strong> ${timeFormatted}</p>
-          <p><strong>Seats Booked:</strong> ${booking.seats.join(', ')}</p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #222; border-radius: 16px; padding: 25px; background-color: #13131c; color: #e4e4e7;">
+        <div style="text-align: center; border-bottom: 1px solid #27272a; padding-bottom: 20px; margin-bottom: 20px;">
+          <h2 style="color: #a855f7; margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">Nova Cinematic</h2>
+          <p style="color: #a1a1aa; font-size: 14px; margin: 5px 0 0 0;">Vé Xem Phim Của Bạn Đã Sẵn Sàng!</p>
         </div>
 
-        ${concessionItems.length > 0 ? `
-          <div style="margin: 15px 0;">
-            <h4 style="margin-bottom: 5px; color: #333;">Concessions Selected:</h4>
-            <ul style="padding-left: 20px;">
-              ${concessionItems.map((item) => `<li>${item.name} x ${item.quantity} (${(item.price * item.quantity).toLocaleString()} VND)</li>`).join('')}
-            </ul>
+        <p>Xin chào <strong>${req.user.username}</strong>,</p>
+        <p>Thanh toán của bạn đã được xác nhận thành công. Dưới đây là thông tin vé:</p>
+
+        <div style="background-color: #1e1e2f; border-left: 4px solid #a855f7; padding: 20px; border-radius: 12px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #fff; font-size: 20px; font-weight: 800;">${booking.showtime.movie.title}</h3>
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #d4d4d8; margin-top: 15px;">
+            <tr><td style="padding: 6px 0; font-weight: bold; color: #a1a1aa; width: 140px;">Rạp chiếu:</td><td style="padding: 6px 0; color: #fff;">${booking.showtime.theater.name}</td></tr>
+            <tr><td style="padding: 6px 0; font-weight: bold; color: #a1a1aa;">Phòng chiếu:</td><td style="padding: 6px 0; color: #fff;">${booking.showtime.room.name} (${booking.showtime.format})</td></tr>
+            <tr><td style="padding: 6px 0; font-weight: bold; color: #a1a1aa;">Thời gian:</td><td style="padding: 6px 0; color: #fff;">${timeFormatted} &bull; ${dateFormatted}</td></tr>
+            <tr><td style="padding: 6px 0; font-weight: bold; color: #a1a1aa;">Ghế ngồi:</td><td style="padding: 6px 0; color: #a855f7; font-weight: bold; font-size: 16px;">${booking.seats.join(', ')}</td></tr>
+            ${concessionItems.length > 0 ? `<tr><td style="padding: 6px 0; font-weight: bold; color: #a1a1aa; vertical-align: top;">Đồ ăn uống:</td><td style="padding: 6px 0; color: #fff;"><ul style="margin: 0; padding-left: 18px;">${concessionItems.map(i => `<li>${i.name} x${i.quantity} (${(i.price * i.quantity).toLocaleString()} đ)</li>`).join('')}</ul></td></tr>` : ''}
+          </table>
+
+          <div style="border-top: 1px dashed #3f3f46; margin-top: 15px; padding-top: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="font-weight: bold; color: #a1a1aa;">Mã vé:</span>
+              <span style="font-family: monospace; font-size: 15px; font-weight: bold; color: #a855f7; background-color: #09090b; padding: 4px 10px; border-radius: 6px; border: 1px solid #3f3f46; letter-spacing: 1px;">${ticketCode}</span>
+            </div>
           </div>
-        ` : ''}
 
-        <div style="border-top: 2px dashed #e0e0e0; padding-top: 15px; margin-top: 15px;">
-          <p style="font-size: 16px;"><strong>Total Price Paid:</strong> <span style="color: #e50914; font-size: 18px; font-weight: bold;">${booking.totalPrice.toLocaleString()} VND</span></p>
-          <p><strong>Transaction ID:</strong> ${payment ? payment.transactionId : 'N/A'}</p>
+          <div style="margin-top: 15px; font-size: 16px; font-weight: bold; text-align: right; color: #fff;">
+            Tổng thanh toán: <span style="color: #a855f7; font-size: 18px;">${booking.totalPrice.toLocaleString('vi-VN')} VND</span>
+          </div>
         </div>
 
-        <p style="font-size: 12px; color: #777; margin-top: 30px; text-align: center;">Please show this email code at the ticket counter to claim your popcorn or enter the hall. Enjoy your movie!</p>
+        <div style="background-color: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; margin: 16px 0; text-align: center;">
+          <p style="color: #94a3b8; font-size: 13px; margin: 0 0 10px 0;">Quét mã QR hoặc nhấn nút để xem &amp; xác minh vé:</p>
+          <a href="${verifyUrl}" style="display: inline-block; background: linear-gradient(135deg, #7c3aed, #a855f7); color: white; font-weight: bold; font-size: 14px; text-decoration: none; padding: 10px 24px; border-radius: 8px;">Xem Vé Điện Tử</a>
+          <p style="color: #64748b; font-size: 11px; margin: 10px 0 0 0; word-break: break-all;">${verifyUrl}</p>
+        </div>
+
+        <p style="font-size: 13px; color: #a1a1aa; line-height: 1.5;">
+          * <strong>Lưu ý:</strong> Xuất trình mã vé <strong>${ticketCode}</strong> hoặc QR Code khi vào rạp.
+        </p>
+
+        <div style="text-align: center; border-top: 1px solid #27272a; margin-top: 25px; padding-top: 15px; font-size: 11px; color: #71717a;">
+          Email này được gửi tự động bởi hệ thống đặt vé Nova Cinematic.
+        </div>
       </div>
     `;
 
     try {
       await sendEmail({
         to: req.user.email,
-        subject: `Movie Ticket Confirmation: ${booking.showtime.movie.title}`,
+        subject: `[Nova Cinematic] Xác nhận đặt vé thành công - ${booking.showtime.movie.title}`,
         html: emailContentHtml,
       });
     } catch (emailErr) {
@@ -557,7 +624,7 @@ const simulatePayment = async (req, res, next) => {
     res.json({
       success: true,
       message: 'Payment simulated and booking confirmed',
-      data: booking,
+      data: savedBooking || booking,
     });
   } catch (error) {
     next(error);
@@ -609,6 +676,91 @@ const cancelBooking = async (req, res, next) => {
   }
 };
 
+// @desc    Verify ticket info by ticketCode (public — no auth required, for QR scan)
+// @route   GET /api/bookings/verify/:ticketCode
+// @access  Public
+const verifyTicket = async (req, res, next) => {
+  try {
+    const { ticketCode } = req.params;
+    const cleanCode = ticketCode.trim().toUpperCase();
+
+    // Tìm theo ticketCode hoặc bookingId nếu code là ObjectId
+    let booking = await Booking.findOne({ ticketCode: cleanCode })
+      .populate('user', 'username email phone')
+      .populate({
+        path: 'showtime',
+        populate: [
+          { path: 'movie', select: 'title posterUrl duration rating' },
+          { path: 'theater', select: 'name address' },
+          { path: 'room', select: 'name type' },
+        ],
+      })
+      .populate('concessions.concession', 'name price');
+
+    if (!booking && cleanCode.length === 24) {
+      booking = await Booking.findById(cleanCode)
+        .populate('user', 'username email phone')
+        .populate({
+          path: 'showtime',
+          populate: [
+            { path: 'movie', select: 'title posterUrl duration rating' },
+            { path: 'theater', select: 'name address' },
+            { path: 'room', select: 'name type' },
+          ],
+        })
+        .populate('concessions.concession', 'name price');
+    }
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        error: 'Không tìm thấy vé với mã này',
+      });
+    }
+
+    // Chỉ trả về thông tin cần thiết để hiển thị, không lộ data nhạy cảm
+    const ticketInfo = {
+      ticketCode: booking.ticketCode,
+      ticketStatus: booking.ticketStatus,
+      paymentStatus: booking.paymentStatus,
+      isCheckedIn: booking.isCheckedIn,
+      checkedInAt: booking.checkedInAt,
+      bookingDate: booking.bookingDate,
+      seats: booking.seats,
+      totalPrice: booking.totalPrice,
+      paymentMethod: booking.paymentMethod,
+      customer: {
+        username: booking.user?.username,
+        // Email ẩn 1 phần để bảo mật (abc@gmail.com → a**@gmail.com)
+        email: booking.user?.email
+          ? booking.user.email.replace(/(.{1}).+(@.+)/, '$1**$2')
+          : null,
+      },
+      movie: {
+        title: booking.showtime?.movie?.title,
+        posterUrl: booking.showtime?.movie?.posterUrl,
+        duration: booking.showtime?.movie?.duration,
+        rating: booking.showtime?.movie?.rating,
+      },
+      showtime: {
+        startTime: booking.showtime?.startTime,
+        format: booking.showtime?.format,
+        theater: booking.showtime?.theater?.name,
+        room: booking.showtime?.room?.name,
+        roomType: booking.showtime?.room?.type,
+      },
+      concessions: (booking.concessions || []).map(c => ({
+        name: c.concession?.name,
+        quantity: c.quantity,
+      })).filter(c => c.name),
+    };
+
+    res.json({ success: true, data: ticketInfo });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createBooking,
   getMyBookings,
@@ -616,4 +768,5 @@ module.exports = {
   getBookingStatus,
   simulatePayment,
   cancelBooking,
+  verifyTicket,
 };

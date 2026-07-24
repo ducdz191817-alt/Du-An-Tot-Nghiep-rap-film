@@ -58,6 +58,12 @@ const cancelBooking = async (id) => {
   return normalizeResponse(response);
 };
 
+// Public: Xác minh vé từ QR code (không cần đăng nhập)
+const verifyTicket = async (ticketCode) => {
+  const response = await api.get(`/bookings/verify/${ticketCode}`);
+  return normalizeResponse(response);
+};
+
 const bookingService = {
   getShowtimesByMovie,
   getShowtimeById,
@@ -69,6 +75,7 @@ const bookingService = {
   getBookingStatus,
   simulatePayment,
   cancelBooking,
+  verifyTicket,
 };
 
 export default bookingService;
