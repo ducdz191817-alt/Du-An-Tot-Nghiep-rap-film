@@ -45,7 +45,7 @@ const TICKET_STATUS_CONFIG = {
     glow: 'shadow-[0_0_30px_rgba(245,158,11,0.15)]',
   },
   cancelled: {
-    label: 'VÉ ĐÃ BỊ HỦY',
+    label: 'VÉ ĐÃ BỊ HỦY / THANH TOÁN THẤT BẠI',
     color: 'red',
     icon: XCircle,
     bar: 'bg-red-500',
@@ -53,12 +53,12 @@ const TICKET_STATUS_CONFIG = {
     glow: 'shadow-[0_0_30px_rgba(239,68,68,0.15)]',
   },
   pending: {
-    label: 'VÉ CHƯA THANH TOÁN',
-    color: 'zinc',
+    label: 'VÉ CHƯA HOÀN TẤT THANH TOÁN',
+    color: 'amber',
     icon: Clock,
-    bar: 'bg-zinc-500',
-    badge: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/30',
-    glow: '',
+    bar: 'bg-amber-500',
+    badge: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+    glow: 'shadow-[0_0_30px_rgba(245,158,11,0.15)]',
   },
 };
 
@@ -149,8 +149,15 @@ export const TicketVerifyPage = () => {
 
   // ── Found ────────────────────────────────────────────────────────────────────
   const ticket = ticketData;
-  const ticketStatus = ticket.ticketStatus || (ticket.isCheckedIn ? 'checked_in' : ticket.paymentStatus !== 'paid' ? 'pending' : 'issued');
-  const config = TICKET_STATUS_CONFIG[ticketStatus] || TICKET_STATUS_CONFIG.pending;
+  let computedStatus = 'issued';
+  if (ticket.paymentStatus === 'failed' || ticket.ticketStatus === 'cancelled') {
+    computedStatus = 'cancelled';
+  } else if (ticket.paymentStatus === 'pending' || ticket.ticketStatus === 'pending') {
+    computedStatus = 'pending';
+  } else if (ticket.isCheckedIn || ticket.ticketStatus === 'checked_in') {
+    computedStatus = 'checked_in';
+  }
+  const config = TICKET_STATUS_CONFIG[computedStatus] || TICKET_STATUS_CONFIG.pending;
   const StatusIcon = config.icon;
 
   const startTime = ticket.showtime?.startTime ? new Date(ticket.showtime.startTime) : null;

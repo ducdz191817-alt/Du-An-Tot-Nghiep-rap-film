@@ -352,9 +352,14 @@ const createBooking = async (req, res, next) => {
           </div>
         </div>
 
-        <div style="background-color: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; margin: 16px 0; text-align: center;">
-          <p style="color: #94a3b8; font-size: 13px; margin: 0 0 10px 0;">Quét mã QR hoặc nhấn nút để xem &amp; xác minh vé:</p>
-          <a href="${verifyUrl}" style="display: inline-block; background: linear-gradient(135deg, #7c3aed, #a855f7); color: white; font-weight: bold; font-size: 14px; text-decoration: none; padding: 10px 24px; border-radius: 8px;">Xem Vé Điện Tử</a>
+        <div style="background-color: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; margin: 16px 0; text-align: center;">
+          <p style="color: #94a3b8; font-size: 13px; margin: 0 0 12px 0; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Mã QR Vé Điện Tử</p>
+          <div style="background-color: #ffffff; padding: 12px; border-radius: 12px; display: inline-block; margin-bottom: 12px; border: 1px solid #e2e8f0;">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&amp;data=${encodeURIComponent(verifyUrl)}" alt="Ticket QR Code" width="180" height="180" style="display: block; border: 0;" />
+          </div>
+          <div style="margin-top: 4px;">
+            <a href="${verifyUrl}" style="display: inline-block; background: linear-gradient(135deg, #7c3aed, #a855f7); color: white; font-weight: bold; font-size: 14px; text-decoration: none; padding: 10px 24px; border-radius: 8px;">Xem Vé Điện Tử Trên Web</a>
+          </div>
           <p style="color: #64748b; font-size: 11px; margin: 10px 0 0 0; word-break: break-all;">${verifyUrl}</p>
         </div>
 
@@ -595,9 +600,14 @@ const simulatePayment = async (req, res, next) => {
           </div>
         </div>
 
-        <div style="background-color: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; margin: 16px 0; text-align: center;">
-          <p style="color: #94a3b8; font-size: 13px; margin: 0 0 10px 0;">Quét mã QR hoặc nhấn nút để xem &amp; xác minh vé:</p>
-          <a href="${verifyUrl}" style="display: inline-block; background: linear-gradient(135deg, #7c3aed, #a855f7); color: white; font-weight: bold; font-size: 14px; text-decoration: none; padding: 10px 24px; border-radius: 8px;">Xem Vé Điện Tử</a>
+        <div style="background-color: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; margin: 16px 0; text-align: center;">
+          <p style="color: #94a3b8; font-size: 13px; margin: 0 0 12px 0; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Mã QR Vé Điện Tử</p>
+          <div style="background-color: #ffffff; padding: 12px; border-radius: 12px; display: inline-block; margin-bottom: 12px; border: 1px solid #e2e8f0;">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&amp;data=${encodeURIComponent(verifyUrl)}" alt="Ticket QR Code" width="180" height="180" style="display: block; border: 0;" />
+          </div>
+          <div style="margin-top: 4px;">
+            <a href="${verifyUrl}" style="display: inline-block; background: linear-gradient(135deg, #7c3aed, #a855f7); color: white; font-weight: bold; font-size: 14px; text-decoration: none; padding: 10px 24px; border-radius: 8px;">Xem Vé Điện Tử Trên Web</a>
+          </div>
           <p style="color: #64748b; font-size: 11px; margin: 10px 0 0 0; word-break: break-all;">${verifyUrl}</p>
         </div>
 
@@ -682,10 +692,23 @@ const cancelBooking = async (req, res, next) => {
 const verifyTicket = async (req, res, next) => {
   try {
     const { ticketCode } = req.params;
-    const cleanCode = ticketCode.trim().toUpperCase();
+    if (!ticketCode) {
+      return res.status(400).json({ success: false, error: 'Thiếu mã vé' });
+    }
 
-    // Tìm theo ticketCode hoặc bookingId nếu code là ObjectId
-    let booking = await Booking.findOne({ ticketCode: cleanCode })
+    const cleanCode = ticketCode.trim().toUpperCase();
+    // Thay thế khoảng trắng bằng gạch nối nếu có
+    const normalizedCode = cleanCode.replace(/\s+/g, '-');
+    const flexPattern = new RegExp('^' + cleanCode.replace(/[\s-]+/g, '[-_\\s]?') + '$', 'i');
+
+    // Tìm theo ticketCode (chính xác hoặc chuẩn hóa hoặc regex) hoặc ObjectId
+    let booking = await Booking.findOne({
+      $or: [
+        { ticketCode: cleanCode },
+        { ticketCode: normalizedCode },
+        { ticketCode: flexPattern },
+      ],
+    })
       .populate('user', 'username email phone')
       .populate({
         path: 'showtime',
@@ -697,8 +720,9 @@ const verifyTicket = async (req, res, next) => {
       })
       .populate('concessions.concession', 'name price');
 
-    if (!booking && cleanCode.length === 24) {
-      booking = await Booking.findById(cleanCode)
+    if (!booking && (cleanCode.length === 24 || normalizedCode.length === 24)) {
+      const searchId = cleanCode.length === 24 ? cleanCode : normalizedCode;
+      booking = await Booking.findById(searchId)
         .populate('user', 'username email phone')
         .populate({
           path: 'showtime',
