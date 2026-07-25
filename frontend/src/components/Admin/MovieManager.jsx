@@ -71,6 +71,7 @@ export const MovieManager = () => {
     director: '',
     cast: [],       // lưu dưới dạng mảng
     country: '',
+    availableFormats: '2D',
   };
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState('');
@@ -126,6 +127,24 @@ export const MovieManager = () => {
     setForm({
       ...form,
       genre: newGenres.join(', '),
+    });
+  };
+
+  const handleToggleFormat = (format) => {
+    const currentFormats = form.availableFormats
+      ? form.availableFormats.split(',').map((g) => g.trim()).filter((g) => g !== '')
+      : [];
+
+    let newFormats;
+    if (currentFormats.includes(format)) {
+      newFormats = currentFormats.filter((g) => g !== format);
+    } else {
+      newFormats = [...currentFormats, format];
+    }
+
+    setForm({
+      ...form,
+      availableFormats: newFormats.join(', '),
     });
   };
 
@@ -204,6 +223,7 @@ export const MovieManager = () => {
         director: m.director || '',
         cast: Array.isArray(m.cast) ? m.cast : [],
         country: m.country || '',
+        availableFormats: m.availableFormats ? m.availableFormats.join(', ') : '2D',
       });
       setEditingMovie(null);
       setTmdbOpen(false);
@@ -234,6 +254,7 @@ export const MovieManager = () => {
       director: movie.director || '',
       cast: Array.isArray(movie.cast) ? movie.cast : [],
       country: movie.country || '',
+      availableFormats: movie.availableFormats ? movie.availableFormats.join(', ') : '2D',
     });
     setError('');
     setIsOpen(true);
@@ -261,6 +282,9 @@ export const MovieManager = () => {
       ? form.cast.map((c) => c.trim()).filter((c) => c !== '')
       : form.cast.split(',').map((c) => c.trim()).filter((c) => c !== '');
     const durationNum = parseInt(form.duration, 10);
+    const formatArray = form.availableFormats
+      ? form.availableFormats.split(',').map((g) => g.trim()).filter((g) => g !== '')
+      : ['2D'];
 
     if (genreArray.length === 0) {
       setError('Vui lòng cung cấp ít nhất một thể loại phim');
@@ -277,6 +301,7 @@ export const MovieManager = () => {
       duration: durationNum,
       genre: genreArray,
       cast: castArray,
+      availableFormats: formatArray,
     };
 
     try {
@@ -561,6 +586,34 @@ export const MovieManager = () => {
                   );
                 });
               })()}
+            </div>
+          </div>
+
+          {/* Định dạng phát hành */}
+          <div className="mb-4">
+            <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">
+              Định Dạng Phát Hành <span className="text-brand">*</span>
+            </label>
+            <div className="flex flex-wrap gap-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+              {['2D', '3D', 'IMAX', '4DX'].map((format) => {
+                const currentFormats = form.availableFormats
+                  ? form.availableFormats.split(',').map((g) => g.trim()).filter((g) => g !== '')
+                  : [];
+                const isSelected = currentFormats.includes(format);
+                return (
+                  <button
+                    key={format}
+                    type="button"
+                    onClick={() => handleToggleFormat(format)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${isSelected
+                      ? 'bg-brand/10 border-brand/40 text-brand shadow-[0_2px_8px_rgba(168,85,247,0.15)]'
+                      : 'bg-zinc-800/40 border-zinc-700/40 text-white hover:border-zinc-650 hover:text-white'
+                      }`}
+                  >
+                    {format}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
