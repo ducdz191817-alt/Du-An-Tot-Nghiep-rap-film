@@ -205,164 +205,71 @@ export const RoomManager = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-200 pb-4 gap-4">
         <div>
-          <h3 className="text-lg font-black text-gray-800">Rạp & Phòng Chiếu</h3>
-          <p className="text-xs text-gray-500 mt-1">Cấu hình cụm rạp và tạo sơ đồ ghế ngồi vật lý.</p>
+          <h3 className="text-lg font-black text-gray-800">Quản Lý Phòng Chiếu</h3>
+          <p className="text-xs text-gray-500 mt-1">Cấu hình các phòng chiếu và tạo sơ đồ ghế ngồi vật lý.</p>
         </div>
 
         <div className="flex items-center gap-3">
-          <Button onClick={handleOpenAddTheater} variant="secondary" className="py-2 px-4 text-sm" icon={<Home size={15} />}>
-            Thêm Cụm Rạp
-          </Button>
           <Button onClick={handleOpenAddRoom} variant="primary" className="py-2 px-4 text-sm" icon={<Plus size={16} />}>
             Thêm Phòng Chiếu
           </Button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex space-x-4 border-b border-gray-200 pb-2">
-        <button
-          onClick={() => setActiveTab('rooms')}
-          className={`pb-2 font-bold text-sm border-b-2 transition-all ${
-            activeTab === 'rooms' ? 'border-brand text-brand' : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Phòng Chiếu ({rooms.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('theaters')}
-          className={`pb-2 font-bold text-sm border-b-2 transition-all ${
-            activeTab === 'theaters' ? 'border-brand text-brand' : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Cụm Rạp ({theaters.length})
-        </button>
-      </div>
-
       {/* Danh sách lưới Phòng chiếu */}
-      {activeTab === 'rooms' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {rooms.length === 0 ? (
-            <div className="col-span-full py-12 text-center text-gray-400 italic border border-dashed border-gray-200 rounded-3xl bg-white">
-              Chưa có phòng chiếu nào được đăng ký. Hãy thêm phòng chiếu ở trên!
-            </div>
-          ) : (
-            rooms.map((rm) => (
-              <div key={rm._id} className="bg-white border border-gray-200 p-5 rounded-3xl space-y-3 shadow-sm hover:border-gray-300 transition-colors relative group">
-                <div className="flex items-start justify-between pr-12">
-                  <div>
-                    <h4 className="font-bold text-gray-800 text-sm flex items-center gap-2">
-                      <DoorOpen size={16} className="text-brand" /> {rm.name}
-                    </h4>
-                    <span className="text-[10px] text-gray-400 font-semibold uppercase">{rm.theater?.name || 'Không xác định'}</span>
-                  </div>
-                  <span className="bg-gray-50 border border-gray-200 px-2 py-0.5 rounded text-[9px] uppercase font-bold text-gray-500 shrink-0">
-                    {rm.type}
-                  </span>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {rooms.length === 0 ? (
+          <div className="col-span-full py-12 text-center text-gray-400 italic border border-dashed border-gray-200 rounded-3xl bg-white">
+            Chưa có phòng chiếu nào được đăng ký. Hãy thêm phòng chiếu ở trên!
+          </div>
+        ) : (
+          rooms.map((rm) => (
+            <div key={rm._id} className="bg-white border border-gray-200 p-5 rounded-3xl space-y-3 shadow-sm hover:border-gray-300 transition-colors relative group">
+              <div className="flex items-start justify-between pr-12">
+                <div>
+                  <h4 className="font-bold text-gray-800 text-sm flex items-center gap-2">
+                    <DoorOpen size={16} className="text-brand" /> {rm.name}
+                  </h4>
+                  <span className="text-[10px] text-gray-400 font-semibold uppercase">{rm.theater?.name || 'Không xác định'}</span>
                 </div>
-                <div className="text-xs font-semibold text-gray-500 border-t border-gray-200/80 pt-2 flex justify-between items-center">
-                  <span>Sơ đồ sức chứa</span>
-                  <span className="text-gray-700">{rm.capacity} Ghế đã tạo</span>
-                </div>
+                <span className="bg-gray-50 border border-gray-200 px-2 py-0.5 rounded text-[9px] uppercase font-bold text-gray-500 shrink-0">
+                  {rm.type}
+                </span>
+              </div>
+              <div className="text-xs font-semibold text-gray-500 border-t border-gray-200/80 pt-2 flex justify-between items-center">
+                <span>Sơ đồ sức chứa</span>
+                <span className="text-gray-700">{rm.capacity} Ghế đã tạo</span>
+              </div>
 
+              <button
+                onClick={() => setSeatMapRoom(rm)}
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold border border-brand/30 text-brand bg-brand/5 hover:bg-brand/10 hover:border-brand/50 transition-all"
+              >
+                <LayoutGrid size={13} />
+                Quản lý sơ đồ ghế
+              </button>
+
+              {/* Floating Action Controls */}
+              <div className="absolute top-2 right-4 flex space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
-                  onClick={() => setSeatMapRoom(rm)}
-                  className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold border border-brand/30 text-brand bg-brand/5 hover:bg-brand/10 hover:border-brand/50 transition-all"
+                  onClick={() => handleOpenEditRoom(rm)}
+                  className="p-1.5 bg-gray-50 border border-gray-200 hover:border-brand/40 text-gray-500 hover:text-gray-700 rounded-lg transition-all"
+                  title="Sửa phòng chiếu"
                 >
-                  <LayoutGrid size={13} />
-                  Quản lý sơ đồ ghế
+                  <Edit2 size={12} />
                 </button>
-
-                {/* Floating Action Controls */}
-                <div className="absolute top-2 right-4 flex space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => handleOpenEditRoom(rm)}
-                    className="p-1.5 bg-gray-50 border border-gray-200 hover:border-brand/40 text-gray-500 hover:text-gray-700 rounded-lg transition-all"
-                    title="Sửa phòng chiếu"
-                  >
-                    <Edit2 size={12} />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteRoom(rm._id)}
-                    className="p-1.5 bg-gray-50 border border-gray-200 hover:border-red-500/40 text-gray-500 hover:text-red-500 rounded-lg transition-all"
-                    title="Xóa phòng chiếu"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
+                <button
+                  onClick={() => handleDeleteRoom(rm._id)}
+                  className="p-1.5 bg-gray-50 border border-gray-200 hover:border-red-500/40 text-gray-500 hover:text-red-500 rounded-lg transition-all"
+                  title="Xóa phòng chiếu"
+                >
+                  <Trash2 size={12} />
+                </button>
               </div>
-            ))
-          )}
-        </div>
-      )}
-
-      {/* Danh sách Cụm rạp */}
-      {activeTab === 'theaters' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {theaters.length === 0 ? (
-            <div className="col-span-full py-12 text-center text-gray-400 italic border border-dashed border-gray-200 rounded-3xl bg-white">
-              Chưa có cụm rạp nào được đăng ký. Hãy thêm cụm rạp ở trên!
             </div>
-          ) : (
-            theaters.map((th) => (
-              <div key={th._id} className="bg-white border border-gray-200 p-5 rounded-3xl space-y-3 shadow-sm relative group">
-                <div className="pr-12">
-                  <h4 className="font-bold text-gray-800 text-sm">{th.name}</h4>
-                  <p className="text-xs text-gray-500 mt-1">{th.address}, {th.city}</p>
-                  <p className="text-[10px] text-gray-400 font-bold mt-0.5">Hotline: {th.phone}</p>
-                </div>
-
-                {/* Floating Action Controls */}
-                <div className="absolute top-4 right-4 flex space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => handleOpenEditTheater(th)}
-                    className="p-1.5 bg-gray-50 border border-gray-200 hover:border-brand/40 text-gray-500 hover:text-gray-700 rounded-lg transition-all"
-                    title="Chỉnh sửa cụm rạp"
-                  >
-                    <Edit2 size={12} />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteTheater(th._id)}
-                    className="p-1.5 bg-gray-50 border border-gray-200 hover:border-red-500/40 text-gray-500 hover:text-red-500 rounded-lg transition-all"
-                    title="Xóa cụm rạp"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      )}
-
-      {/* Add / Edit Complex Modal */}
-      <Modal isOpen={isThOpen} onClose={() => setIsThOpen(false)} title={editingTheater ? "Chỉnh Sửa Cụm Rạp" : "Đăng Ký Cụm Rạp Mới"} size="md">
-        <form onSubmit={handleTheaterSubmit} className="space-y-4">
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm flex items-center gap-2">
-              <AlertCircle size={16} />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <Input name="name" label="Tên Cụm Rạp" placeholder="Nova Cinema Landmark 81" value={thForm.name} onChange={handleThChange} required />
-          <Input name="address" label="Địa Chỉ" placeholder="Tầng B1, Landmark 81" value={thForm.address} onChange={handleThChange} required />
-
-          <div className="grid grid-cols-2 gap-4">
-            <Input name="city" label="Thành Phố" value={thForm.city} onChange={handleThChange} required />
-            <Input name="phone" label="Hotline" placeholder="028 3822 3111" value={thForm.phone} onChange={handleThChange} required />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-3 border-t border-gray-200">
-            <Button onClick={() => setIsThOpen(false)} variant="secondary" className="px-5 py-2">
-              Hủy
-            </Button>
-            <Button type="submit" variant="primary" className="px-6 py-2">
-              {editingTheater ? "Lưu" : "Đăng Ký"}
-            </Button>
-          </div>
-        </form>
-      </Modal>
+          ))
+        )}
+      </div>
 
       {/* Add / Edit Hall Modal */}
       <Modal isOpen={isRmOpen} onClose={() => setIsRmOpen(false)} title={editingRoom ? "Chỉnh Sửa Phòng Chiếu" : "Đăng Ký Phòng Chiếu & Tạo Sơ Đồ Ghế"} size="lg">
@@ -452,7 +359,10 @@ export const RoomManager = () => {
 
       <SeatMapModal
         isOpen={!!seatMapRoom}
-        onClose={() => setSeatMapRoom(null)}
+        onClose={() => {
+          setSeatMapRoom(null);
+          loadData();
+        }}
         room={seatMapRoom}
       />
     </div>

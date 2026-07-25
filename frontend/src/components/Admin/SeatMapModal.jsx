@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
   X,
@@ -10,9 +10,19 @@ import {
   Ban,
   Star,
   Heart,
-  Users,
   Loader2,
   AlertTriangle,
+  Plus,
+  Trash2,
+  ShieldAlert,
+  Sparkles,
+  Columns,
+  Rows,
+  Layers,
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
 } from 'lucide-react';
 import adminService from '../../services/admin.service';
 
@@ -22,46 +32,65 @@ const SEAT_TYPES = [
     key: 'standard',
     label: 'Thường',
     icon: <Square size={12} />,
-    color: 'bg-gray-100 border-gray-200 text-gray-700 hover:bg-gray-200',
-    selectedColor: 'bg-gray-500 border-gray-400 text-white ring-2 ring-gray-300',
-    badgeColor: 'bg-gray-100 text-gray-650/600',
+    color: 'bg-white border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 shadow-xs',
+    selectedColor: 'bg-gray-800 border-gray-900 text-white ring-2 ring-gray-400 shadow-md',
+    badgeColor: 'bg-gray-100 text-gray-700 border-gray-200',
     dot: 'bg-gray-400',
   },
   {
     key: 'vip',
     label: 'VIP',
     icon: <Star size={12} />,
-    color: 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100/50',
-    selectedColor: 'bg-amber-600 border-amber-400 text-white ring-2 ring-amber-300',
-    badgeColor: 'bg-amber-50 text-amber-700',
+    color: 'bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100 shadow-xs',
+    selectedColor: 'bg-gradient-to-r from-amber-500 to-amber-600 border-amber-600 text-white ring-2 ring-amber-300 shadow-md',
+    badgeColor: 'bg-amber-50 text-amber-800 border-amber-200',
     dot: 'bg-amber-500',
   },
   {
     key: 'couple',
     label: 'Đôi',
     icon: <Heart size={12} />,
-    color: 'bg-pink-50 border-pink-200 text-pink-700 hover:bg-pink-100/50',
-    selectedColor: 'bg-pink-600 border-pink-400 text-white ring-2 ring-pink-300',
-    badgeColor: 'bg-pink-50 text-pink-700',
-    dot: 'bg-pink-505/500',
+    color: 'bg-pink-50 border-pink-300 text-pink-900 hover:bg-pink-100 shadow-xs',
+    selectedColor: 'bg-gradient-to-r from-pink-500 to-rose-600 border-pink-600 text-white ring-2 ring-pink-300 shadow-md',
+    badgeColor: 'bg-pink-50 text-pink-800 border-pink-200',
+    dot: 'bg-pink-500',
   },
 ];
 
 const getTypeConfig = (key) => SEAT_TYPES.find((t) => t.key === key) || SEAT_TYPES[0];
 
-// ─── Individual Seat Button ───────────────────────────────────────────────────
-const SeatButton = ({ seat, isSelected, onClick }) => {
+// ─── Row & Column Label Helpers ───────────────────────────────────────────────
+const getRowLabel = (index) => {
+  let label = '';
+  let i = index;
+  while (i >= 0) {
+    label = String.fromCharCode((i % 26) + 65) + label;
+    i = Math.floor(i / 26) - 1;
+  }
+  return label;
+};
+
+const getRowIndex = (label) => {
+  let index = 0;
+  for (let i = 0; i < label.length; i++) {
+    index = index * 26 + (label.charCodeAt(i) - 64);
+  }
+  return index - 1;
+};
+
+// ─── Seat Button Component ────────────────────────────────────────────────────
+const SeatButton = ({ seat, isSelected, isEditable, onClick }) => {
   const cfg = getTypeConfig(seat.type);
   const isDisabled = seat.isDisabled;
 
   const baseClass =
-    'relative flex flex-col items-center justify-center border rounded-md transition-all duration-150 cursor-pointer select-none text-[10px] font-bold';
+    'relative flex flex-col items-center justify-center border rounded-lg transition-all duration-150 cursor-pointer select-none text-[10px] font-bold';
 
-  const sizeClass = seat.type === 'couple' ? 'w-12 h-8' : 'w-8 h-8';
+  const sizeClass = seat.type === 'couple' ? 'w-12 h-7 text-[9px]' : 'w-7 h-7';
 
   let colorClass;
   if (isDisabled) {
-    colorClass = 'bg-red-50 border-red-200 text-red-500 opacity-60 cursor-not-allowed';
+    colorClass = 'bg-red-50 border-red-200 text-red-400 opacity-60 hover:opacity-90';
   } else if (isSelected) {
     colorClass = cfg.selectedColor;
   } else {
@@ -71,330 +100,678 @@ const SeatButton = ({ seat, isSelected, onClick }) => {
   return (
     <button
       onClick={() => onClick(seat)}
-      className={`${baseClass} ${sizeClass} ${colorClass}`}
-      title={`${seat.row}${seat.number} · ${cfg.label}${isDisabled ? ' · Vô hiệu hoá' : ''}`}
+      className={`${baseClass} ${sizeClass} ${colorClass} ${!isEditable ? 'cursor-default' : ''}`}
+      title={`${seat.row}${seat.number} · ${cfg.label}${isDisabled ? ' (Đang khóa/Lối đi)' : ''}`}
     >
       {isDisabled && (
-        <Ban size={10} className="absolute top-0.5 right-0.5 text-red-400 opacity-80" />
+        <Ban size={9} className="absolute top-0.5 right-0.5 text-red-500 opacity-80" />
       )}
       <span>{seat.row}{seat.number}</span>
     </button>
   );
 };
 
-// ─── Main Modal (Giao diện cấu hình sơ đồ ghế dành cho Admin) ────────────────────────────────
+// ─── Main Modal (Trình biên tập Sơ đồ ghế Ma trận $M \times N$) ───────────────
 const SeatMapModal = ({ isOpen, onClose, room }) => {
-  // Các state lưu trữ dữ liệu
-  const [seats, setSeats] = useState([]); // Danh sách tất cả các ghế của phòng
-  const [loading, setLoading] = useState(false); // Trạng thái đang tải dữ liệu từ server
-  const [saving, setSaving] = useState(false); // Trạng thái đang lưu dữ liệu lên server
-  const [selectedIds, setSelectedIds] = useState(new Set()); // Tập hợp các ID ghế đang được admin chọn trên giao diện
-  const [pendingChanges, setPendingChanges] = useState({}); // Các thay đổi tạm thời chưa lưu xuống DB: { seatId: { type, price, isDisabled } }
-  const [editPanel, setEditPanel] = useState({ type: 'standard', price: 0, isDisabled: false }); // Giá trị đang hiển thị trên khung chỉnh sửa bên phải
-  const [toast, setToast] = useState(null); // Quản lý thông báo toast hiển thị nhanh
-  const [selectMode, setSelectMode] = useState(false);
+  const [seats, setSeats] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [selectedKeys, setSelectedKeys] = useState(new Set());
+  const [toast, setToast] = useState(null);
+  
+  // Trạng thái kiểm tra ràng buộc bảo vệ dữ liệu vé
+  const [isEditable, setIsEditable] = useState(true);
+  const [lockReason, setLockReason] = useState('');
 
-  // Nhóm các ghế theo hàng (ví dụ: hàng A có [A1, A2, A3...], hàng B có [B1, B2...])
-  const seatsByRow = (seats ?? []).reduce((acc, seat) => {
-    if (!acc[seat.row]) acc[seat.row] = [];
-    acc[seat.row].push(seat);
-    return acc;
-  }, {});
-  const rows = Object.keys(seatsByRow).sort(); // Danh sách tên hàng đã sắp xếp thứ tự A->Z
+  // Giá trị trong Edit Panel
+  const [editPanel, setEditPanel] = useState({ type: 'standard', price: 0, isDisabled: false });
 
-  // Hàm hiển thị thông báo toast
+  // ── Helper lấy key duy nhất cho 1 ghế ──
+  const getSeatKey = useCallback((seat) => {
+    return seat._id && !String(seat._id).startsWith('temp_') ? String(seat._id) : `${seat.row}_${seat.number}`;
+  }, []);
+
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), 3500);
   };
 
-  // CHỨC NĂNG: Tải danh sách ghế của phòng từ backend
-  const loadSeats = useCallback(async () => {
+  // ── 1. Tải danh sách ghế và kiểm tra trạng thái khóa ──
+  const loadSeatsAndStatus = useCallback(async () => {
     if (!room) return;
     setLoading(true);
     try {
+      const statusRes = await adminService.checkRoomEditable(room._id);
+      const isEdit = statusRes?.editable ?? statusRes?.data?.editable ?? true;
+      const reasonMsg = statusRes?.reason || statusRes?.data?.reason || '';
+      setIsEditable(isEdit);
+      setLockReason(reasonMsg);
+
+      // Tải danh sách ghế
       const res = await adminService.getRoomSeats(room._id);
-      setSeats(Array.isArray(res) ? res : res?.data ?? []);
+      const rawSeats = Array.isArray(res) ? res : res?.data ?? [];
+      setSeats(rawSeats);
     } catch (err) {
-      showToast('Không thể tải danh sách ghế', 'error');
+      showToast('Không thể tải sơ đồ ghế: ' + (err.message || 'Lỗi mạng'), 'error');
     } finally {
       setLoading(false);
     }
   }, [room]);
 
-  // Tải lại dữ liệu ghế mỗi khi mở modal
   useEffect(() => {
     if (isOpen) {
-      setSelectedIds(new Set());
-      setPendingChanges({});
-      loadSeats();
+      setSelectedKeys(new Set());
+      loadSeatsAndStatus();
     }
-  }, [isOpen, loadSeats]);
+  }, [isOpen, loadSeatsAndStatus]);
 
-  // Ngăn cuộn trang phía sau khi modal đang mở
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : 'unset';
     return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen]);
 
+  // ── 2. Xử lý Ma trận Hàng & Cột ──
+  const matrixData = useMemo(() => {
+    const seatsByRow = {};
+    let maxColNum = 0;
+    const rowIndexesSet = new Set();
+
+    seats.forEach((seat) => {
+      if (!seatsByRow[seat.row]) seatsByRow[seat.row] = [];
+      seatsByRow[seat.row].push(seat);
+      if (seat.number > maxColNum) maxColNum = seat.number;
+      rowIndexesSet.add(getRowIndex(seat.row));
+    });
+
+    const sortedRowLabels = Object.keys(seatsByRow).sort((a, b) => getRowIndex(a) - getRowIndex(b));
+
+    // Mảng chứa các cột (1 -> maxColNum)
+    const cols = Array.from({ length: maxColNum }, (_, i) => i + 1);
+
+    return {
+      seatsByRow,
+      rows: sortedRowLabels,
+      maxColNum,
+      cols,
+    };
+  }, [seats]);
+
   if (!isOpen) return null;
 
-  // CHỨC NĂNG: Xử lý khi admin click chọn/hủy chọn một chiếc ghế
+  // ── 3. Thao tác Chọn Ghế / Chọn Hàng / Chọn Cột ──
   const handleSeatClick = (seat) => {
-    setSelectedIds((prev) => {
+    const key = getSeatKey(seat);
+    setSelectedKeys((prev) => {
       const next = new Set(prev);
-      if (next.has(seat._id)) {
-        next.delete(seat._id);
-      } else {
-        next.add(seat._id);
-      }
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
-    // Điền trước thông tin của ghế vừa click vào bảng chỉnh sửa bên phải (bao gồm cả thay đổi tạm thời nếu có)
-    const merged = { ...seat, ...(pendingChanges[seat._id] || {}) };
-    setEditPanel({ type: merged.type, price: merged.price, isDisabled: merged.isDisabled ?? false });
+    setEditPanel({ type: seat.type, price: seat.price || 0, isDisabled: seat.isDisabled ?? false });
   };
 
-  // CHỨC NĂNG: Chọn tất cả các ghế trong phòng chiếu hoặc bỏ chọn tất cả
   const handleSelectAll = () => {
-    if (selectedIds.size === seats.length) {
-      setSelectedIds(new Set()); // Nếu đã chọn hết thì bỏ chọn toàn bộ
+    if (selectedKeys.size === seats.length && seats.length > 0) {
+      setSelectedKeys(new Set());
     } else {
-      setSelectedIds(new Set(seats.map((s) => s._id))); // Chọn tất cả
+      setSelectedKeys(new Set(seats.map(getSeatKey)));
     }
   };
 
-  // CHỨC NĂNG: Chọn toàn bộ ghế của một hàng cụ thể (ví dụ: click chọn hàng A)
-  const handleSelectRow = (row) => {
-    const rowIds = seatsByRow[row].map((s) => s._id);
-    const allSelected = rowIds.every((id) => selectedIds.has(id));
-    setSelectedIds((prev) => {
+  const handleSelectRow = (rowLabel) => {
+    const rowSeats = matrixData.seatsByRow[rowLabel] || [];
+    const rowKeys = rowSeats.map(getSeatKey);
+    const allSelected = rowKeys.every((k) => selectedKeys.has(k));
+
+    setSelectedKeys((prev) => {
       const next = new Set(prev);
-      rowIds.forEach((id) => (allSelected ? next.delete(id) : next.add(id)));
+      rowKeys.forEach((k) => (allSelected ? next.delete(k) : next.add(k)));
       return next;
     });
   };
 
-  // CHỨC NĂNG: Áp dụng thay đổi từ bảng chỉnh sửa bên phải vào tất cả ghế đang chọn (Lưu tạm thời ở máy Client)
-  const handleApplyChanges = () => {
-    if (selectedIds.size === 0) {
+  const handleSelectCol = (colNum) => {
+    const colSeats = seats.filter((s) => s.number === colNum);
+    const colKeys = colSeats.map(getSeatKey);
+    const allSelected = colKeys.every((k) => selectedKeys.has(k));
+
+    setSelectedKeys((prev) => {
+      const next = new Set(prev);
+      colKeys.forEach((k) => (allSelected ? next.delete(k) : next.add(k)));
+      return next;
+    });
+  };
+
+  // ── 4. Thao tác hàng loạt (Bulk Updates) ──
+  const handleBulkChangeType = (newType) => {
+    if (selectedKeys.size === 0) return;
+
+    // RÀNG BUỘC NGHIỆP VỤ: Ghế Đôi CHỈ ĐƯỢC PHÉP ở hàng cuối cùng của phòng chiếu
+    if (newType === 'couple') {
+      const lastRowLabel = matrixData.rows[matrixData.rows.length - 1];
+      const hasUpperRowSeat = seats.some(
+        (s) => selectedKeys.has(getSeatKey(s)) && s.row !== lastRowLabel
+      );
+      if (hasUpperRowSeat) {
+        showToast(`Ghế Đôi chỉ được áp dụng ở Hàng cuối cùng (${lastRowLabel}) của phòng chiếu!`, 'error');
+        return;
+      }
+    }
+
+    setSeats((prev) =>
+      prev.map((s) => (selectedKeys.has(getSeatKey(s)) ? { ...s, type: newType } : s))
+    );
+    showToast(`Đã đổi loại ghế ${getTypeConfig(newType).label} cho ${selectedKeys.size} ghế`);
+  };
+
+  const handleBulkToggleDisabled = () => {
+    if (selectedKeys.size === 0) return;
+    setSeats((prev) =>
+      prev.map((s) => {
+        if (selectedKeys.has(getSeatKey(s))) {
+          return { ...s, isDisabled: !s.isDisabled };
+        }
+        return s;
+      })
+    );
+    showToast(`Đã chuyển đổi trạng thái Khóa/Lối đi cho ${selectedKeys.size} ghế`);
+  };
+
+  const handleBulkDeleteSeats = () => {
+    if (selectedKeys.size === 0) return;
+    if (!window.confirm(`Bạn có chắc muốn xóa ${selectedKeys.size} ghế đang chọn khỏi sơ đồ?`)) return;
+
+    setSeats((prev) => prev.filter((s) => !selectedKeys.has(getSeatKey(s))));
+    setSelectedKeys(new Set());
+    showToast('Đã xóa các ghế được chọn');
+  };
+
+  const handleApplySidePanel = () => {
+    if (selectedKeys.size === 0) {
       showToast('Chưa chọn ghế nào để chỉnh sửa', 'error');
       return;
     }
-    const updates = {};
-    selectedIds.forEach((id) => {
-      updates[id] = { ...editPanel }; // Ghi đè cấu hình mới vào danh sách tạm thời
-    });
-    setPendingChanges((prev) => ({ ...prev, ...updates }));
-    showToast(`Đã áp dụng thay đổi cho ${selectedIds.size} ghế (chưa lưu)`);
+
+    // RÀNG BUỘC NGHIỆP VỤ: Ghế Đôi CHỈ ĐƯỢC PHÉP ở hàng cuối cùng
+    if (editPanel.type === 'couple') {
+      const lastRowLabel = matrixData.rows[matrixData.rows.length - 1];
+      const hasUpperRowSeat = seats.some(
+        (s) => selectedKeys.has(getSeatKey(s)) && s.row !== lastRowLabel
+      );
+      if (hasUpperRowSeat) {
+        showToast(`Ghế Đôi chỉ được áp dụng ở Hàng cuối cùng (${lastRowLabel}) của phòng chiếu!`, 'error');
+        return;
+      }
+    }
+
+    setSeats((prev) =>
+      prev.map((s) => {
+        if (selectedKeys.has(getSeatKey(s))) {
+          return {
+            ...s,
+            type: editPanel.type,
+            price: editPanel.price,
+            isDisabled: editPanel.isDisabled,
+          };
+        }
+        return s;
+      })
+    );
+    showToast(`Đã áp dụng thay đổi cho ${selectedKeys.size} ghế`);
   };
 
-  // CHỨC NĂNG: Lưu toàn bộ danh sách ghế đã thay đổi tạm thời lên server (Lưu thật vào Database)
-  const handleSave = async () => {
-    const changedIds = Object.keys(pendingChanges);
-    if (changedIds.length === 0) {
-      showToast('Không có thay đổi nào để lưu', 'error');
+  // ── 5. Thao tác Thêm / Chèn Hàng & Cột ──
+
+  // Thêm hàng mới ở vị trí rowIdx (0-indexed)
+  const handleInsertRowAt = (targetRowIdx) => {
+    const isVeryBottom = targetRowIdx >= matrixData.rows.length;
+
+    let refColNumbers = [];
+    let defaultType = 'standard';
+    let defaultPrice = 0;
+
+    if (isVeryBottom) {
+      // Hàng cuối cùng của phòng chiếu -> Mặc định là GHẾ ĐÔI (Couple)
+      defaultType = 'couple';
+      defaultPrice = 120000;
+
+      // Lấy danh sách số ghế từ hàng đôi cuối cùng nếu có
+      const lastRowLabel = matrixData.rows[matrixData.rows.length - 1];
+      const lastRowSeats = matrixData.seatsByRow[lastRowLabel] || [];
+      const isLastCouple = lastRowSeats.some((s) => s.type === 'couple');
+
+      if (isLastCouple && lastRowSeats.length > 0) {
+        refColNumbers = lastRowSeats.map((s) => s.number).sort((a, b) => a - b);
+      } else {
+        // Tự động sinh các số ghế lẻ 1, 3, 5, 7... cho ghế đôi
+        const maxCol = Math.max(matrixData.maxColNum, 6);
+        for (let c = 1; c <= maxCol; c += 2) {
+          refColNumbers.push(c);
+        }
+      }
+    } else {
+      // Chèn ở giữa hoặc đầu -> Mặc định là Ghế Thường hoặc VIP
+      if (matrixData.rows.length > 0) {
+        const refIdx = Math.min(Math.max(0, targetRowIdx - 1), matrixData.rows.length - 1);
+        const refLabel = matrixData.rows[refIdx] || matrixData.rows[0];
+        const refSeats = matrixData.seatsByRow[refLabel] || [];
+        refColNumbers = refSeats.map((s) => s.number).sort((a, b) => a - b);
+
+        const refType = refSeats[0]?.type || 'standard';
+        defaultType = refType === 'vip' ? 'vip' : 'standard';
+        defaultPrice = defaultType === 'vip' ? 5000 : 0;
+      }
+
+      if (refColNumbers.length === 0) {
+        refColNumbers = [1, 2, 3, 4, 5, 6];
+      }
+    }
+
+    setSeats((prevSeats) => {
+      const shiftedSeats = prevSeats.map((seat) => {
+        const currentIdx = getRowIndex(seat.row);
+        if (currentIdx >= targetRowIdx) {
+          return { ...seat, row: getRowLabel(currentIdx + 1) };
+        }
+        return seat;
+      });
+
+      const targetLabel = getRowLabel(targetRowIdx);
+      const newRowSeats = refColNumbers.map((c) => ({
+        _id: `temp_row_${targetRowIdx}_col_${c}_${Date.now()}_${Math.random()}`,
+        row: targetLabel,
+        number: c,
+        type: defaultType,
+        price: defaultPrice,
+        isDisabled: false,
+      }));
+
+      return [...shiftedSeats, ...newRowSeats];
+    });
+
+    const typeLabel = defaultType === 'couple' ? 'Ghế Đôi' : defaultType === 'vip' ? 'VIP' : 'Thường';
+    showToast(`Đã thêm Hàng ${getRowLabel(targetRowIdx)} mới (${typeLabel})`);
+  };
+
+  // Tạo thêm 1 ghế lẻ trực tiếp tại ô khoảng trống
+  const handleEmptySlotClick = (rowLabel, colNum) => {
+    if (!isEditable) return;
+    const newSeat = {
+      _id: `temp_slot_${rowLabel}_${colNum}_${Date.now()}`,
+      row: rowLabel,
+      number: colNum,
+      type: editPanel.type || 'standard',
+      price: editPanel.price || 0,
+      isDisabled: editPanel.isDisabled || false,
+    };
+    setSeats((prev) => [...prev, newSeat]);
+    showToast(`Đã tạo ghế ${rowLabel}${colNum}`);
+  };
+
+  // Thêm cột mới ở vị trí targetCol (1-indexed)
+  const handleInsertColAt = (targetColNum) => {
+    setSeats((prevSeats) => {
+      const shiftedSeats = prevSeats.map((seat) => {
+        if (seat.number >= targetColNum) {
+          return { ...seat, number: seat.number + 1 };
+        }
+        return seat;
+      });
+
+      const currentRows = matrixData.rows.length > 0 ? matrixData.rows : ['A', 'B', 'C', 'D', 'E'];
+      const newColSeats = [];
+
+      currentRows.forEach((rLabel) => {
+        newColSeats.push({
+          _id: `temp_col_${targetColNum}_row_${rLabel}_${Date.now()}`,
+          row: rLabel,
+          number: targetColNum,
+          type: 'standard',
+          price: 0,
+          isDisabled: false,
+        });
+      });
+
+      return [...shiftedSeats, ...newColSeats];
+    });
+
+    showToast(`Đã chèn Cột ${targetColNum} mới`);
+  };
+
+  const handleDeleteRow = (rowLabel) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa toàn bộ Hàng ${rowLabel}?`)) return;
+
+    const delIdx = getRowIndex(rowLabel);
+    setSeats((prevSeats) => {
+      const filtered = prevSeats.filter((s) => s.row !== rowLabel);
+      return filtered.map((seat) => {
+        const idx = getRowIndex(seat.row);
+        if (idx > delIdx) {
+          return { ...seat, row: getRowLabel(idx - 1) };
+        }
+        return seat;
+      });
+    });
+
+    showToast(`Đã xóa Hàng ${rowLabel}`);
+  };
+
+  // ── 6. Lưu toàn bộ sơ đồ ghế xuống DB ──
+  const handleSaveAll = async () => {
+    if (!isEditable) {
+      showToast('Phòng chiếu đang bị khóa sửa sơ đồ', 'error');
       return;
     }
     setSaving(true);
     try {
-      const updates = changedIds.map((seatId) => ({
-        seatId,
-        ...pendingChanges[seatId],
-      }));
-      // Gọi API cập nhật hàng loạt (Bulk Update)
-      await adminService.bulkUpdateSeats(updates);
-      await loadSeats(); // Tải lại danh sách ghế mới nhất từ server
-      setPendingChanges({}); // Reset danh sách tạm thời
-      setSelectedIds(new Set()); // Reset trạng thái chọn
-      showToast(`Đã lưu ${changedIds.length} ghế thành công! ✓`);
+      const res = await adminService.saveRoomLayout(room._id, seats);
+      setSeats(res.data || []);
+      setSelectedKeys(new Set());
+      showToast('Đã lưu cấu trúc sơ đồ ghế thành công! ✓');
     } catch (err) {
-      showToast('Lỗi khi lưu dữ liệu: ' + err.message, 'error');
+      showToast('Lỗi khi lưu sơ đồ ghế: ' + (err.message || 'Lỗi không xác định'), 'error');
     } finally {
       setSaving(false);
     }
   };
 
-  // CHỨC NĂNG: Hủy bỏ toàn bộ các thay đổi chưa lưu để quay về cấu hình gốc
-  const handleDiscard = () => {
-    setPendingChanges({});
-    setSelectedIds(new Set());
-    showToast('Đã huỷ toàn bộ thay đổi chưa lưu');
-  };
-
-  // CHỨC NĂNG: Lấy thông tin hiển thị cuối cùng của một chiếc ghế (ưu tiên lấy thay đổi tạm thời trước)
-  const getDisplaySeat = (seat) => ({
-    ...seat,
-    ...(pendingChanges[seat._id] || {}),
-  });
-
-  // ── Stats ──
-  const stats = (seats ?? []).reduce(
+  const stats = seats.reduce(
     (acc, s) => {
-      const d = getDisplaySeat(s);
-      acc[d.type] = (acc[d.type] || 0) + 1;
-      if (d.isDisabled) acc.disabled = (acc.disabled || 0) + 1;
+      acc[s.type] = (acc[s.type] || 0) + 1;
+      if (s.isDisabled) acc.disabled = (acc.disabled || 0) + 1;
       return acc;
     },
     {}
   );
 
-  const pendingCount = Object.keys(pendingChanges).length;
-
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 pt-6">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5">
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/85 backdrop-blur-sm z-0"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-0" onClick={onClose} />
 
-      {/* Modal */}
-      <div className="relative w-full max-w-5xl bg-white border border-gray-200 rounded-2xl shadow-2xl z-10 flex flex-col max-h-[92vh]">
-
+      {/* Modal Container */}
+      <div className="relative w-full max-w-6xl bg-white border border-gray-200 rounded-3xl shadow-2xl z-10 flex flex-col max-h-[95vh] overflow-hidden">
+        
         {/* ── Header ── */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0 bg-gradient-to-r from-gray-50/80 via-white to-gray-50/80">
           <div>
             <h3 className="text-base font-black text-gray-900 flex items-center gap-2">
-              <Users size={16} className="text-brand" />
-              Sơ đồ ghế —&nbsp;
+              <div className="w-7 h-7 rounded-xl bg-brand/10 text-brand flex items-center justify-center shadow-xs">
+                <Layers size={16} />
+              </div>
+              Cấu hình Ma trận Ghế Hàng & Cột —&nbsp;
               <span className="text-brand">{room?.name}</span>
             </h3>
-            <p className="text-[11px] text-gray-400 mt-0.5">
-              {room?.theater?.name} · {room?.type} · {seats.length} ghế tổng
+            <p className="text-xs text-gray-400 mt-0.5">
+              {room?.theater?.name || 'Cụm rạp'} · {room?.type} · Tổng số lượng: <span className="font-extrabold text-gray-800">{seats.length} ghế</span>
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-450 hover:text-gray-700 transition-colors p-1.5 rounded-lg hover:bg-gray-150/100 hover:bg-gray-100"
+            className="text-gray-400 hover:text-gray-700 transition-colors p-2 rounded-2xl hover:bg-gray-100"
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
-        {/* ── Toast ── */}
+        {/* ── Warning Banner if Not Editable ── */}
+        {!isEditable && (
+          <div className="mx-6 mt-4 p-3.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl flex items-start gap-3 text-xs shrink-0 shadow-xs">
+            <ShieldAlert size={18} className="text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-extrabold block text-amber-900 mb-0.5">⚠️ Chế độ xem (Đã khóa chỉnh sửa cấu trúc):</span>
+              <p className="text-amber-800/90">{lockReason}</p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Toast Alert ── */}
         {toast && (
           <div
-            className={`mx-6 mt-3 shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+            className={`mx-6 mt-3 shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md ${
               toast.type === 'error'
-                ? 'bg-red-500/10 border border-red-500/30 text-red-400'
-                : 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
+                ? 'bg-red-500 text-white'
+                : 'bg-emerald-600 text-white'
             }`}
           >
-            {toast.type === 'error' ? <AlertTriangle size={14} /> : <CheckSquare size={14} />}
+            {toast.type === 'error' ? <AlertTriangle size={15} /> : <CheckSquare size={15} />}
             {toast.msg}
           </div>
         )}
 
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 size={28} className="animate-spin text-brand" />
+          <div className="flex flex-col items-center justify-center py-24 space-y-3">
+            <Loader2 size={32} className="animate-spin text-brand" />
+            <span className="text-xs font-bold text-gray-400">Đang tải ma trận sơ đồ ghế...</span>
           </div>
         ) : (
-          <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+          <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
+            
+            {/* ── SEAT MAP MATRIX WORKSPACE ── */}
+            <div className="flex-1 overflow-auto p-4 sm:p-6 space-y-4 bg-gray-50/40">
 
-            {/* ── Seat Map Area ── */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              {/* ── FLOATING GLASS TOOLBAR KHI CHỌN GHẾ ── */}
+              {selectedKeys.size > 0 && isEditable && (
+                <div className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 p-3 bg-gray-900/95 backdrop-blur-md text-white rounded-2xl shadow-xl ring-1 ring-white/10 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-extrabold text-amber-400 pr-3 border-r border-gray-700 flex items-center gap-1.5">
+                      <Sparkles size={13} />
+                      Đang chọn ({selectedKeys.size}):
+                    </span>
 
-              {/* Screen */}
-              <div className="flex flex-col items-center mb-2">
-                <div className="w-3/4 h-2 bg-gradient-to-r from-transparent via-brand/60 to-transparent rounded-full mb-1" />
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">MÀN HÌNH</span>
+                    <button
+                      onClick={() => handleBulkChangeType('standard')}
+                      className="px-3 py-1.5 text-xs font-bold rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-700 flex items-center gap-1.5 transition-all"
+                    >
+                      <Square size={12} /> Ghế Thường
+                    </button>
+
+                    <button
+                      onClick={() => handleBulkChangeType('vip')}
+                      className="px-3 py-1.5 text-xs font-bold rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 flex items-center gap-1.5 transition-all"
+                    >
+                      <Star size={12} /> Ghế VIP
+                    </button>
+
+                    <button
+                      onClick={() => handleBulkChangeType('couple')}
+                      className="px-3 py-1.5 text-xs font-bold rounded-xl bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 border border-pink-500/40 flex items-center gap-1.5 transition-all"
+                    >
+                      <Heart size={12} /> Ghế Đôi
+                    </button>
+
+                    <button
+                      onClick={handleBulkToggleDisabled}
+                      className="px-3 py-1.5 text-xs font-bold rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 flex items-center gap-1.5 transition-all"
+                    >
+                      <Ban size={12} /> Khóa / Lối đi
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={handleBulkDeleteSeats}
+                    className="px-3 py-1.5 text-xs font-extrabold rounded-xl bg-red-600 hover:bg-red-500 text-white flex items-center gap-1.5 transition-all shadow-md"
+                  >
+                    <Trash2 size={13} /> Xóa ghế
+                  </button>
+                </div>
+              )}
+
+              {/* ── Screen Representation ── */}
+              <div className="flex flex-col items-center my-3">
+                <div className="w-2/3 h-2 bg-gradient-to-r from-transparent via-amber-500/60 to-transparent rounded-full shadow-xs mb-1" />
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">MÀN HÌNH CHIẾU</span>
               </div>
 
-              {/* Toolbar */}
-              <div className="flex flex-wrap items-center gap-2 mb-1">
+              {/* ── MATRIX DISPLAY ── */}
+              <div className="overflow-x-auto p-5 bg-white border border-gray-200/80 rounded-3xl shadow-sm space-y-1">
+                
+                {/* Column Headers (1, 2, 3...) */}
+                <div className="flex items-center gap-1.5 pl-8">
+                  {matrixData.cols.map((colNum, cIdx) => (
+                    <React.Fragment key={`col_hdr_${colNum}`}>
+                      <button
+                        onClick={() => handleSelectCol(colNum)}
+                        className="w-7 text-center text-[10px] font-black text-gray-400 hover:text-brand hover:bg-brand/10 py-1 rounded-md transition-colors"
+                        title={`Click để chọn tất cả Cột ${colNum}`}
+                      >
+                        {colNum}
+                      </button>
+                      {/* Interstitial Col Insert Button */}
+                      {isEditable && cIdx < matrixData.cols.length - 1 && (
+                        <div className="relative mx-0.5 group/colinsert inline-flex items-center">
+                          <button
+                            onClick={() => handleInsertColAt(colNum + 1)}
+                            className="w-4 h-6 opacity-0 group-hover/colinsert:opacity-100 bg-blue-500/10 hover:bg-blue-600 text-blue-600 hover:text-white rounded-md flex items-center justify-center transition-all shadow-xs border border-blue-300/50"
+                            title={`Chèn cột mới giữa Cột ${colNum} và Cột ${colNum + 1}`}
+                          >
+                            <Plus size={10} />
+                          </button>
+                        </div>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
+
+                {/* Rows & Seats Grid */}
+                {matrixData.rows.map((rowLabel, rIdx) => {
+                  const rowSeats = matrixData.seatsByRow[rowLabel] || [];
+                  const seatByColNum = {};
+                  rowSeats.forEach((s) => {
+                    seatByColNum[s.number] = s;
+                  });
+
+                  return (
+                    <React.Fragment key={`row_wrap_${rowLabel}`}>
+                      <div className="flex items-center gap-1.5 py-0.5">
+                        
+                        {/* Row Header Label Button */}
+                        <div className="flex items-center gap-1 w-7 shrink-0">
+                          <button
+                            onClick={() => handleSelectRow(rowLabel)}
+                            className="w-6 text-center text-[11px] font-black text-gray-700 hover:text-brand hover:bg-brand/10 py-1 rounded-md transition-colors"
+                            title={`Click để chọn tất cả Hàng ${rowLabel}`}
+                          >
+                            {rowLabel}
+                          </button>
+                          {isEditable && (
+                            <button
+                              onClick={() => handleDeleteRow(rowLabel)}
+                              className="text-gray-300 hover:text-red-500 p-0.5 opacity-0 hover:opacity-100 transition-opacity"
+                              title={`Xóa toàn bộ Hàng ${rowLabel}`}
+                            >
+                              <Trash2 size={10} />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Seat Cells in this row */}
+                        <div className="flex items-center gap-1.5 flex-1">
+                          {matrixData.cols.map((colNum, cIdx) => {
+                            const seat = seatByColNum[colNum];
+                            if (!seat) {
+                              return (
+                                <React.Fragment key={`empty_${rowLabel}_${colNum}`}>
+                                  <button
+                                    disabled={!isEditable}
+                                    onClick={() => handleEmptySlotClick(rowLabel, colNum)}
+                                    className={`w-7 h-7 border border-dashed border-gray-200 rounded-lg flex items-center justify-center text-[9px] font-extrabold transition-all ${
+                                      isEditable
+                                        ? 'hover:border-brand hover:bg-brand/10 text-gray-300 hover:text-brand cursor-pointer'
+                                        : 'text-gray-200 cursor-default opacity-40'
+                                    }`}
+                                    title={isEditable ? `Click để tạo ghế ${rowLabel}${colNum}` : `Khoảng trống (${rowLabel}${colNum})`}
+                                  >
+                                    +
+                                  </button>
+                                  {isEditable && cIdx < matrixData.cols.length - 1 && (
+                                    <div className="w-4" />
+                                  )}
+                                </React.Fragment>
+                              );
+                            }
+
+                            const isSelected = selectedKeys.has(getSeatKey(seat));
+                            return (
+                              <React.Fragment key={getSeatKey(seat)}>
+                                <SeatButton
+                                  seat={seat}
+                                  isSelected={isSelected}
+                                  isEditable={isEditable}
+                                  onClick={handleSeatClick}
+                                />
+                                {isEditable && cIdx < matrixData.cols.length - 1 && (
+                                  <div className="w-4" />
+                                )}
+                              </React.Fragment>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Sleek Interstitial Row Insert (+) Handle */}
+                      {isEditable && rIdx < matrixData.rows.length - 1 && (
+                        <div className="relative my-1 group/rowinsert">
+                          <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t-2 border-dashed border-emerald-300 opacity-0 group-hover/rowinsert:opacity-100 transition-opacity" />
+                          </div>
+                          <div className="relative flex justify-center opacity-0 group-hover/rowinsert:opacity-100 transition-all transform scale-95 group-hover/rowinsert:scale-100">
+                            <button
+                              onClick={() => handleInsertRowAt(rIdx + 1)}
+                              className="px-3 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-extrabold shadow-md hover:bg-emerald-500 flex items-center gap-1 transition-all"
+                            >
+                              <Plus size={11} /> Chèn hàng giữa Hàng {rowLabel} và {matrixData.rows[rIdx + 1]}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+
+              {/* ── Legend Bar & Select All ── */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 text-xs">
+                <div className="flex flex-wrap gap-4 items-center">
+                  {SEAT_TYPES.map((t) => (
+                    <div key={t.key} className="flex items-center gap-1.5 font-semibold text-gray-600">
+                      <span className={`w-3.5 h-3.5 rounded-sm ${t.dot}`} />
+                      {t.label} ({stats[t.key] || 0})
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-1.5 font-semibold text-gray-600">
+                    <span className="w-3.5 h-3.5 rounded-sm bg-red-500" />
+                    Vô hiệu / Lối đi ({stats.disabled || 0})
+                  </div>
+                </div>
+
                 <button
                   onClick={handleSelectAll}
-                  className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:text-gray-700 hover:border-gray-450/400 transition-all bg-white"
+                  className="flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all bg-white shadow-2xs"
                 >
-                  {selectedIds.size === seats.length && seats.length > 0 ? (
-                    <CheckSquare size={12} />
+                  {selectedKeys.size === seats.length && seats.length > 0 ? (
+                    <CheckSquare size={12} className="text-brand" />
                   ) : (
                     <Square size={12} />
                   )}
-                  {selectedIds.size === seats.length && seats.length > 0 ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+                  {selectedKeys.size === seats.length && seats.length > 0 ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
                 </button>
-                {selectedIds.size > 0 && (
-                  <span className="text-[11px] font-bold text-brand bg-brand/10 border border-brand/20 px-3 py-1.5 rounded-lg">
-                    Đang chọn {selectedIds.size} ghế
-                  </span>
-                )}
-                {pendingCount > 0 && (
-                  <span className="text-[11px] font-bold text-amber-600 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg animate-pulse">
-                    {pendingCount} ghế chờ lưu
-                  </span>
-                )}
-              </div>
-
-              {/* Row-by-row grid */}
-              {rows.map((row) => (
-                <div key={row} className="flex items-center gap-2">
-                  {/* Row label */}
-                  <button
-                    onClick={() => handleSelectRow(row)}
-                    className="w-6 shrink-0 text-center text-[11px] font-black text-gray-400 hover:text-brand transition-colors"
-                    title={`Chọn hàng ${row}`}
-                  >
-                    {row}
-                  </button>
-
-                  {/* Seats */}
-                  <div className="flex flex-wrap gap-1.5">
-                    {seatsByRow[row].map((seat) => {
-                      const display = getDisplaySeat(seat);
-                      const isPending = !!pendingChanges[seat._id];
-                      return (
-                        <div key={seat._id} className="relative">
-                          {isPending && (
-                            <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full z-10 ring-1 ring-white" />
-                          )}
-                          <SeatButton
-                            seat={display}
-                            isSelected={selectedIds.has(seat._id)}
-                            onClick={() => handleSeatClick(seat)}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-
-              {/* Legend */}
-              <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-gray-200">
-                {SEAT_TYPES.map((t) => (
-                  <div key={t.key} className="flex items-center gap-1.5 text-[11px] text-gray-400 font-semibold">
-                    <span className={`w-3 h-3 rounded-sm ${t.dot}`} />
-                    {t.label} ({stats[t.key] || 0})
-                  </div>
-                ))}
-                <div className="flex items-center gap-1.5 text-[11px] text-gray-400 font-semibold">
-                  <span className="w-3 h-3 rounded-sm bg-red-500" />
-                  Vô hiệu ({stats.disabled || 0})
-                </div>
-                <div className="flex items-center gap-1.5 text-[11px] text-gray-400 font-semibold">
-                  <span className="w-3 h-3 rounded-sm bg-amber-500 rounded-full" />
-                  Chờ lưu ({pendingCount})
-                </div>
               </div>
             </div>
 
-            {/* ── Right Panel: Edit Controls ── */}
-            <div className="w-full md:w-64 border-t md:border-t-0 md:border-l border-gray-200 shrink-0 flex flex-col bg-white">
-              <div className="p-5 space-y-4 overflow-y-auto flex-1">
+            {/* ── RIGHT CONTROL PANEL ── */}
+            <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-gray-200/80 shrink-0 flex flex-col bg-white">
+              <div className="p-5 space-y-5 overflow-y-auto flex-1">
                 <div>
-                  <h4 className="text-xs font-black text-gray-800 uppercase tracking-wider mb-3">
-                    Chỉnh sửa ghế đã chọn
+                  <h4 className="text-xs font-black text-gray-800 uppercase tracking-wider mb-1">
+                    Bảng Thuộc Tính Ghế
                   </h4>
-                  {selectedIds.size === 0 && (
-                    <p className="text-[11px] text-gray-400 italic flex items-center gap-1.5">
-                      <Info size={12} /> Click vào ghế để chọn rồi chỉnh sửa
-                    </p>
-                  )}
+                  <p className="text-[11px] text-gray-400">
+                    Click vào ghế/hàng/cột để tùy chỉnh thuộc tính bên dưới.
+                  </p>
                 </div>
 
-                {/* Seat Type */}
+                {/* Seat Type Options */}
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-gray-600 uppercase tracking-wide">
                     Loại ghế
@@ -403,11 +780,12 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
                     {SEAT_TYPES.map((t) => (
                       <button
                         key={t.key}
+                        disabled={!isEditable}
                         onClick={() => setEditPanel((p) => ({ ...p, type: t.key }))}
-                        className={`flex flex-col items-center gap-1 p-2 rounded-lg border text-[10px] font-bold transition-all ${
+                        className={`flex flex-col items-center gap-1 p-2 rounded-xl border text-[10px] font-bold transition-all ${
                           editPanel.type === t.key
-                            ? 'border-brand bg-brand/10 text-brand'
-                            : 'border-gray-200 text-gray-400 hover:border-gray-300 hover:bg-gray-50'
+                            ? 'border-brand bg-brand/10 text-brand shadow-xs'
+                            : 'border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50'
                         }`}
                       >
                         {t.icon}
@@ -417,101 +795,93 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
                   </div>
                 </div>
 
-                {/* Price */}
+                {/* Price Surcharge */}
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-gray-600 uppercase tracking-wide">
-                    Giá thêm (VND)
+                    Phụ thu (VND)
                   </label>
                   <input
                     type="number"
                     min={0}
                     step={5000}
+                    disabled={!isEditable}
                     value={editPanel.price}
                     onChange={(e) => setEditPanel((p) => ({ ...p, price: parseInt(e.target.value) || 0 }))}
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-800 rounded-lg px-3 py-2 text-sm focus:border-brand outline-none"
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-800 rounded-xl px-3 py-2 text-sm focus:border-brand outline-none transition-colors"
                   />
-                  <p className="text-[10px] text-gray-400">0 = Không phụ thu thêm</p>
                 </div>
 
                 {/* Disabled toggle */}
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold text-gray-600 uppercase tracking-wide">
-                    Trạng thái
+                    Trạng thái hoạt động
                   </label>
                   <button
+                    disabled={!isEditable}
                     onClick={() => setEditPanel((p) => ({ ...p, isDisabled: !p.isDisabled }))}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg border transition-all text-sm font-semibold ${
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border transition-all text-xs font-bold ${
                       editPanel.isDisabled
-                        ? 'bg-red-50 border-red-200 text-red-500'
+                        ? 'bg-red-50 border-red-200 text-red-600'
                         : 'bg-emerald-50 border-emerald-200 text-emerald-700'
                     }`}
                   >
-                    <span>{editPanel.isDisabled ? 'Vô hiệu hoá' : 'Hoạt động'}</span>
-                    {editPanel.isDisabled ? <Ban size={14} /> : <CheckSquare size={14} />}
+                    <span>{editPanel.isDisabled ? 'Vô hiệu / Lối đi' : 'Cho phép đặt vé'}</span>
+                    {editPanel.isDisabled ? <Ban size={15} /> : <CheckSquare size={15} />}
                   </button>
                 </div>
 
-                {/* Apply to selection */}
+                {/* Apply Panel Button */}
                 <button
-                  onClick={handleApplyChanges}
-                  disabled={selectedIds.size === 0}
-                  className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                    selectedIds.size > 0
+                  onClick={handleApplySidePanel}
+                  disabled={!isEditable || selectedKeys.size === 0}
+                  className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                    selectedKeys.size > 0 && isEditable
                       ? 'bg-brand hover:bg-brand/90 text-white shadow-md'
                       : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
                   }`}
                 >
                   <CheckSquare size={14} />
-                  Áp dụng ({selectedIds.size})
+                  Áp dụng cho ({selectedKeys.size}) ghế
                 </button>
 
-                {/* Divider */}
-                <div className="border-t border-gray-200" />
-
-                {/* Stats mini */}
-                <div className="space-y-1.5">
-                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Thống kê phòng</h4>
-                  {SEAT_TYPES.map((t) => (
-                    <div key={t.key} className="flex justify-between text-[11px]">
-                      <span className="text-gray-400">{t.label}</span>
-                      <span className="font-bold text-gray-700">{stats[t.key] || 0} ghế</span>
-                    </div>
-                  ))}
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-red-500">Vô hiệu</span>
-                    <span className="font-bold text-red-650/600 text-red-500">{stats.disabled || 0} ghế</span>
+                {/* Stats */}
+                <div className="pt-3 border-t border-gray-200/80 space-y-1.5">
+                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Tổng quan ma trận</h4>
+                  <div className="flex justify-between text-xs font-medium text-gray-600">
+                    <span>Số hàng:</span>
+                    <span className="font-bold">{matrixData.rows.length} hàng ({matrixData.rows[0] || 'A'} - {matrixData.rows[matrixData.rows.length - 1] || 'A'})</span>
+                  </div>
+                  <div className="flex justify-between text-xs font-medium text-gray-600">
+                    <span>Số cột tối đa:</span>
+                    <span className="font-bold">{matrixData.maxColNum} cột</span>
+                  </div>
+                  <div className="flex justify-between text-xs font-medium text-gray-600">
+                    <span>Tổng số ghế:</span>
+                    <span className="font-bold text-brand">{seats.length} ghế</span>
                   </div>
                 </div>
               </div>
 
-              {/* Footer actions */}
-              <div className="p-4 border-t border-gray-200 space-y-2 shrink-0 bg-white">
-                {pendingCount > 0 && (
-                  <button
-                    onClick={handleDiscard}
-                    className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold text-gray-500 border border-gray-200 hover:border-gray-300 hover:text-gray-700 transition-all bg-white"
-                  >
-                    <RotateCcw size={12} />
-                    Huỷ thay đổi ({pendingCount})
-                  </button>
-                )}
+              {/* Bottom Actions */}
+              <div className="p-4 border-t border-gray-200/80 space-y-2 shrink-0 bg-white">
                 <button
-                  onClick={handleSave}
-                  disabled={saving || pendingCount === 0}
-                  className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-black transition-all ${
-                    pendingCount > 0 && !saving
-                      ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/30'
+                  onClick={handleSaveAll}
+                  disabled={saving || !isEditable}
+                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black transition-all ${
+                    isEditable && !saving
+                      ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20'
                       : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
                   }`}
                 >
                   {saving ? (
-                    <><Loader2 size={14} className="animate-spin" /> Đang lưu...</>
+                    <><Loader2 size={16} className="animate-spin" /> Đang lưu sơ đồ...</>
                   ) : (
-                    <><Save size={14} /> Lưu tất cả ({pendingCount})</>
+                    <><Save size={16} /> Lưu Ma Trận Sơ Đồ Ghế</>
                   )}
                 </button>
               </div>
             </div>
+
           </div>
         )}
       </div>

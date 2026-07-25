@@ -13,6 +13,8 @@ const {
   deleteRoom,
   listRooms,
   getRoomSeats,
+  checkRoomEditable,
+  saveRoomLayout,
   updateSeat,
   bulkUpdateSeats,
   createConcession,
@@ -23,10 +25,15 @@ const {
   updateShowtime,
   deleteShowtime,
   autoGenerateShowtimes,
+  getPricingConfig,
+  updatePricingConfig,
+  previewTicketPrice,
   getDashboardStats,
   getRevenueReport,
   listBookings,
   deleteBooking,
+  printTicket,
+  checkInTicket,
   listUsers,
   updateUserRole,
   deleteUser,
@@ -49,6 +56,8 @@ router.route("/theaters/:id").put(updateTheater).delete(deleteTheater);
 router.route("/rooms").get(listRooms).post(createRoom);
 router.route("/rooms/:id").put(updateRoom).delete(deleteRoom);
 router.get("/rooms/:id/seats", getRoomSeats);
+router.get("/rooms/:id/check-editable", checkRoomEditable);
+router.put("/rooms/:id/seats/layout", saveRoomLayout);
 
 // Seats
 router.patch("/seats/bulk", bulkUpdateSeats);
@@ -63,6 +72,10 @@ router.post("/showtimes/auto-generate", autoGenerateShowtimes);
 router.post("/showtimes", createShowtime);
 router.route("/showtimes/:id").put(updateShowtime).delete(deleteShowtime);
 
+// Pricing Config
+router.route("/pricing").get(getPricingConfig).put(updatePricingConfig);
+router.post("/pricing/preview", previewTicketPrice);
+
 // Dashboard & Analytics
 router.get("/dashboard/stats", getDashboardStats);
 router.get("/dashboard/revenue", getRevenueReport);
@@ -70,6 +83,8 @@ router.get("/dashboard/revenue", getRevenueReport);
 // Booking Management
 router.get('/bookings', listBookings);
 router.delete('/bookings/:id', deleteBooking);
+router.post('/bookings/:id/print', printTicket);
+router.post('/bookings/check-in', checkInTicket);
 
 // Coupon Management (Admin)
 const { listCoupons, createCoupon, updateCoupon, deleteCoupon } = require("../controllers/coupon.controller");

@@ -6,7 +6,9 @@ const Showtime = require('../models/Showtime.model');
 const Booking = require('../models/Booking.model');
 const User = require('../models/User.model');
 const Concession = require('../models/Concession.model');
+const PricingConfig = require('../models/PricingConfig.model');
 const { generateSeatsForRoom } = require('../utils/generateSeats');
+const { calculateBaseShowtimePrice } = require('../utils/pricingEngine');
 
 // ==========================================
 // 1. Movie Management
@@ -292,13 +294,35 @@ const createShowtime = async (req, res, next) => {
       throw new Error(`⚠️ Lịch chiếu bị trùng! Phòng này đã có suất chiếu "${overlappingShowtime.movie ? (await Movie.findById(overlappingShowtime.movie).select('title'))?.title || 'Khác' : 'Khác'}" từ ${existStart} đến ${existEnd}. Vui lòng chọn giờ chiếu khác.`);
     }
 
+    // Lấy cấu hình giá hiện tại
+    const pricingConfig = await PricingConfig.findOne().lean();
+    if (!pricingConfig) {
+      res.status(400);
+      throw new Error('Chưa có bảng giá được cấu hình. Vui lòng thiết lập bảng giá trong mục “Bảng Giá” trước.');
+    }
+
+    // Lấy thông tin phòng để xác định roomType
+    const room = await Room.findById(roomId);
+    if (!room) {
+      res.status(404);
+      throw new Error('Không tìm thấy phòng chiếu');
+    }
+
+    // Tự động tính giá (giá ghế thường, chưa tính phụ thu loại ghế)
+    const autoPrice = calculateBaseShowtimePrice({
+      startTime: start,
+      format,
+      roomType: room.roomType || 'standard',
+      config: pricingConfig,
+    });
+
     const showtime = await Showtime.create({
       movie: movieId,
       theater: theaterId,
       room: roomId,
       startTime: start,
       endTime: end,
-      ticketPrice,
+      ticketPrice: autoPrice,
       format,
     });
 
@@ -383,13 +407,13 @@ const deleteShowtime = async (req, res, next) => {
 // ==========================================
 const getDashboardStats = async (req, res, next) => {
   try {
-    const { date, month, year } = req.query;
+    const { date, month, year, filter = 'ended' } = req.query;
     const isFiltered = date || month || year;
+    const now = new Date();
 
     const totalMovies = await Movie.countDocuments();
     let totalBookings = 0;
     let totalUsers = 0;
-    let totalRevenue = 0;
     let recentBookings = [];
 
     const periodQuery = {};
@@ -411,13 +435,25 @@ const getDashboardStats = async (req, res, next) => {
       periodQuery.bookingDate = { $gte: start, $lte: end };
     }
 
+    // Lấy tất cả đơn đặt vé đã thanh toán
+    const paidBookings = await Booking.find({ ...periodQuery, paymentStatus: 'paid' }).populate('showtime');
+
+    let completedRevenue = 0; // Doanh thu từ suất chiếu đã KẾT THÚC
+    let upcomingRevenue = 0;  // Doanh thu từ suất chiếu chưa kết thúc
+    let allPaidRevenue = 0;    // Tổng doanh thu đã thanh toán
+
+    paidBookings.forEach((b) => {
+      const isEnded = b.showtime && b.showtime.endTime ? new Date(b.showtime.endTime) <= now : true;
+      if (isEnded) {
+        completedRevenue += b.totalPrice;
+      } else {
+        upcomingRevenue += b.totalPrice;
+      }
+      allPaidRevenue += b.totalPrice;
+    });
+
     if (isFiltered) {
-      // Filter stats by chosen period
       totalBookings = await Booking.countDocuments(periodQuery);
-
-      const paidBookings = await Booking.find({ ...periodQuery, paymentStatus: 'paid' });
-      totalRevenue = paidBookings.reduce((sum, b) => sum + b.totalPrice, 0);
-
       const bookingsInPeriod = await Booking.find(periodQuery);
       const userIds = new Set(bookingsInPeriod.map((b) => b.user?.toString()).filter(Boolean));
       totalUsers = userIds.size;
@@ -430,12 +466,8 @@ const getDashboardStats = async (req, res, next) => {
         })
         .sort({ bookingDate: -1 });
     } else {
-      // Default overall stats
       totalBookings = await Booking.countDocuments();
       totalUsers = await User.countDocuments({ role: 'user' });
-
-      const allPaidBookings = await Booking.find({ paymentStatus: 'paid' });
-      totalRevenue = allPaidBookings.reduce((sum, b) => sum + b.totalPrice, 0);
 
       recentBookings = await Booking.find()
         .populate('user', 'username email')
@@ -447,6 +479,9 @@ const getDashboardStats = async (req, res, next) => {
         .limit(5);
     }
 
+    // totalRevenue hiển thị mặc định theo filter ('ended' = chỉ phim chiếu xong, 'all' = tất cả)
+    const displayRevenue = filter === 'all' ? allPaidRevenue : completedRevenue;
+
     res.json({
       success: true,
       data: {
@@ -454,7 +489,10 @@ const getDashboardStats = async (req, res, next) => {
           totalBookings,
           totalMovies,
           totalUsers,
-          totalRevenue,
+          totalRevenue: displayRevenue,
+          completedRevenue,
+          upcomingRevenue,
+          allPaidRevenue,
         },
         recentBookings,
       },
@@ -466,28 +504,43 @@ const getDashboardStats = async (req, res, next) => {
 
 const getRevenueReport = async (req, res, next) => {
   try {
+    const { status = 'ended' } = req.query; // 'ended' (mặc định: chỉ phim chiếu xong), 'all', 'upcoming'
+    const now = new Date();
+
     const bookings = await Booking.find({ paymentStatus: 'paid' })
       .populate({
         path: 'showtime',
         populate: [
-          // Lấy thêm posterUrl, thời lượng (duration) và thể loại (genre) để hiển thị giao diện Top Movies
-          { path: 'movie', select: 'title genre duration posterUrl' }, 
+          { path: 'movie', select: 'title genre duration posterUrl' },
           { path: 'theater', select: 'name' },
-          // Lấy sức chứa (capacity) của phòng chiếu để tính phần trăm ghế đã bán (Occupancy)
           { path: 'room', select: 'capacity' }
         ],
       });
 
-    // 1. Group revenue by movie
+    let completedRevenue = 0;
+    let upcomingRevenue = 0;
+    let totalRevenue = 0;
+
     const movieSales = {};
-    // 2. Group revenue by theater
     const theaterSales = {};
-    // 3. Group revenue by month
     const monthlySales = {};
 
     bookings.forEach((booking) => {
       const showtime = booking.showtime;
       if (!showtime) return;
+
+      const isEnded = showtime.endTime ? new Date(showtime.endTime) <= now : true;
+
+      if (isEnded) {
+        completedRevenue += booking.totalPrice;
+      } else {
+        upcomingRevenue += booking.totalPrice;
+      }
+      totalRevenue += booking.totalPrice;
+
+      // Lọc theo query status: 'ended' (chỉ phim đã kết thúc), 'upcoming', 'all'
+      if (status === 'ended' && !isEnded) return;
+      if (status === 'upcoming' && isEnded) return;
 
       const movieTitle = showtime.movie ? showtime.movie.title : 'Deleted Movie';
       const theaterName = showtime.theater ? showtime.theater.name : 'Deleted Theater';
@@ -495,26 +548,23 @@ const getRevenueReport = async (req, res, next) => {
       const date = new Date(booking.bookingDate);
       const monthYear = date.toLocaleString('en-US', { month: 'short', year: '2-digit' });
 
-      // Aggregate Movie - Tính toán dữ liệu cho từng bộ phim
+      // Aggregate Movie
       if (!movieSales[movieTitle]) {
         movieSales[movieTitle] = {
           name: movieTitle,
-          revenue: 0,           // Tổng doanh thu
-          tickets: 0,           // Tổng số vé bán ra
-          capacity: 0,          // Tổng số ghế có thể bán của các suất chiếu
+          revenue: 0,
+          tickets: 0,
+          capacity: 0,
           posterUrl: showtime.movie ? showtime.movie.posterUrl : null,
           genre: showtime.movie ? showtime.movie.genre : [],
           duration: showtime.movie ? showtime.movie.duration : 0,
-          uniqueShowtimes: new Set() // Dùng Set để lưu ID suất chiếu, tránh cộng dồn sức chứa (capacity) nhiều lần nếu 1 suất chiếu có nhiều booking
+          uniqueShowtimes: new Set()
         };
       }
       
-      // Cộng dồn doanh thu và số vé bán được của từng booking
       movieSales[movieTitle].revenue += booking.totalPrice;
       movieSales[movieTitle].tickets += (booking.seats ? booking.seats.length : 0);
       
-      // Tính tổng số ghế (capacity) của tất cả suất chiếu của phim này
-      // Chỉ cộng capacity nếu suất chiếu này chưa được cộng trước đó
       const showtimeId = showtime._id.toString();
       if (!movieSales[movieTitle].uniqueShowtimes.has(showtimeId)) {
          movieSales[movieTitle].uniqueShowtimes.add(showtimeId);
@@ -533,18 +583,14 @@ const getRevenueReport = async (req, res, next) => {
     const formatObjectToArray = (obj) => {
       return Object.keys(obj).map((key) => {
         if (typeof obj[key] === 'object' && obj[key] !== null) {
-          // Xử lý riêng cho đối tượng Movie để tính toán thêm % lấp đầy (Occupancy)
           const item = { ...obj[key] };
-          item.value = item.revenue; // Gán value = revenue để code cũ không bị lỗi khi render biểu đồ (nếu có)
-          
-          // Tính % ghế đã bán (Occupancy = Tickets / Capacity * 100)
+          item.value = item.revenue;
           if (item.capacity > 0) {
              item.occupancy = Math.round((item.tickets / item.capacity) * 100);
-             if (item.occupancy > 100) item.occupancy = 100; // Đảm bảo tối đa 100%
+             if (item.occupancy > 100) item.occupancy = 100;
           } else {
              item.occupancy = 0;
           }
-          // Xóa biến tạm uniqueShowtimes trước khi gửi về frontend
           delete item.uniqueShowtimes;
           return item;
         }
@@ -573,7 +619,7 @@ const listBookings = async (req, res, next) => {
       .populate({
         path: 'showtime',
         populate: [
-          { path: 'movie', select: 'title' },
+          { path: 'movie', select: 'title posterUrl duration' },
           { path: 'theater', select: 'name' },
           { path: 'room', select: 'name' },
         ],
@@ -583,10 +629,145 @@ const listBookings = async (req, res, next) => {
       })
       .sort({ createdAt: -1 });
 
+    // Đảm bảo mọi bản ghi vé đều có ticketCode và ticketStatus
+    for (const b of bookings) {
+      if (!b.ticketCode) {
+        const d = b.bookingDate || b.createdAt || new Date();
+        const yy = String(d.getFullYear()).slice(-2);
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const suffix = String(b._id).slice(-4).toUpperCase();
+        b.ticketCode = `TKT-${yy}${mm}${dd}-${suffix}`;
+        if (b.paymentStatus === 'paid' && b.ticketStatus === 'pending') {
+          b.ticketStatus = b.isCheckedIn ? 'checked_in' : 'issued';
+        }
+        await b.save();
+      }
+    }
+
     res.json({
       success: true,
       count: bookings.length,
       data: bookings,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// CHỨC NĂNG: In vé (Cập nhật isPrinted = true, tăng printCount, lưu lịch sử in)
+const printTicket = async (req, res, next) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      res.status(404);
+      throw new Error('Không tìm thấy vé đặt');
+    }
+
+    booking.isPrinted = true;
+    booking.printCount = (booking.printCount || 0) + 1;
+    booking.printedAt = new Date();
+    booking.printLogs = booking.printLogs || [];
+    booking.printLogs.push({
+      printedAt: new Date(),
+      staffName: req.user?.username || 'Admin Cinema',
+      device: 'PC-01',
+    });
+
+    await booking.save();
+
+    const updated = await Booking.findById(booking._id)
+      .populate('user', 'username email phone')
+      .populate({
+        path: 'showtime',
+        populate: [
+          { path: 'movie', select: 'title posterUrl duration' },
+          { path: 'theater', select: 'name' },
+          { path: 'room', select: 'name' },
+        ],
+      })
+      .populate('concessions.concession');
+
+    res.json({ success: true, message: 'Đã cập nhật trạng thái in vé thành công', data: updated });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// CHỨC NĂNG: Check-in vé (Quét mã vé / QR Code)
+const checkInTicket = async (req, res, next) => {
+  try {
+    const { ticketCode, bookingId } = req.body;
+    let booking;
+
+    if (ticketCode) {
+      const cleanCode = ticketCode.trim().toUpperCase();
+      booking = await Booking.findOne({ ticketCode: cleanCode });
+      if (!booking && cleanCode.length === 24) {
+        booking = await Booking.findById(cleanCode);
+      }
+    } else if (bookingId) {
+      booking = await Booking.findById(bookingId);
+    }
+
+    if (!booking) {
+      res.status(404);
+      throw new Error('Không tìm thấy vé phù hợp với mã đã nhập');
+    }
+
+    const populated = await Booking.findById(booking._id)
+      .populate('user', 'username email phone')
+      .populate({
+        path: 'showtime',
+        populate: [
+          { path: 'movie', select: 'title posterUrl duration' },
+          { path: 'theater', select: 'name' },
+          { path: 'room', select: 'name' },
+        ],
+      })
+      .populate('concessions.concession');
+
+    // Trường hợp 1: Vé ĐÃ ĐƯỢC SỬ DỤNG trước đó
+    if (booking.isCheckedIn) {
+      return res.status(400).json({
+        success: false,
+        isAlreadyCheckedIn: true,
+        message: 'VÉ ĐÃ ĐƯỢC SỬ DỤNG',
+        data: populated,
+      });
+    }
+
+    // Trường hợp 2: Vé chưa thanh toán
+    if (booking.paymentStatus !== 'paid') {
+      res.status(400);
+      throw new Error('Vé này chưa hoàn tất thanh toán, không thể check-in');
+    }
+
+    // Trường hợp 3: Check-in thành công
+    booking.isCheckedIn = true;
+    booking.checkedInAt = new Date();
+    booking.checkedInBy = req.user?.username || 'Admin Cinema';
+    booking.ticketStatus = 'checked_in';
+
+    await booking.save();
+
+    const finalBooking = await Booking.findById(booking._id)
+      .populate('user', 'username email phone')
+      .populate({
+        path: 'showtime',
+        populate: [
+          { path: 'movie', select: 'title posterUrl duration' },
+          { path: 'theater', select: 'name' },
+          { path: 'room', select: 'name' },
+        ],
+      })
+      .populate('concessions.concession');
+
+    res.json({
+      success: true,
+      isCheckInSuccess: true,
+      message: 'CHECK-IN THÀNH CÔNG',
+      data: finalBooking,
     });
   } catch (error) {
     next(error);
@@ -692,6 +873,154 @@ const bulkUpdateSeats = async (req, res, next) => {
     // Thực hiện tất cả các thao tác cập nhật trong 1 lượt gửi đến MongoDB
     const result = await Seat.bulkWrite(ops);
     res.json({ success: true, modifiedCount: result.modifiedCount });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// CHỨC NĂNG: Kiểm tra phòng chiếu có được phép sửa sơ đồ ghế hay không (nếu có suất chiếu active thì khóa)
+const checkRoomEditable = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const room = await Room.findById(id);
+    if (!room) {
+      res.status(404);
+      throw new Error('Không tìm thấy phòng chiếu');
+    }
+
+    const now = new Date();
+    const activeShowtimes = await Showtime.find({
+      room: id,
+      endTime: { $gte: now },
+    });
+
+    if (activeShowtimes.length > 0) {
+      const reasonMsg = `Phòng chiếu này hiện đang có ${activeShowtimes.length} suất chiếu sắp hoặc đang diễn ra. Không thể thay đổi cấu trúc sơ đồ ghế để bảo vệ dữ liệu vé đã bán.`;
+      return res.json({
+        success: true,
+        editable: false,
+        activeShowtimesCount: activeShowtimes.length,
+        reason: reasonMsg,
+        data: {
+          editable: false,
+          activeShowtimesCount: activeShowtimes.length,
+          reason: reasonMsg,
+        },
+      });
+    }
+
+    res.json({
+      success: true,
+      editable: true,
+      activeShowtimesCount: 0,
+      data: {
+        editable: true,
+        activeShowtimesCount: 0,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// CHỨC NĂNG: Lưu toàn bộ cấu trúc sơ đồ ghế của phòng chiếu (thêm/xóa/sửa hàng và cột)
+const saveRoomLayout = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { seats: incomingSeats } = req.body;
+
+    const room = await Room.findById(id);
+    if (!room) {
+      res.status(404);
+      throw new Error('Không tìm thấy phòng chiếu');
+    }
+
+    const now = new Date();
+    const activeShowtimes = await Showtime.find({
+      room: id,
+      endTime: { $gte: now },
+    });
+
+    if (activeShowtimes.length > 0) {
+      res.status(400);
+      throw new Error(`Phòng chiếu này hiện đang có ${activeShowtimes.length} suất chiếu chưa kết thúc. Không thể thay đổi cấu trúc sơ đồ ghế.`);
+    }
+
+    if (!Array.isArray(incomingSeats)) {
+      res.status(400);
+      throw new Error('Dữ liệu sơ đồ ghế không hợp lệ');
+    }
+
+    // 1. Lấy tất cả các ghế đang có trong DB của phòng này
+    const existingSeats = await Seat.find({ room: id });
+    const existingMap = new Map(existingSeats.map((s) => [s._id.toString(), s]));
+
+    const incomingIds = new Set(
+      incomingSeats
+        .filter((s) => s._id && !String(s._id).startsWith('temp_'))
+        .map((s) => String(s._id))
+    );
+
+    // 2. Xác định các ghế bị xóa khỏi ma trận
+    const toDeleteIds = existingSeats
+      .filter((s) => !incomingIds.has(s._id.toString()))
+      .map((s) => s._id);
+
+    if (toDeleteIds.length > 0) {
+      await Seat.deleteMany({ _id: { $in: toDeleteIds } });
+    }
+
+    // 3. Phân loại ghế cần update và ghế mới cần insert
+    const bulkOps = [];
+    const newSeatsToInsert = [];
+
+    for (const seat of incomingSeats) {
+      const isExisting = seat._id && !String(seat._id).startsWith('temp_') && existingMap.has(String(seat._id));
+
+      if (isExisting) {
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: seat._id },
+            update: {
+              $set: {
+                row: seat.row,
+                number: seat.number,
+                type: seat.type || 'standard',
+                price: seat.price || 0,
+                isDisabled: seat.isDisabled ?? false,
+              },
+            },
+          },
+        });
+      } else {
+        newSeatsToInsert.push({
+          room: id,
+          row: seat.row,
+          number: seat.number,
+          type: seat.type || 'standard',
+          price: seat.price || 0,
+          isDisabled: seat.isDisabled ?? false,
+        });
+      }
+    }
+
+    if (bulkOps.length > 0) {
+      await Seat.bulkWrite(bulkOps);
+    }
+    if (newSeatsToInsert.length > 0) {
+      await Seat.insertMany(newSeatsToInsert);
+    }
+
+    // 4. Lấy lại danh sách ghế mới và cập nhật sức chứa (capacity) của phòng
+    const updatedSeats = await Seat.find({ room: id }).sort({ row: 1, number: 1 });
+    await Room.findByIdAndUpdate(id, { capacity: updatedSeats.length });
+
+    res.json({
+      success: true,
+      message: 'Lưu sơ đồ ghế thành công!',
+      count: updatedSeats.length,
+      data: updatedSeats,
+    });
   } catch (error) {
     next(error);
   }
@@ -819,7 +1148,6 @@ const autoGenerateShowtimes = async (req, res, next) => {
       endDate,        // "YYYY-MM-DD"
       timeSlots,      // string[] – VD: ["08:00", "10:30", "13:00"]
       format = '2D',
-      ticketPrice = 80000,
     } = req.body;
 
     // --- Validation ---
@@ -827,6 +1155,18 @@ const autoGenerateShowtimes = async (req, res, next) => {
       res.status(400);
       throw new Error('Thiếu thông tin bắt buộc: movieId, theaterId, roomIds, startDate, endDate, timeSlots');
     }
+
+    // Lấy bảng giá
+    const pricingConfig = await PricingConfig.findOne().lean();
+    if (!pricingConfig) {
+      res.status(400);
+      throw new Error('Chưa có bảng giá được cấu hình. Vui lòng thiết lập bảng giá trong mục “Bảng Giá” trước.');
+    }
+
+    // Lấy roomType của từng phòng trước
+    const roomDocs = await Room.find({ _id: { $in: roomIds } }).select('_id roomType').lean();
+    const roomTypeMap = {};
+    roomDocs.forEach((r) => { roomTypeMap[r._id.toString()] = r.roomType || 'standard'; });
 
     // Lấy thông tin phim để biết duration
     const movie = await Movie.findById(movieId);
@@ -891,6 +1231,14 @@ const autoGenerateShowtimes = async (req, res, next) => {
             continue; // Bỏ qua – trùng lịch
           }
 
+          // Tự động tính giá theo ngày + giờ + format + roomType
+          const autoPrice = calculateBaseShowtimePrice({
+            startTime,
+            format,
+            roomType: roomTypeMap[roomId] || 'standard',
+            config: pricingConfig,
+          });
+
           // Tạo suất chiếu mới
           await Showtime.create({
             movie:       movieId,
@@ -898,7 +1246,7 @@ const autoGenerateShowtimes = async (req, res, next) => {
             room:        roomId,
             startTime,
             endTime,
-            ticketPrice: Number(ticketPrice),
+            ticketPrice: autoPrice,
             format,
           });
 
@@ -924,6 +1272,89 @@ const autoGenerateShowtimes = async (req, res, next) => {
   }
 };
 
+// ==========================================
+// 7. Pricing Config Management
+// ==========================================
+
+/**
+ * GET /api/admin/pricing
+ * Lấy bảng giá hiện tại (tự tạo mới với giá mặc định nếu chưa có)
+ */
+const getPricingConfig = async (req, res, next) => {
+  try {
+    let config = await PricingConfig.findOne();
+    if (!config) {
+      config = await PricingConfig.create({});
+    }
+
+    const defaultWeekdaySurcharge = { sun: 30000, mon: 0, tue: 0, wed: 0, thu: 0, fri: 10000, sat: 30000 };
+    const defaultFormatSurcharge = { '2D': 0, '3D': 40000, 'IMAX': 90000, 'GOLDCLASS': 120000 };
+    const defaultTimeSlotSurcharge = { morning: 0, evening: 20000, latenight: 10000 };
+    const defaultRoomTypeSurcharge = { standard: 0, premium: 20000, dolby: 50000 };
+    const defaultSeatTypeSurcharge = { standard: 0, vip: 30000, couple: 100000 };
+    const defaultBasePrice = { weekday: 90000, weekend: 120000, holiday: 180000 };
+
+    const configObj = config.toObject();
+    configObj.basePrice = { ...defaultBasePrice, ...(configObj.basePrice || {}) };
+    configObj.weekdaySurcharge = { ...defaultWeekdaySurcharge, ...(configObj.weekdaySurcharge || {}) };
+    configObj.timeSlotSurcharge = { ...defaultTimeSlotSurcharge, ...(configObj.timeSlotSurcharge || {}) };
+    configObj.formatSurcharge = { ...defaultFormatSurcharge, ...(configObj.formatSurcharge || {}) };
+    configObj.roomTypeSurcharge = { ...defaultRoomTypeSurcharge, ...(configObj.roomTypeSurcharge || {}) };
+    configObj.seatTypeSurcharge = { ...defaultSeatTypeSurcharge, ...(configObj.seatTypeSurcharge || {}) };
+    configObj.holidays = configObj.holidays?.length ? configObj.holidays : ['2026-01-01', '2026-04-30', '2026-05-01', '2026-09-02'];
+
+    res.json({ success: true, data: configObj });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * PUT /api/admin/pricing
+ * Cập nhật bảng giá (upsert singleton)
+ */
+const updatePricingConfig = async (req, res, next) => {
+  try {
+    const config = await PricingConfig.findOneAndUpdate(
+      {},
+      { $set: req.body },
+      { new: true, upsert: true, runValidators: true }
+    );
+    res.json({ success: true, data: config });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/admin/pricing/preview
+ * Preview giá vé cho một tổ hợp tham số cụ thể
+ */
+const previewTicketPrice = async (req, res, next) => {
+  try {
+    const { startTime, format = '2D', roomType = 'standard', seatType = 'standard' } = req.body;
+    if (!startTime) {
+      res.status(400);
+      throw new Error('Thiếu startTime');
+    }
+
+    let config = await PricingConfig.findOne().lean();
+    if (!config) config = {};
+
+    const { getPriceBreakdown } = require('../utils/pricingEngine');
+    const result = getPriceBreakdown({
+      startTime: new Date(startTime),
+      format,
+      roomType,
+      seatType,
+      config,
+    });
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createMovie,
   updateMovie,
@@ -937,6 +1368,8 @@ module.exports = {
   deleteRoom,
   listRooms,
   getRoomSeats,
+  checkRoomEditable,
+  saveRoomLayout,
   updateSeat,
   bulkUpdateSeats,
   createConcession,
@@ -947,10 +1380,15 @@ module.exports = {
   updateShowtime,
   deleteShowtime,
   autoGenerateShowtimes,
+  getPricingConfig,
+  updatePricingConfig,
+  previewTicketPrice,
   getDashboardStats,
   getRevenueReport,
   listBookings,
   deleteBooking,
+  printTicket,
+  checkInTicket,
   listUsers,
   updateUserRole,
   deleteUser,

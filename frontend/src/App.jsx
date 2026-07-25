@@ -21,6 +21,7 @@ import PromotionsPage from './pages/PromotionsPage';
 import TheatersPage from './pages/TheatersPage';
 import AboutPage from './pages/AboutPage';
 import VNPayReturnPage from './pages/VNPayReturnPage';
+import TicketVerifyPage from './pages/TicketVerifyPage';
 
 // Layout wrapper for public pages (with Header + Footer)
 const PublicLayout = ({ children }) => (
@@ -42,6 +43,9 @@ function App() {
             <Routes>
             {/* ── Admin: full-screen standalone (no Header/Footer) ── */}
             <Route path="/admin" element={<AdminPage />} />
+
+            {/* ── Ticket verify: standalone (no Header/Footer) — for staff QR scan ── */}
+            <Route path="/ticket/:ticketCode" element={<TicketVerifyPage />} />
 
             {/* ── Public pages wrapped in Header + Footer ── */}
             <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />

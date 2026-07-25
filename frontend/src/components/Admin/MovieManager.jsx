@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Plus, Edit2, Trash2, X, AlertCircle, Eye, Search, Sparkles, Star, Calendar, Clock, Loader2, TrendingUp, Flame } from 'lucide-react';
 import movieService from '../../services/movie.service';
 import adminService from '../../services/admin.service';
 import Input from '../common/Input';
+import AutocompleteInput from '../common/AutocompleteInput';
 import Button from '../common/Button';
 import Loading from '../common/Loading';
 import Modal from '../common/Modal';
@@ -68,13 +69,28 @@ export const MovieManager = () => {
     status: 'now-showing',
     rating: 'T16',
     director: '',
-    cast: '',
+    cast: [],       // lưu dưới dạng mảng
     country: '',
     availableFormats: '2D',
   };
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState('');
   const [toast, setToast] = useState({ message: '', type: 'success' });
+
+  // Tính danh sách gợi ý đạo diễn và diễn viên từ dữ liệu phim hiện có
+  const allDirectors = useMemo(() => {
+    const set = new Set();
+    movies.forEach((m) => { if (m.director) set.add(m.director.trim()); });
+    return Array.from(set).sort();
+  }, [movies]);
+
+  const allCast = useMemo(() => {
+    const set = new Set();
+    movies.forEach((m) => {
+      if (Array.isArray(m.cast)) m.cast.forEach((c) => { if (c) set.add(c.trim()); });
+    });
+    return Array.from(set).sort();
+  }, [movies]);
 
   const fetchMoviesList = async () => {
     setLoading(true);
@@ -205,7 +221,7 @@ export const MovieManager = () => {
         status: m.status || 'coming-soon',
         rating: m.rating || 'T16',
         director: m.director || '',
-        cast: (m.cast || []).join(', '),
+        cast: Array.isArray(m.cast) ? m.cast : [],
         country: m.country || '',
         availableFormats: m.availableFormats ? m.availableFormats.join(', ') : '2D',
       });
@@ -236,7 +252,7 @@ export const MovieManager = () => {
       status: movie.status,
       rating: movie.rating,
       director: movie.director || '',
-      cast: movie.cast ? movie.cast.join(', ') : '',
+      cast: Array.isArray(movie.cast) ? movie.cast : [],
       country: movie.country || '',
       availableFormats: movie.availableFormats ? movie.availableFormats.join(', ') : '2D',
     });
@@ -261,7 +277,10 @@ export const MovieManager = () => {
 
     // Tiền xử lý dữ liệu gửi đi
     const genreArray = form.genre.split(',').map((g) => g.trim()).filter((g) => g !== '');
-    const castArray = form.cast.split(',').map((c) => c.trim()).filter((c) => c !== '');
+    // cast đã là mảng, chỉ cần lọc rỗng
+    const castArray = Array.isArray(form.cast)
+      ? form.cast.map((c) => c.trim()).filter((c) => c !== '')
+      : form.cast.split(',').map((c) => c.trim()).filter((c) => c !== '');
     const durationNum = parseInt(form.duration, 10);
     const formatArray = form.availableFormats
       ? form.availableFormats.split(',').map((g) => g.trim()).filter((g) => g !== '')
@@ -497,7 +516,14 @@ export const MovieManager = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input name="title" label="Tên Phim" placeholder="Ví dụ: Dune: Part Two" value={form.title} onChange={handleChange} required />
-            <Input name="director" label="Đạo Diễn" placeholder="Ví dụ: Denis Villeneuve" value={form.director} onChange={handleChange} />
+            <AutocompleteInput
+              label="Đạo Diễn"
+              placeholder="Ví dụ: Denis Villeneuve"
+              suggestions={allDirectors}
+              value={form.director}
+              onChange={(val) => setForm((f) => ({ ...f, director: val }))}
+              mode="single"
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -601,7 +627,14 @@ export const MovieManager = () => {
             <Input name="trailerUrl" label="Đường Dẫn Nhúng Trailer YouTube (URL)" placeholder="https://www.youtube.com/embed/..." value={form.trailerUrl} onChange={handleChange} />
           </div>
 
-          <Input name="cast" label="Danh Sách Diễn Viên (phân tách bằng dấu phẩy)" placeholder="Timothée Chalamet, Zendaya, Austin Butler" value={form.cast} onChange={handleChange} />
+          <AutocompleteInput
+            label="Danh Sách Diễn Viên"
+            placeholder="Tìm kiếm tên diễn viên..."
+            suggestions={allCast}
+            value={form.cast}
+            onChange={(val) => setForm((f) => ({ ...f, cast: val }))}
+            mode="tags"
+          />
 
           <Input
             name="description"

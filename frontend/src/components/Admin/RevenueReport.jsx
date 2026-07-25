@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { DollarSign, Landmark, BarChart3 } from 'lucide-react';
+import { DollarSign, Landmark, CheckCircle2, Clock, Layers, Filter } from 'lucide-react';
 import adminService from '../../services/admin.service';
 import Loading from '../common/Loading';
 
@@ -8,11 +8,13 @@ export const RevenueReport = () => {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAllMovies, setShowAllMovies] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('ended'); // 'ended' (mặc định), 'all', 'upcoming'
 
   useEffect(() => {
     const fetchRevenue = async () => {
+      setLoading(true);
       try {
-        const result = await adminService.getRevenueReport();
+        const result = await adminService.getRevenueReport({ status: statusFilter });
         setReport(result);
       } catch (err) {
         console.error(err);
@@ -21,21 +23,94 @@ export const RevenueReport = () => {
       }
     };
     fetchRevenue();
-  }, []);
+  }, [statusFilter]);
 
-  if (loading) return <Loading />;
+  if (loading && !report) return <Loading />;
 
-  const COLORS = ['#e50914', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
-
+  const summary = report?.data?.summary || report?.summary || {};
   const monthlyData = report?.data?.monthlySales || report?.monthlySales || [];
   const movieData = report?.data?.movieSales || report?.movieSales || [];
   const theaterData = report?.data?.theaterSales || report?.theaterSales || [];
 
+  const fmt = (val) => (val || 0).toLocaleString('vi-VN') + ' ₫';
+
   return (
     <div className="space-y-8">
-      <div>
-        <h3 className="text-lg font-black text-gray-800">Báo Cáo & Phân Tích Tài Chính</h3>
-        <p className="text-xs text-gray-500 mt-1">Xem lại hiệu suất bán hàng của các cụm rạp, lưu lượng vé hàng tháng và các phim nổi bật nhất.</p>
+      {/* Header & Filter */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-lg font-black text-gray-800">Báo Cáo & Phân Tích Tài Chính</h3>
+          <p className="text-xs text-gray-500 mt-1">
+            Hiệu suất bán hàng của các cụm rạp, vé bán theo tháng và danh sách phim.
+          </p>
+        </div>
+
+        {/* Bộ lọc tính doanh thu */}
+        <div className="flex items-center gap-2 bg-white border border-gray-200 p-1.5 rounded-2xl shadow-sm">
+          <span className="text-[11px] font-bold text-gray-400 pl-2.5 flex items-center gap-1.5 uppercase tracking-wider">
+            <Filter size={12} /> Lọc:
+          </span>
+          <button
+            onClick={() => setStatusFilter('ended')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
+              statusFilter === 'ended'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            ✓ Đã kết thúc phim
+          </button>
+          <button
+            onClick={() => setStatusFilter('all')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
+              statusFilter === 'all'
+                ? 'bg-brand text-white shadow-sm'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            Tất cả suất chiếu
+          </button>
+          <button
+            onClick={() => setStatusFilter('upcoming')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
+              statusFilter === 'upcoming'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            Chưa chiếu (Đặt trước)
+          </button>
+        </div>
+      </div>
+
+      {/* 3 Thẻ thống kê tổng quan */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="bg-gradient-to-br from-emerald-50 to-white border border-emerald-200 rounded-3xl p-5 shadow-sm space-y-2">
+          <div className="flex justify-between items-center text-emerald-700">
+            <span className="text-xs font-extrabold uppercase tracking-wider">Doanh Thu Phim Đã Chiếu Xong</span>
+            <CheckCircle2 size={20} className="text-emerald-500" />
+          </div>
+          <div className="text-2xl font-black text-emerald-900">{fmt(summary.completedRevenue)}</div>
+          <p className="text-[11px] text-emerald-600 font-medium">Chỉ ghi nhận từ các suất chiếu đã kết thúc</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-blue-50 to-white border border-blue-200 rounded-3xl p-5 shadow-sm space-y-2">
+          <div className="flex justify-between items-center text-blue-700">
+            <span className="text-xs font-extrabold uppercase tracking-wider">Doanh Thu Vé Đặt Trước</span>
+            <Clock size={20} className="text-blue-500" />
+          </div>
+          <div className="text-2xl font-black text-blue-900">{fmt(summary.upcomingRevenue)}</div>
+          <p className="text-[11px] text-blue-600 font-medium">Từ các suất chiếu sắp diễn ra trong tương lai</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-purple-50 to-white border border-purple-200 rounded-3xl p-5 shadow-sm space-y-2">
+          <div className="flex justify-between items-center text-purple-700">
+            <span className="text-xs font-extrabold uppercase tracking-wider">Tổng Doanh Thu Đã Thanh Toán</span>
+            <Layers size={20} className="text-purple-500" />
+          </div>
+          <div className="text-2xl font-black text-purple-900">{fmt(summary.totalRevenue)}</div>
+          <p className="text-[11px] text-purple-600 font-medium">Bao gồm cả suất chiếu đã xong & vé đặt trước</p>
+        </div>
       </div>
 
       {/* Lưới biểu đồ */}

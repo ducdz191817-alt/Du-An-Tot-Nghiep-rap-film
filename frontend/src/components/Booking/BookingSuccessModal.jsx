@@ -194,18 +194,28 @@ export const BookingSuccessModal = ({ isOpen, bookingResult, showtime, selectedS
           </div>
 
           {/* Ticket QR Code */}
-          <div className="flex flex-col items-center justify-center bg-zinc-900/60 border border-dark-border/60 rounded-2xl p-5 space-y-2.5">
-            <div className="bg-white p-2 rounded-2xl shadow-lg flex items-center justify-center w-36 h-36 border border-zinc-200">
+          <div className="flex flex-col items-center justify-center bg-zinc-900/60 border border-dark-border/60 rounded-2xl p-5 space-y-3">
+            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider text-center">
+              Mã QR vé điện tử — Cho nhân viên quét khi vào rạp
+            </p>
+            <div className="bg-white p-3 rounded-2xl shadow-lg flex items-center justify-center w-40 h-40 border border-zinc-200">
               <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
-                  `CINEADMIN TICKET\nMã vé: ${booking?._id?.slice(-10).toUpperCase() || transactionId}\nPhim: ${movie.title || 'N/A'}\nRạp: ${theater.name || 'N/A'} - ${room.name || 'N/A'}\nGhế: ${(selectedSeats || booking?.seats || []).join(', ')}\nSuất chiếu: ${timeString} - ${dateString}\nTrạng thái: ĐÃ THANH TOÁN`
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
+                  `${window.location.origin}/ticket/${booking?.ticketCode || booking?._id}`
                 )}`}
                 alt="Ticket QR Code"
                 className="w-full h-full object-contain"
               />
             </div>
-            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider text-center max-w-[220px] leading-relaxed">
-              Đưa mã này cho nhân viên soát vé để vào rạp
+            {/* Mã vé dạng text để nhân viên nhập tay nếu không quét được QR */}
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider">Mã vé</span>
+              <span className="font-mono text-base font-black text-brand tracking-widest bg-zinc-800 border border-zinc-700 px-3 py-1 rounded-lg select-all">
+                {booking?.ticketCode || '---'}
+              </span>
+            </div>
+            <p className="text-[10px] text-zinc-500 font-semibold text-center max-w-[240px] leading-relaxed">
+              Hoặc nhập mã vé bên trên tại quầy nếu không quét được QR
             </p>
           </div>
 

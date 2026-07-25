@@ -17,6 +17,12 @@ const RoomSchema = new mongoose.Schema(
       enum: ['2D', '3D', 'IMAX', 'GOLDCLASS'],
       default: '2D',
     },
+    // Loại chất lượng phòng – dùng để tính phụ thu giá vé
+    roomType: {
+      type: String,
+      enum: ['standard', 'premium', 'dolby'],
+      default: 'standard',
+    },
     capacity: {
       type: Number,
       required: true,

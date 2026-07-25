@@ -64,6 +64,16 @@ const getRoomSeats = async (roomId) => {
   return response.data;
 };
 
+const checkRoomEditable = async (roomId) => {
+  const response = await api.get(`/admin/rooms/${roomId}/check-editable`);
+  return response?.data || response;
+};
+
+const saveRoomLayout = async (roomId, seats) => {
+  const response = await api.put(`/admin/rooms/${roomId}/seats/layout`, { seats });
+  return response?.data || response;
+};
+
 const updateSeat = async (id, seatData) => {
   const response = await api.put(`/admin/seats/${id}`, seatData);
   return response.data;
@@ -124,8 +134,8 @@ const getDashboardStats = async (params = {}) => {
   return response.data;
 };
 
-const getRevenueReport = async () => {
-  const response = await api.get('/admin/dashboard/revenue');
+const getRevenueReport = async (params = {}) => {
+  const response = await api.get('/admin/dashboard/revenue', { params });
   return response.data;
 };
 
@@ -137,6 +147,16 @@ const getBookings = async () => {
 const deleteBooking = async (id) => {
   const response = await api.delete(`/admin/bookings/${id}`);
   return response.data;
+};
+
+const printTicket = async (id) => {
+  const response = await api.post(`/admin/bookings/${id}/print`);
+  return response;
+};
+
+const checkInTicket = async (data) => {
+  const response = await api.post('/admin/bookings/check-in', data);
+  return response;
 };
 
 // User Management
@@ -154,6 +174,22 @@ const updateUserRole = async (id, role) => {
 
 const deleteUser = async (id) => {
   const response = await api.delete(`/admin/users/${id}`);
+  return response.data;
+};
+
+// Pricing Config
+const getPricingConfig = async () => {
+  const response = await api.get('/admin/pricing');
+  return response.data;
+};
+
+const updatePricingConfig = async (data) => {
+  const response = await api.put('/admin/pricing', data);
+  return response.data;
+};
+
+const previewTicketPrice = async (params) => {
+  const response = await api.post('/admin/pricing/preview', params);
   return response.data;
 };
 
@@ -188,6 +224,8 @@ const adminService = {
   updateRoom,
   deleteRoom,
   getRoomSeats,
+  checkRoomEditable,
+  saveRoomLayout,
   updateSeat,
   bulkUpdateSeats,
   createShowtime,
@@ -202,12 +240,17 @@ const adminService = {
   getRevenueReport,
   getBookings,
   deleteBooking,
+  printTicket,
+  checkInTicket,
   getUsers,
   updateUserRole,
   deleteUser,
   searchTMDB,
   getTMDBMovieDetail,
   getTMDBTrending,
+  getPricingConfig,
+  updatePricingConfig,
+  previewTicketPrice,
 };
 
 export default adminService;
