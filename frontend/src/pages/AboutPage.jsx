@@ -4,103 +4,7 @@ import {
   Heart, Shield, Zap, Users, Star, MapPin, Film, Trophy,
   Headphones, ChevronDown, ChevronUp, Mail, Phone,
 } from 'lucide-react';
-
-// ─── Data ────────────────────────────────────────────────────────────────────
-const stats = [
-  { value: '1', label: 'Cụm rạp', icon: <MapPin size={20} className="text-brand" /> },
-  { value: '500K+', label: 'Khách hàng tin tưởng', icon: <Users size={20} className="text-emerald-600" /> },
-  { value: '10K+', label: 'Suất chiếu mỗi tháng', icon: <Film size={20} className="text-sky-600" /> },
-  { value: '4.8★', label: 'Đánh giá trung bình', icon: <Star size={20} className="text-amber-500" /> },
-];
-
-const values = [
-  {
-    icon: <Heart size={22} className="text-rose-600" />,
-    bg: 'bg-rose-50 border-rose-200',
-    title: 'Đam mê điện ảnh',
-    desc: 'Mọi quyết định của chúng tôi đều xuất phát từ tình yêu với nghệ thuật thứ 7 và khát vọng mang đến trải nghiệm xem phim tuyệt vời nhất.',
-  },
-  {
-    icon: <Shield size={22} className="text-emerald-600" />,
-    bg: 'bg-emerald-50 border-emerald-200',
-    title: 'Chất lượng & Uy tín',
-    desc: 'Chúng tôi cam kết duy trì tiêu chuẩn chất lượng cao nhất ở mọi điểm chạm, từ màn hình IMAX đến ghế ngồi, từ âm thanh đến dịch vụ.',
-  },
-  {
-    icon: <Zap size={22} className="text-amber-600" />,
-    bg: 'bg-amber-50 border-amber-200',
-    title: 'Công nghệ tiên tiến',
-    desc: 'Ứng dụng công nghệ mới nhất để tối ưu trải nghiệm đặt vé, quản lý ghế theo thời gian thực và cá nhân hóa gợi ý phim cho từng người.',
-  },
-  {
-    icon: <Headphones size={22} className="text-sky-600" />,
-    bg: 'bg-sky-50 border-sky-200',
-    title: 'Dịch vụ tận tâm',
-    desc: 'Đội ngũ hỗ trợ 24/7 luôn sẵn sàng giải đáp mọi thắc mắc, xử lý phản hồi và đảm bảo bạn có trải nghiệm hoàn hảo từ đầu đến cuối.',
-  },
-];
-
-const milestones = [
-  { year: '2019', title: 'Thành lập', desc: 'Nova Cinema ra đời tại Hà Nội với cụm rạp đầu tiên ở Cầu Giấy, mang theo giấc mơ điện ảnh đẳng cấp.' },
-  { year: '2020', title: 'Vượt qua thử thách', desc: 'Vượt qua thách thức của dịch bệnh, chúng tôi vẫn kiên định với sứ mệnh phục vụ khán giả thủ đô.' },
-  { year: '2022', title: 'Ra mắt ứng dụng', desc: 'Nền tảng đặt vé trực tuyến chính thức ra mắt, giúp khách hàng đặt vé mọi lúc mọi nơi chỉ với vài chạm.' },
-  { year: '2023', title: 'Nâng cấp IMAX', desc: 'Nâng cấp màn hình IMAX đầu tiên tại Việt Nam thuộc hệ thống tư nhân tại cụm rạp Hà Nội.' },
-  { year: '2024', title: '500K khách hàng', desc: 'Cột mốc nửa triệu khách hàng trung thành, khẳng định vị thế thương hiệu điện ảnh hàng đầu tại Việt Nam.' },
-];
-
-const team = [
-  {
-    name: 'Nguyễn Minh Tuấn',
-    role: 'CEO & Co-founder',
-    avatar: 'MT',
-    avatarBg: 'from-brand-dark to-brand text-zinc-950',
-    quote: '"Điện ảnh không chỉ là giải trí – đó là nghệ thuật kết nối con người."',
-  },
-  {
-    name: 'Trần Thị Lan Anh',
-    role: 'COO & Co-founder',
-    avatar: 'LA',
-    avatarBg: 'from-sky-600 to-sky-400 text-white',
-    quote: '"Chúng tôi không chỉ bán vé – chúng tôi bán những khoảnh khắc đáng nhớ."',
-  },
-  {
-    name: 'Lê Hoàng Phúc',
-    role: 'CTO',
-    avatar: 'HP',
-    avatarBg: 'from-emerald-600 to-emerald-400 text-white',
-    quote: '"Công nghệ giúp nghệ thuật chạm đến nhiều người hơn, nhanh hơn và tiện lợi hơn."',
-  },
-  {
-    name: 'Phạm Quỳnh Anh',
-    role: 'Head of Experience',
-    avatar: 'QA',
-    avatarBg: 'from-rose-600 to-rose-400 text-white',
-    quote: '"Mỗi chuyến đến rạp của bạn là một hành trình – chúng tôi muốn nó hoàn hảo."',
-  },
-];
-
-const faqs = [
-  {
-    q: 'Làm sao để đặt vé xem phim trên Nova Cinema?',
-    a: 'Bạn có thể đặt vé qua website hoặc ứng dụng di động. Chọn phim → Chọn suất chiếu → Chọn ghế → Thêm bắp nước (tùy chọn) → Thanh toán online. Cực kỳ nhanh chóng, chỉ vài phút!',
-  },
-  {
-    q: 'Nova Cinema hỗ trợ những phương thức thanh toán nào?',
-    a: 'Chúng tôi hỗ trợ: Momo, ZaloPay, VNPay, thẻ tín dụng/ghi nợ Visa/Mastercard và thanh toán tiền mặt tại quầy.',
-  },
-  {
-    q: 'Tôi có thể đổi/hoàn vé sau khi đặt không?',
-    a: 'Vé có thể hoàn trước giờ chiếu 2 giờ. Phí hoàn vé là 20% giá vé. Vé đặt trong chương trình Flash Sale không được hoàn.',
-  },
-  {
-    q: 'Chính sách thành viên và tích điểm của Nova Cinema?',
-    a: 'Mỗi 10,000đ chi tiêu bạn nhận 1 điểm thưởng. Tích lũy đủ điểm để lên hạng thành viên (Bạc, Vàng, Kim Cương) và nhận ưu đãi độc quyền.',
-  },
-  {
-    q: 'Nova Cinema có phòng chiếu dành cho trẻ em không?',
-    a: 'Có! Chúng tôi có buổi chiếu Matinee đặc biệt cho gia đình vào buổi sáng cuối tuần với giá vé ưu đãi và không gian thân thiện với trẻ nhỏ.',
-  },
-];
+import { useLanguage } from '../context/LanguageContext';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 const FaqItem = ({ q, a }) => {
@@ -129,6 +33,89 @@ const FaqItem = ({ q, a }) => {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 const AboutPage = () => {
+  const { t } = useLanguage();
+
+  const stats = [
+    { value: '1',    label: t('about.stat.cinemas'),    icon: <MapPin size={20} className="text-brand" /> },
+    { value: '500K+', label: t('about.stat.customers'),  icon: <Users size={20} className="text-emerald-600" /> },
+    { value: '10K+', label: t('about.stat.showtimes'),  icon: <Film size={20} className="text-sky-600" /> },
+    { value: '4.8★', label: t('about.stat.rating'),     icon: <Star size={20} className="text-amber-500" /> },
+  ];
+
+  const values = [
+    {
+      icon: <Heart size={22} className="text-rose-600" />,
+      bg: 'bg-rose-50 border-rose-200',
+      title: t('about.values.passion.title'),
+      desc:  t('about.values.passion.desc'),
+    },
+    {
+      icon: <Shield size={22} className="text-emerald-600" />,
+      bg: 'bg-emerald-50 border-emerald-200',
+      title: t('about.values.quality.title'),
+      desc:  t('about.values.quality.desc'),
+    },
+    {
+      icon: <Zap size={22} className="text-amber-600" />,
+      bg: 'bg-amber-50 border-amber-200',
+      title: t('about.values.tech.title'),
+      desc:  t('about.values.tech.desc'),
+    },
+    {
+      icon: <Headphones size={22} className="text-sky-600" />,
+      bg: 'bg-sky-50 border-sky-200',
+      title: t('about.values.service.title'),
+      desc:  t('about.values.service.desc'),
+    },
+  ];
+
+  const milestones = [
+    { year: '2019', title: t('about.milestone.2019.title'), desc: t('about.milestone.2019.desc') },
+    { year: '2020', title: t('about.milestone.2020.title'), desc: t('about.milestone.2020.desc') },
+    { year: '2022', title: t('about.milestone.2022.title'), desc: t('about.milestone.2022.desc') },
+    { year: '2023', title: t('about.milestone.2023.title'), desc: t('about.milestone.2023.desc') },
+    { year: '2024', title: t('about.milestone.2024.title'), desc: t('about.milestone.2024.desc') },
+  ];
+
+  const team = [
+    {
+      name: 'Nguyễn Minh Tuấn',
+      role: 'CEO & Co-founder',
+      avatar: 'MT',
+      avatarBg: 'from-brand-dark to-brand text-zinc-950',
+      quote: t('about.team.quote.ceo'),
+    },
+    {
+      name: 'Trần Thị Lan Anh',
+      role: 'COO & Co-founder',
+      avatar: 'LA',
+      avatarBg: 'from-sky-600 to-sky-400 text-white',
+      quote: t('about.team.quote.coo'),
+    },
+    {
+      name: 'Lê Hoàng Phúc',
+      role: 'CTO',
+      avatar: 'HP',
+      avatarBg: 'from-emerald-600 to-emerald-400 text-white',
+      quote: t('about.team.quote.cto'),
+    },
+    {
+      name: 'Phạm Quỳnh Anh',
+      role: 'Head of Experience',
+      avatar: 'QA',
+      avatarBg: 'from-rose-600 to-rose-400 text-white',
+      quote: t('about.team.quote.hoe'),
+    },
+  ];
+
+  const faqs = [
+    { q: t('about.faq.q1'), a: t('about.faq.a1') },
+    { q: t('about.faq.q2'), a: t('about.faq.a2') },
+    { q: t('about.faq.q3'), a: t('about.faq.a3') },
+    { q: t('about.faq.q4'), a: t('about.faq.a4') },
+    { q: t('about.faq.q5'), a: t('about.faq.a5') },
+  ];
+
   return (
     <div className="space-y-16 pb-16">
 
@@ -143,27 +130,26 @@ const AboutPage = () => {
         <div className="relative z-10 space-y-4 max-w-2xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-brand/15 border border-brand/30 text-zinc-700 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest">
             <Heart size={12} className="text-brand" />
-            Câu chuyện của chúng tôi
+            {t('about.badge')}
           </div>
           <h1 className="text-3xl md:text-5xl font-black text-zinc-900 leading-tight">
-            Về <span className="text-brand">Nova Cinema</span>
+            {t('about.hero.title')} <span className="text-brand">Nova Cinema</span>
           </h1>
           <p className="text-zinc-600 text-sm md:text-base leading-relaxed font-medium">
-            Chúng tôi không chỉ là một hệ thống rạp chiếu phim. Nova Cinema là nơi nghệ thuật điện ảnh 
-            gặp gỡ công nghệ hiện đại, mang đến những trải nghiệm xem phim đáng nhớ cho hàng triệu khán giả Việt Nam.
+            {t('about.hero.desc')}
           </p>
           <div className="flex items-center justify-center gap-4 pt-2">
             <Link
               to="/movies"
               className="bg-[#f4d068] hover:bg-[#f3c647] text-zinc-950 text-sm font-bold px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-[#f4d068]/20 active:scale-95"
             >
-              Khám phá phim
+              {t('about.hero.exploreMovies')}
             </Link>
             <Link
               to="/theaters"
               className="bg-zinc-100 border border-zinc-200 text-zinc-700 hover:text-zinc-950 text-sm font-bold px-6 py-2.5 rounded-xl transition-all active:scale-95"
             >
-              Tìm rạp gần bạn
+              {t('about.hero.findTheater')}
             </Link>
           </div>
         </div>
@@ -184,20 +170,17 @@ const AboutPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center pb-12 md:pb-20 border-b border-zinc-100">
         <div className="space-y-4">
           <div className="inline-flex items-center gap-2 bg-brand/10 border border-brand/20 text-zinc-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest">
-            <Trophy size={11} className="text-brand" /> Sứ mệnh
+            <Trophy size={11} className="text-brand" /> {t('about.mission.badge')}
           </div>
           <h2 className="text-2xl md:text-3xl font-black text-zinc-900 leading-tight">
-            Đưa điện ảnh đến<br />
-            <span className="text-brand">gần hơn với bạn</span>
+            {t('about.mission.title1')}<br />
+            <span className="text-brand">{t('about.mission.title2')}</span>
           </h2>
           <p className="text-zinc-600 text-sm leading-relaxed font-medium">
-            Nova Cinema được thành lập với sứ mệnh dân chủ hóa trải nghiệm điện ảnh đỉnh cao tại Việt Nam. 
-            Chúng tôi tin rằng mọi người đều xứng đáng được thưởng thức bộ phim yêu thích trên màn hình lớn 
-            với chất lượng hình ảnh và âm thanh tốt nhất.
+            {t('about.mission.desc1')}
           </p>
           <p className="text-zinc-500 text-sm leading-relaxed font-medium">
-            Từ IMAX 4K đến những suất chiếu sáng tạo theo chủ đề, chúng tôi không ngừng đổi mới để 
-            mỗi lần đến rạp là một kỷ niệm đáng nhớ.
+            {t('about.mission.desc2')}
           </p>
         </div>
 
@@ -232,8 +215,8 @@ const AboutPage = () => {
       {/* ── Core Values ── */}
       <div className="space-y-6 pt-16 md:pt-24">
         <div className="text-center">
-          <h2 className="text-2xl font-black text-zinc-900">Giá trị cốt lõi</h2>
-          <p className="text-zinc-500 text-sm mt-1">Những nguyên tắc định hình mọi quyết định của chúng tôi</p>
+          <h2 className="text-2xl font-black text-zinc-900">{t('about.values.title')}</h2>
+          <p className="text-zinc-500 text-sm mt-1">{t('about.values.subtitle')}</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {values.map((v, i) => (
@@ -251,8 +234,8 @@ const AboutPage = () => {
       {/* ── FAQ ── */}
       <div className="space-y-6">
         <div className="text-center">
-          <h2 className="text-2xl font-black text-zinc-900">Câu hỏi thường gặp</h2>
-          <p className="text-zinc-500 text-sm mt-1">Giải đáp những thắc mắc phổ biến nhất</p>
+          <h2 className="text-2xl font-black text-zinc-900">{t('about.faq.title')}</h2>
+          <p className="text-zinc-500 text-sm mt-1">{t('about.faq.subtitle')}</p>
         </div>
         <div className="max-w-2xl mx-auto space-y-3">
           {faqs.map((faq) => (
@@ -263,9 +246,9 @@ const AboutPage = () => {
 
       {/* ── Contact CTA ── */}
       <div className="bg-gradient-to-br from-brand/10 via-white to-zinc-50 border border-brand/20 rounded-3xl p-8 md:p-12 text-center space-y-5 shadow-sm">
-        <h2 className="text-2xl md:text-3xl font-black text-zinc-900">Cần hỗ trợ?</h2>
+        <h2 className="text-2xl md:text-3xl font-black text-zinc-900">{t('about.contact.title')}</h2>
         <p className="text-zinc-600 text-sm max-w-md mx-auto leading-relaxed font-medium">
-          Đội ngũ Nova Cinema luôn sẵn sàng lắng nghe và hỗ trợ bạn. Liên hệ với chúng tôi qua các kênh dưới đây.
+          {t('about.contact.desc')}
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <a
