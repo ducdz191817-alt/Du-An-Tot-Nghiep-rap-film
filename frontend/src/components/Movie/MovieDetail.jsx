@@ -596,9 +596,6 @@ export const MovieDetail = ({ movie }) => {
                             <span className="text-gray-900 dark:text-gray-100 font-black text-base transition-colors group-hover:text-brand">
                               {startTimeString}
                             </span>
-                            <span className="text-[11px] text-gray-500 dark:text-gray-400 font-bold block uppercase tracking-wider">
-                              {showtime.room?.name || 'Screen'} • {showtime.format}
-                            </span>
                           </div>
                           <div className="flex items-center gap-2">
                             <ChevronRight size={16} className="text-gray-400 group-hover:text-brand transition-all" />

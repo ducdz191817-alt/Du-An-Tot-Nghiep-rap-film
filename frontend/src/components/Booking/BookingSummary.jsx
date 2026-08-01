@@ -109,7 +109,7 @@ export const BookingSummary = ({
           {durationLabel && <span>{durationLabel}</span>}
         </div>
         <p className="text-xs text-zinc-600 dark:text-zinc-400 font-semibold uppercase">
-          {theater.name} &bull; {room.name} ({showtime.format})
+          {theater.name} &bull; {room.name && showtime.format && room.name.toUpperCase().includes(showtime.format.toUpperCase()) ? room.name : `${room.name || ''}${showtime.format ? ` (${showtime.format})` : ''}`}
         </p>
         <p className="text-xs text-zinc-500 dark:text-zinc-500 font-bold">
           {dateString} &bull; {timeString}

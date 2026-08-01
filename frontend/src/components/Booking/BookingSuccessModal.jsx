@@ -130,7 +130,7 @@ export const BookingSuccessModal = ({ isOpen, bookingResult, showtime, selectedS
               <DetailRow
                 icon={<MapPin size={13} className="text-brand" />}
                 label="Rạp & Phòng"
-                value={`${theater.name || 'N/A'} • ${room.name || ''} (${showtime?.format || ''})`}
+                value={`${theater.name || 'N/A'} • ${room.name && showtime?.format && room.name.toUpperCase().includes(showtime.format.toUpperCase()) ? room.name : `${room.name || ''}${showtime?.format ? ` (${showtime.format})` : ''}`}`}
               />
               <DetailRow
                 icon={<Calendar size={13} className="text-brand" />}
