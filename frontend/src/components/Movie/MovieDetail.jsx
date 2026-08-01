@@ -186,7 +186,7 @@ export const MovieDetail = ({ movie }) => {
 
   // Phát hiện phim now-showing/preview nhưng không có lịch chiếu nào trong tất cả các ngày
   const hasNoScheduleAtAll = useMemo(() => {
-    if (movie.status !== 'now-showing' && movie.status !== 'preview') return false;
+    if (movie.status !== 'now-showing') return false;
     if (checkingAvailability) return false;
     // Nếu đã check xong tất cả ngày mà không ngày nào có suất
     const datesChecked = Object.keys(dateAvailability);
@@ -468,7 +468,7 @@ export const MovieDetail = ({ movie }) => {
       )}
 
       {/* 4. Bảng đặt vé theo lịch chiếu */}
-      {(movie.status === 'now-showing' || movie.status === 'preview') && !hasNoScheduleAtAll && (
+      {(movie.status === 'now-showing') && !hasNoScheduleAtAll && (
         <div ref={showtimesSectionRef} className="space-y-6 bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 p-6 md:p-10 rounded-[2rem] shadow-lg mt-12 relative overflow-hidden">
           {/* Subtle glow in background */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand/5 blur-[80px] rounded-full pointer-events-none" />

@@ -27,17 +27,13 @@ export const MovieCard = ({ movie }) => {
     ? (language === 'vi' ? 'ĐANG CHIẾU' : 'NOW SHOWING')
     : effectiveStatus === 'coming-soon'
       ? (language === 'vi' ? 'SẮP CHIẾU' : 'COMING SOON')
-      : effectiveStatus === 'preview'
-        ? (language === 'vi' ? 'CHIẾU SỚM' : 'PREVIEW')
-        : (language === 'vi' ? 'SẮP RA MẮT' : 'PRE-RELEASE');
+      : (language === 'vi' ? 'SẮP RA MẮT' : 'PRE-RELEASE');
 
   const statusColor = effectiveStatus === 'now-showing'
     ? 'bg-emerald-500'
     : effectiveStatus === 'coming-soon'
       ? 'bg-blue-500'
-      : effectiveStatus === 'preview'
-        ? 'bg-violet-500'
-        : 'bg-sky-500';
+      : 'bg-sky-500';
 
   const releaseDateLabel = movie.releaseDate
     ? new Date(movie.releaseDate).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', {

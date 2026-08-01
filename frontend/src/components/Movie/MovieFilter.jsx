@@ -96,7 +96,6 @@ export const MovieFilter = ({ filters, onChange }) => {
     { value: 'all', label: t('filter.statusAll') },
     { value: 'now-showing', label: t('filter.nowShowing') },
     { value: 'coming-soon', label: t('filter.comingSoon') },
-    { value: 'preview', label: t('filter.preview') },
     { value: 'pre-release', label: t('filter.preRelease') },
   ];
 
@@ -193,15 +192,6 @@ export const MovieFilter = ({ filters, onChange }) => {
               }`}
           >
             {t('filter.comingSoon')}
-          </button>
-          <button
-            onClick={() => handleStatusChange('preview')}
-            className={`flex-1 lg:flex-none text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap ${filters.status === 'preview'
-                ? 'bg-gray-900 text-white shadow-md'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-              }`}
-          >
-            {t('filter.preview')}
           </button>
           <button
             onClick={() => handleStatusChange('pre-release')}

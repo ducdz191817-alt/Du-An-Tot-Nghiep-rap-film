@@ -245,7 +245,7 @@ const getBestSellers = async (req, res, next) => {
         {
           $match: {
             _id: { $nin: existingObjectIds },
-            status: { $in: ['now-showing', 'preview'] }
+            status: { $in: ['now-showing', 'coming-soon'] }
           }
         },
         {
