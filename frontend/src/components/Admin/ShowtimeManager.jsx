@@ -26,6 +26,8 @@ export const ShowtimeManager = () => {
 
   // ── Auto Modal ──
   const [isAutoOpen, setIsAutoOpen] = useState(false);
+  const [autoStep, setAutoStep] = useState(1); // 1: Form, 2: Preview
+  const [previewList, setPreviewList] = useState([]);
   const [autoGenerating, setAutoGenerating] = useState(false);
   const [autoResult, setAutoResult] = useState(null);
   const [autoModalRooms, setAutoModalRooms] = useState([]);
@@ -248,6 +250,246 @@ export const ShowtimeManager = () => {
     }
   };
 
+  const handleOpenAutoGenerate = () => {
+    setAutoError('');
+    setAutoResult(null);
+    setAutoStep(1);
+    setPreviewList([]);
+    const today = new Date().toISOString().split('T')[0];
+    const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    setAutoForm({
+      movieId: movies[0]?._id || '',
+      theaterId: selectedTheater,
+      roomIds: rooms.length > 0 ? [rooms[0]._id] : [],
+      startDate: today,
+      endDate: nextWeek,
+      timeSlots: [...DEFAULT_TIME_SLOTS],
+      format: '2D',
+      ticketPrice: 80000,
+    });
+    setAutoModalRooms([...rooms]);
+    setIsAutoOpen(true);
+  };
+
+  const handleAutoFormChange = (e) => {
+    const { name, value } = e.target;
+    setAutoForm((prev) => {
+      const u = { ...prev, [name]: value };
+      if (name === 'format') u.ticketPrice = DEFAULT_PRICES[value] || 80000;
+      return u;
+    });
+  };
+
+  const handleToggleRoom = (roomId) => {
+    setAutoForm((prev) => ({
+      ...prev,
+      roomIds: prev.roomIds.includes(roomId) ? prev.roomIds.filter((id) => id !== roomId) : [...prev.roomIds, roomId],
+    }));
+  };
+
+  const handleRemoveSlot = (slot) => {
+    setAutoForm((prev) => ({ ...prev, timeSlots: prev.timeSlots.filter((s) => s !== slot) }));
+  };
+
+  const handleAddSlot = () => {
+    const trimmed = newSlotInput.trim();
+    if (!trimmed) return;
+    if (!/^\d{2}:\d{2}$/.test(trimmed)) {
+      setAutoError('Định dạng không hợp lệ. Dùng HH:mm (VD: 09:00)');
+      return;
+    }
+    if (autoForm.timeSlots.includes(trimmed)) {
+      setAutoError('Khung giờ này đã tồn tại');
+      return;
+    }
+    setAutoError('');
+    setAutoForm((prev) => ({ ...prev, timeSlots: [...prev.timeSlots, trimmed].sort() }));
+    setNewSlotInput('');
+  };
+
+  const estimatedShowtimes = (() => {
+    if (!autoForm.startDate || !autoForm.endDate || !autoForm.roomIds.length || !autoForm.timeSlots.length) return 0;
+    const start = new Date(autoForm.startDate);
+    const end = new Date(autoForm.endDate);
+    if (start > end) return 0;
+    const days = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    return days * autoForm.roomIds.length * autoForm.timeSlots.length;
+  })();
+  // ── Chuyển từ Màn 1 ➔ Màn 2: Tính toán danh sách suất chiếu dự kiến để xem trước ──
+  const handleGoToPreview = (e) => {
+    e.preventDefault();
+    setAutoError('');
+
+    if (!autoForm.movieId) { setAutoError('Vui lòng chọn phim'); return; }
+    if (!autoForm.roomIds.length) { setAutoError('Vui lòng chọn một phòng chiếu'); return; }
+    if (!autoForm.startDate || !autoForm.endDate) { setAutoError('Vui lòng chọn ngày bắt đầu và kết thúc'); return; }
+    if (new Date(autoForm.startDate) > new Date(autoForm.endDate)) { setAutoError('Ngày bắt đầu phải trước hoặc bằng ngày kết thúc'); return; }
+    if (!autoForm.timeSlots.length) { setAutoError('Vui lòng thêm ít nhất một khung giờ chiếu'); return; }
+
+    const selectedMovie = movies.find((m) => m._id === autoForm.movieId);
+    const selectedRoom = autoModalRooms.find((r) => r._id === autoForm.roomIds[0]) || rooms.find((r) => r._id === autoForm.roomIds[0]);
+    const movieDuration = selectedMovie?.duration || 120;
+    const durationMs = movieDuration * 60000;
+    const bufferMs = 20 * 60000; // 20 phút dọn vệ sinh phòng
+
+    const days = [];
+    const current = new Date(autoForm.startDate);
+    const last = new Date(autoForm.endDate);
+    current.setHours(0, 0, 0, 0);
+    last.setHours(23, 59, 59, 999);
+
+    while (current <= last) {
+      days.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+    }
+
+    const generated = [];
+    const targetRoomId = autoForm.roomIds[0];
+
+    days.forEach((day) => {
+      // Mảng lưu trữ khoảng thời gian chiếm dụng phòng của các ca HỢP LỆ đã được duyệt trong ngày
+      const dayAcceptedSlots = [];
+
+      autoForm.timeSlots.forEach((slot) => {
+        const [hours, minutes] = slot.split(':').map(Number);
+        if (isNaN(hours) || isNaN(minutes)) return;
+
+        const startTime = new Date(day);
+        startTime.setHours(hours, minutes, 0, 0);
+
+        // Giờ kết thúc bao gồm 20p vệ sinh
+        const endTime = new Date(startTime.getTime() + durationMs + bufferMs);
+
+        const endLimit = new Date(day);
+        endLimit.setHours(23, 59, 59, 999);
+
+        let status = 'valid';
+        let reason = '';
+
+        if (endTime > endLimit) {
+          status = 'invalid';
+          reason = 'Vượt quá 23:59 trong ngày';
+        } else {
+          // 1. Kiểm tra trùng lịch với suất chiếu đã có sẵn trong CSDL
+          const conflictDB = showtimes.find((st) => {
+            const stRoomId = st.room?._id || st.room;
+            if (stRoomId !== targetRoomId) return false;
+            const stStart = new Date(st.startTime);
+            const stEnd = new Date(st.endTime);
+            return startTime < stEnd && endTime > stStart;
+          });
+
+          if (conflictDB) {
+            status = 'invalid';
+            const cMovieTitle = conflictDB.movie?.title || 'Phim khác';
+            const cStartFmt = new Date(conflictDB.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            const cEndFmt = new Date(conflictDB.endTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            reason = `Trùng lịch với suất có sẵn "${cMovieTitle}" (${cStartFmt} - ${cEndFmt})`;
+          } else {
+            // 2. Kiểm tra trùng lịch NỘI BỘ với các suất chiếu đã được xếp trước đó trong cùng đợt
+            const conflictInternal = dayAcceptedSlots.find(
+              (prev) => startTime < prev.endTime && endTime > prev.startTime
+            );
+
+            if (conflictInternal) {
+              status = 'invalid';
+              const prevEndClean = new Date(conflictInternal.endTime.getTime() - bufferMs).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+              reason = `Trùng với ca ${conflictInternal.slot} trước đó (kết thúc ${prevEndClean} + 20m dọn phòng)`;
+            }
+          }
+        }
+
+        // Nếu hợp lệ ➔ ghi nhận khoảng chiếm dụng phòng để các slot sau không đè lên
+        if (status === 'valid') {
+          dayAcceptedSlots.push({ startTime, endTime, slot });
+        }
+
+        generated.push({
+          id: `${day.toISOString().split('T')[0]}_${slot}`,
+          dayStr: day.toLocaleDateString('vi-VN'),
+          dateObj: day,
+          slot,
+          startTime,
+          endTime,
+          startFmt: startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+          endFmt: new Date(startTime.getTime() + durationMs).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+          movieTitle: selectedMovie?.title || 'Phim đã chọn',
+          roomName: selectedRoom?.name || 'Phòng chiếu',
+          format: autoForm.format,
+          ticketPrice: Number(autoForm.ticketPrice) || 80000,
+          status,
+          reason,
+          selected: status === 'valid', // Mặc định tích chọn các suất hợp lệ
+        });
+      });
+    });
+
+    setPreviewList(generated);
+    setAutoStep(2);
+  };
+
+  // Toggle chọn / bỏ chọn 1 suất chiếu ở Màn 2
+  const handleTogglePreviewItem = (index) => {
+    setPreviewList((prev) =>
+      prev.map((item, idx) => (idx === index ? { ...item, selected: !item.selected } : item))
+    );
+  };
+
+  // Toggle chọn tất cả các suất hợp lệ ở Màn 2
+  const handleToggleSelectAllPreview = () => {
+    const validItems = previewList.filter((item) => item.status === 'valid');
+    const allValidSelected = validItems.every((item) => item.selected);
+
+    setPreviewList((prev) =>
+      prev.map((item) => (item.status === 'valid' ? { ...item, selected: !allValidSelected } : item))
+    );
+  };
+
+  // ── Màn 2 ➔ Bấm "Lưu Suất Chiếu" thì MỚI gửi dữ liệu lên Backend lưu DB ──
+  const handleConfirmSaveAuto = async () => {
+    const selectedValidItems = previewList.filter((item) => item.selected && item.status === 'valid');
+    if (selectedValidItems.length === 0) {
+      setAutoError('Không có suất chiếu hợp lệ nào được chọn để lưu');
+      return;
+    }
+
+    setAutoGenerating(true);
+    setAutoError('');
+
+    let createdCount = 0;
+    let skippedCount = 0;
+
+    for (const item of selectedValidItems) {
+      try {
+        await adminService.createShowtime({
+          movieId: autoForm.movieId,
+          theaterId: autoForm.theaterId,
+          roomId: autoForm.roomIds[0],
+          startTime: item.startTime.toISOString(),
+          ticketPrice: item.ticketPrice,
+          format: item.format,
+        });
+        createdCount++;
+      } catch (err) {
+        console.error(`Không thể tạo suất ${item.slot} ngày ${item.dayStr}:`, err.message);
+        skippedCount++;
+      }
+    }
+
+    setAutoResult({
+      created: createdCount,
+      skipped: (previewList.length - createdCount),
+      total: previewList.length,
+      movie: movies.find((m) => m._id === autoForm.movieId)?.title || '',
+      days: Math.floor((new Date(autoForm.endDate) - new Date(autoForm.startDate)) / (1000 * 60 * 60 * 24)) + 1,
+      rooms: 1,
+      slots: autoForm.timeSlots.length,
+    });
+
+    await reloadShowtimesAndRooms(selectedTheater);
+    setAutoGenerating(false);
+  };
+
   const handleManualSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -265,47 +507,6 @@ export const ShowtimeManager = () => {
       setError(err.message);
     }
   };
-
-  const handleOpenAutoGenerate = () => {
-    setAutoError('');
-    setAutoResult(null);
-    const today = new Date().toISOString().split('T')[0];
-    const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    setAutoForm({ movieId: movies[0]?._id || '', theaterId: selectedTheater, roomIds: rooms.map((r) => r._id), startDate: today, endDate: nextWeek, timeSlots: [...DEFAULT_TIME_SLOTS], format: '2D', ticketPrice: 80000 });
-    setAutoModalRooms([...rooms]);
-    setIsAutoOpen(true);
-  };
-
-  const handleAutoFormChange = (e) => {
-    const { name, value } = e.target;
-    setAutoForm((prev) => { const u = { ...prev, [name]: value }; if (name === 'format') u.ticketPrice = DEFAULT_PRICES[value] || 80000; return u; });
-  };
-
-  const handleToggleRoom = (roomId) => {
-    setAutoForm((prev) => ({ ...prev, roomIds: prev.roomIds.includes(roomId) ? prev.roomIds.filter((id) => id !== roomId) : [...prev.roomIds, roomId] }));
-  };
-
-  const handleRemoveSlot = (slot) => {
-    setAutoForm((prev) => ({ ...prev, timeSlots: prev.timeSlots.filter((s) => s !== slot) }));
-  };
-
-  const handleAddSlot = () => {
-    const trimmed = newSlotInput.trim();
-    if (!trimmed) return;
-    if (!/^\d{2}:\d{2}$/.test(trimmed)) { setAutoError('Dịnh dạng không hợp lệ. Dùng HH:mm (VD: 09:00)'); return; }
-    if (autoForm.timeSlots.includes(trimmed)) { setAutoError('Khung giờ này đã tồn tại'); return; }
-    setAutoError('');
-    setAutoForm((prev) => ({ ...prev, timeSlots: [...prev.timeSlots, trimmed].sort() }));
-    setNewSlotInput('');
-  };
-
-  const estimatedShowtimes = (() => {
-    if (!autoForm.startDate || !autoForm.endDate || !autoForm.roomIds.length || !autoForm.timeSlots.length) return 0;
-    const start = new Date(autoForm.startDate); const end = new Date(autoForm.endDate);
-    if (start > end) return 0;
-    const days = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
-    return days * autoForm.roomIds.length * autoForm.timeSlots.length;
-  })();
 
   const handleAutoSubmit = async (e) => {
     e.preventDefault(); setAutoError('');
@@ -996,8 +1197,8 @@ export const ShowtimeManager = () => {
         </form>
       </Modal>
 
-      {/* ───── Modal Tạo Tự Động ───── */}
-      <Modal isOpen={isAutoOpen} onClose={() => { setIsAutoOpen(false); setAutoResult(null); }} title="⚡ Tạo Suất Chiếu Tự Động" size="lg">
+      {/* ───── Modal Tạo Tự Động (2 Bước: Màn 1 - Cấu hình, Màn 2 - Xem trước & Kiểm tra) ───── */}
+      <Modal isOpen={isAutoOpen} onClose={() => { setIsAutoOpen(false); setAutoResult(null); setAutoStep(1); }} title={autoStep === 2 ? "⚡ Kiểm Tra Danh Sách Suất Chiếu Tự Động" : "⚡ Tạo Suất Chiếu Tự Động"} size={autoStep === 2 ? "xl" : "lg"}>
         {autoResult ? (
           <div className="space-y-5">
             <div className="flex flex-col items-center py-4">
@@ -1008,29 +1209,33 @@ export const ShowtimeManager = () => {
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-green-50 border border-green-200 rounded-2xl p-4 text-center">
                 <p className="text-3xl font-black text-green-600">{autoResult.created}</p>
-                <p className="text-xs text-green-700 font-semibold mt-1">Tạo Thành Công</p>
+                <p className="text-xs text-green-700 font-semibold mt-1">Đã Lưu Thành Công</p>
               </div>
               <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">
                 <p className="text-3xl font-black text-amber-600">{autoResult.skipped}</p>
-                <p className="text-xs text-amber-700 font-semibold mt-1">Bỏ Qua (Trùng Lịch)</p>
+                <p className="text-xs text-amber-700 font-semibold mt-1">Bỏ Qua (Bị Trùng/Khóa)</p>
               </div>
               <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-center">
                 <p className="text-3xl font-black text-gray-700">{autoResult.total}</p>
-                <p className="text-xs text-gray-600 font-semibold mt-1">Tổng Đã Xử Lý</p>
+                <p className="text-xs text-gray-600 font-semibold mt-1">Tổng Suất Dự Kiến</p>
               </div>
             </div>
             <div className="bg-gray-50 rounded-xl p-3 text-xs text-gray-600 space-y-1">
               <p>📅 <strong>{autoResult.days}</strong> ngày &nbsp;×&nbsp; 🏠 <strong>{autoResult.rooms}</strong> phòng &nbsp;×&nbsp; 🕐 <strong>{autoResult.slots}</strong> khung giờ</p>
-              {autoResult.skipped > 0 && <p className="text-amber-600">⚠ {autoResult.skipped} suất bị bỏ qua do trùng lịch hoặc vượt quá 23:59.</p>}
             </div>
             <div className="flex justify-end gap-3 pt-3 border-t border-gray-200">
-              <Button onClick={() => { setIsAutoOpen(false); setAutoResult(null); }} variant="secondary" className="px-5 py-2">Đóng</Button>
-              <Button onClick={() => setAutoResult(null)} variant="primary" className="px-5 py-2" icon={<Zap size={14} />}>Tạo Thêm</Button>
+              <Button onClick={() => { setIsAutoOpen(false); setAutoResult(null); setAutoStep(1); }} variant="secondary" className="px-5 py-2">Đóng</Button>
+              <Button onClick={() => { setAutoResult(null); setAutoStep(1); }} variant="primary" className="px-5 py-2" icon={<Zap size={14} />}>Tạo Thêm</Button>
             </div>
           </div>
-        ) : (
-          <form onSubmit={handleAutoSubmit} className="space-y-4">
-            {autoError && (<div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm flex items-center gap-2"><AlertCircle size={16} /><span>{autoError}</span></div>)}
+        ) : autoStep === 1 ? (
+          /* ── MÀN 1: Cấu hình tham số ── */
+          <form onSubmit={handleGoToPreview} className="space-y-4">
+            {autoError && (
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm flex items-center gap-2">
+                <AlertCircle size={16} /><span>{autoError}</span>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Chọn Phim</label>
@@ -1114,7 +1319,7 @@ export const ShowtimeManager = () => {
             <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-3.5 flex items-center gap-3">
               <Zap size={20} className="text-amber-500 shrink-0" />
               <div className="flex-1">
-                <p className="text-xs text-amber-700 font-semibold">Dự Kiến Tạo</p>
+                <p className="text-xs text-amber-700 font-semibold">Dự Kiến Sinh Ra</p>
                 <p className="text-sm text-amber-800 font-bold">
                   ~{estimatedShowtimes} suất chiếu
                   {autoForm.startDate && autoForm.endDate && (
@@ -1123,21 +1328,165 @@ export const ShowtimeManager = () => {
                     </span>
                   )}
                 </p>
-                {estimatedShowtimes > 0 && <p className="text-xs text-amber-600 mt-0.5">Số thực tế có thể ít hơn do bỏ qua các slot trùng lịch hoặc vượt 23:59.</p>}
+                <p className="text-xs text-amber-600 mt-0.5">Bấm "Kiểm Tra Danh Sách" để xem chi tiết danh sách từng suất chiếu trước khi lưu.</p>
               </div>
             </div>
             <div className="flex justify-end gap-3 pt-3 border-t border-gray-200">
               <Button onClick={() => setIsAutoOpen(false)} variant="secondary" className="px-5 py-2">Hủy</Button>
               <button
                 type="submit"
-                disabled={autoGenerating || !autoForm.roomIds.length || !autoForm.timeSlots.length}
-                className="flex items-center gap-2 px-6 py-2 text-sm font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!autoForm.roomIds.length || !autoForm.timeSlots.length}
+                className="flex items-center gap-2 px-6 py-2 text-sm font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                {autoGenerating ? <Loader2 size={15} className="animate-spin" /> : <Zap size={15} />}
-                {autoGenerating ? 'Đang Tạo...' : 'Xác Nhận Tạo Tự Động'}
+                Kiểm Tra Danh Sách ➔
               </button>
             </div>
           </form>
+        ) : (
+          /* ── MÀN 2: Xem Trước & Kiểm Tra Danh Sách Suất Chiếu Trước Khi Lưu ── */
+          <div className="space-y-4">
+            {autoError && (
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm flex items-center gap-2">
+                <AlertCircle size={16} /><span>{autoError}</span>
+              </div>
+            )}
+
+            {/* Thống kê tóm tắt Màn 2 */}
+            <div className="grid grid-cols-3 gap-3 bg-gray-50 p-3 rounded-2xl border border-gray-200">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                  <CheckCircle2 size={18} />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 font-semibold">Sẵn sàng lưu</p>
+                  <p className="text-base font-black text-emerald-600">
+                    {previewList.filter((i) => i.selected && i.status === 'valid').length} / {previewList.length} suất
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                  <AlertCircle size={18} />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 font-semibold">Bị trùng / Không thể tạo</p>
+                  <p className="text-base font-black text-amber-600">
+                    {previewList.filter((i) => i.status === 'invalid').length} suất
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end">
+                <button
+                  type="button"
+                  onClick={handleToggleSelectAllPreview}
+                  className="px-3 py-1.5 text-xs font-bold text-brand bg-brand/10 hover:bg-brand/20 rounded-xl transition-all border border-brand/20 cursor-pointer"
+                >
+                  Chọn/Bỏ Chọn Tất Cả Suất Hợp Lệ
+                </button>
+              </div>
+            </div>
+
+            {/* Bảng danh sách suất chiếu xem trước */}
+            <div className="border border-gray-200 rounded-2xl overflow-hidden max-h-[380px] overflow-y-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-gray-100/80 sticky top-0 border-b border-gray-200 text-gray-700 font-bold uppercase tracking-wider">
+                  <tr>
+                    <th className="p-3 text-center w-10">Chọn</th>
+                    <th className="p-3">Ngày Chiếu</th>
+                    <th className="p-3">Khung Giờ</th>
+                    <th className="p-3">Phim</th>
+                    <th className="p-3">Phòng</th>
+                    <th className="p-3">Định Dạng / Giá</th>
+                    <th className="p-3">Trạng Thái Kiểm Tra</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 bg-white">
+                  {previewList.map((item, idx) => {
+                    const isValid = item.status === 'valid';
+                    return (
+                      <tr
+                        key={idx}
+                        className={`transition-colors ${
+                          !isValid
+                            ? 'bg-red-50/40 text-gray-500'
+                            : item.selected
+                            ? 'bg-emerald-50/50'
+                            : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        <td className="p-3 text-center">
+                          <input
+                            type="checkbox"
+                            disabled={!isValid}
+                            checked={item.selected && isValid}
+                            onChange={() => handleTogglePreviewItem(idx)}
+                            className="accent-brand w-4 h-4 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                          />
+                        </td>
+                        <td className="p-3 font-bold text-gray-800">{item.dayStr}</td>
+                        <td className="p-3 font-black text-gray-900">
+                          {item.startFmt} - {item.endFmt}
+                        </td>
+                        <td className="p-3 font-bold text-gray-700 truncate max-w-[140px]" title={item.movieTitle}>
+                          {item.movieTitle}
+                        </td>
+                        <td className="p-3 font-semibold text-gray-600">{item.roomName}</td>
+                        <td className="p-3 font-bold text-gray-800">
+                          <span className="px-1.5 py-0.5 rounded bg-gray-100 text-[10px] uppercase font-black mr-1">
+                            {item.format}
+                          </span>
+                          {item.ticketPrice.toLocaleString()}đ
+                        </td>
+                        <td className="p-3">
+                          {isValid ? (
+                            <span className="inline-flex items-center gap-1 font-bold text-emerald-600 bg-emerald-100/70 px-2 py-1 rounded-lg text-[11px]">
+                              <CheckCircle2 size={13} /> Khả thi (Hợp lệ)
+                            </span>
+                          ) : (
+                            <span
+                              className="inline-flex items-center gap-1 font-bold text-red-600 bg-red-100/80 px-2 py-1 rounded-lg text-[11px]"
+                              title={item.reason}
+                            >
+                              <AlertCircle size={13} /> {item.reason}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Thanh Nút Thao Tác Bên Dưới Màn 2 */}
+            <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+              <Button
+                onClick={() => setAutoStep(1)}
+                variant="secondary"
+                className="px-4 py-2 text-sm font-semibold"
+                disabled={autoGenerating}
+              >
+                ⬅ Quay Lại Sửa Cấu Hình
+              </Button>
+
+              <button
+                type="button"
+                onClick={handleConfirmSaveAuto}
+                disabled={
+                  autoGenerating ||
+                  previewList.filter((i) => i.selected && i.status === 'valid').length === 0
+                }
+                className="flex items-center gap-2 px-6 py-2.5 text-sm font-black rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {autoGenerating ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
+                {autoGenerating
+                  ? 'Đang Lưu...'
+                  : `⚡ Xác Nhận Lưu (${previewList.filter((i) => i.selected && i.status === 'valid').length} Suất Chiếu)`}
+              </button>
+            </div>
+          </div>
         )}
       </Modal>
     </div>
