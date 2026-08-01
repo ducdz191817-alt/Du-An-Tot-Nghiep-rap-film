@@ -85,7 +85,7 @@ export const ShowtimeManager = () => {
       const rmRes = await adminService.getRooms(theaterId);
       const roomArr = Array.isArray(rmRes) ? rmRes : (Array.isArray(rmRes?.data) ? rmRes.data : []);
       setAutoModalRooms(roomArr);
-      setAutoForm((prev) => ({ ...prev, roomIds: roomArr.map((r) => r._id) }));
+      setAutoForm((prev) => ({ ...prev, roomIds: roomArr.length > 0 ? [roomArr[0]._id] : [] }));
     } catch (err) {
       console.error('Lỗi load phòng auto:', err);
       setAutoModalRooms([]);
@@ -593,6 +593,7 @@ export const ShowtimeManager = () => {
       {/* Danh sách lịch chiếu được nhóm theo ngày */}
       {(() => {
         const filteredShowtimes = showtimes.filter(st => {
+          if (!st.movie) return false; // Lọc bỏ phim đã bị xóa / null
           const matchMovie = filterMovie ? (st.movie?._id === filterMovie || st.movie === filterMovie) : true;
           const matchRoom = filterRoom ? (st.room?._id === filterRoom || st.room === filterRoom) : true;
           const dateStr = new Date(st.startTime).toLocaleDateString('vi-VN');
@@ -1045,25 +1046,29 @@ export const ShowtimeManager = () => {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-800 mb-2 pl-0.5">
+              <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">
                 Phòng Chiếu {autoModalRoomsLoading && <Loader2 size={12} className="inline ml-2 animate-spin text-brand" />}
-                <span className="ml-2 text-xs font-normal text-gray-400">({autoForm.roomIds.length}/{autoModalRooms.length} đã chọn)</span>
               </label>
-              {autoModalRoomsLoading ? (
-                <div className="flex items-center gap-2 text-gray-400 text-sm py-3"><Loader2 size={16} className="animate-spin" /> Đang tải...</div>
-              ) : autoModalRooms.length === 0 ? (
-                <p className="text-sm text-amber-600">⚠ Rạp này chưa có phòng chiếu.</p>
-              ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  {autoModalRooms.map((room) => (
-                    <label key={room._id} className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all text-sm ${autoForm.roomIds.includes(room._id) ? 'bg-brand/10 border-brand/30 text-brand font-semibold' : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-300'}`}>
-                      <input type="checkbox" checked={autoForm.roomIds.includes(room._id)} onChange={() => handleToggleRoom(room._id)} className="accent-brand w-4 h-4 shrink-0" />
-                      <span>{room.name}</span>
-                      <span className="ml-auto text-[10px] uppercase font-bold opacity-60">{room.type}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
+              <select
+                name="roomId"
+                value={autoForm.roomIds[0] || ''}
+                onChange={(e) => setAutoForm((prev) => ({ ...prev, roomIds: e.target.value ? [e.target.value] : [] }))}
+                className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer font-medium disabled:opacity-50"
+                required
+                disabled={autoModalRoomsLoading}
+              >
+                {autoModalRoomsLoading ? (
+                  <option value="">Đang tải danh sách phòng...</option>
+                ) : autoModalRooms.length === 0 ? (
+                  <option value="">Rạp này chưa có phòng chiếu</option>
+                ) : (
+                  autoModalRooms.map((room) => (
+                    <option key={room._id} value={room._id}>
+                      {room.name} ({room.type || '2D'})
+                    </option>
+                  ))
+                )}
+              </select>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
