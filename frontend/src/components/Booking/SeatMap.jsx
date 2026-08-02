@@ -33,25 +33,26 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
   const getEmptySegments = (seatStates, currentSelectedSeats) => {
     const segments = [];
     let currentSegmentLength = 0;
-    let isStartEdge = false;
+    let isLeftEdge = false;
     
     for (let i = 0; i < seatStates.length; i++) {
       const s = seatStates[i];
       const isOccupied = !s.isAvailable || currentSelectedSeats.includes(s.seatCode);
+      const seatCapacity = s.type === 'couple' ? 2 : 1;
       
       if (!isOccupied) {
-        if (currentSegmentLength === 0 && i === 0) {
-          isStartEdge = true; // Segment chạm rìa trái
+        if (currentSegmentLength === 0) {
+          isLeftEdge = (i === 0); // Bắt đầu ở mép trái của khán phòng / cụm ghế
         }
-        currentSegmentLength++;
+        currentSegmentLength += seatCapacity;
       } else {
         if (currentSegmentLength > 0) {
           segments.push({
             length: currentSegmentLength,
-            isEdge: isStartEdge // Nếu nó chạm rìa trái thì là edge
+            isEdge: isLeftEdge // Chỉ chạm mép nếu bắt đầu ở i = 0
           });
           currentSegmentLength = 0;
-          isStartEdge = false;
+          isLeftEdge = false;
         }
       }
     }
@@ -59,8 +60,7 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
     if (currentSegmentLength > 0) {
       segments.push({
         length: currentSegmentLength,
-        // Nếu vòng lặp kết thúc mà vẫn còn segment, nghĩa là segment này chạm rìa phải (i = length)
-        isEdge: isStartEdge || true 
+        isEdge: true // Kéo dài đến cuối cụm ghế -> Chạm mép phải / lối đi
       });
     }
     return segments;
@@ -74,61 +74,68 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
       // Bỏ chọn
       newSelected = selectedSeats.filter(code => code !== clickedSeatCode);
     } else {
-      // Chọn thêm (không giới hạn số lượng)
+      // QUY TẮC: Giới hạn tối đa 8 ghế cho 1 lần đặt
+      if (selectedSeats.length >= 8) {
+        setToastMsg("🚫 Bạn chỉ được chọn tối đa 8 ghế cho mỗi lần đặt vé.");
+        return;
+      }
+      // Chọn thêm
       newSelected = [...selectedSeats, clickedSeatCode];
     }
 
-    // --- KIỂM TRA LUẬT CHỐNG GHẾ SO LE (ORPHAN RULE) ---
-    // Chỉ cần kiểm tra hàng của ghế vừa click
+    // --- 1. KIỂM TRA QUY TẮC CẢNH BÁO HÀNG GẦN MÀN HÌNH (Hàng A, B) ---
+    const isFrontRow = rowLetter === 'A' || rowLetter === 'B';
+    let currentToast = '';
+
+    if (!isAlreadySelected && isFrontRow) {
+      currentToast = "⚠️ Hàng ghế A/B nằm sát màn chiếu, góc nhìn có thể hơi dốc.";
+    }
+
+    // --- 2. KIỂM TRA QUY TẮC ĐẶT GHẾ PHÂN TÁN NHIỀU DÃY (≥ 3 dãy) ---
+    const uniqueRows = new Set(newSelected.map(code => code.match(/^([A-Za-z]+)/)?.[1]));
+    if (uniqueRows.size >= 3) {
+      currentToast = "⚠️ Bạn đang chọn ghế ở 3 dãy khác nhau. Vui lòng kiểm tra vị trí xem phim của nhóm.";
+    }
+
+    // --- 3. KIỂM TRA QUY TẮC CHỐNG GHẾ SO LEỞ GIỮA (ORPHAN SEAT IN THE MIDDLE) ---
     const rowSeats = [...groupedSeats[rowLetter]].sort((a, b) => a.number - b.number);
     const rowSeatStates = rowSeats.map(getSeatState);
 
-    // Chia hàng thành 2 block nếu có lối đi ở giữa (theo giao diện, lối đi ở giữa ghế 6 và 7)
+    // Chia hàng thành 2 block nếu có lối đi ở giữa (lối đi ở giữa ghế 6 và 7)
     const block1 = rowSeatStates.filter(s => s.number <= 6);
     const block2 = rowSeatStates.filter(s => s.number >= 7);
 
-    // ==========================================
-    // FIX BUG 3: THUẬT TOÁN CHỐNG GHẾ MỒ CÔI (ORPHAN SEAT)
-    // ==========================================
-    // Helper: Xác định xem có bao nhiêu "ghế mồ côi".
-    // Ghế mồ côi được định nghĩa là một khoảng trống có kích thước ĐÚNG BẰNG 1 GHẾ (seg.length === 1).
-    // Dù ở giữa hay ở mép lối đi, cứ hở ra đúng 1 ghế thì đều bị coi là mồ côi.
+    // Ghế mồ côi (so le) là khoảng trống đúng 1 ghế VÀ bị kẹp ở giữa (không chạm mép ngoài/lối đi)
     const getOrphanCount = (segments) => {
-      return segments.filter(seg => seg.length === 1).length;
+      return segments.filter(seg => seg.length === 1 && !seg.isEdge).length;
     };
 
-    // Đếm số lượng ghế mồ côi SAU KHI user chọn ghế mới
     const orphanCount1 = getOrphanCount(getEmptySegments(block1, newSelected));
-    // Đếm số lượng ghế mồ côi TRƯỚC KHI user chọn (lấy làm chuẩn để so sánh)
     const oldOrphanCount1 = getOrphanCount(getEmptySegments(block1, []));
 
     const orphanCount2 = getOrphanCount(getEmptySegments(block2, newSelected));
     const oldOrphanCount2 = getOrphanCount(getEmptySegments(block2, []));
 
-    // Nếu thao tác chọn ghế của user vô tình TẠO THÊM ghế mồ côi (làm số lượng tăng lên)
     if (orphanCount1 > oldOrphanCount1 || orphanCount2 > oldOrphanCount2) {
-      setToastMsg("Đang để trống 1 ghế (so le). Vui lòng chọn lấp chỗ trống hoặc bỏ chọn.");
-      // Báo lỗi lên component cha (BookingPage) để KHÓA nút "Xác nhận ghế"
+      currentToast = "❌ Đang để trống 1 ghế (so le). Vui lòng chọn lấp chỗ trống hoặc bỏ chọn.";
       if (onOrphanError) onOrphanError(true);
     } else {
-      setToastMsg("");
-      // Hết lỗi -> Mở khóa nút "Xác nhận ghế"
       if (onOrphanError) onOrphanError(false);
     }
 
-    // CẢI TIẾN UX: Luôn cho phép mảng ghế cập nhật (để ghế đổi sang màu cam).
-    // Việc này giúp người dùng không bị "kẹt cứng" (bấm không ăn) khi đang dở tay chọn một chuỗi nhiều ghế.
-    // Nếu sai luật, họ chỉ bị khóa nút thanh toán chứ vẫn được phép click chọn/bỏ chọn tự do để sửa lỗi.
+    setToastMsg(currentToast);
+
+    // Cập nhật mảng ghế đã chọn
     onSeatClick(newSelected);
   };
 
   return (
-    <div className="space-y-12 overflow-x-auto py-6 relative">
+    <div className="space-y-4 overflow-x-auto py-2 relative">
       <Toast message={toastMsg} type="warning" onClose={() => setToastMsg('')} />
       {/* 1. Chỉ báo màn hình cong */}
       <div className="w-full max-w-xl mx-auto flex flex-col items-center select-none">
-        <div className="h-2 w-full bg-brand rounded-full shadow-[0_0_20px_rgba(229,9,20,0.8)]" />
-        <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.25em] mt-3">
+        <div className="h-1.5 w-full bg-brand rounded-full shadow-[0_0_15px_rgba(229,9,20,0.8)]" />
+        <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-[0.2em] mt-1">
           Màn hình chiếu phim
         </span>
       </div>

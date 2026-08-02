@@ -21,6 +21,11 @@ const createBooking = async (req, res, next) => {
       throw new Error('Please select at least one seat');
     }
 
+    if (seats.length > 8) {
+      res.status(400);
+      throw new Error('Mỗi lần đặt vé chỉ được chọn tối đa 8 ghế. Vui lòng chọn lại.');
+    }
+
     // 1. Verify showtime exists
     const showtime = await Showtime.findById(showtimeId)
       .populate('movie')
