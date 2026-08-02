@@ -4,7 +4,7 @@ import {
   AlertCircle, ShoppingBag, X, Eye, CreditCard, Clock,
   Film, Building2, DoorOpen, Armchair, Popcorn, Receipt, CheckCircle2,
   Hourglass, Undo2, Printer, QrCode, History, Check, XCircle, Download,
-  Filter, Smartphone, Trash2, Camera
+  Filter, Smartphone, Trash2, Camera, Mail, SendHorizontal, Loader2
 } from 'lucide-react';
 import adminService from '../../services/admin.service';
 import Loading from '../common/Loading';
@@ -27,8 +27,33 @@ export const BookingManager = () => {
 
   // Check-in state
   const [checkInInput, setCheckInInput] = useState('');
-  const [checkInResult, setCheckInResult] = useState(null); // { success: boolean, isAlreadyCheckedIn: boolean, data: object, message: string }
+  const [checkInResult, setCheckInResult] = useState(null);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
+
+  // Email state
+  const [sendingEmailId, setSendingEmailId] = useState(null); // bookingId đang gửi
+  const [isBulkEmailOpen, setIsBulkEmailOpen] = useState(false);
+  const [bulkEmailForm, setBulkEmailForm] = useState({ showtimeId: '', customMessage: '', subject: '' });
+  const [isSendingBulk, setIsSendingBulk] = useState(false);
+  const [bulkEmailResult, setBulkEmailResult] = useState(null);
+
+  // Collect unique showtimes from bookings for bulk email selector
+  const uniqueShowtimes = React.useMemo(() => {
+    const map = new Map();
+    bookings.forEach(b => {
+      const st = b.showtime;
+      if (st && st._id && b.paymentStatus === 'paid') {
+        if (!map.has(st._id)) {
+          const movieTitle = st.movie?.title || 'Phim không xác định';
+          const startStr = st.startTime
+            ? new Date(st.startTime).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+            : '';
+          map.set(st._id, { id: st._id, label: `${movieTitle} — ${startStr}`, movieTitle, startStr });
+        }
+      }
+    });
+    return Array.from(map.values());
+  }, [bookings]);
 
   const fetchBookings = async () => {
     setLoading(true);
@@ -78,6 +103,44 @@ export const BookingManager = () => {
 
     return matchSearch && matchStatus && matchDate;
   });
+
+  // Action: Send email to one booking
+  const handleSendEmail = async (e, booking) => {
+    e.stopPropagation();
+    if (sendingEmailId) return;
+    setSendingEmailId(booking._id);
+    try {
+      const res = await adminService.sendBookingEmail(booking._id);
+      setMessage({ text: `✅ Đã gửi email tới ${res.email || booking.user?.email || 'khách hàng'} thành công!`, type: 'success' });
+    } catch (err) {
+      setMessage({ text: `❌ Lỗi gửi email: ${err.message || 'Không xác định'}`, type: 'error' });
+    } finally {
+      setSendingEmailId(null);
+    }
+  };
+
+  // Action: Send bulk email
+  const handleSendBulkEmail = async (e) => {
+    e.preventDefault();
+    if (!bulkEmailForm.showtimeId) {
+      setMessage({ text: 'Vui lòng chọn suất chiếu để gửi email', type: 'error' });
+      return;
+    }
+    setIsSendingBulk(true);
+    setBulkEmailResult(null);
+    try {
+      const payload = { showtimeId: bulkEmailForm.showtimeId };
+      if (bulkEmailForm.subject.trim()) payload.subject = bulkEmailForm.subject.trim();
+      if (bulkEmailForm.customMessage.trim()) payload.customMessage = bulkEmailForm.customMessage.trim();
+      const res = await adminService.sendBulkEmail(payload);
+      setBulkEmailResult(res);
+      setMessage({ text: `✅ ${res.message}`, type: 'success' });
+    } catch (err) {
+      setMessage({ text: `❌ Lỗi: ${err.message || 'Gửi email thất bại'}`, type: 'error' });
+    } finally {
+      setIsSendingBulk(false);
+    }
+  };
 
   // Action: Print ticket
   const handlePrintTicket = async (booking) => {
@@ -251,6 +314,15 @@ export const BookingManager = () => {
               >
                 <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
               </button>
+
+              <button
+                id="btn-bulk-email"
+                onClick={() => { setBulkEmailResult(null); setBulkEmailForm({ showtimeId: uniqueShowtimes[0]?.id || '', customMessage: '', subject: '' }); setIsBulkEmailOpen(true); }}
+                className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all active:scale-95"
+                title="Gửi email hàng loạt"
+              >
+                <Mail size={13} /> Gửi Email Hàng Loạt
+              </button>
             </div>
           </div>
 
@@ -360,13 +432,30 @@ export const BookingManager = () => {
                           </td>
 
                           {/* Thao tác */}
-                          <td className="py-3.5 pr-6 text-center" onClick={(e) => e.stopPropagation()}>
-                            <button
-                              onClick={() => setSelectedBooking(b)}
-                              className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 rounded-xl text-xs font-bold transition-all active:scale-95 inline-flex items-center gap-1"
-                            >
-                              <Eye size={13} /> Xem
-                            </button>
+                          <td className="py-3.5 pr-6" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => setSelectedBooking(b)}
+                                className="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 rounded-xl text-xs font-bold transition-all active:scale-95 inline-flex items-center gap-1"
+                                title="Xem chi tiết"
+                              >
+                                <Eye size={13} /> Xem
+                              </button>
+                              {b.paymentStatus === 'paid' && b.user?.email && (
+                                <button
+                                  id={`btn-send-email-${b._id}`}
+                                  onClick={(e) => handleSendEmail(e, b)}
+                                  disabled={sendingEmailId === b._id}
+                                  className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all active:scale-95 inline-flex items-center gap-1 disabled:opacity-60 disabled:cursor-not-allowed"
+                                  title={`Gửi email xác nhận tới ${b.user.email}`}
+                                >
+                                  {sendingEmailId === b._id
+                                    ? <><Loader2 size={12} className="animate-spin" /> Đang gửi...</>
+                                    : <><Mail size={12} /> Email</>
+                                  }
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -893,6 +982,125 @@ export const BookingManager = () => {
           </div>
         );
       })()}
+      {/* ════════════════════════════════════════════════════════════════════════ */}
+      {/* MODAL: GỬI EMAIL HÀNG LOẠT                                               */}
+      {/* ════════════════════════════════════════════════════════════════════════ */}
+      {isBulkEmailOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                  <Mail size={18} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="text-white font-black text-sm">Gửi Email Hàng Loạt</h3>
+                  <p className="text-blue-100 text-[10px]">Gửi email xác nhận vé đến tất cả khách hàng của một suất chiếu</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsBulkEmailOpen(false)}
+                className="text-white/70 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSendBulkEmail} className="p-6 space-y-5">
+              {/* Showtime selector */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-2">
+                  📅 Chọn suất chiếu <span className="text-red-500">*</span>
+                </label>
+                {uniqueShowtimes.length === 0 ? (
+                  <div className="text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+                    Không có suất chiếu nào có khách hàng đặt vé đã thanh toán
+                  </div>
+                ) : (
+                  <select
+                    value={bulkEmailForm.showtimeId}
+                    onChange={(e) => setBulkEmailForm(prev => ({ ...prev, showtimeId: e.target.value }))}
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-700 text-xs font-semibold rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-400 cursor-pointer"
+                  >
+                    <option value="">-- Chọn suất chiếu --</option>
+                    {uniqueShowtimes.map(st => (
+                      <option key={st.id} value={st.id}>{st.label}</option>
+                    ))}
+                  </select>
+                )}
+                {bulkEmailForm.showtimeId && (
+                  <p className="text-[10px] text-blue-600 mt-1 font-semibold">
+                    📨 Sẽ gửi email đến tất cả khách hàng đã thanh toán vé của suất chiếu này
+                  </p>
+                )}
+              </div>
+
+              {/* Custom subject (optional) */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-2">
+                  ✏️ Tiêu đề email tùy chỉnh <span className="text-gray-400 font-normal">(để trống dùng mặc định)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="VD: Nhắc nhở lịch chiếu phim ngày mai..."
+                  value={bulkEmailForm.subject}
+                  onChange={(e) => setBulkEmailForm(prev => ({ ...prev, subject: e.target.value }))}
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-700 text-xs rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-400"
+                />
+              </div>
+
+              {/* Custom message (optional) */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-2">
+                  📢 Thông điệp tùy chỉnh từ admin <span className="text-gray-400 font-normal">(optional, hiển thị nổi bật trong email)</span>
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="VD: Suất chiếu sẽ bắt đầu muộn 15 phút do sự cố kỹ thuật. Xin quý khách thông cảm..."
+                  value={bulkEmailForm.customMessage}
+                  onChange={(e) => setBulkEmailForm(prev => ({ ...prev, customMessage: e.target.value }))}
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-700 text-xs rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-400 resize-none"
+                />
+              </div>
+
+              {/* Result display */}
+              {bulkEmailResult && (
+                <div className={`p-4 rounded-2xl border text-xs font-semibold ${bulkEmailResult.sent > 0 ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
+                  <div className="font-black text-sm mb-2">{bulkEmailResult.message}</div>
+                  <div className="flex gap-4">
+                    <span>✅ Gửi thành công: <strong>{bulkEmailResult.sent}</strong></span>
+                    {bulkEmailResult.failed > 0 && <span>❌ Thất bại: <strong>{bulkEmailResult.failed}</strong></span>}
+                    <span>📊 Tổng: <strong>{bulkEmailResult.total}</strong></span>
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsBulkEmailOpen(false)}
+                  className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-all"
+                >
+                  Đóng
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSendingBulk || !bulkEmailForm.showtimeId}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-md shadow-blue-200"
+                >
+                  {isSendingBulk ? (
+                    <><Loader2 size={14} className="animate-spin" /> Đang gửi...</>
+                  ) : (
+                    <><SendHorizontal size={14} /> Gửi Email Ngay</>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

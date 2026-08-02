@@ -9,6 +9,7 @@ const Concession = require('../models/Concession.model');
 const PricingConfig = require('../models/PricingConfig.model');
 const { generateSeatsForRoom } = require('../utils/generateSeats');
 const { calculateBaseShowtimePrice } = require('../utils/pricingEngine');
+const sendEmail = require('../utils/sendEmail');
 
 // ==========================================
 // 1. Movie Management
@@ -1326,6 +1327,314 @@ const updatePricingConfig = async (req, res, next) => {
   }
 };
 
+// ==========================================
+// 8. Gửi Email thông báo đến khách hàng đặt vé
+// ==========================================
+
+/**
+ * Tạo nội dung HTML email thông tin vé
+ */
+function buildTicketEmailHtml({ booking, movie, showtime, theater, room, seats, concessions }) {
+  const movieTitle = movie?.title || 'Phim không xác định';
+  const moviePoster = movie?.posterUrl || '';
+  const theaterName = theater?.name || 'Rạp không xác định';
+  const roomName = room?.name || 'Phòng không xác định';
+  const ticketCode = booking.ticketCode || booking._id;
+  const totalPrice = (booking.totalPrice || 0).toLocaleString('vi-VN');
+  const userName = booking.user?.username || 'Quý khách';
+
+  const startTime = showtime?.startTime
+    ? new Date(showtime.startTime).toLocaleString('vi-VN', {
+        weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit',
+      })
+    : 'Không xác định';
+
+  const endTime = showtime?.endTime
+    ? new Date(showtime.endTime).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+    : '';
+
+  const seatsStr = Array.isArray(seats) && seats.length > 0
+    ? seats.map(s => `${s.row || ''}${s.number || ''}`).join(', ')
+    : (Array.isArray(booking.seats) ? booking.seats.join(', ') : 'Không có thông tin');
+
+  const concessionRows = Array.isArray(concessions) && concessions.length > 0
+    ? concessions.map(c => {
+        const name = c.concession?.name || 'Sản phẩm';
+        const qty = c.quantity || 1;
+        const price = ((c.concession?.price || 0) * qty).toLocaleString('vi-VN');
+        return `<tr><td style="padding:8px 14px;border-bottom:1px solid rgba(255,255,255,0.05);color:#ccc;font-size:13px">${name}</td><td style="padding:8px 14px;border-bottom:1px solid rgba(255,255,255,0.05);text-align:center;color:#ccc;font-size:13px">x${qty}</td><td style="padding:8px 14px;border-bottom:1px solid rgba(255,255,255,0.05);text-align:right;color:#e74c3c;font-size:13px;font-weight:700">${price}đ</td></tr>`;
+      }).join('')
+    : '';
+
+  const posterSection = moviePoster
+    ? `<div style="position:relative;overflow:hidden;height:160px"><img src="${moviePoster}" alt="${movieTitle}" style="width:100%;height:100%;object-fit:cover;opacity:0.55;display:block"><div style="position:absolute;bottom:0;left:0;right:0;padding:14px 22px;background:linear-gradient(transparent,#0f3460)"><div style="color:#fff;font-size:20px;font-weight:900">${movieTitle}</div></div></div>`
+    : `<div style="padding:18px 22px;background:rgba(231,76,60,0.12);border-bottom:1px solid rgba(231,76,60,0.2)"><div style="color:#fff;font-size:20px;font-weight:900">🎬 ${movieTitle}</div></div>`;
+
+  const concessionSection = concessionRows
+    ? `<tr><td style="background:#16213e;padding:0 36px 24px"><div style="color:#fff;font-size:12px;font-weight:700;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">🍿 Đồ ăn & thức uống</div><table width="100%" style="background:#0f3460;border-radius:8px;overflow:hidden" cellpadding="0" cellspacing="0"><thead><tr style="background:rgba(231,76,60,0.15)"><th style="padding:9px 14px;text-align:left;color:#888;font-size:11px;text-transform:uppercase">Sản phẩm</th><th style="padding:9px 14px;text-align:center;color:#888;font-size:11px;text-transform:uppercase">SL</th><th style="padding:9px 14px;text-align:right;color:#888;font-size:11px;text-transform:uppercase">Thành tiền</th></tr></thead><tbody>${concessionRows}</tbody></table></td></tr>`
+    : '';
+
+  return `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Xác nhận vé - Nova Cinematic</title>
+</head>
+<body style="margin:0;padding:0;background:#0f0f1a;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0f0f1a;padding:36px 16px">
+    <tr><td align="center">
+      <table width="580" cellpadding="0" cellspacing="0" style="max-width:580px;width:100%">
+
+        <!-- HEADER -->
+        <tr><td style="background:linear-gradient(135deg,#c0392b 0%,#e74c3c 60%,#ff6b6b 100%);border-radius:14px 14px 0 0;padding:28px 36px;text-align:center">
+          <div style="font-size:26px;font-weight:900;color:#fff;letter-spacing:2px">🎬 NOVA CINEMATIC</div>
+          <div style="color:rgba(255,255,255,0.8);font-size:12px;margin-top:5px;letter-spacing:1px">XÁC NHẬN ĐẶT VÉ THÀNH CÔNG</div>
+        </td></tr>
+
+        <!-- GREETING -->
+        <tr><td style="background:#1a1a2e;padding:24px 36px">
+          <div style="color:#fff;font-size:15px;font-weight:600">Xin chào <span style="color:#e74c3c">${userName}</span>,</div>
+          <div style="color:#999;font-size:12px;margin-top:6px;line-height:1.7">Cảm ơn bạn đã tin tưởng đặt vé tại Nova Cinematic. Dưới đây là thông tin chi tiết vé của bạn.</div>
+        </td></tr>
+
+        <!-- TICKET CARD -->
+        <tr><td style="background:#16213e;padding:0 36px 24px">
+          <div style="background:#0f3460;border-radius:12px;overflow:hidden;border:1px solid rgba(231,76,60,0.25)">
+            ${posterSection}
+            <div style="padding:18px 22px">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.07);width:48%">
+                    <div style="color:#666;font-size:10px;text-transform:uppercase;letter-spacing:1px">🏢 Rạp chiếu</div>
+                    <div style="color:#fff;font-size:13px;font-weight:700;margin-top:4px">${theaterName}</div>
+                  </td>
+                  <td style="padding:10px 0 10px 16px;border-bottom:1px solid rgba(255,255,255,0.07)">
+                    <div style="color:#666;font-size:10px;text-transform:uppercase;letter-spacing:1px">🚪 Phòng chiếu</div>
+                    <div style="color:#fff;font-size:13px;font-weight:700;margin-top:4px">${roomName}</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.07)">
+                    <div style="color:#666;font-size:10px;text-transform:uppercase;letter-spacing:1px">📅 Thời gian chiếu</div>
+                    <div style="color:#e74c3c;font-size:13px;font-weight:700;margin-top:4px">${startTime}${endTime ? ' → ' + endTime : ''}</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.07)">
+                    <div style="color:#666;font-size:10px;text-transform:uppercase;letter-spacing:1px">💺 Ghế ngồi</div>
+                    <div style="color:#fff;font-size:13px;font-weight:700;margin-top:4px;letter-spacing:1px">${seatsStr}</div>
+                  </td>
+                  <td style="padding:10px 0 10px 16px;border-bottom:1px solid rgba(255,255,255,0.07)">
+                    <div style="color:#666;font-size:10px;text-transform:uppercase;letter-spacing:1px">💰 Tổng thanh toán</div>
+                    <div style="color:#f1c40f;font-size:16px;font-weight:900;margin-top:4px">${totalPrice}đ</div>
+                  </td>
+                </tr>
+              </table>
+              <!-- TICKET CODE BOX -->
+              <div style="margin-top:18px;background:linear-gradient(135deg,#e74c3c,#c0392b);border-radius:8px;padding:14px 18px;text-align:center">
+                <div style="color:rgba(255,255,255,0.75);font-size:10px;text-transform:uppercase;letter-spacing:2px;margin-bottom:5px">Mã vé của bạn</div>
+                <div style="color:#fff;font-size:22px;font-weight:900;letter-spacing:4px">${ticketCode}</div>
+                <div style="color:rgba(255,255,255,0.65);font-size:10px;margin-top:5px">Xuất trình mã này hoặc email này khi check-in tại quầy</div>
+              </div>
+            </div>
+          </div>
+        </td></tr>
+
+        ${concessionSection}
+
+        <!-- GUIDE -->
+        <tr><td style="background:#1a1a2e;padding:20px 36px">
+          <div style="color:#999;font-size:12px;line-height:1.9">
+            <strong style="color:#ddd">📌 Lưu ý quan trọng:</strong><br>
+            • Vui lòng có mặt trước <strong style="color:#e74c3c">15 phút</strong> trước giờ chiếu để làm thủ tục check-in<br>
+            • Xuất trình mã vé hoặc email này tại quầy soát vé<br>
+            • Vé đã mua không được hoàn trả
+          </div>
+        </td></tr>
+
+        <!-- FOOTER -->
+        <tr><td style="background:#0f0f1a;border-radius:0 0 14px 14px;padding:18px 36px;text-align:center;border-top:1px solid rgba(255,255,255,0.05)">
+          <div style="color:#444;font-size:11px">© 2026 Nova Cinematic · Mọi thắc mắc vui lòng liên hệ hotline hoặc email hỗ trợ</div>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
+/**
+ * POST /api/admin/bookings/:id/send-email
+ * Gửi email xác nhận vé cho 1 khách hàng
+ */
+const sendBookingEmail = async (req, res, next) => {
+  try {
+    const booking = await Booking.findById(req.params.id)
+      .populate('user', 'username email')
+      .populate({
+        path: 'showtime',
+        populate: [
+          { path: 'movie', select: 'title posterUrl duration' },
+          { path: 'theater', select: 'name' },
+          { path: 'room', select: 'name' },
+        ],
+      })
+      .populate('concessions.concession');
+
+    if (!booking) {
+      res.status(404);
+      throw new Error('Không tìm thấy đơn đặt vé');
+    }
+
+    const userEmail = booking.user?.email;
+    if (!userEmail) {
+      res.status(400);
+      throw new Error('Khách hàng này không có địa chỉ email');
+    }
+
+    const showtime = booking.showtime;
+    const movie = showtime?.movie;
+    const theater = showtime?.theater;
+    const room = showtime?.room;
+
+    let seatDocs = [];
+    if (booking.seats && booking.seats.length > 0) {
+      seatDocs = await Seat.find({ _id: { $in: booking.seats } }).select('row number type');
+    }
+
+    const html = buildTicketEmailHtml({
+      booking, movie, showtime, theater, room,
+      seats: seatDocs,
+      concessions: booking.concessions,
+    });
+
+    const movieTitle = movie?.title || 'Phim';
+    const subject = `🎬 Xác nhận vé "${movieTitle}" - Mã vé: ${booking.ticketCode || booking._id}`;
+
+    await sendEmail({ to: userEmail, subject, html });
+
+    res.json({
+      success: true,
+      message: `Đã gửi email xác nhận vé tới ${userEmail} thành công`,
+      email: userEmail,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/admin/bookings/send-email-bulk
+ * Gửi email đến nhiều khách hàng:
+ * - body.showtimeId: gửi tất cả booking (paid) của suất chiếu
+ * - body.bookingIds[]: gửi danh sách booking cụ thể
+ * - body.subject (optional): tiêu đề tùy chỉnh
+ * - body.customMessage (optional): thông điệp tùy chỉnh thêm vào email
+ */
+const sendBulkEmail = async (req, res, next) => {
+  try {
+    const { showtimeId, bookingIds, subject: customSubject, customMessage } = req.body;
+
+    let bookings = [];
+
+    if (showtimeId) {
+      bookings = await Booking.find({ showtime: showtimeId, paymentStatus: 'paid' })
+        .populate('user', 'username email')
+        .populate({
+          path: 'showtime',
+          populate: [
+            { path: 'movie', select: 'title posterUrl duration' },
+            { path: 'theater', select: 'name' },
+            { path: 'room', select: 'name' },
+          ],
+        })
+        .populate('concessions.concession');
+    } else if (Array.isArray(bookingIds) && bookingIds.length > 0) {
+      bookings = await Booking.find({ _id: { $in: bookingIds } })
+        .populate('user', 'username email')
+        .populate({
+          path: 'showtime',
+          populate: [
+            { path: 'movie', select: 'title posterUrl duration' },
+            { path: 'theater', select: 'name' },
+            { path: 'room', select: 'name' },
+          ],
+        })
+        .populate('concessions.concession');
+    } else {
+      res.status(400);
+      throw new Error('Vui lòng cung cấp showtimeId hoặc danh sách bookingIds');
+    }
+
+    if (bookings.length === 0) {
+      return res.json({ success: true, message: 'Không có đơn đặt vé nào phù hợp', sent: 0, failed: 0, total: 0 });
+    }
+
+    let sent = 0;
+    let failed = 0;
+    const errors = [];
+
+    for (const booking of bookings) {
+      const userEmail = booking.user?.email;
+      if (!userEmail) { failed++; continue; }
+
+      try {
+        const showtime = booking.showtime;
+        const movie = showtime?.movie;
+        const theater = showtime?.theater;
+        const room = showtime?.room;
+
+        let seatDocs = [];
+        if (booking.seats && booking.seats.length > 0) {
+          seatDocs = await Seat.find({ _id: { $in: booking.seats } }).select('row number type');
+        }
+
+        let html = buildTicketEmailHtml({
+          booking, movie, showtime, theater, room,
+          seats: seatDocs,
+          concessions: booking.concessions,
+        });
+
+        // Chèn thêm thông điệp tùy chỉnh của admin nếu có
+        if (customMessage) {
+          const adminNotice = `
+        <!-- CUSTOM MESSAGE -->
+        <tr><td style="background:#1a1a2e;padding:16px 36px 0">
+          <div style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);border-radius:8px;padding:14px 16px">
+            <div style="color:#e74c3c;font-size:11px;font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:1px">📢 Thông báo từ Nova Cinematic</div>
+            <div style="color:#ddd;font-size:13px;line-height:1.7">${customMessage}</div>
+          </div>
+        </td></tr>`;
+          html = html.replace('<!-- GUIDE -->', adminNotice + '<!-- GUIDE -->');
+        }
+
+        const movieTitle = movie?.title || 'Phim';
+        const subject = customSubject || `🎬 Thông báo vé "${movieTitle}" - Mã vé: ${booking.ticketCode || booking._id}`;
+
+        await sendEmail({ to: userEmail, subject, html });
+        sent++;
+      } catch (err) {
+        failed++;
+        errors.push({ bookingId: booking._id, email: userEmail, error: err.message });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Đã gửi ${sent}/${bookings.length} email thành công`,
+      sent,
+      failed,
+      total: bookings.length,
+      errors: errors.length > 0 ? errors : undefined,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 /**
  * POST /api/admin/pricing/preview
  * Preview giá vé cho một tổ hợp tham số cụ thể
@@ -1389,6 +1698,8 @@ module.exports = {
   deleteBooking,
   printTicket,
   checkInTicket,
+  sendBookingEmail,
+  sendBulkEmail,
   listUsers,
   updateUserRole,
   deleteUser,

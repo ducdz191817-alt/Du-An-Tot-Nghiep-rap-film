@@ -17,7 +17,7 @@ export const MoviesPage = () => {
   const { movies, loading, error } = useSelector((state) => state.movie);
 
   const [filters, setFilters] = useState({
-    status: 'all',
+    status: 'now-showing',
     search: '',
     genres: [],
     rating: '',
