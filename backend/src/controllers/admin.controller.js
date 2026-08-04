@@ -294,21 +294,20 @@ const createShowtime = async (req, res, next) => {
       throw new Error(`⚠️ Lịch chiếu bị trùng! Phòng này đã có suất chiếu "${overlappingShowtime.movie ? (await Movie.findById(overlappingShowtime.movie).select('title'))?.title || 'Khác' : 'Khác'}" từ ${existStart} đến ${existEnd}. Vui lòng chọn giờ chiếu khác.`);
     }
 
-    // Lấy cấu hình giá hiện tại
+    // --- DYNAMIC PRICING: Tự động tính giá vé theo ngày & giờ ---
     const pricingConfig = await PricingConfig.findOne().lean();
     if (!pricingConfig) {
       res.status(400);
       throw new Error('Chưa có bảng giá được cấu hình. Vui lòng thiết lập bảng giá trong mục “Bảng Giá” trước.');
     }
 
-    // Lấy thông tin phòng để xác định roomType
     const room = await Room.findById(roomId);
     if (!room) {
       res.status(404);
       throw new Error('Không tìm thấy phòng chiếu');
     }
 
-    // Tự động tính giá (giá ghế thường, chưa tính phụ thu loại ghế)
+    // Tính giá tự động từ Pricing Engine
     const autoPrice = calculateBaseShowtimePrice({
       startTime: start,
       format,
@@ -316,13 +315,14 @@ const createShowtime = async (req, res, next) => {
       config: pricingConfig,
     });
 
+    // Lưu suất chiếu vào DB (Giá vé = autoPrice, phớt lờ input tay)
     const showtime = await Showtime.create({
       movie: movieId,
       theater: theaterId,
       room: roomId,
       startTime: start,
       endTime: end,
-      ticketPrice: autoPrice,
+      ticketPrice: autoPrice, 
       format,
     });
 

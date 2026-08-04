@@ -1,23 +1,50 @@
-import React, { useState } from 'react';
+/**
+ * COMPONENT: SeatMap.jsx — Sơ đồ ghế
+ * - Chống ghế mồ côi (Orphan Seat): Không cho phép bỏ trống 1 ghế ở giữa.
+ * - Giới hạn tối đa 8 ghế/giao dịch.
+ * - Hỗ trợ ghế đôi, tính lối đi tự động.
+ */
+
+import React, { useState, useMemo } from 'react';
 import { SEAT_TYPES } from '../../utils/constants';
 import Toast from '../common/Toast';
 
-export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], heldSeatsByOthers = [], onSeatClick, onOrphanError }) => {
+// Giới hạn tối đa số ghế mỗi lần đặt (giống CGV/Beta)
+const MAX_SEATS_PER_BOOKING = 8;
+
+export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], heldSeatsByOthers = [], onSeatClick, onOrphanError, ticketPrice = 0 }) => {
   const [toastMsg, setToastMsg] = useState('');
   
   // Nhóm ghế theo hàng (chữ cái)
-  const groupedSeats = seats.reduce((acc, seat) => {
+  const groupedSeats = useMemo(() => seats.reduce((acc, seat) => {
     const row = seat.row;
     if (!acc[row]) {
       acc[row] = [];
     }
     acc[row].push(seat);
     return acc;
-  }, {});
+  }, {}), [seats]);
 
-  const normalizedBookedSeats = new Set(
+  const normalizedBookedSeats = useMemo(() => new Set(
     (bookedSeats || []).map((seatCodeItem) => String(seatCodeItem).trim().toUpperCase())
-  );
+  ), [bookedSeats]);
+
+  // Tính toán số ghế trống
+  const seatStats = useMemo(() => {
+    let total = 0;
+    let available = 0;
+    seats.forEach(seat => {
+      total++;
+      const seatCode = `${seat.row}${seat.number}`.toUpperCase();
+      const isBooked = normalizedBookedSeats.has(seatCode);
+      const isHeld = heldSeatsByOthers.includes(seatCode);
+      const isDisabled = seat.isDisabled === true;
+      if (!isBooked && !isHeld && !isDisabled) {
+        available++;
+      }
+    });
+    return { total, available };
+  }, [seats, normalizedBookedSeats, heldSeatsByOthers]);
 
   // Helper: Trả về state của một ghế
   const getSeatState = (seat) => {
@@ -29,41 +56,89 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
     return { ...seat, seatCode, isBooked, isHeld, isDisabled, isAvailable };
   };
 
+  // Helper: Tìm vị trí lối đi ĐỘNG dựa trên số ghế trong hàng
+  const getAislePosition = (rowSeats) => {
+    if (rowSeats.length <= 4) return -1; // Không cần aisle nếu ít ghế (ghế đôi)
+    return Math.floor(rowSeats.length / 2); // Lối đi ở chính giữa
+  };
+
+  // Helper: Chia hàng ghế thành 2 block dựa trên vị trí lối đi động
+  const splitRowIntoBlocks = (rowSeatStates) => {
+    const aislePos = getAislePosition(rowSeatStates);
+    if (aislePos === -1) {
+      // Không có aisle -> toàn bộ hàng là 1 block
+      return [rowSeatStates];
+    }
+    const block1 = rowSeatStates.slice(0, aislePos);
+    const block2 = rowSeatStates.slice(aislePos);
+    return [block1, block2];
+  };
+
   // Helper: Tìm các "khoảng trống" (segment) trong 1 cụm ghế
   const getEmptySegments = (seatStates, currentSelectedSeats) => {
     const segments = [];
     let currentSegmentLength = 0;
-    let isStartEdge = false;
     
     for (let i = 0; i < seatStates.length; i++) {
       const s = seatStates[i];
       const isOccupied = !s.isAvailable || currentSelectedSeats.includes(s.seatCode);
       
       if (!isOccupied) {
-        if (currentSegmentLength === 0 && i === 0) {
-          isStartEdge = true; // Segment chạm rìa trái
-        }
         currentSegmentLength++;
       } else {
         if (currentSegmentLength > 0) {
-          segments.push({
-            length: currentSegmentLength,
-            isEdge: isStartEdge // Nếu nó chạm rìa trái thì là edge
-          });
+          segments.push({ length: currentSegmentLength });
           currentSegmentLength = 0;
-          isStartEdge = false;
         }
       }
     }
     
     if (currentSegmentLength > 0) {
-      segments.push({
-        length: currentSegmentLength,
-        // Nếu vòng lặp kết thúc mà vẫn còn segment, nghĩa là segment này chạm rìa phải (i = length)
-        isEdge: isStartEdge || true 
-      });
+      segments.push({ length: currentSegmentLength });
     }
     return segments;
+  };
+
+  // Helper: Đếm số ghế mồ côi (khoảng trống đúng 1 ghế)
+  const getOrphanCount = (segments) => {
+    return segments.filter(seg => seg.length === 1).length;
+  };
+
+  // ==========================================
+  // FIX BUG 1: KIỂM TRA ORPHAN TRÊN TẤT CẢ CÁC HÀNG CÓ GHẾ ĐANG CHỌN
+  // ==========================================
+  const checkAllRowsForOrphan = (newSelected) => {
+    // Tìm tất cả các hàng có ghế đang được chọn
+    const affectedRows = new Set();
+    newSelected.forEach(seatCode => {
+      const match = seatCode.match(/^([A-Z]+)/);
+      if (match) affectedRows.add(match[1]);
+    });
+
+    // Thêm cả các hàng có ghế đã được đặt (bookedSeats) vì orphan có thể xảy ra ở đó
+    // Nhưng ta chỉ cần check các hàng có ghế user đang chọn
+    for (const rowLetter of affectedRows) {
+      if (!groupedSeats[rowLetter]) continue;
+
+      const rowSeats = [...groupedSeats[rowLetter]].sort((a, b) => a.number - b.number);
+      const rowSeatStates = rowSeats.map(getSeatState);
+
+      // FIX BUG 3: Chia block ĐỘNG thay vì fix cứng 6/7
+      const blocks = splitRowIntoBlocks(rowSeatStates);
+
+      for (const block of blocks) {
+        if (block.length === 0) continue;
+
+        const orphanCountNew = getOrphanCount(getEmptySegments(block, newSelected));
+        const orphanCountOld = getOrphanCount(getEmptySegments(block, []));
+
+        // Nếu bất kỳ block nào tạo thêm orphan -> lỗi
+        if (orphanCountNew > orphanCountOld) {
+          return true; // Có lỗi orphan
+        }
+      }
+    }
+    return false; // Không có lỗi
   };
 
   const handleSeatClick = (clickedSeatCode, rowLetter) => {
@@ -74,57 +149,63 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
       // Bỏ chọn
       newSelected = selectedSeats.filter(code => code !== clickedSeatCode);
     } else {
-      // Chọn thêm (không giới hạn số lượng)
+      // ==========================================
+      // FIX BUG 2: GIỚI HẠN TỐI ĐA 8 GHẾ
+      // ==========================================
+      if (selectedSeats.length >= MAX_SEATS_PER_BOOKING) {
+        setToastMsg(`Bạn chỉ được chọn tối đa ${MAX_SEATS_PER_BOOKING} ghế mỗi lần đặt vé.`);
+        return;
+      }
       newSelected = [...selectedSeats, clickedSeatCode];
     }
 
     // --- KIỂM TRA LUẬT CHỐNG GHẾ SO LE (ORPHAN RULE) ---
-    // Chỉ cần kiểm tra hàng của ghế vừa click
-    const rowSeats = [...groupedSeats[rowLetter]].sort((a, b) => a.number - b.number);
-    const rowSeatStates = rowSeats.map(getSeatState);
+    // FIX BUG 1: Kiểm tra TẤT CẢ các hàng, không chỉ hàng vừa click
+    const hasOrphan = checkAllRowsForOrphan(newSelected);
 
-    // Chia hàng thành 2 block nếu có lối đi ở giữa (theo giao diện, lối đi ở giữa ghế 6 và 7)
-    const block1 = rowSeatStates.filter(s => s.number <= 6);
-    const block2 = rowSeatStates.filter(s => s.number >= 7);
-
-    // ==========================================
-    // FIX BUG 3: THUẬT TOÁN CHỐNG GHẾ MỒ CÔI (ORPHAN SEAT)
-    // ==========================================
-    // Helper: Xác định xem có bao nhiêu "ghế mồ côi".
-    // Ghế mồ côi được định nghĩa là một khoảng trống có kích thước ĐÚNG BẰNG 1 GHẾ (seg.length === 1).
-    // Dù ở giữa hay ở mép lối đi, cứ hở ra đúng 1 ghế thì đều bị coi là mồ côi.
-    const getOrphanCount = (segments) => {
-      return segments.filter(seg => seg.length === 1).length;
-    };
-
-    // Đếm số lượng ghế mồ côi SAU KHI user chọn ghế mới
-    const orphanCount1 = getOrphanCount(getEmptySegments(block1, newSelected));
-    // Đếm số lượng ghế mồ côi TRƯỚC KHI user chọn (lấy làm chuẩn để so sánh)
-    const oldOrphanCount1 = getOrphanCount(getEmptySegments(block1, []));
-
-    const orphanCount2 = getOrphanCount(getEmptySegments(block2, newSelected));
-    const oldOrphanCount2 = getOrphanCount(getEmptySegments(block2, []));
-
-    // Nếu thao tác chọn ghế của user vô tình TẠO THÊM ghế mồ côi (làm số lượng tăng lên)
-    if (orphanCount1 > oldOrphanCount1 || orphanCount2 > oldOrphanCount2) {
+    if (hasOrphan) {
       setToastMsg("Đang để trống 1 ghế (so le). Vui lòng chọn lấp chỗ trống hoặc bỏ chọn.");
-      // Báo lỗi lên component cha (BookingPage) để KHÓA nút "Xác nhận ghế"
       if (onOrphanError) onOrphanError(true);
     } else {
       setToastMsg("");
-      // Hết lỗi -> Mở khóa nút "Xác nhận ghế"
       if (onOrphanError) onOrphanError(false);
     }
 
-    // CẢI TIẾN UX: Luôn cho phép mảng ghế cập nhật (để ghế đổi sang màu cam).
-    // Việc này giúp người dùng không bị "kẹt cứng" (bấm không ăn) khi đang dở tay chọn một chuỗi nhiều ghế.
-    // Nếu sai luật, họ chỉ bị khóa nút thanh toán chứ vẫn được phép click chọn/bỏ chọn tự do để sửa lỗi.
+    // Luôn cho phép cập nhật để user có thể sửa lỗi (chỉ khóa nút thanh toán)
     onSeatClick(newSelected);
   };
 
+  // Helper: Lấy label + giá tiền cho tooltip
+  const getSeatTooltip = (seatInfo) => {
+    const seatStyle = SEAT_TYPES[seatInfo.type] || SEAT_TYPES.standard;
+    const extraPrice = seatInfo.price || seatStyle.extraPrice || 0;
+    const multiplier = seatInfo.type === 'couple' ? 2 : 1;
+    const totalPrice = (ticketPrice * multiplier) + extraPrice;
+
+    let statusText = '';
+    if (seatInfo.isDisabled) statusText = ' • 🔧 Bảo trì';
+    else if (seatInfo.isBooked) statusText = ' • ❌ Đã đặt';
+    else if (seatInfo.isHeld) statusText = ' • ⏳ Đang giữ';
+    else statusText = ` • ${totalPrice.toLocaleString()} VND`;
+
+    return `${seatInfo.seatCode} - ${seatStyle.label}${statusText}`;
+  };
+
   return (
-    <div className="space-y-12 overflow-x-auto py-6 relative">
+    <div className="space-y-6 overflow-x-auto py-6 relative">
       <Toast message={toastMsg} type="warning" onClose={() => setToastMsg('')} />
+
+      {/* Thông tin ghế trống + Giới hạn */}
+      <div className="flex items-center justify-between max-w-xl mx-auto px-2">
+        <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+          <div className={`w-2 h-2 rounded-full ${seatStats.available > 10 ? 'bg-emerald-500' : seatStats.available > 0 ? 'bg-amber-500' : 'bg-red-500'}`} />
+          <span>Còn <span className="text-zinc-700 dark:text-zinc-200 font-bold">{seatStats.available}</span>/{seatStats.total} ghế trống</span>
+        </div>
+        <div className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+          Tối đa {MAX_SEATS_PER_BOOKING} ghế/lần
+        </div>
+      </div>
+
       {/* 1. Chỉ báo màn hình cong */}
       <div className="w-full max-w-xl mx-auto flex flex-col items-center select-none">
         <div className="h-2 w-full bg-brand rounded-full shadow-[0_0_20px_rgba(229,9,20,0.8)]" />
@@ -138,6 +219,8 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
         {Object.keys(groupedSeats).map((rowLetter) => {
           const rowSeats = [...groupedSeats[rowLetter]].sort((a, b) => a.number - b.number);
           const rowSeatStates = rowSeats.map(getSeatState);
+          // FIX BUG 3: Tính vị trí aisle động
+          const aisleIndex = getAislePosition(rowSeatStates);
 
           return (
             <div key={rowLetter} className="flex items-center space-x-3">
@@ -148,21 +231,21 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
 
               {/* Các ghế trong hàng */}
               <div className="flex items-center gap-2">
-                {rowSeatStates.map((seatInfo) => {
+                {rowSeatStates.map((seatInfo, index) => {
                   const isSelected = selectedSeats.includes(seatInfo.seatCode);
                   const seatStyle = SEAT_TYPES[seatInfo.type] || SEAT_TYPES.standard;
                   
                   let activeBg = seatStyle.color;
                   if (seatInfo.isDisabled) {
-                    activeBg = 'bg-gray-200 border border-gray-300 text-gray-500 cursor-not-allowed';
+                    activeBg = 'bg-gray-200 border border-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400';
                   } else if (seatInfo.isBooked) {
                     activeBg = seatStyle.bookedColor;
                   } else if (seatInfo.isHeld) {
-                    activeBg = 'bg-orange-100 border border-orange-300 text-orange-600 cursor-not-allowed';
+                    activeBg = 'bg-orange-100 border border-orange-300 text-orange-600 cursor-not-allowed dark:bg-orange-900/40 dark:border-orange-700 dark:text-orange-400';
                   } else if (isSelected) {
-                    activeBg = seatStyle.selectedColor + ' shadow-[0_0_12px_rgba(168,85,247,0.6)] border-brand';
+                    activeBg = seatStyle.selectedColor + ' shadow-[0_0_12px_rgba(168,85,247,0.6)] border-brand scale-110';
                   } else {
-                    activeBg = activeBg + ' hover:border-brand/50 hover:bg-brand/20 cursor-pointer';
+                    activeBg = activeBg + ' hover:border-brand/50 hover:bg-brand/20 hover:scale-105 cursor-pointer';
                   }
 
                   const isCouple = seatInfo.type === 'couple';
@@ -172,16 +255,16 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
                       <button
                         disabled={!seatInfo.isAvailable}
                         onClick={() => handleSeatClick(seatInfo.seatCode, rowLetter)}
-                        className={`h-8 rounded-lg font-bold text-[9px] transition-all flex items-center justify-center transform active:scale-90 border ${
+                        className={`h-8 rounded-lg font-bold text-[9px] transition-all duration-200 ease-out flex items-center justify-center transform active:scale-90 border ${
                           isCouple ? 'w-[72px]' : 'w-8'
                         } ${activeBg}`}
-                        title={`${seatInfo.seatCode} - ${seatInfo.type.toUpperCase()}${seatInfo.isDisabled ? ' (Bảo trì)' : ''}${seatInfo.isBooked ? ' (Đã đặt)' : ''}${seatInfo.isHeld ? ' (Đang giữ)' : ''}`}
+                        title={getSeatTooltip(seatInfo)}
                       >
                         {seatInfo.isDisabled ? 'X' : (isCouple ? `${seatInfo.seatCode} Đôi` : seatInfo.seatCode)}
                       </button>
 
-                      {/* Lối đi (Aisle) chia cắt khu vực trái và phải */}
-                      {seatInfo.number === 6 && (
+                      {/* FIX BUG 3: Lối đi (Aisle) ĐỘNG - dựa trên vị trí tính toán */}
+                      {aisleIndex !== -1 && index === aisleIndex - 1 && (
                         <div className="w-8 sm:w-12 flex flex-col items-center justify-center mx-1">
                           <div className="h-full w-px bg-zinc-800/50"></div>
                         </div>
