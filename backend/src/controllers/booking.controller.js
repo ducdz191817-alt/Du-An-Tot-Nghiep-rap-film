@@ -259,9 +259,9 @@ const createBooking = async (req, res, next) => {
 
     if (isVietQR) {
       // 9. VietQR logic
-      const bankId = process.env.VIETQR_BANK_ID || 'MB';
-      const accountNo = process.env.VIETQR_ACCOUNT_NO || '0903123456';
-      const accountName = process.env.VIETQR_ACCOUNT_NAME || 'TRAN TIEN DUC';
+      const bankId = process.env.VIETQR_BANK_ID || 'VCB';
+      const accountNo = process.env.VIETQR_ACCOUNT_NO || '1049742329';
+      const accountName = process.env.VIETQR_ACCOUNT_NAME || 'NGUYEN TRUONG DUC';
       const addInfo = `NOVA${booking._id.toString().slice(-6).toUpperCase()}`;
       
       const qrUrl = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact.png?amount=${totalPrice}&addInfo=${addInfo}&accountName=${encodeURIComponent(accountName)}`;

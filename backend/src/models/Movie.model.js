@@ -62,7 +62,7 @@ const MovieSchema = new mongoose.Schema(
         'pre-release',    // Sắp ra mắt (tách riêng với Sắp chiếu)
         'hidden',         // Bảo trì / Ẩn (dùng cho quản trị viên)
       ],
-      default: 'now-showing',
+      default: 'coming-soon',
     },
     rating: {
       type: String, // e.g. T16, T18, P, C13
@@ -79,6 +79,10 @@ const MovieSchema = new mongoose.Schema(
     country: {
       type: String,
       default: '',
+    },
+    tmdbId: {
+      type: Number,
+      default: null,
     },
   },
   {

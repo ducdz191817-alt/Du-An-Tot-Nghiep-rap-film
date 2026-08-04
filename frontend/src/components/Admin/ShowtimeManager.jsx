@@ -37,6 +37,7 @@ export const ShowtimeManager = () => {
   const [filterDate, setFilterDate] = useState('');
   const [filterMovie, setFilterMovie] = useState('');
   const [filterRoom, setFilterRoom] = useState('');
+  const [showPastDays, setShowPastDays] = useState(false);
 
   // Manual form
   const [form, setForm] = useState({ movieId: '', theaterId: '', roomId: '', startTime: '', ticketPrice: 80000, format: '2D' });
@@ -740,73 +741,156 @@ export const ShowtimeManager = () => {
         </div>
       </div>
 
-      {/* BỘ LỌC */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-        <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">Lọc theo Phim</label>
-          <select
-            value={filterMovie}
-            onChange={(e) => setFilterMovie(e.target.value)}
-            className="w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm py-2 px-3 rounded-xl focus:border-brand outline-none cursor-pointer"
-          >
-            <option value="">Tất cả các phim</option>
-            {movies.map((m) => (
-              <option key={m._id} value={m._id}>
-                {m.title}
-              </option>
-            ))}
-          </select>
+      {/* BỘ LỌC HÀNG ĐẦU */}
+      <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+          {/* Lọc theo Phim */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1">Lọc theo Phim</label>
+            <select
+              value={filterMovie}
+              onChange={(e) => setFilterMovie(e.target.value)}
+              className="w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm py-2 px-3 rounded-xl focus:border-brand outline-none cursor-pointer"
+            >
+              <option value="">Tất cả các phim</option>
+              {movies.map((m) => (
+                <option key={m._id} value={m._id}>
+                  {m.title}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Lọc theo Phòng */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1">Lọc theo Phòng</label>
+            <select
+              value={filterRoom}
+              onChange={(e) => setFilterRoom(e.target.value)}
+              className="w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm py-2 px-3 rounded-xl focus:border-brand outline-none cursor-pointer"
+            >
+              <option value="">Tất cả các phòng</option>
+              {rooms.map((r) => (
+                <option key={r._id} value={r._id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Lọc theo Ngày (Dropdown + Date Picker) */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1">Chọn ngày chiếu</label>
+            <input
+              type="date"
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              className="w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm py-2 px-3 rounded-xl focus:border-brand outline-none cursor-pointer"
+            />
+          </div>
+
+          {/* Checkbox Ẩn / Hiện ngày đã qua */}
+          <div className="flex items-center gap-2 pb-2">
+            <label className="flex items-center gap-2 text-xs font-bold text-gray-600 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showPastDays}
+                onChange={(e) => setShowPastDays(e.target.checked)}
+                className="w-4 h-4 rounded text-brand focus:ring-brand/30 border-gray-300"
+              />
+              Hiển thị cả các ngày đã qua
+            </label>
+          </div>
         </div>
 
-        <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">Lọc theo Phòng</label>
-          <select
-            value={filterRoom}
-            onChange={(e) => setFilterRoom(e.target.value)}
-            className="w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm py-2 px-3 rounded-xl focus:border-brand outline-none cursor-pointer"
-          >
-            <option value="">Tất cả các phòng</option>
-            {rooms.map((r) => (
-              <option key={r._id} value={r._id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Quick Date Select Pills */}
+        {(() => {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
 
-        <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">Lọc theo Ngày</label>
-          <select
-            value={filterDate}
-            onChange={(e) => setFilterDate(e.target.value)}
-            className="w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm py-2 px-3 rounded-xl focus:border-brand outline-none cursor-pointer"
-          >
-            <option value="">Tất cả các ngày</option>
-            {Array.from(new Set(showtimes.map(st => new Date(st.startTime).toLocaleDateString('vi-VN')))).map(dateStr => (
-              <option key={dateStr} value={dateStr}>
-                {dateStr}
-              </option>
-            ))}
-          </select>
-        </div>
+          // Tạo danh sách 7 ngày từ hôm nay trở đi
+          const quickDates = Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(today);
+            d.setDate(d.getDate() + i);
+            const iso = d.toISOString().split('T')[0];
+            const vnDate = d.toLocaleDateString('vi-VN');
+            let label = i === 0 ? 'Hôm nay' : i === 1 ? 'Ngày mai' : d.toLocaleDateString('vi-VN', { weekday: 'short' });
+            return { iso, vnDate, label, dayMonth: `${d.getDate()}/${d.getMonth() + 1}` };
+          });
+
+          return (
+            <div className="flex items-center gap-2 pt-2 border-t border-gray-100 overflow-x-auto pb-1 custom-scrollbar">
+              <span className="text-[11px] font-bold text-gray-400 uppercase shrink-0">Nhanh:</span>
+              <button
+                type="button"
+                onClick={() => setFilterDate('')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all shrink-0 border ${!filterDate
+                  ? 'bg-brand text-white border-brand shadow-sm'
+                  : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                  }`}
+              >
+                Tất cả các ngày
+              </button>
+              {quickDates.map((item) => {
+                const isSelected = filterDate === item.iso || filterDate === item.vnDate;
+                return (
+                  <button
+                    key={item.iso}
+                    type="button"
+                    onClick={() => setFilterDate(item.iso)}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1 border ${isSelected
+                      ? 'bg-brand text-white border-brand shadow-sm'
+                      : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                      }`}
+                  >
+                    <span>{item.label}</span>
+                    <span className="opacity-75 font-normal">({item.dayMonth})</span>
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Danh sách lịch chiếu được nhóm theo ngày */}
       {(() => {
+        const todayZero = new Date();
+        todayZero.setHours(0, 0, 0, 0);
+
         const filteredShowtimes = showtimes.filter(st => {
-          if (!st.movie) return false; // Lọc bỏ phim đã bị xóa / null
+          if (!st.movie) return false;
+
+          const stDate = new Date(st.startTime);
+
+          // 1. Ẩn lịch chiếu thuộc ngày đã qua nếu không chọn showPastDays
+          if (!showPastDays && stDate < todayZero) {
+            return false;
+          }
+
+          // 2. Lọc theo Phim
           const matchMovie = filterMovie ? (st.movie?._id === filterMovie || st.movie === filterMovie) : true;
+
+          // 3. Lọc theo Phòng
           const matchRoom = filterRoom ? (st.room?._id === filterRoom || st.room === filterRoom) : true;
-          const dateStr = new Date(st.startTime).toLocaleDateString('vi-VN');
-          const matchDate = filterDate ? (dateStr === filterDate) : true;
+
+          // 4. Lọc theo Ngày
+          let matchDate = true;
+          if (filterDate) {
+            const stIsoDate = stDate.toISOString().split('T')[0];
+            const stVnDate = stDate.toLocaleDateString('vi-VN');
+            matchDate = (filterDate === stIsoDate || filterDate === stVnDate);
+          }
+
           return matchMovie && matchRoom && matchDate;
         });
 
         if (filteredShowtimes.length === 0) {
           return (
-            <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-              <Calendar size={40} className="mb-3 opacity-30" />
-              <p className="text-sm">Không tìm thấy lịch chiếu nào phù hợp với bộ lọc.</p>
+            <div className="flex flex-col items-center justify-center py-16 text-gray-400 bg-white rounded-2xl border border-gray-200 shadow-sm">
+              <Calendar size={40} className="mb-3 opacity-30 text-brand" />
+              <p className="text-sm font-bold text-gray-600">Không tìm thấy lịch chiếu nào phù hợp.</p>
+              <p className="text-xs text-gray-400 mt-1">Các ngày đã qua đã được ẩn đi. Bạn có thể chọn ngày khác hoặc tích chọn "Hiển thị cả các ngày đã qua".</p>
             </div>
           );
         }
@@ -820,7 +904,7 @@ export const ShowtimeManager = () => {
           if (!acc[dateStr]) acc[dateStr] = {};
           if (!acc[dateStr][movieId]) acc[dateStr][movieId] = { movie: st.movie, rooms: {} };
           if (!acc[dateStr][movieId].rooms[roomId]) acc[dateStr][movieId].rooms[roomId] = { room: st.room, showtimes: [] };
-          
+
           acc[dateStr][movieId].rooms[roomId].showtimes.push(st);
           return acc;
         }, {});
@@ -838,10 +922,44 @@ export const ShowtimeManager = () => {
 
               return (
                 <div key={dateStr} className="bg-white border border-gray-200 p-5 rounded-3xl space-y-5 shadow-sm">
-                  <div className="flex items-center gap-2 border-b border-gray-200 pb-2.5">
-                    <Calendar className="text-brand" size={18} />
-                    <h4 className="font-bold text-gray-800 text-md">Ngày {dateStr}</h4>
-                  </div>
+                  {(() => {
+                    const [d, m, y] = dateStr.split('/');
+                    const targetDate = new Date(y, m - 1, d);
+                    const today = new Date(); today.setHours(0,0,0,0);
+                    const tmr = new Date(today); tmr.setDate(tmr.getDate() + 1);
+                    const isToday = targetDate.toDateString() === today.toDateString();
+                    const isTomorrow = targetDate.toDateString() === tmr.toDateString();
+                    const isPast = targetDate < today;
+                    const weekdayFmt = targetDate.toLocaleDateString('vi-VN', { weekday: 'long' });
+
+                    return (
+                      <div className="flex items-center justify-between border-b border-gray-200 pb-2.5">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="text-brand" size={18} />
+                          <h4 className="font-extrabold text-gray-800 text-base capitalize">
+                            {weekdayFmt}, {dateStr}
+                          </h4>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isToday && (
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-green-500/10 text-green-600 border border-green-500/20">
+                              🔥 Hôm nay
+                            </span>
+                          )}
+                          {isTomorrow && (
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-500/10 text-blue-600 border border-blue-500/20">
+                              ⭐ Ngày mai
+                            </span>
+                          )}
+                          {isPast && (
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                              ⌛ Đã qua
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {Object.keys(moviesOnDate).map((movieId) => {

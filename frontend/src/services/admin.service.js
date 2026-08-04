@@ -223,6 +223,16 @@ const getTMDBTrending = async () => {
   return response;
 };
 
+// Upload ảnh poster
+const uploadImage = async (file) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  const response = await api.post('/upload/image', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
 const adminService = {
   createMovie,
   updateMovie,
@@ -262,6 +272,7 @@ const adminService = {
   searchTMDB,
   getTMDBMovieDetail,
   getTMDBTrending,
+  uploadImage,
   getPricingConfig,
   updatePricingConfig,
   previewTicketPrice,
