@@ -221,7 +221,7 @@ export const BookingPage = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 space-y-3">
       {/* Modal Cảnh Báo Độ Tuổi Cho Booking */}
       <Modal
         isOpen={ageWarning.isOpen}
@@ -252,35 +252,36 @@ export const BookingPage = () => {
         </div>
       </Modal>
 
-      {/* Nút quay lại chi tiết phim */}
-      <button
-        onClick={handleBackStep}
-        className="inline-flex items-center text-zinc-500 hover:text-brand text-xs font-extrabold uppercase tracking-wider gap-1.5 transition-colors"
-      >
-        <ChevronLeft size={16} /> Quay lại chi tiết phim
-      </button>
+      {/* Thanh công cụ trên cùng: Nút quay lại + Chỉ báo tiến trình */}
+      <div className="flex items-center justify-between select-none py-1">
+        <button
+          onClick={handleBackStep}
+          className="inline-flex items-center text-zinc-500 hover:text-brand text-xs font-extrabold uppercase tracking-wider gap-1.5 transition-colors"
+        >
+          <ChevronLeft size={16} /> Quay lại chi tiết phim
+        </button>
 
-      {/* Thanh chỉ báo tiến trình */}
-      <div className="flex items-center justify-center space-x-4 select-none max-w-md mx-auto py-2">
-        <span className={`text-xs font-extrabold px-3 py-1 rounded-full border ${
-          activeStep === 1 ? 'bg-brand text-white border-brand shadow' : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400'
-        }`}>1. Sơ đồ ghế</span>
-        <span className="h-0.5 w-12 bg-gray-200 dark:bg-gray-800" />
-        <span className={`text-xs font-extrabold px-3 py-1 rounded-full border ${
-          activeStep === 2 ? 'bg-brand text-white border-brand shadow' : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400'
-        }`}>2. Bắp nước</span>
+        <div className="flex items-center space-x-3">
+          <span className={`text-xs font-extrabold px-3 py-1 rounded-full border ${
+            activeStep === 1 ? 'bg-brand text-white border-brand shadow' : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400'
+          }`}>1. Sơ đồ ghế</span>
+          <span className="h-0.5 w-8 bg-gray-200 dark:bg-gray-800" />
+          <span className={`text-xs font-extrabold px-3 py-1 rounded-full border ${
+            activeStep === 2 ? 'bg-brand text-white border-brand shadow' : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400'
+          }`}>2. Bắp nước</span>
+        </div>
       </div>
 
       {/* Lưới bố cục */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
         {/* Tùy chọn đặt chỗ bên trái */}
-        <div className="lg:col-span-2 space-y-8 bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 p-6 rounded-3xl shadow-xl">
+        <div className="lg:col-span-2 space-y-3 bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-xl">
           {activeStep === 1 ? (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-3">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-2">
                 <div className="flex items-center gap-2">
-                  <Armchair className="text-brand" size={20} />
-                  <h3 className="text-lg font-black text-zinc-800 dark:text-zinc-100">Chọn vị trí ghế ngồi</h3>
+                  <Armchair className="text-brand" size={18} />
+                  <h3 className="text-base font-black text-zinc-800 dark:text-zinc-100">Chọn vị trí ghế ngồi</h3>
                 </div>
                 
                 {selectedSeats.length > 0 && (

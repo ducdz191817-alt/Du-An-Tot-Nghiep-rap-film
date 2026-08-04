@@ -12,6 +12,7 @@ import RevenueReport from '../components/Admin/RevenueReport';
 import UserManager from '../components/Admin/UserManager';
 import CouponManager from '../components/Admin/CouponManager';
 import PricingManager from '../components/Admin/PricingManager';
+import SeatPriceManager from '../components/Admin/SeatPriceManager';
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -33,6 +34,7 @@ const AdminPage = () => {
       case 'movies':      return <MovieManager />;
       case 'showtimes':   return <ShowtimeManager />;
       case 'rooms':       return <RoomManager />;
+      case 'seat-prices': return <SeatPriceManager />;
       case 'concessions': return <ConcessionManager />;
       case 'bookings':    return <BookingManager />;
       case 'coupons':     return <CouponManager />;

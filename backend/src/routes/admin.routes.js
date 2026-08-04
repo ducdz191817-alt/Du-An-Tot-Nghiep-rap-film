@@ -34,6 +34,8 @@ const {
   deleteBooking,
   printTicket,
   checkInTicket,
+  sendBookingEmail,
+  sendBulkEmail,
   listUsers,
   updateUserRole,
   deleteUser,
@@ -85,6 +87,8 @@ router.get('/bookings', listBookings);
 router.delete('/bookings/:id', deleteBooking);
 router.post('/bookings/:id/print', printTicket);
 router.post('/bookings/check-in', checkInTicket);
+router.post('/bookings/send-email-bulk', sendBulkEmail);
+router.post('/bookings/:id/send-email', sendBookingEmail);
 
 // Coupon Management (Admin)
 const { listCoupons, createCoupon, updateCoupon, deleteCoupon } = require("../controllers/coupon.controller");

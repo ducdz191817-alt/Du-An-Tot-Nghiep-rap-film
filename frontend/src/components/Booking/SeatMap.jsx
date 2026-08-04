@@ -82,9 +82,10 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
     for (let i = 0; i < seatStates.length; i++) {
       const s = seatStates[i];
       const isOccupied = !s.isAvailable || currentSelectedSeats.includes(s.seatCode);
+      const seatCapacity = s.type === 'couple' ? 2 : 1;
       
       if (!isOccupied) {
-        currentSegmentLength++;
+        currentSegmentLength += seatCapacity;
       } else {
         if (currentSegmentLength > 0) {
           segments.push({ length: currentSegmentLength });
@@ -149,29 +150,38 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
       // Bỏ chọn
       newSelected = selectedSeats.filter(code => code !== clickedSeatCode);
     } else {
-      // ==========================================
-      // FIX BUG 2: GIỚI HẠN TỐI ĐA 8 GHẾ
-      // ==========================================
+      // Giới hạn tối đa 8 ghế
       if (selectedSeats.length >= MAX_SEATS_PER_BOOKING) {
-        setToastMsg(`Bạn chỉ được chọn tối đa ${MAX_SEATS_PER_BOOKING} ghế mỗi lần đặt vé.`);
+        setToastMsg(`🚫 Bạn chỉ được chọn tối đa ${MAX_SEATS_PER_BOOKING} ghế mỗi lần đặt vé.`);
         return;
       }
       newSelected = [...selectedSeats, clickedSeatCode];
     }
 
-    // --- KIỂM TRA LUẬT CHỐNG GHẾ SO LE (ORPHAN RULE) ---
-    // FIX BUG 1: Kiểm tra TẤT CẢ các hàng, không chỉ hàng vừa click
-    const hasOrphan = checkAllRowsForOrphan(newSelected);
+    // 1. Cảnh báo hàng ghế A/B gần màn hình
+    const isFrontRow = rowLetter === 'A' || rowLetter === 'B';
+    let currentToast = '';
 
+    if (!isAlreadySelected && isFrontRow) {
+      currentToast = "⚠️ Hàng ghế A/B nằm sát màn chiếu, góc nhìn có thể hơi dốc.";
+    }
+
+    // 2. Cảnh báo đặt ghế phân tán >= 3 dãy
+    const uniqueRows = new Set(newSelected.map(code => code.match(/^([A-Za-z]+)/)?.[1]));
+    if (uniqueRows.size >= 3) {
+      currentToast = "⚠️ Bạn đang chọn ghế ở 3 dãy khác nhau. Vui lòng kiểm tra vị trí xem phim của nhóm.";
+    }
+
+    // 3. Kiểm tra luật chống ghế mồ côi (toàn bộ các hàng)
+    const hasOrphan = checkAllRowsForOrphan(newSelected);
     if (hasOrphan) {
-      setToastMsg("Đang để trống 1 ghế (so le). Vui lòng chọn lấp chỗ trống hoặc bỏ chọn.");
+      currentToast = "❌ Đang để trống 1 ghế (so le). Vui lòng chọn lấp chỗ trống hoặc bỏ chọn.";
       if (onOrphanError) onOrphanError(true);
     } else {
-      setToastMsg("");
       if (onOrphanError) onOrphanError(false);
     }
 
-    // Luôn cho phép cập nhật để user có thể sửa lỗi (chỉ khóa nút thanh toán)
+    setToastMsg(currentToast);
     onSeatClick(newSelected);
   };
 
@@ -192,7 +202,7 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
   };
 
   return (
-    <div className="space-y-6 overflow-x-auto py-6 relative">
+    <div className="space-y-4 overflow-x-auto py-2 relative">
       <Toast message={toastMsg} type="warning" onClose={() => setToastMsg('')} />
 
       {/* Thông tin ghế trống + Giới hạn */}
@@ -208,15 +218,15 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
 
       {/* 1. Chỉ báo màn hình cong */}
       <div className="w-full max-w-xl mx-auto flex flex-col items-center select-none">
-        <div className="h-2 w-full bg-brand rounded-full shadow-[0_0_20px_rgba(229,9,20,0.8)]" />
-        <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.25em] mt-3">
+        <div className="h-1.5 w-full bg-brand rounded-full shadow-[0_0_15px_rgba(229,9,20,0.8)]" />
+        <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-[0.2em] mt-1">
           Màn hình chiếu phim
         </span>
       </div>
 
       {/* 2. Bố cục lưới ghế */}
       <div className="min-w-[600px] flex flex-col items-center justify-center space-y-3">
-        {Object.keys(groupedSeats).map((rowLetter) => {
+        {Object.keys(groupedSeats).map((rowLetter, rowIndex) => {
           const rowSeats = [...groupedSeats[rowLetter]].sort((a, b) => a.number - b.number);
           const rowSeatStates = rowSeats.map(getSeatState);
           // FIX BUG 3: Tính vị trí aisle động
@@ -263,10 +273,15 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
                         {seatInfo.isDisabled ? 'X' : (isCouple ? `${seatInfo.seatCode} Đôi` : seatInfo.seatCode)}
                       </button>
 
-                      {/* FIX BUG 3: Lối đi (Aisle) ĐỘNG - dựa trên vị trí tính toán */}
+                      {/* Lối đi (Aisle) ĐỘNG */}
                       {aisleIndex !== -1 && index === aisleIndex - 1 && (
-                        <div className="w-8 sm:w-12 flex flex-col items-center justify-center mx-1">
-                          <div className="h-full w-px bg-zinc-800/50"></div>
+                        <div className="w-8 sm:w-12 flex flex-col items-center justify-center mx-1 select-none shrink-0">
+                          {rowIndex === 0 && (
+                            <span className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider mb-1 whitespace-nowrap">
+                              Lối đi
+                            </span>
+                          )}
+                          <div className="h-full w-px border-r border-dashed border-zinc-700/60" />
                         </div>
                       )}
                     </React.Fragment>

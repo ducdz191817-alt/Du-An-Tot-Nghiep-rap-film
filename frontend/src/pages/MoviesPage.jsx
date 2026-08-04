@@ -8,7 +8,7 @@ import Loading from '../components/common/Loading';
 import { useLanguage } from '../context/LanguageContext';
 
 // Status groups
-const NOW_SHOWING_STATUSES = ['now-showing', 'preview'];
+const NOW_SHOWING_STATUSES = ['now-showing'];
 const UPCOMING_STATUSES = ['coming-soon', 'pre-release'];
 
 export const MoviesPage = () => {
@@ -17,7 +17,7 @@ export const MoviesPage = () => {
   const { movies, loading, error } = useSelector((state) => state.movie);
 
   const [filters, setFilters] = useState({
-    status: 'all',
+    status: 'now-showing',
     search: '',
     genres: [],
     rating: '',

@@ -27,9 +27,6 @@ const createBooking = async (req, res, next) => {
       throw new Error('Please select at least one seat');
     }
 
-    // ==========================================
-    // VALIDATION: GIỚI HẠN TỐI ĐA 8 GHẾ MỖI GIAO DỊCH
-    // ==========================================
     const MAX_SEATS_PER_BOOKING = 8;
     if (seats.length > MAX_SEATS_PER_BOOKING) {
       res.status(400);

@@ -79,7 +79,7 @@ export const MovieFilter = ({ filters, onChange }) => {
       genres: [],
       rating: '',
       sortBy: 'newest',
-      status: 'all',
+      status: 'now-showing',
       date: '',
     });
   };
@@ -88,7 +88,7 @@ export const MovieFilter = ({ filters, onChange }) => {
     (filters.search && filters.search !== '') ||
     selectedGenres.length > 0 ||
     selectedRating !== '' ||
-    selectedStatus !== 'all' ||
+    (selectedStatus !== 'now-showing' && selectedStatus !== 'all') ||
     selectedDate !== '' ||
     selectedSortBy !== 'newest';
 
@@ -96,7 +96,6 @@ export const MovieFilter = ({ filters, onChange }) => {
     { value: 'all', label: t('filter.statusAll') },
     { value: 'now-showing', label: t('filter.nowShowing') },
     { value: 'coming-soon', label: t('filter.comingSoon') },
-    { value: 'preview', label: t('filter.preview') },
     { value: 'pre-release', label: t('filter.preRelease') },
   ];
 
@@ -165,17 +164,8 @@ export const MovieFilter = ({ filters, onChange }) => {
     <div className="space-y-4 bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 p-4 sm:p-5 rounded-2xl shadow-sm">
       {/* Row 1: Status tabs & Search */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
-        {/* Status tabs */}
+        {/* Status tabs — không có "Tất cả trạng thái" */}
         <div className="flex flex-wrap items-center bg-gray-100 dark:bg-gray-800 p-1.5 rounded-xl border border-gray-200 dark:border-gray-700 w-full lg:w-auto overflow-x-auto">
-          <button
-            onClick={() => handleStatusChange('all')}
-            className={`flex-1 lg:flex-none text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap ${filters.status === 'all'
-                ? 'bg-gray-900 text-white shadow-md'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-              }`}
-          >
-            {t('filter.statusAll')}
-          </button>
           <button
             onClick={() => handleStatusChange('now-showing')}
             className={`flex-1 lg:flex-none text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap ${filters.status === 'now-showing'
@@ -193,15 +183,6 @@ export const MovieFilter = ({ filters, onChange }) => {
               }`}
           >
             {t('filter.comingSoon')}
-          </button>
-          <button
-            onClick={() => handleStatusChange('preview')}
-            className={`flex-1 lg:flex-none text-xs sm:text-sm font-bold px-4 py-2.5 rounded-lg transition-all duration-300 whitespace-nowrap ${filters.status === 'preview'
-                ? 'bg-gray-900 text-white shadow-md'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-              }`}
-          >
-            {t('filter.preview')}
           </button>
           <button
             onClick={() => handleStatusChange('pre-release')}

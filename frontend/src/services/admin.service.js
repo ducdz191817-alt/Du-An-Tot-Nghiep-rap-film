@@ -159,6 +159,18 @@ const checkInTicket = async (data) => {
   return response;
 };
 
+// Email notifications
+const sendBookingEmail = async (bookingId) => {
+  const response = await api.post(`/admin/bookings/${bookingId}/send-email`);
+  return response.data;
+};
+
+const sendBulkEmail = async (data) => {
+  // data: { showtimeId } or { bookingIds: [...] } + optional { subject, customMessage }
+  const response = await api.post('/admin/bookings/send-email-bulk', data);
+  return response.data;
+};
+
 // User Management
 const getUsers = async (role = '') => {
   const response = await api.get('/admin/users', {
@@ -242,6 +254,8 @@ const adminService = {
   deleteBooking,
   printTicket,
   checkInTicket,
+  sendBookingEmail,
+  sendBulkEmail,
   getUsers,
   updateUserRole,
   deleteUser,

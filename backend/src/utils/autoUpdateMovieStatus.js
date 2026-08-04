@@ -18,17 +18,17 @@ const Showtime = require('../models/Showtime.model');
  * @returns {'now-showing'|'coming-soon'|'pre-release'}
  */
 const computeMovieStatus = async (movieId) => {
+  const movie = await Movie.findById(movieId).select('releaseDate status').lean();
+  if (!movie) return 'pre-release';
+
   const now = new Date();
 
-  // Đầu ngày hôm nay (00:00:00)
+  // 1. Kiểm tra xem có lịch chiếu nào hôm nay không
   const startOfToday = new Date(now);
   startOfToday.setHours(0, 0, 0, 0);
-
-  // Cuối ngày hôm nay (23:59:59)
   const endOfToday = new Date(now);
   endOfToday.setHours(23, 59, 59, 999);
 
-  // 1. Kiểm tra xem có lịch chiếu nào hôm nay không
   const todayShowtime = await Showtime.findOne({
     movie: movieId,
     startTime: { $gte: startOfToday, $lte: endOfToday },
@@ -38,17 +38,23 @@ const computeMovieStatus = async (movieId) => {
     return 'now-showing';
   }
 
-  // 2. Kiểm tra xem có lịch chiếu nào trong tương lai không
+  // 2. Nếu ngày khởi chiếu đã qua hoặc là hôm nay -> Đang chiếu (now-showing)
+  if (movie.releaseDate && new Date(movie.releaseDate) <= now) {
+    return 'now-showing';
+  }
+
+  // 3. Kiểm tra xem có lịch chiếu trong tương lai hoặc khởi chiếu trong vòng 30 ngày tới -> Sắp chiếu (coming-soon)
   const futureShowtime = await Showtime.findOne({
     movie: movieId,
     startTime: { $gt: endOfToday },
   }).lean();
 
-  if (futureShowtime) {
+  const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  if (futureShowtime || (movie.releaseDate && new Date(movie.releaseDate) <= thirtyDaysLater)) {
     return 'coming-soon';
   }
 
-  // 3. Không có lịch chiếu nào
+  // 4. Khởi chiếu còn quá xa (> 30 ngày) và chưa có lịch chiếu -> Sắp ra mắt (pre-release)
   return 'pre-release';
 };
 

@@ -4,10 +4,11 @@ import {
   LayoutDashboard, Film, Calendar, Building2, Coffee,
   Ticket, BarChart3, LogOut, Menu, ChevronRight,
   Clapperboard, Zap, Bell, ChevronDown, Activity, Users,
-  Hourglass, X, AlertCircle, Tag, DollarSign,
+  Hourglass, X, AlertCircle, Tag, DollarSign, Armchair, Sun, Moon
 } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 import adminService from '../../services/admin.service';
+import { useTheme } from '../../context/ThemeContext';
 
 const NAV_ITEMS = [
   {
@@ -22,6 +23,7 @@ const NAV_ITEMS = [
       { key: 'movies',     label: 'Quản lý Phim',       icon: Film },
       { key: 'showtimes',  label: 'Lịch chiếu',          icon: Calendar },
       { key: 'rooms',      label: 'Rạp & Phòng chiếu',   icon: Building2 },
+      { key: 'seat-prices',label: 'Quản lý giá ghế',    icon: Armchair },
       { key: 'concessions',label: 'Bắp nước & Combo',    icon: Coffee },
     ]
   },
@@ -45,6 +47,7 @@ const NAV_ITEMS = [
 const AdminLayout = ({ activeTab, setActiveTab, children }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen]   = useState(false);
   const [collapsed, setCollapsed]       = useState(false);
   const [profileOpen, setProfileOpen]   = useState(false);
@@ -82,7 +85,7 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
   const currentLabel = NAV_ITEMS.flatMap(g => g.items).find(i => i.key === activeTab)?.label || 'Admin';
 
   return (
-    <div style={{ display:'flex', height:'100vh', overflow:'hidden', background:'#faf7f2', fontFamily:'Outfit, Inter, sans-serif' }}>
+    <div style={{ display:'flex', height:'100vh', overflow:'hidden', fontFamily:'Be Vietnam Pro, Plus Jakarta Sans, Inter, sans-serif' }} className="admin-layout bg-[#faf7f2] dark:bg-[#0b0f19] text-gray-900 dark:text-gray-100">
 
       {/* ── Mobile overlay ── */}
       {sidebarOpen && (
@@ -250,11 +253,9 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
         minWidth: 0, overflow: 'hidden',
       }}>
         {/* Top bar */}
-        <header style={{
+        <header className="bg-white dark:bg-[#121827] border-b border-gray-200 dark:border-[#1f293d]" style={{
           height: 64, display: 'flex', alignItems: 'center', gap: 16,
           padding: '0 20px',
-          background: '#ffffff',
-          borderBottom: '1px solid #e5e0d5',
           flexShrink: 0, zIndex: 10,
         }}>
           {/* Mobile menu */}
@@ -270,16 +271,30 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
             <Clapperboard size={14} color="#8b5cf6" />
             <ChevronRight size={12} color="#9ca3af" />
-            <span style={{ fontWeight: 700, color: '#1a1a2e' }}>{currentLabel}</span>
+            <span className="text-[#1a1a2e] dark:text-white" style={{ fontWeight: 700 }}>{currentLabel}</span>
           </div>
 
           <div style={{ flex: 1 }} />
 
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            style={{
+              padding: 8, borderRadius: 8, border: 'none',
+              background: 'transparent',
+              color: theme === 'dark' ? '#f59e0b' : '#6b7280',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            title={theme === 'dark' ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+
           {/* Live indicator */}
-          <div style={{
+          <div className="bg-[#f5f0e8] dark:bg-[#1e293b] border border-[#e5e0d5] dark:border-[#334155] text-gray-600 dark:text-gray-300" style={{
             display: 'flex', alignItems: 'center', gap: 6,
-            fontSize: 11, color: '#6b7280', fontWeight: 700,
-            background: '#f5f0e8', border: '1px solid #e5e0d5',
+            fontSize: 11, fontWeight: 700,
             padding: '5px 10px', borderRadius: 8,
           }}>
             <Activity size={12} color="#34d399" />

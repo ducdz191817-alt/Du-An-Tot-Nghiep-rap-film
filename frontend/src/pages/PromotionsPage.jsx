@@ -349,7 +349,7 @@ const PromotionsPage = () => {
         {[
           { label: t('promo.activeCodes'), value: promotions.length, icon: <Tag size={18} className="text-brand" /> },
           { label: t('promo.maxSavings'), value: '50%', icon: <Percent size={18} className="text-emerald-600" /> },
-          { label: t('promo.weeklyUpdate'), value: language === 'en' ? '7 days' : '7 ngày', icon: <Clock size={18} className="text-amber-500" /> },
+          { label: t('promo.weeklyUpdate'), value: t('promo.weeklyDays'), icon: <Clock size={18} className="text-amber-500" /> },
         ].map((s, i) => (
           <div key={i} className="bg-white border border-zinc-200 rounded-2xl p-4 flex flex-col items-center gap-1 text-center shadow-sm">
             {s.icon}
@@ -376,26 +376,10 @@ const PromotionsPage = () => {
         <h3 className="text-lg font-black text-zinc-800 mb-6 text-center">{t('promo.howToUse')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[
-            {
-              step: '01',
-              title: language === 'en' ? 'Select Movie' : 'Chọn phim',
-              desc: language === 'en' ? 'Browse the movie catalog and choose the showtime you wish to watch.' : 'Duyệt danh sách phim và chọn suất chiếu bạn muốn xem.'
-            },
-            {
-              step: '02',
-              title: language === 'en' ? 'Select Seats' : 'Chọn ghế',
-              desc: language === 'en' ? 'Select your preferred seats and optionally add snacks or drinks.' : 'Chọn ghế yêu thích và thêm bắp nước nếu muốn.'
-            },
-            {
-              step: '03',
-              title: language === 'en' ? 'Apply Code' : 'Nhập mã',
-              desc: language === 'en' ? 'Copy the promotion code and paste it into the voucher input at checkout.' : 'Sao chép và dán mã khuyến mãi vào ô nhập khi thanh toán.'
-            },
-            {
-              step: '04',
-              title: language === 'en' ? 'Enjoy' : 'Tận hưởng',
-              desc: language === 'en' ? 'Complete your booking and enjoy your movie at a discounted rate!' : 'Hoàn tất đặt vé và tận hưởng bộ phim với giá ưu đãi!'
-            },
+            { step: '01', title: t('promo.step1'), desc: t('promo.step1Desc') },
+            { step: '02', title: t('promo.step2'), desc: t('promo.step2Desc') },
+            { step: '03', title: t('promo.step3'), desc: t('promo.step3Desc') },
+            { step: '04', title: t('promo.step4'), desc: t('promo.step4Desc') },
           ].map((item) => (
             <div key={item.step} className="text-center space-y-2">
               <div className="w-10 h-10 rounded-full bg-brand/10 border border-brand/20 text-zinc-700 font-black text-sm flex items-center justify-center mx-auto">

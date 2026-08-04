@@ -82,15 +82,21 @@ const getShowtimes = async (req, res, next) => {
     if (roomId) query.room = roomId;
 
     const showtimes = await Showtime.find(query)
-      .populate('movie')
+      .populate({
+        path: 'movie',
+        match: { status: { $nin: ['hidden', 'cancelled'] } },
+      })
       .populate('theater')
       .populate('room')
       .sort({ startTime: 1 });
 
+    // Lọc bỏ các showtime mà phim đã bị xóa/ẩn (populate trả về null)
+    const filteredShowtimes = showtimes.filter((st) => st.movie !== null);
+
     res.json({
       success: true,
-      count: showtimes.length,
-      data: showtimes,
+      count: filteredShowtimes.length,
+      data: filteredShowtimes,
     });
   } catch (error) {
     next(error);

@@ -152,8 +152,7 @@ export const BookingHistoryPage = () => {
                       </h3>
                       <p className="text-xs text-zinc-400 font-bold flex items-center gap-1.5">
                         <MapPin size={13} className="text-brand shrink-0" />
-                        {theater.name || t('history.unknownTheater')} &bull; {room.name || t('history.unknownRoom')} (
-                        {showtime.format || 'N/A'})
+                        {theater.name || t('history.unknownTheater')} &bull; {room.name && showtime.format && room.name.toUpperCase().includes(showtime.format.toUpperCase()) ? room.name : `${room.name || t('history.unknownRoom')}${showtime.format ? ` (${showtime.format})` : ''}`}
                       </p>
                       <p className="text-[11px] text-zinc-500 font-semibold flex items-center gap-1.5">
                         <Calendar size={13} />

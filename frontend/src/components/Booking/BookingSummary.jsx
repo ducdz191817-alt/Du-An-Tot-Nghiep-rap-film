@@ -97,33 +97,35 @@ export const BookingSummary = ({
     : null;
 
   return (
-    <div className="bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 p-6 rounded-3xl space-y-6 shadow-xl sticky top-24">
+    <div className="bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 p-4 rounded-2xl space-y-4 shadow-xl sticky top-20">
       {/* Movie Details Invoice Header */}
-      <div className="space-y-3 border-b border-gray-200 dark:border-gray-800 pb-4">
-        <span className="text-[10px] font-black bg-brand px-2 py-0.5 rounded text-white tracking-wide uppercase">
-          {movie.rating}
-        </span>
-        <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-100 leading-snug">{movie.title}</h3>
-        <div className="flex flex-wrap gap-2 text-xs text-zinc-500 dark:text-zinc-400 font-semibold uppercase">
-          {releaseDateLabel && <span>Khởi chiếu: {releaseDateLabel}</span>}
-          {durationLabel && <span>{durationLabel}</span>}
+      <div className="space-y-1.5 border-b border-gray-200 dark:border-gray-800 pb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-black bg-brand px-2 py-0.5 rounded text-white tracking-wide uppercase">
+            {movie.rating}
+          </span>
+          <h3 className="text-base font-black text-zinc-900 dark:text-zinc-100 leading-snug line-clamp-1">{movie.title}</h3>
         </div>
-        <p className="text-xs text-zinc-600 dark:text-zinc-400 font-semibold uppercase">
-          {theater.name} &bull; {room.name} ({showtime.format})
+        <div className="flex flex-wrap gap-x-2 text-[11px] text-zinc-500 dark:text-zinc-400 font-semibold uppercase">
+          {releaseDateLabel && <span>Khởi chiếu: {releaseDateLabel}</span>}
+          {durationLabel && <span>&bull; {durationLabel}</span>}
+        </div>
+        <p className="text-[11px] text-zinc-600 dark:text-zinc-400 font-semibold uppercase">
+          {theater.name} &bull; {room.name && showtime.format && room.name.toUpperCase().includes(showtime.format.toUpperCase()) ? room.name : `${room.name || ''}${showtime.format ? ` (${showtime.format})` : ''}`}
         </p>
-        <p className="text-xs text-zinc-500 dark:text-zinc-500 font-bold">
+        <p className="text-[11px] text-zinc-500 dark:text-zinc-500 font-bold">
           {dateString} &bull; {timeString}
         </p>
       </div>
 
       {/* Thời gian giữ ghế (Chỉ hiện khi đã chọn ghế) */}
       {selectedSeats.length > 0 && timeLeft !== undefined && (
-        <div className="flex items-center justify-between bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-xl px-4 py-3 shadow-inner">
-          <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
-            <Clock size={18} className="animate-pulse" />
-            <span className="text-xs font-bold uppercase tracking-wider">Thời gian giữ ghế</span>
+        <div className="flex items-center justify-between bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-xl px-3.5 py-2 shadow-inner">
+          <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400">
+            <Clock size={16} className="animate-pulse" />
+            <span className="text-[11px] font-bold uppercase tracking-wider">Thời gian giữ ghế</span>
           </div>
-          <span className="text-xl font-black text-red-600 dark:text-red-400 tabular-nums tracking-widest">
+          <span className="text-lg font-black text-red-600 dark:text-red-400 tabular-nums tracking-widest">
             {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}
           </span>
         </div>

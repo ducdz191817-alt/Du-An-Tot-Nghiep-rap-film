@@ -1,12 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  html, body, #root, input, select, textarea, button, p, span, div, h1, h2, h3, h4, h5, h6, table, thead, tbody, tr, th, td, a {
-    font-family: 'Quicksand', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  html, body, #root, input, select, textarea, button, option, p, span, div, h1, h2, h3, h4, h5, h6, table, thead, tbody, tr, th, td, a {
+    font-family: 'Be Vietnam Pro', 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -163,4 +163,80 @@
     linear-gradient(to top, #faf7f2 10%, rgba(250, 247, 242, 0.7) 50%, rgba(250, 247, 242, 0.3) 100%),
     radial-gradient(circle at 90% 10%, rgba(200, 135, 43, 0.08) 0%, transparent 60%);
   pointer-events: none;
+}
+
+/* =========================================================
+   🌙 DARK MODE CONTRAST & READABILITY FIXES (ADMIN & GLOBAL)
+   ========================================================= */
+
+/* Dark mode main body & background fix */
+html.dark body {
+  background-color: #0b0f19 !important;
+  color: #f3f4f6 !important;
+}
+
+/* Fix bg-white containers & cards in dark mode */
+html.dark .bg-white {
+  background-color: #121827 !important;
+  border-color: #1f293d !important;
+  color: #f3f4f6 !important;
+}
+
+/* Fix light gray background blocks & select boxes in dark mode */
+html.dark .bg-gray-50 {
+  background-color: #1a2234 !important;
+  border-color: #1f293d !important;
+  color: #f3f4f6 !important;
+}
+
+html.dark .bg-gray-100 {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f3f4f6 !important;
+}
+
+/* Input, select & textarea visibility & high contrast in dark mode */
+html.dark select,
+html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+html.dark textarea {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+html.dark select option {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+/* High contrast text colors for dark mode */
+html.dark .text-gray-900,
+html.dark .text-gray-800,
+html.dark .text-gray-700,
+html.dark .text-gray-600 {
+  color: #e2e8f0 !important;
+}
+
+html.dark .text-gray-500,
+html.dark .text-gray-400 {
+  color: #94a3b8 !important;
+}
+
+/* Border and line contrast in dark mode */
+html.dark .border-gray-200,
+html.dark .border-gray-100,
+html.dark .border-gray-300 {
+  border-color: #1f293d !important;
+}
+
+html.dark .divide-gray-100 > * + *,
+html.dark .divide-gray-200 > * + * {
+  border-color: #1f293d !important;
+}
+
+/* Dark mode modal dropdown & card shadow fixes */
+html.dark .shadow-sm,
+html.dark .shadow-md,
+html.dark .shadow-lg {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4) !important;
 }

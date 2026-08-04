@@ -86,11 +86,11 @@ const SeatButton = ({ seat, isSelected, isEditable, onClick }) => {
   const baseClass =
     'relative flex flex-col items-center justify-center border rounded-lg transition-all duration-150 cursor-pointer select-none text-[10px] font-bold';
 
-  const sizeClass = seat.type === 'couple' ? 'w-12 h-7 text-[9px]' : 'w-7 h-7';
+  const sizeClass = seat.type === 'couple' ? 'w-[62px] h-7 text-[9px]' : 'w-7 h-7';
 
   let colorClass;
   if (isDisabled) {
-    colorClass = 'bg-red-50 border-red-200 text-red-400 opacity-60 hover:opacity-90';
+    colorClass = 'bg-gray-100 border-dashed border-red-300 text-red-500 opacity-80 hover:opacity-100';
   } else if (isSelected) {
     colorClass = cfg.selectedColor;
   } else {
@@ -103,10 +103,14 @@ const SeatButton = ({ seat, isSelected, isEditable, onClick }) => {
       className={`${baseClass} ${sizeClass} ${colorClass} ${!isEditable ? 'cursor-default' : ''}`}
       title={`${seat.row}${seat.number} · ${cfg.label}${isDisabled ? ' (Đang khóa/Lối đi)' : ''}`}
     >
-      {isDisabled && (
-        <Ban size={9} className="absolute top-0.5 right-0.5 text-red-500 opacity-80" />
+      {isDisabled ? (
+        <div className="flex flex-col items-center justify-center leading-none">
+          <Ban size={9} className="text-red-500 mb-0.5" />
+          <span className="text-[6.5px] font-black text-red-600/80 uppercase">Lối đi</span>
+        </div>
+      ) : (
+        <span>{seat.row}{seat.number}</span>
       )}
-      <span>{seat.row}{seat.number}</span>
     </button>
   );
 };
@@ -629,6 +633,12 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
                           </button>
                         </div>
                       )}
+                      {/* Central Aisle Column Header Divider after seat 6 */}
+                      {colNum === 6 && cIdx < matrixData.cols.length - 1 && (
+                        <div className="w-10 text-center text-[10px] font-extrabold text-gray-400 border-x border-dashed border-gray-300 py-0.5 px-0.5 bg-gray-50 rounded select-none uppercase tracking-wider shrink-0 whitespace-nowrap">
+                          Lối đi
+                        </div>
+                      )}
                     </React.Fragment>
                   ))}
                 </div>
@@ -669,6 +679,21 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
                         <div className="flex items-center gap-1.5 flex-1">
                           {matrixData.cols.map((colNum, cIdx) => {
                             const seat = seatByColNum[colNum];
+                            const prevSeat = seatByColNum[colNum - 1];
+                            const isCoveredByCouple = prevSeat && prevSeat.type === 'couple';
+                            const isAfterAisle = colNum === 6 && cIdx < matrixData.cols.length - 1;
+
+                            if (isCoveredByCouple) {
+                              if (isAfterAisle) {
+                                return (
+                                  <div key={`aisle_after_${rowLabel}_${colNum}`} className="w-8 flex flex-col items-center justify-center mx-0.5 select-none shrink-0">
+                                    <div className="h-full w-px border-r border-dashed border-gray-300" />
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }
+
                             if (!seat) {
                               return (
                                 <React.Fragment key={`empty_${rowLabel}_${colNum}`}>
@@ -687,6 +712,11 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
                                   {isEditable && cIdx < matrixData.cols.length - 1 && (
                                     <div className="w-4" />
                                   )}
+                                  {isAfterAisle && (
+                                    <div className="w-8 flex flex-col items-center justify-center mx-0.5 select-none shrink-0">
+                                      <div className="h-full w-px border-r border-dashed border-gray-300" />
+                                    </div>
+                                  )}
                                 </React.Fragment>
                               );
                             }
@@ -702,6 +732,11 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
                                 />
                                 {isEditable && cIdx < matrixData.cols.length - 1 && (
                                   <div className="w-4" />
+                                )}
+                                {isAfterAisle && (
+                                  <div className="w-8 flex flex-col items-center justify-center mx-0.5 select-none shrink-0">
+                                    <div className="h-full w-px border-r border-dashed border-gray-300" />
+                                  </div>
                                 )}
                               </React.Fragment>
                             );
