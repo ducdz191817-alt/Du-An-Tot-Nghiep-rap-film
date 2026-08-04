@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const TMDB_API_KEY = process.env.TMDB_API_KEY;
+const getTMDBApiKey = () => process.env.TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.tmdb.org/3';
 const TMDB_IMG_BASE = 'https://image.tmdb.org/t/p/original';
 
@@ -57,6 +57,7 @@ const mapCertification = (certifications) => {
 const searchTMDB = async (req, res, next) => {
   try {
     const { query, page = 1 } = req.query;
+    const TMDB_API_KEY = getTMDBApiKey();
     
     if (!query || query.trim() === '') {
       return res.status(400).json({
@@ -121,6 +122,7 @@ const searchTMDB = async (req, res, next) => {
 const getTMDBTrending = async (req, res, next) => {
   try {
     const { page = 1 } = req.query;
+    const TMDB_API_KEY = getTMDBApiKey();
 
     if (!TMDB_API_KEY) {
       return res.status(500).json({
@@ -177,6 +179,7 @@ const getTMDBTrending = async (req, res, next) => {
 const getTMDBMovieDetail = async (req, res, next) => {
   try {
     const { tmdbId } = req.params;
+    const TMDB_API_KEY = getTMDBApiKey();
 
     if (!TMDB_API_KEY) {
       return res.status(500).json({
@@ -263,6 +266,17 @@ const getTMDBMovieDetail = async (req, res, next) => {
       // fallback: dùng original_title
     }
 
+    // Tính status thông minh dựa vào releaseDate
+    const computedStatus = (() => {
+      if (!movie.release_date) return 'coming-soon';
+      const release = new Date(movie.release_date);
+      const now = new Date();
+      const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      if (release <= now) return 'coming-soon';           // Đã ra mắt nhưng chưa xếp lịch → Sắp chiếu
+      if (release <= thirtyDaysLater) return 'coming-soon'; // Trong 30 ngày tới → Sắp chiếu
+      return 'pre-release';                               // Còn xa → Sắp ra mắt
+    })();
+
     // Trả về data đã map sang format Movie model
     const mappedMovie = {
       title: movie.title || movie.original_title,
@@ -275,7 +289,7 @@ const getTMDBMovieDetail = async (req, res, next) => {
       releaseDate: movie.release_date || '',
       posterUrl: movie.poster_path ? `${TMDB_IMG_BASE}${movie.poster_path}` : '',
       trailerUrl,
-      status: 'coming-soon',
+      status: computedStatus,
       rating,
       director,
       cast,

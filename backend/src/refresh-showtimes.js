@@ -63,23 +63,11 @@ const run = async () => {
     const today = new Date();
     today.setHours(23, 59, 59, 999);
 
-    // Phim đã ra mắt (releaseDate <= hôm nay) → set now-showing
-    const releasedMovies = allMovies.filter(m => new Date(m.releaseDate) <= today);
-    // Phim chưa ra mắt → giữ nguyên, nhưng vẫn tạo lịch chiếu tương lai
-    const upcomingMovies = allMovies.filter(m => new Date(m.releaseDate) > today);
+    // Chỉ tạo lịch chiếu cho các phim đang chiếu (now-showing)
+    const nowShowingMovies = allMovies.filter(m => m.status === 'now-showing');
+    console.log(`\n🎬 Lịch chiếu sẽ được tự động tạo cho ${nowShowingMovies.length} phim Đang chiếu (now-showing).\n`);
 
-    console.log(`\n🎬 Tổng: ${allMovies.length} phim | Đã ra mắt: ${releasedMovies.length} | Chưa ra mắt: ${upcomingMovies.length}\n`);
-
-    if (releasedMovies.length > 0) {
-      await Movie.updateMany(
-        { _id: { $in: releasedMovies.map(m => m._id) } },
-        { status: 'now-showing' }
-      );
-      console.log(`✅ Đặt lại status = now-showing cho ${releasedMovies.length} phim đã ra mắt.\n`);
-    }
-
-    // Tạo showtimes cho phim đã ra mắt (bắt đầu từ hôm nay)
-    const movies = allMovies; // tạo cho tất cả
+    const movies = nowShowingMovies;
 
 
 
@@ -127,7 +115,7 @@ const run = async () => {
     todayBase.setHours(0, 0, 0, 0);
     const todayStr = todayBase.toISOString().slice(0, 10);
 
-    for (const movie of releasedMovies) {
+    for (const movie of movies) {
       let assigned = false;
       // Thử tất cả các slot theo thứ tự để đảm bảo có slot
       for (const slot of SHOWTIME_SLOTS) {

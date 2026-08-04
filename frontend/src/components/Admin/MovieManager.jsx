@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus, Edit2, Trash2, X, AlertCircle, Eye, Search, Sparkles, Star, Calendar, Clock, Loader2, TrendingUp, Flame } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Plus, Edit2, Trash2, X, AlertCircle, Eye, Search, Sparkles, Star, Calendar, Clock, Loader2, TrendingUp, Flame, Upload, ImagePlus, Link } from 'lucide-react';
 import movieService from '../../services/movie.service';
 import adminService from '../../services/admin.service';
 import Input from '../common/Input';
@@ -57,6 +57,12 @@ export const MovieManager = () => {
   const [trendingMovies, setTrendingMovies] = useState([]);
   const [trendingLoading, setTrendingLoading] = useState(false);
 
+  // Poster Upload States
+  const [posterUploading, setPosterUploading] = useState(false);
+  const [posterPreview, setPosterPreview] = useState('');
+  const posterInputRef = useRef(null);
+  const [submitting, setSubmitting] = useState(false);
+
   const initialForm = {
     title: '',
     description: '',
@@ -66,7 +72,7 @@ export const MovieManager = () => {
     releaseDate: '',
     posterUrl: '',
     trailerUrl: '',
-    status: 'now-showing',
+    status: 'coming-soon',
     rating: 'T16',
     director: '',
     cast: [],       // lưu dưới dạng mảng
@@ -151,6 +157,7 @@ export const MovieManager = () => {
   const handleOpenAdd = () => {
     setEditingMovie(null);
     setForm(initialForm);
+    setPosterPreview('');
     setError('');
     setIsOpen(true);
   };
@@ -206,9 +213,23 @@ export const MovieManager = () => {
 
   const handleSelectTMDBMovie = async (tmdbId) => {
     setTmdbDetailLoading(tmdbId);
+    setTmdbError('');
     try {
       const result = await adminService.getTMDBMovieDetail(tmdbId);
       const m = result.data;
+
+      // Kiểm tra xem phim đã có trong kho dữ liệu chưa
+      const existing = movies.find(
+        (item) =>
+          item.tmdbId === m.tmdbId ||
+          item.title?.trim().toLowerCase() === m.title?.trim().toLowerCase()
+      );
+
+      if (existing) {
+        setTmdbError(`Phim "${m.title}" đã có sẵn trong danh sách quản lý phim (Trạng thái: ${existing.status}).`);
+        return;
+      }
+
       setForm({
         title: m.title || '',
         description: m.description || '',
@@ -224,10 +245,12 @@ export const MovieManager = () => {
         cast: Array.isArray(m.cast) ? m.cast : [],
         country: m.country || '',
         availableFormats: m.availableFormats ? m.availableFormats.join(', ') : '2D',
+        tmdbId: m.tmdbId || null,
       });
       setEditingMovie(null);
       setTmdbOpen(false);
       setIsOpen(true);
+      setPosterPreview(m.posterUrl || '');
     } catch (err) {
       setTmdbError(err.message || 'Lỗi lấy chi tiết phim');
     } finally {
@@ -257,7 +280,35 @@ export const MovieManager = () => {
       availableFormats: movie.availableFormats ? movie.availableFormats.join(', ') : '2D',
     });
     setError('');
+    setPosterPreview(movie.posterUrl || '');
     setIsOpen(true);
+  };
+
+  // === Upload Poster ===
+  const handlePosterFileChange = async (file) => {
+    if (!file) return;
+    const localUrl = URL.createObjectURL(file);
+    setPosterPreview(localUrl);
+    setPosterUploading(true);
+    try {
+      const result = await adminService.uploadImage(file);
+      if (result.success) {
+        const fullUrl = `http://localhost:5000${result.url}`;
+        setForm((f) => ({ ...f, posterUrl: fullUrl }));
+        setPosterPreview(fullUrl);
+      }
+    } catch (err) {
+      setError('Lỗi upload ảnh: ' + (err.message || 'Vui lòng thử lại'));
+      setPosterPreview('');
+    } finally {
+      setPosterUploading(false);
+    }
+  };
+
+  const handlePosterDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) handlePosterFileChange(file);
   };
 
   const handleDelete = async (id) => {
@@ -304,6 +355,7 @@ export const MovieManager = () => {
       availableFormats: formatArray,
     };
 
+    setSubmitting(true);
     try {
       if (editingMovie) {
         await adminService.updateMovie(editingMovie._id, payload);
@@ -315,8 +367,11 @@ export const MovieManager = () => {
       setIsOpen(false);
       fetchMoviesList();
     } catch (err) {
-      setError(err.message);
-      setToast({ message: err.message || 'Có lỗi xảy ra', type: 'error' });
+      const errMsg = err.response?.data?.message || err.message || 'Có lỗi xảy ra';
+      setError(errMsg);
+      setToast({ message: errMsg, type: 'error' });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -533,14 +588,20 @@ export const MovieManager = () => {
             <div>
               <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Trạng Thái Phát Hành</label>
               <select name="status" value={form.status} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer">
-                <option value="now-showing">🟢 Đang chiếu</option>
+                {/* Thêm mới: chỉ cho chọn 2 trạng thái hợp lý */}
                 <option value="coming-soon">🟡 Sắp chiếu</option>
                 <option value="pre-release">🔵 Sắp ra mắt</option>
-                <option value="preview">🟣 Chiếu sớm / Preview</option>
-                <option value="suspended">🟠 Tạm hoãn</option>
-                <option value="stopped">🔴 Ngừng chiếu</option>
-                <option value="cancelled">❌ Hủy phát hành</option>
-                <option value="hidden">🔒 Ẩn / Bảo trì</option>
+                {/* Chỉnh sửa: hiện thêm các trạng thái khác */}
+                {editingMovie && (
+                  <>
+                    <option value="now-showing">🟢 Đang chiếu</option>
+                    <option value="preview">🟣 Chiếu sớm / Preview</option>
+                    <option value="suspended">🟠 Tạm hoãn</option>
+                    <option value="stopped">🔴 Ngừng chiếu</option>
+                    <option value="cancelled">❌ Hủy phát hành</option>
+                    <option value="hidden">🔒 Ẩn / Bảo trì</option>
+                  </>
+                )}
               </select>
             </div>
 
@@ -622,10 +683,86 @@ export const MovieManager = () => {
             <Input name="country" label="Quốc Gia" placeholder="Ví dụ: Mỹ, Hàn Quốc, Việt Nam" value={form.country} onChange={handleChange} />
           </div>
 
+          {/* Poster Upload + Trailer URL */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input name="posterUrl" label="Đường Dẫn Hình Ảnh Poster (URL)" placeholder="https://unsplash.com/..." value={form.posterUrl} onChange={handleChange} required />
+            {/* Poster Upload */}
+            <div>
+              <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">
+                Ảnh Poster <span className="text-brand">*</span>
+              </label>
+              <input
+                ref={posterInputRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => handlePosterFileChange(e.target.files?.[0])}
+              />
+
+              {/* Upload area or Preview */}
+              {posterPreview ? (
+                <div className="relative group rounded-xl overflow-hidden border border-gray-200 bg-gray-50" style={{ height: '180px' }}>
+                  <img src={posterPreview} alt="Poster preview" className="w-full h-full object-cover" />
+                  {posterUploading && (
+                    <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-2">
+                      <Loader2 size={24} className="text-white animate-spin" />
+                      <span className="text-white text-xs font-bold">Đang upload...</span>
+                    </div>
+                  )}
+                  {!posterUploading && (
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                      <button
+                        type="button"
+                        onClick={() => posterInputRef.current?.click()}
+                        className="px-3 py-1.5 bg-white text-gray-800 text-xs font-bold rounded-lg shadow hover:bg-gray-100 transition-all flex items-center gap-1"
+                      >
+                        <Upload size={12} /> Đổi ảnh
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setPosterPreview(''); setForm((f) => ({ ...f, posterUrl: '' })); }}
+                        className="px-3 py-1.5 bg-red-500 text-white text-xs font-bold rounded-lg shadow hover:bg-red-600 transition-all flex items-center gap-1"
+                      >
+                        <X size={12} /> Xóa
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div
+                  onDrop={handlePosterDrop}
+                  onDragOver={(e) => e.preventDefault()}
+                  onClick={() => posterInputRef.current?.click()}
+                  className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 hover:border-brand/50 rounded-xl bg-gray-50 hover:bg-brand/5 cursor-pointer transition-all"
+                  style={{ height: '180px' }}
+                >
+                  <ImagePlus size={28} className="text-gray-400" />
+                  <div className="text-center">
+                    <p className="text-sm font-bold text-gray-600">Nhấn hoặc kéo thả ảnh vào đây</p>
+                    <p className="text-xs text-gray-400 mt-0.5">JPG, PNG, WEBP · Tối đa 10MB</p>
+                  </div>
+                  <span className="px-3 py-1.5 bg-brand/10 border border-brand/30 text-brand text-xs font-bold rounded-lg flex items-center gap-1">
+                    <Upload size={12} /> Chọn ảnh
+                  </span>
+                </div>
+              )}
+
+              {/* Fallback: URL nhập tay */}
+              <div className="mt-2 flex items-center gap-2">
+                <Link size={12} className="text-gray-400 shrink-0" />
+                <input
+                  type="text"
+                  name="posterUrl"
+                  placeholder="Hoặc dán URL ảnh vào đây..."
+                  value={form.posterUrl}
+                  onChange={(e) => { handleChange(e); setPosterPreview(e.target.value); }}
+                  className="flex-1 text-xs bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-1.5 px-2.5 focus:border-brand outline-none placeholder:text-gray-400"
+                />
+              </div>
+            </div>
+
             <Input name="trailerUrl" label="Đường Dẫn Nhúng Trailer YouTube (URL)" placeholder="https://www.youtube.com/embed/..." value={form.trailerUrl} onChange={handleChange} />
           </div>
+
 
           <AutocompleteInput
             label="Danh Sách Diễn Viên"
@@ -648,11 +785,11 @@ export const MovieManager = () => {
           />
 
           <div className="flex justify-end gap-3 pt-3 border-t border-gray-200">
-            <Button onClick={() => setIsOpen(false)} variant="secondary" className="px-5 py-2">
+            <Button onClick={() => setIsOpen(false)} variant="secondary" className="px-5 py-2" disabled={submitting}>
               Hủy
             </Button>
-            <Button type="submit" variant="primary" className="px-6 py-2">
-              Lưu Phim
+            <Button type="submit" variant="primary" className="px-6 py-2" disabled={submitting || posterUploading} icon={submitting ? <Loader2 size={16} className="animate-spin" /> : null}>
+              {submitting ? 'Đang lưu...' : 'Lưu Phim'}
             </Button>
           </div>
         </form>

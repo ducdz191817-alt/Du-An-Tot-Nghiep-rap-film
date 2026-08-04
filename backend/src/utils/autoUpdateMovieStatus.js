@@ -23,7 +23,7 @@ const computeMovieStatus = async (movieId) => {
 
   const now = new Date();
 
-  // 1. Kiểm tra xem có lịch chiếu nào hôm nay không
+  // 1. Kiểm tra xem có lịch chiếu nào hôm nay không -> Bắt buộc Đang Chiếu
   const startOfToday = new Date(now);
   startOfToday.setHours(0, 0, 0, 0);
   const endOfToday = new Date(now);
@@ -38,24 +38,30 @@ const computeMovieStatus = async (movieId) => {
     return 'now-showing';
   }
 
-  // 2. Nếu ngày khởi chiếu đã qua hoặc là hôm nay -> Đang chiếu (now-showing)
+  // 2. Nếu không có lịch chiếu hôm nay và status đã là coming-soon hoặc pre-release với ngày khởi chiếu ở tương lai -> GIỮ NGUYÊN
+  if (['coming-soon', 'pre-release'].includes(movie.status)) {
+    if (movie.releaseDate && new Date(movie.releaseDate) > now) {
+      return movie.status;
+    }
+  }
+
+  // 3. Khởi chiếu trong vòng 30 ngày tới -> coming-soon
+  const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  if (movie.releaseDate && new Date(movie.releaseDate) > thirtyDaysLater) {
+    return 'pre-release';
+  }
+
+  if (movie.releaseDate && new Date(movie.releaseDate) > now) {
+    return 'coming-soon';
+  }
+
+  // 4. Nếu releaseDate đã qua (phim đã ra mắt) → giữ now-showing (dù hôm nay không có suất chiếu)
   if (movie.releaseDate && new Date(movie.releaseDate) <= now) {
     return 'now-showing';
   }
 
-  // 3. Kiểm tra xem có lịch chiếu trong tương lai hoặc khởi chiếu trong vòng 30 ngày tới -> Sắp chiếu (coming-soon)
-  const futureShowtime = await Showtime.findOne({
-    movie: movieId,
-    startTime: { $gt: endOfToday },
-  }).lean();
-
-  const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-  if (futureShowtime || (movie.releaseDate && new Date(movie.releaseDate) <= thirtyDaysLater)) {
-    return 'coming-soon';
-  }
-
-  // 4. Khởi chiếu còn quá xa (> 30 ngày) và chưa có lịch chiếu -> Sắp ra mắt (pre-release)
-  return 'pre-release';
+  // 5. Fallback: giữ nguyên status hiện tại
+  return movie.status || 'coming-soon';
 };
 
 /**

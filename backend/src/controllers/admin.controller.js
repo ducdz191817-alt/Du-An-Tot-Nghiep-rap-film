@@ -16,6 +16,38 @@ const sendEmail = require('../utils/sendEmail');
 // ==========================================
 const createMovie = async (req, res, next) => {
   try {
+    const { title, tmdbId } = req.body;
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({ success: false, message: 'Tên phim không được để trống' });
+    }
+
+    const trimmedTitle = title.trim();
+
+    // 1. Kiểm tra theo tmdbId nếu có
+    if (tmdbId) {
+      const existingTmdbMovie = await Movie.findOne({ tmdbId: Number(tmdbId) });
+      if (existingTmdbMovie) {
+        return res.status(400).json({
+          success: false,
+          message: `Phim "${existingTmdbMovie.title}" (TMDB ID: ${tmdbId}) đã tồn tại trên hệ thống.`,
+        });
+      }
+    }
+
+    // 2. Kiểm tra theo tiêu đề (không phân biệt hoa/thường)
+    const escapedTitle = trimmedTitle.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const existingMovie = await Movie.findOne({
+      title: { $regex: new RegExp(`^${escapedTitle}$`, 'i') },
+    });
+
+    if (existingMovie) {
+      return res.status(400).json({
+        success: false,
+        message: `Phim "${existingMovie.title}" đã tồn tại trên hệ thống! Không thể tạo trùng lặp.`,
+      });
+    }
+
     const movie = await Movie.create(req.body);
     res.status(201).json({ success: true, data: movie });
   } catch (error) {
@@ -25,6 +57,21 @@ const createMovie = async (req, res, next) => {
 
 const updateMovie = async (req, res, next) => {
   try {
+    const { title } = req.body;
+    if (title && title.trim()) {
+      const trimmedTitle = title.trim();
+      const escapedTitle = trimmedTitle.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const existing = await Movie.findOne({
+        _id: { $ne: req.params.id },
+        title: { $regex: new RegExp(`^${escapedTitle}$`, 'i') },
+      });
+      if (existing) {
+        return res.status(400).json({
+          success: false,
+          message: `Tên phim "${existing.title}" trùng với một bộ phim khác đã có trên hệ thống.`,
+        });
+      }
+    }
     const movie = await Movie.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
@@ -41,17 +88,26 @@ const updateMovie = async (req, res, next) => {
 
 const deleteMovie = async (req, res, next) => {
   try {
-    const movie = await Movie.findByIdAndUpdate(
-      req.params.id, 
-      { status: 'hidden' }, 
-      { new: true }
-    );
+    const movieId = req.params.id;
+    const movie = await Movie.findById(movieId);
     if (!movie) {
       res.status(404);
       throw new Error('Movie not found');
     }
-    // We do NOT delete showtimes so that existing bookings and showtimes retain the movie reference.
-    res.json({ success: true, data: {} });
+
+    // Kiểm tra xem phim này đã có suất chiếu nào chưa
+    const showtimeCount = await Showtime.countDocuments({ movie: movieId });
+    if (showtimeCount > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `🚫 Không thể xóa phim "${movie.title}" vì phim đã có ${showtimeCount} suất chiếu trong hệ thống. Vui lòng xóa tất cả suất chiếu của phim trước!`,
+      });
+    }
+
+    movie.status = 'hidden';
+    await movie.save();
+
+    res.json({ success: true, message: 'Đã xóa phim thành công!' });
   } catch (error) {
     next(error);
   }
@@ -342,6 +398,21 @@ const updateShowtime = async (req, res, next) => {
       throw new Error('Showtime not found');
     }
 
+    // Kiểm tra xem suất chiếu này đã có đơn đặt vé nào chưa
+    const validBookingCount = await Booking.countDocuments({
+      showtime: showtimeId,
+      status: { $nin: ['cancelled', 'expired'] },
+    });
+
+    const hasBookedSeats = existingShowtime.bookedSeats && existingShowtime.bookedSeats.length > 0;
+
+    if (validBookingCount > 0 || hasBookedSeats) {
+      return res.status(400).json({
+        success: false,
+        message: `🚫 Không thể chỉnh sửa suất chiếu này vì đã có ${validBookingCount || existingShowtime.bookedSeats.length} vé được đặt!`,
+      });
+    }
+
     // Merge updates with existing data to calculate new times/room
     const movieId = req.body.movieId || req.body.movie || existingShowtime.movie;
     const roomId = req.body.roomId || req.body.room || existingShowtime.room;
@@ -392,11 +463,29 @@ const updateShowtime = async (req, res, next) => {
 
 const deleteShowtime = async (req, res, next) => {
   try {
-    const showtime = await Showtime.findByIdAndDelete(req.params.id);
+    const showtimeId = req.params.id;
+    const showtime = await Showtime.findById(showtimeId);
     if (!showtime) {
       res.status(404);
       throw new Error('Showtime not found');
     }
+
+    // Kiểm tra xem suất chiếu này đã có đơn đặt vé nào chưa
+    const validBookingCount = await Booking.countDocuments({
+      showtime: showtimeId,
+      status: { $nin: ['cancelled', 'expired'] },
+    });
+
+    const hasBookedSeats = showtime.bookedSeats && showtime.bookedSeats.length > 0;
+
+    if (validBookingCount > 0 || hasBookedSeats) {
+      return res.status(400).json({
+        success: false,
+        message: `🚫 Không thể xóa suất chiếu này vì đã có ${validBookingCount || showtime.bookedSeats.length} vé được đặt trong hệ thống!`,
+      });
+    }
+
+    await Showtime.findByIdAndDelete(showtimeId);
     res.json({ success: true, data: {} });
   } catch (error) {
     next(error);

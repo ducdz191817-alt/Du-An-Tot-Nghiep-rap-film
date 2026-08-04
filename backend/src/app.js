@@ -17,6 +17,7 @@ const momoRoutes = require('./routes/momo.routes');
 const vnpayRoutes = require('./routes/vnpay.routes');
 const tmdbRoutes = require('./routes/tmdb.routes');
 const couponRoutes = require('./routes/coupon.routes');
+const uploadRoutes = require('./routes/upload.routes');
 
 // Connect to MongoDB
 connectDB();
@@ -48,6 +49,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve uploaded files (poster images, etc.)
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+
 // Simple request logger
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
@@ -66,6 +71,7 @@ app.use('/api/payments/momo', momoRoutes);
 app.use('/api/payments/vnpay', vnpayRoutes);
 app.use('/api/admin/tmdb', tmdbRoutes);
 app.use('/api/coupons', couponRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Base route status check
 app.get('/api/status', (req, res) => {
