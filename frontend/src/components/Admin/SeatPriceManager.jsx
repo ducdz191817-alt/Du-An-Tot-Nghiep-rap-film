@@ -632,7 +632,7 @@ export const SeatPriceManager = () => {
 
                 {/* Danh sách các hàng ghế */}
                 <div className="space-y-2.5">
-                  {seatGridByRow.sortedRows.map((rowKey) => {
+                  {seatGridByRow.sortedRows.map((rowKey, rowIndex) => {
                     const rowSeats = seatGridByRow.map[rowKey];
                     const isRowAllSelected = rowSeats.every((s) => selectedSeatIds.has(s._id));
 
@@ -653,49 +653,66 @@ export const SeatPriceManager = () => {
 
                         {/* Hàng chứa các ghế */}
                         <div className="flex flex-wrap items-center gap-1.5">
-                          {rowSeats.map((seat) => {
+                          {rowSeats.map((seat, index) => {
                             const isSelected = selectedSeatIds.has(seat._id);
                             const cfg = SEAT_TYPES.find((t) => t.key === seat.type) || SEAT_TYPES[0];
                             const Icon = cfg.icon;
 
                             let seatStyle = cfg.color;
                             if (seat.isDisabled) {
-                              seatStyle = 'bg-red-50 border-red-200 text-red-400 opacity-60';
+                              seatStyle = 'bg-gray-100 border-dashed border-red-300 text-red-500 opacity-80 hover:opacity-100';
                             } else if (isSelected) {
                               seatStyle = `${cfg.activeBg} ring-2 ring-brand shadow-md scale-105`;
                             }
 
                             const isCouple = seat.type === 'couple';
+                            const isAfterAisleCol = seat.number === 6 || (isCouple && seat.number === 5);
 
                             return (
-                              <button
-                                key={seat._id}
-                                onClick={() => toggleSelectSeat(seat._id)}
-                                className={`relative flex flex-col items-center justify-center rounded-xl border transition-all duration-150 cursor-pointer select-none ${
-                                  isCouple ? 'w-14 h-10 text-[10px]' : 'w-10 h-10 text-xs'
-                                } ${seatStyle}`}
-                                title={`${seat.row}${seat.number} - ${cfg.label} (+${(
-                                  seat.price || 0
-                                ).toLocaleString()}đ)${
-                                  seat.isDisabled ? ' [Đang Khóa]' : ''
-                                }`}
-                              >
-                                {seat.isDisabled ? (
-                                  <Ban size={12} className="text-red-500" />
-                                ) : (
-                                  <>
-                                    <span className="font-extrabold tracking-tighter">
-                                      {seat.row}
-                                      {seat.number}
-                                    </span>
-                                    <span className="text-[9px] font-bold opacity-80 leading-none">
-                                      {seat.price > 0
-                                        ? `+${seat.price / 1000}k`
-                                        : '0k'}
-                                    </span>
-                                  </>
+                              <React.Fragment key={seat._id}>
+                                <button
+                                  onClick={() => toggleSelectSeat(seat._id)}
+                                  className={`relative flex flex-col items-center justify-center rounded-xl border transition-all duration-150 cursor-pointer select-none ${
+                                    isCouple ? 'w-[86px] h-10 text-[10px]' : 'w-10 h-10 text-xs'
+                                  } ${seatStyle}`}
+                                  title={`${seat.row}${seat.number} - ${cfg.label} (+${(
+                                    seat.price || 0
+                                  ).toLocaleString()}đ)${
+                                    seat.isDisabled ? ' [Lối đi/Đang Khóa]' : ''
+                                  }`}
+                                >
+                                  {seat.isDisabled ? (
+                                    <div className="flex flex-col items-center justify-center leading-none">
+                                      <Ban size={12} className="text-red-500 mb-0.5" />
+                                      <span className="text-[8px] font-black text-red-600/80 uppercase tracking-tighter">Lối đi</span>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <span className="font-extrabold tracking-tighter">
+                                        {seat.row}
+                                        {seat.number}
+                                      </span>
+                                      <span className="text-[9px] font-bold opacity-80 leading-none">
+                                        {seat.price > 0
+                                          ? `+${seat.price / 1000}k`
+                                          : '0k'}
+                                      </span>
+                                    </>
+                                  )}
+                                </button>
+
+                                {/* Lối đi ở giữa chia cách cụm ghế trái và phải */}
+                                {isAfterAisleCol && index < rowSeats.length - 1 && (
+                                  <div className="w-8 sm:w-10 flex flex-col items-center justify-center mx-1 select-none shrink-0">
+                                    {rowIndex === 0 && (
+                                      <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-1 whitespace-nowrap">
+                                        Lối đi
+                                      </span>
+                                    )}
+                                    <div className="h-7 w-px border-r border-dashed border-gray-400/60" />
+                                  </div>
                                 )}
-                              </button>
+                              </React.Fragment>
                             );
                           })}
                         </div>

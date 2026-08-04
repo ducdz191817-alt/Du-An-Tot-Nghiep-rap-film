@@ -142,7 +142,7 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
 
       {/* 2. Bố cục lưới ghế */}
       <div className="min-w-[600px] flex flex-col items-center justify-center space-y-3">
-        {Object.keys(groupedSeats).map((rowLetter) => {
+        {Object.keys(groupedSeats).map((rowLetter, rowIndex) => {
           const rowSeats = [...groupedSeats[rowLetter]].sort((a, b) => a.number - b.number);
           const rowSeatStates = rowSeats.map(getSeatState);
 
@@ -155,7 +155,7 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
 
               {/* Các ghế trong hàng */}
               <div className="flex items-center gap-2">
-                {rowSeatStates.map((seatInfo) => {
+                {rowSeatStates.map((seatInfo, index) => {
                   const isSelected = selectedSeats.includes(seatInfo.seatCode);
                   const seatStyle = SEAT_TYPES[seatInfo.type] || SEAT_TYPES.standard;
                   
@@ -173,6 +173,7 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
                   }
 
                   const isCouple = seatInfo.type === 'couple';
+                  const isAfterAisle = seatInfo.number === 6 || (isCouple && seatInfo.number === 5);
 
                   return (
                     <React.Fragment key={seatInfo._id}>
@@ -188,9 +189,14 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
                       </button>
 
                       {/* Lối đi (Aisle) chia cắt khu vực trái và phải */}
-                      {seatInfo.number === 6 && (
-                        <div className="w-8 sm:w-12 flex flex-col items-center justify-center mx-1">
-                          <div className="h-full w-px bg-zinc-800/50"></div>
+                      {isAfterAisle && index < rowSeatStates.length - 1 && (
+                        <div className="w-8 sm:w-12 flex flex-col items-center justify-center mx-1 select-none shrink-0">
+                          {rowIndex === 0 && (
+                            <span className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider mb-1 whitespace-nowrap">
+                              Lối đi
+                            </span>
+                          )}
+                          <div className="h-full w-px border-r border-dashed border-zinc-700/60" />
                         </div>
                       )}
                     </React.Fragment>
