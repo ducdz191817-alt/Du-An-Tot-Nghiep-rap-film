@@ -122,7 +122,7 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
   const [saving, setSaving] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState(new Set());
   const [toast, setToast] = useState(null);
-  
+
   // Trạng thái kiểm tra ràng buộc bảo vệ dữ liệu vé
   const [isEditable, setIsEditable] = useState(true);
   const [lockReason, setLockReason] = useState('');
@@ -495,7 +495,7 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
 
       {/* Modal Container */}
       <div className="relative w-full max-w-6xl bg-white border border-gray-200 rounded-3xl shadow-2xl z-10 flex flex-col max-h-[95vh] overflow-hidden">
-        
+
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0 bg-gradient-to-r from-gray-50/80 via-white to-gray-50/80">
           <div>
@@ -532,11 +532,10 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
         {/* ── Toast Alert ── */}
         {toast && (
           <div
-            className={`mx-6 mt-3 shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md ${
-              toast.type === 'error'
+            className={`mx-6 mt-3 shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md ${toast.type === 'error'
                 ? 'bg-red-500 text-white'
                 : 'bg-emerald-600 text-white'
-            }`}
+              }`}
           >
             {toast.type === 'error' ? <AlertTriangle size={15} /> : <CheckSquare size={15} />}
             {toast.msg}
@@ -550,7 +549,7 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
           </div>
         ) : (
           <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
-            
+
             {/* ── SEAT MAP MATRIX WORKSPACE ── */}
             <div className="flex-1 overflow-auto p-4 sm:p-6 space-y-4 bg-gray-50/40">
 
@@ -609,7 +608,7 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
 
               {/* ── MATRIX DISPLAY ── */}
               <div className="overflow-x-auto p-5 bg-white border border-gray-200/80 rounded-3xl shadow-sm space-y-1">
-                
+
                 {/* Column Headers (1, 2, 3...) */}
                 <div className="flex items-center gap-1.5 pl-8">
                   {matrixData.cols.map((colNum, cIdx) => (
@@ -654,7 +653,7 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
                   return (
                     <React.Fragment key={`row_wrap_${rowLabel}`}>
                       <div className="flex items-center gap-1.5 py-0.5">
-                        
+
                         {/* Row Header Label Button */}
                         <div className="flex items-center gap-1 w-7 shrink-0">
                           <button
@@ -700,11 +699,10 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
                                   <button
                                     disabled={!isEditable}
                                     onClick={() => handleEmptySlotClick(rowLabel, colNum)}
-                                    className={`w-7 h-7 border border-dashed border-gray-200 rounded-lg flex items-center justify-center text-[9px] font-extrabold transition-all ${
-                                      isEditable
+                                    className={`w-7 h-7 border border-dashed border-gray-200 rounded-lg flex items-center justify-center text-[9px] font-extrabold transition-all ${isEditable
                                         ? 'hover:border-brand hover:bg-brand/10 text-gray-300 hover:text-brand cursor-pointer'
                                         : 'text-gray-200 cursor-default opacity-40'
-                                    }`}
+                                      }`}
                                     title={isEditable ? `Click để tạo ghế ${rowLabel}${colNum}` : `Khoảng trống (${rowLabel}${colNum})`}
                                   >
                                     +
@@ -817,11 +815,10 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
                         key={t.key}
                         disabled={!isEditable}
                         onClick={() => setEditPanel((p) => ({ ...p, type: t.key }))}
-                        className={`flex flex-col items-center gap-1 p-2 rounded-xl border text-[10px] font-bold transition-all ${
-                          editPanel.type === t.key
+                        className={`flex flex-col items-center gap-1 p-2 rounded-xl border text-[10px] font-bold transition-all ${editPanel.type === t.key
                             ? 'border-brand bg-brand/10 text-brand shadow-xs'
                             : 'border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50'
-                        }`}
+                          }`}
                       >
                         {t.icon}
                         {t.label}
@@ -854,11 +851,10 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
                   <button
                     disabled={!isEditable}
                     onClick={() => setEditPanel((p) => ({ ...p, isDisabled: !p.isDisabled }))}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border transition-all text-xs font-bold ${
-                      editPanel.isDisabled
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border transition-all text-xs font-bold ${editPanel.isDisabled
                         ? 'bg-red-50 border-red-200 text-red-600'
                         : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                    }`}
+                      }`}
                   >
                     <span>{editPanel.isDisabled ? 'Vô hiệu / Lối đi' : 'Cho phép đặt vé'}</span>
                     {editPanel.isDisabled ? <Ban size={15} /> : <CheckSquare size={15} />}
@@ -869,11 +865,10 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
                 <button
                   onClick={handleApplySidePanel}
                   disabled={!isEditable || selectedKeys.size === 0}
-                  className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                    selectedKeys.size > 0 && isEditable
+                  className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${selectedKeys.size > 0 && isEditable
                       ? 'bg-brand hover:bg-brand/90 text-white shadow-md'
                       : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                  }`}
+                    }`}
                 >
                   <CheckSquare size={14} />
                   Áp dụng cho ({selectedKeys.size}) ghế
@@ -902,11 +897,10 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
                 <button
                   onClick={handleSaveAll}
                   disabled={saving || !isEditable}
-                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black transition-all ${
-                    isEditable && !saving
+                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-black transition-all ${isEditable && !saving
                       ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20'
                       : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                  }`}
+                    }`}
                 >
                   {saving ? (
                     <><Loader2 size={16} className="animate-spin" /> Đang lưu sơ đồ...</>
