@@ -1,3 +1,9 @@
+/**
+ * CONTROLLER: booking.controller.js — Xử lý đặt vé (Backend)
+ * - Là chốt chặn bảo mật cuối cùng: Validate số lượng ghế (tối đa 8) và lỗi ghế mồ côi.
+ * - API chính: POST /api/bookings -> createBooking
+ */
+
 const Booking = require('../models/Booking.model');
 const Showtime = require('../models/Showtime.model');
 const Seat = require('../models/Seat.model');
@@ -21,9 +27,10 @@ const createBooking = async (req, res, next) => {
       throw new Error('Please select at least one seat');
     }
 
-    if (seats.length > 8) {
+    const MAX_SEATS_PER_BOOKING = 8;
+    if (seats.length > MAX_SEATS_PER_BOOKING) {
       res.status(400);
-      throw new Error('Mỗi lần đặt vé chỉ được chọn tối đa 8 ghế. Vui lòng chọn lại.');
+      throw new Error(`Bạn chỉ được đặt tối đa ${MAX_SEATS_PER_BOOKING} ghế mỗi giao dịch. Bạn đang cố đặt ${seats.length} ghế.`);
     }
 
     // 1. Verify showtime exists
@@ -99,6 +106,81 @@ const createBooking = async (req, res, next) => {
     // Truy vấn tất cả cấu hình ghế thực tế của phòng chiếu này từ database
     let seatPriceSum = 0;
     const roomSeats = await Seat.find({ room: showtime.room._id });
+
+    // ==========================================
+    // VALIDATION: KIỂM TRA LUẬT GHẾ MỒ CÔI (ORPHAN SEAT RULE) Ở BACKEND
+    // ==========================================
+    // Ngăn chặn user bypass client-side validation bằng Postman/DevTools
+    const allBookedAndSelected = new Set([
+      ...(showtime.bookedSeats || []).map(s => String(s).trim().toUpperCase()),
+      ...normalizedSeats,
+    ]);
+
+    // Nhóm ghế theo hàng
+    const seatsByRow = {};
+    roomSeats.forEach(s => {
+      if (!seatsByRow[s.row]) seatsByRow[s.row] = [];
+      seatsByRow[s.row].push(s);
+    });
+
+    // Chỉ kiểm tra các hàng có ghế user đang đặt
+    const affectedRows = new Set(normalizedSeats.map(sc => sc.match(/^([A-Z]+)/)?.[1]).filter(Boolean));
+
+    for (const rowLetter of affectedRows) {
+      const rowSeatsArr = (seatsByRow[rowLetter] || [])
+        .filter(s => !s.isDisabled)
+        .sort((a, b) => a.number - b.number);
+
+      if (rowSeatsArr.length <= 2) continue; // Hàng quá ngắn, bỏ qua
+
+      // Chia hàng thành 2 block (lối đi ở giữa)
+      const aislePos = Math.floor(rowSeatsArr.length / 2);
+      const blocks = rowSeatsArr.length <= 4
+        ? [rowSeatsArr]
+        : [rowSeatsArr.slice(0, aislePos), rowSeatsArr.slice(aislePos)];
+
+      for (const block of blocks) {
+        // Tạo mảng trạng thái: true = occupied (đã đặt/đang chọn), false = trống
+        const stateArr = block.map(s => {
+          const code = `${s.row}${s.number}`.toUpperCase();
+          return allBookedAndSelected.has(code);
+        });
+
+        // Tìm khoảng trống liên tiếp
+        let gapLen = 0;
+        for (let i = 0; i < stateArr.length; i++) {
+          if (!stateArr[i]) {
+            gapLen++;
+          } else {
+            if (gapLen === 1) {
+              // Có đúng 1 ghế trống giữa 2 ghế occupied -> orphan
+              // Kiểm tra xem orphan này có phải do user tạo ra không
+              // (so sánh với trạng thái chỉ có bookedSeats, không có selectedSeats)
+              const stateWithoutSelection = block.map(s => {
+                const code = `${s.row}${s.number}`.toUpperCase();
+                return bookedSeatSet.has(code);
+              });
+              let oldGap = 0;
+              let hadOldOrphan = false;
+              for (let j = 0; j < stateWithoutSelection.length; j++) {
+                if (!stateWithoutSelection[j]) { oldGap++; }
+                else {
+                  if (oldGap === 1) hadOldOrphan = true;
+                  oldGap = 0;
+                }
+              }
+              // Nếu orphan mới mà trước đó không có -> user tạo ra -> chặn
+              if (!hadOldOrphan) {
+                res.status(400);
+                throw new Error(`Vị trí ghế bạn chọn ở hàng ${rowLetter} đang để trống 1 ghế lẻ (ghế mồ côi). Vui lòng chọn lại để không có khoảng trống 1 ghế.`);
+              }
+            }
+            gapLen = 0;
+          }
+        }
+      }
+    }
+
 
     for (const seatCode of seats) {
       // Tách mã ghế ví dụ: "A12" thành hàng "A" và số "12"

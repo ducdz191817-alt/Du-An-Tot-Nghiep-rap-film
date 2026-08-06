@@ -1,6 +1,12 @@
+/**
+ * PAGE: BookingPage.jsx — Trang đặt vé xem phim
+ * - Bước 1: Chọn ghế (có chống ghế mồ côi, đếm ngược 5p).
+ * - Bước 2: Chọn bắp nước, kiểm tra độ tuổi.
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronLeft, Popcorn, Armchair, Ticket, ShieldAlert } from 'lucide-react';
+import { ChevronLeft, Popcorn, Armchair, Ticket, ShieldAlert, AlertTriangle, Info } from 'lucide-react';
 import bookingService from '../services/booking.service';
 import useBooking from '../hooks/useBooking';
 import useAuth from '../hooks/useAuth';
@@ -36,6 +42,7 @@ export const BookingPage = () => {
   const [ageWarning, setAgeWarning] = useState({ isOpen: false, movieTitle: '', requiredAge: 0, userAge: 0, movieId: '' });
   const [hasOrphanError, setHasOrphanError] = useState(false);
   const [timeLeft, setTimeLeft] = useState(300); // 5 phút (300 giây)
+  const [confirmModal, setConfirmModal] = useState(false); // Modal xác nhận trước khi chuyển bước
   const socketRef = useRef(null);
   const timerRef = useRef(null);
 
@@ -193,10 +200,16 @@ export const BookingPage = () => {
 
   const handleProceed = () => {
     if (activeStep === 1) {
-      setActiveStep(2);
+      // Hiện modal xác nhận trước khi chuyển sang bước bắp nước
+      setConfirmModal(true);
     } else {
       navigate('/payment');
     }
+  };
+
+  const handleConfirmSeats = () => {
+    setConfirmModal(false);
+    setActiveStep(2);
   };
 
   const handleBackStep = () => {
@@ -272,10 +285,10 @@ export const BookingPage = () => {
                 </div>
                 
                 {selectedSeats.length > 0 && (
-                  <div className="flex items-center gap-1.5 bg-brand/10 px-2.5 py-1 rounded-lg border border-brand/20">
-                    <Ticket className="text-brand" size={14} />
-                    <span className="text-xs font-bold text-brand">
-                      Đã chọn: {selectedSeats.length} ghế
+                  <div className="flex items-center gap-2 bg-brand/10 px-3 py-1.5 rounded-lg border border-brand/20">
+                    <Ticket className="text-brand" size={16} />
+                    <span className="text-sm font-bold text-brand">
+                      Đã chọn: {selectedSeats.length}/8 ghế
                     </span>
                   </div>
                 )}
@@ -287,13 +300,19 @@ export const BookingPage = () => {
                 selectedSeats={selectedSeats}
                 heldSeatsByOthers={heldSeatsByOthers}
                 onSeatClick={handleSeatClick}
-                // ==========================================
-                // FIX BUG 3 (UX): Lắng nghe lỗi ghế mồ côi từ SeatMap truyền lên
-                // ==========================================
                 onOrphanError={setHasOrphanError}
+                ticketPrice={selectedShowtime?.ticketPrice || 0}
               />
 
               <SeatLegend />
+
+              {/* Chính sách đổi/trả vé */}
+              <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 rounded-xl px-4 py-3 text-[11px] text-amber-700 dark:text-amber-400 font-semibold leading-relaxed">
+                <Info size={16} className="shrink-0 mt-0.5 text-amber-500" />
+                <span>
+                  <strong>Lưu ý:</strong> Vé đã thanh toán thành công sẽ <strong>không được hoàn trả, đổi suất chiếu hoặc đổi ghế</strong>. Vui lòng kiểm tra kỹ thông tin trước khi xác nhận thanh toán.
+                </span>
+              </div>
             </div>
           ) : (
             <ConcessionList
@@ -320,6 +339,53 @@ export const BookingPage = () => {
           />
         </div>
       </div>
+
+      {/* Modal Xác Nhận Ghế Trước Khi Chuyển Bước */}
+      <Modal
+        isOpen={confirmModal}
+        onClose={() => setConfirmModal(false)}
+        title="Xác nhận ghế ngồi"
+        size="sm"
+      >
+        <div className="space-y-4 py-2">
+          <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-zinc-500 dark:text-zinc-400 font-semibold">Ghế đã chọn:</span>
+              <span className="text-brand font-black">{selectedSeats.join(', ')}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-zinc-500 dark:text-zinc-400 font-semibold">Số lượng vé:</span>
+              <span className="text-zinc-800 dark:text-zinc-200 font-bold">{selectedSeats.length} vé</span>
+            </div>
+            <div className="flex items-center justify-between text-sm border-t border-gray-200 dark:border-gray-700 pt-2">
+              <span className="text-zinc-500 dark:text-zinc-400 font-semibold">Tổng tiền vé:</span>
+              <span className="text-brand font-black text-base">{pricing.seatsTotal.toLocaleString()} VND</span>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-2 text-[11px] text-amber-600 dark:text-amber-400 font-semibold bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 rounded-lg px-3 py-2">
+            <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+            <span>Sau khi xác nhận, bạn vẫn có thể quay lại chỉnh sửa ghế trước khi thanh toán.</span>
+          </div>
+
+          <div className="flex gap-3">
+            <Button
+              onClick={() => setConfirmModal(false)}
+              variant="secondary"
+              className="flex-1 py-2.5 rounded-xl font-bold text-sm"
+            >
+              Chỉnh lại
+            </Button>
+            <Button
+              onClick={handleConfirmSeats}
+              variant="primary"
+              className="flex-1 py-2.5 rounded-xl font-bold text-sm"
+            >
+              Xác nhận ghế
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
