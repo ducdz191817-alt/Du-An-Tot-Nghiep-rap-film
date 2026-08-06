@@ -997,7 +997,19 @@ export const ShowtimeManager = () => {
                                   {/* Time Pills */}
                                   <div className="flex flex-wrap gap-2">
                                     {sortedShowtimes.map((st) => {
-                                      const startFmt = new Date(st.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                                      const startDt = new Date(st.startTime);
+                                      const startFmt = startDt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                                      
+                                      // Tính giờ kết thúc phim thực tế (theo thời lượng phim):
+                                      const movieDuration = st.movie?.duration;
+                                      let endDt = null;
+                                      if (movieDuration) {
+                                        endDt = new Date(startDt.getTime() + movieDuration * 60000);
+                                      } else if (st.endTime) {
+                                        // Nếu CSDL lưu endTime đã cộng 20 phút dọn phòng thì trừ lại 20p
+                                        endDt = new Date(new Date(st.endTime).getTime() - 20 * 60000);
+                                      }
+                                      const endFmt = endDt ? endDt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '';
                                       
                                       // Màu sắc theo Format
                                       let pillBg = 'bg-white hover:bg-brand/10 border-gray-200 hover:border-brand/40 text-gray-700';
@@ -1009,10 +1021,12 @@ export const ShowtimeManager = () => {
                                         <div key={st._id} className="relative group">
                                           <button
                                             onClick={() => handleOpenEditShowtime(st)}
-                                            className={`px-3 py-1.5 rounded-lg border flex flex-col items-center justify-center transition-all min-w-[60px] shadow-sm ${pillBg}`}
-                                            title={`Sửa suất chiếu lúc ${startFmt} - Giá: ${st.ticketPrice.toLocaleString()} VNĐ`}
+                                            className={`px-3.5 py-1.5 rounded-lg border flex flex-col items-center justify-center transition-all min-w-[85px] shadow-sm ${pillBg}`}
+                                            title={`Sửa suất chiếu: ${startFmt} - ${endFmt} | Giá: ${st.ticketPrice.toLocaleString()} VNĐ`}
                                           >
-                                            <span className="text-sm font-black tracking-wide">{startFmt}</span>
+                                            <span className="text-xs font-black tracking-tight whitespace-nowrap">
+                                              {startFmt}{endFmt ? ` - ${endFmt}` : ''}
+                                            </span>
                                             <span className="text-[9px] font-bold uppercase opacity-80">{st.format}</span>
                                           </button>
                                           
@@ -1051,7 +1065,7 @@ export const ShowtimeManager = () => {
         isOpen={isManualOpen}
         onClose={() => setIsManualOpen(false)}
         title={editingShowtime ? 'Chỉnh Sửa Lịch Chiếu' : 'Tạo Suất Chiếu Thủ Công'}
-        size="lg"
+        size="4xl"
       >
         <form onSubmit={handleManualSubmit} className="space-y-4">
           {error && (
@@ -1085,6 +1099,44 @@ export const ShowtimeManager = () => {
             </div>
             <Input name="ticketPrice" type="number" label="Giá Vé Cơ Bản (VNĐ)" value={form.ticketPrice} onChange={handleChange} required />
           </div>
+
+          {/* ── HIỂN THỊ THỜI GIAN CHIẾU CỤ THỂ (TỪ MẤY GIỜ ĐẾN MẤY GIỜ) ── */}
+          {(() => {
+            if (!form.startTime || !form.movieId) return null;
+            const currentMovie = movies.find((m) => m._id === form.movieId);
+            const duration = currentMovie?.duration || 120;
+            const startDt = new Date(form.startTime);
+            if (isNaN(startDt.getTime())) return null;
+
+            const startFmt = startDt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            const endDt = new Date(startDt.getTime() + duration * 60000);
+            const endFmt = endDt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            const cleanDt = new Date(startDt.getTime() + (duration + 20) * 60000);
+            const cleanFmt = cleanDt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
+            return (
+              <div className="p-3.5 bg-blue-50/90 border border-blue-200 rounded-2xl flex items-center justify-between gap-3 text-xs text-blue-950 shadow-2xs my-1">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <Clock size={18} />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-extrabold text-blue-600 uppercase tracking-wider block">Thời Gian Chiếu Cụ Thể</span>
+                    <div className="text-sm font-black text-blue-950 tracking-wide flex items-center gap-2 mt-0.5">
+                      <span>{startFmt}</span>
+                      <span className="text-blue-500 font-bold text-xs">đến</span>
+                      <span className="text-red-600 font-black text-base">{endFmt}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-right text-[11px] space-y-0.5 border-l border-blue-200/80 pl-4 shrink-0">
+                  <div className="text-gray-600">Thời lượng phim: <strong className="text-gray-900">{duration} phút</strong></div>
+                  <div className="text-gray-500">Trống phòng cho suất tiếp: <strong className="text-emerald-700">{cleanFmt}</strong> (+20m vệ sinh)</div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ── BIỂU ĐỒ GANTT TIMELINE TRỰC QUAN CỦA CÁC PHÒNG ── */}
           {ganttChartData && (
@@ -1243,6 +1295,8 @@ export const ShowtimeManager = () => {
 
             <Input name="startTime" type="datetime-local" label="Ngày & Giờ Bắt Đầu" value={form.startTime} onChange={handleChange} required />
           </div>
+
+
 
           {/* ── BẢNG TÍNH & GỢI Ý KHUNG GIỜ CÒN TRỐNG ── */}
           {form.roomId && (

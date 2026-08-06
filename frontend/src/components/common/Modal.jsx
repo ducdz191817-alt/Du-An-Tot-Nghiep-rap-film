@@ -28,6 +28,9 @@ export const Modal = ({
     lg: 'max-w-lg',
     xl: 'max-w-2xl',
     xxl: 'max-w-4xl',
+    '3xl': 'max-w-5xl',
+    '4xl': 'max-w-6xl',
+    full: 'max-w-[95vw]',
   };
 
   return (
