@@ -40,7 +40,7 @@ export const ShowtimeManager = () => {
   const [showPastDays, setShowPastDays] = useState(false);
 
   // Manual form
-  const [form, setForm] = useState({ movieId: '', theaterId: '', roomId: '', startTime: '', ticketPrice: 80000, format: '2D' });
+  const [form, setForm] = useState({ movieId: '', theaterId: '', roomId: '', startTime: '', format: '2D' });
   const [error, setError] = useState('');
 
   // Auto generate form
@@ -52,7 +52,6 @@ export const ShowtimeManager = () => {
     endDate: '',
     timeSlots: [...DEFAULT_TIME_SLOTS],
     format: '2D',
-    ticketPrice: 80000,
   });
   const [autoError, setAutoError] = useState('');
   const [newSlotInput, setNewSlotInput] = useState('');
@@ -190,7 +189,6 @@ export const ShowtimeManager = () => {
     const { name, value } = e.target;
     setForm((prev) => {
       const updated = { ...prev, [name]: value };
-      if (name === 'format') updated.ticketPrice = DEFAULT_PRICES[value] || 80000;
       return updated;
     });
   };
@@ -210,7 +208,7 @@ export const ShowtimeManager = () => {
     setEditingShowtime(null);
     setError('');
     setModalRooms([...rooms]);
-    setForm({ movieId: movies[0]?._id || '', theaterId: selectedTheater, roomId: rooms[0]?._id || '', startTime: '', ticketPrice: 80000, format: '2D' });
+    setForm({ movieId: movies[0]?._id || '', theaterId: selectedTheater, roomId: rooms[0]?._id || '', startTime: '', format: '2D' });
     setIsManualOpen(true);
   };
 
@@ -234,7 +232,6 @@ export const ShowtimeManager = () => {
       theaterId,
       roomId,
       startTime: localTimeFormatted,
-      ticketPrice: st.ticketPrice || 80000,
       format: (st.format || '2D').toUpperCase(),
     });
     setIsManualOpen(true);
@@ -316,7 +313,8 @@ export const ShowtimeManager = () => {
     const days = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
     return days * autoForm.roomIds.length * autoForm.timeSlots.length;
   })();
-  // ── Chuyển từ Màn 1 ➔ Màn 2: Tính toán danh sách suất chiếu dự kiến để xem trước ──
+
+  // ── Chuyển từ Màn 1 ➔ Màn 2: Tính toán danh sách suất chiếu dự kiến để xem trước ──
   const handleGoToPreview = (e) => {
     e.preventDefault();
     setAutoError('');
@@ -508,6 +506,7 @@ export const ShowtimeManager = () => {
       setError(err.message);
     }
   };
+
 
   const handleAutoSubmit = async (e) => {
     e.preventDefault(); setAutoError('');
@@ -1097,7 +1096,17 @@ export const ShowtimeManager = () => {
                 <option value="2D">2D</option><option value="3D">3D</option><option value="IMAX">IMAX</option><option value="GOLDCLASS">GOLDCLASS</option>
               </select>
             </div>
-            <Input name="ticketPrice" type="number" label="Giá Vé Cơ Bản (VNĐ)" value={form.ticketPrice} onChange={handleChange} required />
+            
+            {/* Thông báo Giá Vé Tự Động */}
+            <div className="bg-blue-50 border border-blue-200 text-blue-700 p-3 rounded-lg flex items-start gap-2">
+              <AlertCircle size={16} className="mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider">Dynamic Pricing (Giá Tự Động)</p>
+                <p className="text-[10px] mt-0.5 leading-relaxed">
+                  Giá vé sẽ được <strong>tự động tính toán</strong> bởi Backend dựa trên "Bảng Giá", bao gồm phụ thu theo Thứ (cuối tuần), Khung giờ (giờ vàng), Định dạng và Loại phòng. <br/>👉 Bạn không cần nhập tay!
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* ── HIỂN THỊ THỜI GIAN CHIẾU CỤ THỂ (TỪ MẤY GIỜ ĐẾN MẤY GIỜ) ── */}
@@ -1476,16 +1485,22 @@ export const ShowtimeManager = () => {
                 </button>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Định Dạng Chiếu</label>
                 <select name="format" value={autoForm.format} onChange={handleAutoFormChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer">
                   <option value="2D">2D</option><option value="3D">3D</option><option value="IMAX">IMAX</option><option value="GOLDCLASS">GOLDCLASS</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Giá Vé Cơ Bản (VNĐ)</label>
-                <input type="number" name="ticketPrice" value={autoForm.ticketPrice} onChange={handleAutoFormChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none" required min={0} />
+              {/* Thông báo Giá Vé Tự Động */}
+              <div className="bg-blue-50 border border-blue-200 text-blue-700 p-3 rounded-lg flex items-start gap-2">
+                <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider">Dynamic Pricing</p>
+                  <p className="text-[10px] mt-0.5 leading-relaxed">
+                    Giá vé sẽ được <strong>tính tự động</strong> dựa trên ngày giờ chiếu.
+                  </p>
+                </div>
               </div>
             </div>
             <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-3.5 flex items-center gap-3">

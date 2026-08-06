@@ -1,3 +1,9 @@
+/**
+ * COMPONENT: PaymentForm.jsx — Form thanh toán
+ * - 4 phương thức: Thẻ, VietQR, MoMo, VNPay.
+ * - Bắt buộc tick Checkbox "Đồng ý điều khoản" trước khi thanh toán.
+ */
+
 import React, { useState } from 'react';
 import { CreditCard, Wallet, QrCode } from 'lucide-react';
 import Input from '../common/Input';
@@ -17,6 +23,7 @@ export const PaymentForm = ({
     cvv: '',
   });
   const [errors, setErrors] = useState({});
+  const [agreedTerms, setAgreedTerms] = useState(false);
 
   const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
   const finalTotal = Math.max(0, pricing.grandTotal - discountAmount);
@@ -58,6 +65,10 @@ export const PaymentForm = ({
   const handlePay = (e) => {
     e.preventDefault();
     if (!validate()) return;
+    if (!agreedTerms) {
+      setErrors(prev => ({ ...prev, terms: 'Vui lòng đồng ý điều khoản trước khi thanh toán' }));
+      return;
+    }
     onSubmit(method);
   };
 
@@ -172,11 +183,35 @@ export const PaymentForm = ({
             />
           </div>
 
+          {/* Điều khoản sử dụng dịch vụ */}
+          <div className="border-t border-gray-200 dark:border-gray-800 pt-4 space-y-3">
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={agreedTerms}
+                onChange={(e) => {
+                  setAgreedTerms(e.target.checked);
+                  if (e.target.checked && errors.terms) {
+                    setErrors(prev => ({ ...prev, terms: '' }));
+                  }
+                }}
+                className="mt-0.5 w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-brand focus:ring-brand/30 accent-brand cursor-pointer"
+              />
+              <span className="text-xs text-zinc-600 dark:text-zinc-400 font-semibold leading-relaxed">
+                Tôi đồng ý với <span className="text-brand hover:underline font-bold">điều khoản sử dụng dịch vụ</span> và <span className="text-brand hover:underline font-bold">chính sách bảo mật</span> của Nova Cinematic. Vé đã mua <strong className="text-zinc-800 dark:text-zinc-200">không được đổi, trả hoặc hoàn tiền</strong>.
+              </span>
+            </label>
+            {errors.terms && (
+              <p className="text-[11px] text-red-500 font-semibold ml-7">⚠️ {errors.terms}</p>
+            )}
+          </div>
+
           <Button
             type="submit"
             variant="primary"
             loading={loading}
-            className="w-full mt-4 py-3.5 rounded-2xl font-black text-sm"
+            disabled={!agreedTerms}
+            className={`w-full mt-4 py-3.5 rounded-2xl font-black text-sm ${!agreedTerms ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             Xác nhận & Thanh toán {finalTotal.toLocaleString()} VND
           </Button>
@@ -250,11 +285,35 @@ export const PaymentForm = ({
             </div>
           )}
 
+          {/* Điều khoản sử dụng dịch vụ (cho các phương thức e-wallet) */}
+          <div className="border-t border-gray-200 dark:border-gray-800 pt-4 space-y-3">
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={agreedTerms}
+                onChange={(e) => {
+                  setAgreedTerms(e.target.checked);
+                  if (e.target.checked && errors.terms) {
+                    setErrors(prev => ({ ...prev, terms: '' }));
+                  }
+                }}
+                className="mt-0.5 w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-brand focus:ring-brand/30 accent-brand cursor-pointer"
+              />
+              <span className="text-xs text-zinc-600 dark:text-zinc-400 font-semibold leading-relaxed">
+                Tôi đồng ý với <span className="text-brand hover:underline font-bold">điều khoản sử dụng dịch vụ</span> và <span className="text-brand hover:underline font-bold">chính sách bảo mật</span> của Nova Cinematic. Vé đã mua <strong className="text-zinc-800 dark:text-zinc-200">không được đổi, trả hoặc hoàn tiền</strong>.
+              </span>
+            </label>
+            {errors.terms && (
+              <p className="text-[11px] text-red-500 font-semibold ml-7">⚠️ {errors.terms}</p>
+            )}
+          </div>
+
           <Button
             type="submit"
             variant="primary"
             loading={loading}
-            className="w-full py-3.5 rounded-2xl font-black text-sm"
+            disabled={!agreedTerms}
+            className={`w-full py-3.5 rounded-2xl font-black text-sm ${!agreedTerms ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {method === 'vietqr'
               ? `Tiến hành chuyển khoản VietQR`
