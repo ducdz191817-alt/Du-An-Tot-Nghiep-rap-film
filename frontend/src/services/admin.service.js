@@ -189,6 +189,11 @@ const deleteUser = async (id) => {
   return response.data;
 };
 
+const toggleUserStatus = async (id) => {
+  const response = await api.put(`/admin/users/${id}/toggle-status`);
+  return response.data;
+};
+
 // Pricing Config
 const getPricingConfig = async () => {
   const response = await api.get('/admin/pricing');
@@ -269,6 +274,7 @@ const adminService = {
   getUsers,
   updateUserRole,
   deleteUser,
+  toggleUserStatus,
   searchTMDB,
   getTMDBMovieDetail,
   getTMDBTrending,
