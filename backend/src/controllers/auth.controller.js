@@ -81,6 +81,13 @@ const loginUser = async (req, res, next) => {
       throw new Error('Invalid email or password');
     }
 
+    if (user.status === 'locked') {
+      return res.status(403).json({
+        success: false,
+        message: 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ Quản trị viên để được hỗ trợ.',
+      });
+    }
+
     res.json({
       success: true,
       data: {

@@ -327,6 +327,8 @@ const createBooking = async (req, res, next) => {
       paymentMethod,
       coupon: couponId,
       discountAmount,
+      movieTitle: showtime.movie?.title || '',
+      moviePosterUrl: showtime.movie?.posterUrl || '',
     });
 
     // 8. Create Payment Transaction
@@ -501,6 +503,15 @@ const getMyBookings = async (req, res, next) => {
         path: 'concessions.concession',
       })
       .sort({ bookingDate: -1 });
+
+    // Auto-fill snapshot movieTitle for legacy bookings if not present
+    for (const b of bookings) {
+      if (!b.movieTitle && b.showtime?.movie?.title) {
+        b.movieTitle = b.showtime.movie.title;
+        b.moviePosterUrl = b.showtime.movie.posterUrl || '';
+        await b.save();
+      }
+    }
 
     res.json({
       success: true,
