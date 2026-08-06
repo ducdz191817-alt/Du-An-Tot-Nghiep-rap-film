@@ -18,7 +18,7 @@ export const BookingManager = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterDate, setFilterDate] = useState('');
   const [message, setMessage] = useState({ text: '', type: '' });
-  
+
   // Modals & Active Views
   const [activeTab, setActiveTab] = useState('list'); // 'list' | 'checkin'
   const [selectedBooking, setSelectedBooking] = useState(null); // Detail drawer
@@ -239,17 +239,15 @@ export const BookingManager = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setActiveTab('list')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === 'list' ? 'bg-brand text-white shadow-md shadow-brand/20' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${activeTab === 'list' ? 'bg-brand text-white shadow-md shadow-brand/20' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
           >
             <Ticket size={15} /> Danh sách vé
           </button>
           <button
             onClick={() => { setActiveTab('checkin'); setCheckInResult(null); setCheckInInput(''); }}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === 'checkin' ? 'bg-brand text-white shadow-md shadow-brand/20' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${activeTab === 'checkin' ? 'bg-brand text-white shadow-md shadow-brand/20' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
           >
             <QrCode size={15} /> Kiểm tra vé (Check-in)
           </button>
@@ -474,7 +472,7 @@ export const BookingManager = () => {
       {activeTab === 'checkin' && (
         <div className="max-w-4xl mx-auto space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-            
+
             {/* Khung quét mã / Nhập mã vé */}
             <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm space-y-6">
               <div className="space-y-1">
@@ -704,7 +702,7 @@ export const BookingManager = () => {
                     </div>
                     <div className="text-xs text-gray-600 flex items-center gap-1 font-medium">
                       <Building2 size={12} className="text-gray-400 shrink-0" />
-                      <span className="truncate">{theater.name || 'CineBook Center'}</span>
+                      <span className="truncate">{theater.name || 'Nova Cinema'}</span>
                     </div>
                     <div className="text-base font-black text-brand pt-1">
                       {fmt(b.totalPrice)}
@@ -900,6 +898,8 @@ export const BookingManager = () => {
       {/* ════════════════════════════════════════════════════════════════════════ */}
       {/* MODAL: MẪU VÉ IN VÀO MÁY IN (PRINTABLE CINEMA TICKET)                    */}
       {/* ════════════════════════════════════════════════════════════════════════ */}
+      {/* MODAL: MẪU VÉ IN VÀO MÁY IN (PRINTABLE CINEMA TICKET - CHIA TỪNG GHẾ)   */}
+      {/* ════════════════════════════════════════════════════════════════════════ */}
       {ticketToPrint && (() => {
         const b = ticketToPrint;
         const showtime = b.showtime || {};
@@ -908,68 +908,122 @@ export const BookingManager = () => {
         const room = showtime.room || {};
         const user = b.user || {};
         const code = b.ticketCode || `TKT-${String(b._id).slice(-8).toUpperCase()}`;
+        const seats = b.seats && b.seats.length > 0 ? b.seats : ['N/A'];
+        const seatCount = seats.length;
+        const pricePerTicket = b.totalPrice ? Math.round(b.totalPrice / seatCount) : 0;
+
+        const printStyles = `
+          @media print {
+            body * {
+              visibility: hidden !important;
+            }
+            .print-ticket-container, .print-ticket-container * {
+              visibility: visible !important;
+            }
+            .print-ticket-container {
+              position: absolute !important;
+              left: 0 !important;
+              top: 0 !important;
+              width: 100% !important;
+              margin: 0 !important;
+              padding: 0 !important;
+            }
+            .print-ticket-slip {
+              page-break-after: always !important;
+              break-after: page !important;
+              box-shadow: none !important;
+              border: 1px solid #333 !important;
+              background: #fff !important;
+              color: #000 !important;
+            }
+            .no-print-btn {
+              display: none !important;
+            }
+          }
+        `;
 
         return (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs overflow-y-auto"
             onClick={() => setTicketToPrint(null)}
           >
+            <style>{printStyles}</style>
+
             <div
-              className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4 border border-gray-200"
+              className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4 border border-gray-200 my-auto max-h-[90vh] flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Ticket Printable Layout */}
-              <div className="border-2 border-dashed border-gray-300 p-5 rounded-2xl space-y-4 font-mono text-xs bg-amber-50/30">
-                <div className="text-center space-y-1 border-b border-dashed border-gray-300 pb-3">
-                  <h3 className="font-black text-base uppercase text-gray-900 tracking-wider">CINEBOOK CINEMA</h3>
-                  <p className="text-[10px] text-gray-500">{theater.name || 'Rạp CineBook Center'}</p>
-                  <p className="text-[10px] font-bold text-brand">{code}</p>
+              {/* Modal Header */}
+              <div className="flex justify-between items-center border-b pb-3 no-print-btn">
+                <div>
+                  <h3 className="font-bold text-gray-900 text-sm">Mẫu In Vé Xem Phim</h3>
+                  <p className="text-[11px] text-gray-500">Tự động chia thành {seatCount} tờ vé (mỗi ghế 1 vé)</p>
                 </div>
+                <span className="text-xs font-mono bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold">{code}</span>
+              </div>
 
-                <div className="space-y-2">
-                  <div className="font-black text-sm text-gray-900 uppercase">{movie.title || 'Phim'}</div>
-                  <div className="flex justify-between text-gray-700">
-                    <span>Định dạng:</span>
-                    <span className="font-bold">{showtime.format || '2D'}</span>
-                  </div>
-                  <div className="flex justify-between text-gray-700">
-                    <span>Suất chiếu:</span>
-                    <span className="font-bold">
-                      {showtime.startTime ? new Date(showtime.startTime).toLocaleString('vi-VN') : 'N/A'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-gray-700">
-                    <span>Phòng chiếu:</span>
-                    <span className="font-bold">{room.name || 'Phòng 1'}</span>
-                  </div>
-                  <div className="flex justify-between text-gray-700 text-sm">
-                    <span>VỊ TRÍ GHẾ:</span>
-                    <span className="font-black text-brand text-base">{(b.seats || []).join(', ')}</span>
-                  </div>
-                  <div className="flex justify-between text-gray-700 border-t border-dashed border-gray-300 pt-2">
-                    <span>Khách hàng:</span>
-                    <span className="font-bold">{user.username || 'Khách vãng lai'}</span>
-                  </div>
-                  <div className="flex justify-between text-gray-700">
-                    <span>Giá vé:</span>
-                    <span className="font-black text-gray-900">{fmt(b.totalPrice)}</span>
-                  </div>
-                </div>
+              {/* Scrollable Printable Container for preview & print */}
+              <div className="print-ticket-container overflow-y-auto space-y-4 pr-1 max-h-[60vh]">
+                {seats.map((seatCode, index) => (
+                  <div
+                    key={index}
+                    className="print-ticket-slip border-2 border-dashed border-gray-300 p-5 rounded-2xl space-y-4 font-mono text-xs bg-amber-50/30 relative"
+                  >
+                    <div className="text-center space-y-1 border-b border-dashed border-gray-300 pb-3">
+                      <h3 className="font-black text-base uppercase text-gray-900 tracking-wider">NOVA CINEMA</h3>
+                      <p className="text-[10px] text-gray-500">{theater.name || 'Rạp Nova Cinema'}</p>
+                      <p className="text-[10px] font-bold text-brand mt-1">{code}</p>
+                    </div>
 
-                {/* Simulated Barcode / QR */}
-                <div className="text-center pt-2 border-t border-dashed border-gray-300 space-y-1">
-                  <div className="font-mono text-[10px] tracking-widest text-gray-400">||| | |||| ||| || ||||| |||</div>
-                  <p className="text-[9px] text-gray-400">Vui lòng mang theo vé này khi vào phòng chiếu</p>
-                </div>
+                    <div className="space-y-2">
+                      <div className="font-black text-sm text-gray-900 uppercase">{movie.title || 'Phim'}</div>
+                      <div className="flex justify-between text-gray-700">
+                        <span>Định dạng:</span>
+                        <span className="font-bold">{showtime.format || '2D'}</span>
+                      </div>
+                      <div className="flex justify-between text-gray-700">
+                        <span>Suất chiếu:</span>
+                        <span className="font-bold">
+                          {showtime.startTime ? new Date(showtime.startTime).toLocaleString('vi-VN') : 'N/A'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-gray-700">
+                        <span>Phòng chiếu:</span>
+                        <span className="font-bold">{room.name || 'Phòng 1'}</span>
+                      </div>
+
+                      {/* Vị trí ghế duy nhất của tờ vé này */}
+                      <div className="flex justify-between items-center text-gray-700 text-sm bg-amber-100/60 p-2.5 rounded-xl border border-amber-300/70 my-1">
+                        <span className="font-bold text-gray-800">VỊ TRÍ GHẾ:</span>
+                        <span className="font-black text-brand text-lg tracking-wider">{seatCode}</span>
+                      </div>
+
+                      <div className="flex justify-between text-gray-700 border-t border-dashed border-gray-300 pt-2">
+                        <span>Khách hàng:</span>
+                        <span className="font-bold">{user.username || 'Khách vãng lai'}</span>
+                      </div>
+                      <div className="flex justify-between text-gray-700">
+                        <span>Giá vé từng ghế:</span>
+                        <span className="font-black text-gray-900">{fmt(pricePerTicket)}</span>
+                      </div>
+                    </div>
+
+                    {/* Simulated Barcode / QR */}
+                    <div className="text-center pt-2 border-t border-dashed border-gray-300 space-y-1">
+                      <div className="font-mono text-[10px] tracking-widest text-gray-400">||| | |||| ||| || ||||| |||</div>
+                      <p className="text-[9px] text-gray-400">Vui lòng mang theo vé này khi vào phòng chiếu ({seatCode})</p>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 pt-2 border-t no-print-btn">
                 <button
                   onClick={() => window.print()}
                   className="flex-1 py-2.5 bg-brand text-white rounded-xl text-xs font-bold hover:bg-brand-hover transition-all flex items-center justify-center gap-1.5 shadow-md active:scale-95"
                 >
-                  <Printer size={14} /> In lệnh ra máy in
+                  <Printer size={14} /> In lệnh ra máy in ({seatCount} vé)
                 </button>
                 <button
                   onClick={() => setTicketToPrint(null)}
