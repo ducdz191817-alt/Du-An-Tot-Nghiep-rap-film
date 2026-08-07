@@ -184,11 +184,6 @@ const updateUserRole = async (id, role) => {
   return response.data;
 };
 
-const deleteUser = async (id) => {
-  const response = await api.delete(`/admin/users/${id}`);
-  return response.data;
-};
-
 // Pricing Config
 const getPricingConfig = async () => {
   const response = await api.get('/admin/pricing');
@@ -268,7 +263,6 @@ const adminService = {
   sendBulkEmail,
   getUsers,
   updateUserRole,
-  deleteUser,
   searchTMDB,
   getTMDBMovieDetail,
   getTMDBTrending,
