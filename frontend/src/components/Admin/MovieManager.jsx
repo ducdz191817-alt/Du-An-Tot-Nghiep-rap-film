@@ -318,7 +318,8 @@ export const MovieManager = () => {
       setToast({ message: 'Đã xóa phim thành công!', type: 'success' });
       fetchMoviesList();
     } catch (err) {
-      setToast({ message: err.message || 'Lỗi khi xóa phim', type: 'error' });
+      const errMsg = err.response?.data?.message || err.message || 'Lỗi khi xóa phim';
+      setToast({ message: errMsg, type: 'error' });
     }
   };
 
