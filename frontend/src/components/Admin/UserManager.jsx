@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Users, Search, Trash2, RefreshCw, AlertCircle, X,
+  Users, Search, RefreshCw, AlertCircle, X,
   ShieldCheck, UserCheck, Calendar, Phone, Mail, Info, Crown,
 } from 'lucide-react';
 import adminService from '../../services/admin.service';
@@ -15,7 +15,6 @@ export const UserManager = () => {
   const [message, setMessage] = useState({ text: '', type: '' });
 
   // Confirm modals
-  const [confirmDelete, setConfirmDelete] = useState(null);   // { id, username }
   const [confirmRole, setConfirmRole] = useState(null);       // { id, username, newRole }
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -40,21 +39,6 @@ export const UserManager = () => {
   const showMessage = (text, type = 'success') => {
     setMessage({ text, type });
     setTimeout(() => setMessage({ text: '', type: '' }), 4000);
-  };
-
-  const handleDeleteUser = async () => {
-    if (!confirmDelete) return;
-    setActionLoading(true);
-    try {
-      await adminService.deleteUser(confirmDelete.id);
-      showMessage(`Đã xóa người dùng "${confirmDelete.username}" thành công!`, 'success');
-      setConfirmDelete(null);
-      fetchUsers();
-    } catch (err) {
-      showMessage(err.message || 'Lỗi khi xóa người dùng.', 'error');
-    } finally {
-      setActionLoading(false);
-    }
   };
 
   const handleUpdateRole = async () => {
@@ -129,7 +113,7 @@ export const UserManager = () => {
             <Users className="text-brand" size={20} /> Quản lý Người dùng
           </h3>
           <p className="text-xs text-gray-500 mt-1">
-            Xem danh sách tài khoản, phân quyền hoặc xóa người dùng khỏi hệ thống.
+            Xem danh sách tài khoản và phân quyền quản trị trong hệ thống.
           </p>
         </div>
         <button
@@ -280,8 +264,8 @@ export const UserManager = () => {
                       {/* Actions */}
                       <td className="py-4 pr-6">
                         <div className="flex items-center justify-center gap-2">
-                          {/* Nút Nâng quyền - chỉ hiển thị với người dùng thường (không cho phép hạ quyền admin) */}
-                          {user.role !== 'admin' && (
+                          {/* Nút Nâng quyền - chỉ hiển thị với người dùng thường */}
+                          {user.role !== 'admin' ? (
                             <button
                               onClick={() =>
                                 setConfirmRole({
@@ -291,20 +275,13 @@ export const UserManager = () => {
                                 })
                               }
                               title="Nâng lên Quản trị viên"
-                              className="p-2 rounded-xl border transition-all duration-300 active:scale-95 inline-flex items-center justify-center bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20 hover:border-blue-500/40 text-blue-400"
+                              className="px-3 py-1.5 rounded-xl border transition-all duration-300 active:scale-95 inline-flex items-center justify-center gap-1 bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20 hover:border-blue-500/40 text-blue-600 font-bold text-xs"
                             >
-                              <ShieldCheck size={14} />
+                              <ShieldCheck size={14} /> Nâng quyền
                             </button>
+                          ) : (
+                            <span className="text-[11px] text-gray-400 font-medium italic">Không có thao tác</span>
                           )}
-
-                          {/* Delete button */}
-                          <button
-                            onClick={() => setConfirmDelete({ id: user._id, username: user.username })}
-                            title="Xóa người dùng"
-                            className="p-2 bg-brand/10 hover:bg-brand/20 border border-brand/20 hover:border-brand/40 text-brand rounded-xl transition-all duration-300 active:scale-95 inline-flex items-center justify-center"
-                          >
-                            <Trash2 size={14} />
-                          </button>
                         </div>
                       </td>
                     </tr>
@@ -314,26 +291,6 @@ export const UserManager = () => {
             </table>
           </div>
         </div>
-      )}
-
-      {/* Confirm Delete Modal */}
-      {confirmDelete && (
-        <ConfirmModal
-          icon={<Trash2 size={24} className="text-brand" />}
-          iconBg="bg-brand/10 border-brand/20"
-          title="Xác nhận xóa người dùng?"
-          description={
-            <>
-              Hành động này sẽ xóa vĩnh viễn tài khoản{' '}
-              <span className="font-mono text-brand font-bold">@{confirmDelete.username}</span> và toàn bộ lịch sử đặt vé.
-            </>
-          }
-          note="Các ghế đã đặt sẽ được giải phóng tự động. Hành động này không thể hoàn tác."
-          onCancel={() => setConfirmDelete(null)}
-          onConfirm={handleDeleteUser}
-          loading={actionLoading}
-          confirmLabel="Đồng ý xóa"
-        />
       )}
 
       {/* Confirm Role Change Modal */}
@@ -374,7 +331,7 @@ const ConfirmModal = ({ icon, iconBg, title, description, note, onCancel, onConf
           <p className="text-xs text-gray-500 leading-relaxed">{description}</p>
           <div className="bg-gray-50 border border-gray-200 p-2.5 rounded-xl flex items-start gap-2 mt-2">
             <Info size={14} className="text-gray-400 shrink-0 mt-0.5" />
-            <span className="text-[10px] text-gray-550/500 leading-normal">{note}</span>
+            <span className="text-[10px] text-gray-500 leading-normal">{note}</span>
           </div>
         </div>
       </div>
@@ -382,7 +339,7 @@ const ConfirmModal = ({ icon, iconBg, title, description, note, onCancel, onConf
         <button
           disabled={loading}
           onClick={onCancel}
-          className="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-750 bg-transparent hover:bg-gray-100 rounded-xl transition-colors"
+          className="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-700 bg-transparent hover:bg-gray-100 rounded-xl transition-colors"
         >
           Hủy bỏ
         </button>
