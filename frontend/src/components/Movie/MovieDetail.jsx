@@ -357,44 +357,17 @@ export const MovieDetail = ({ movie }) => {
             </button>
           </div>
 
-          {/* Preview thumbnail khi trailer đang ẩn */}
-          {!showTrailer && (
-            <button
-              onClick={() => setShowTrailer(true)}
-              className="w-full group relative aspect-video rounded-[2rem] overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-900 hover:border-brand/50 transition-all duration-300 shadow-lg hover:shadow-[0_20px_40px_rgba(0,0,0,0.2)] cursor-pointer"
-            >
-              {/* Poster as thumbnail background */}
-              <img
-                src={getPosterUrl(movie.posterUrl)}
-                alt={displayTitle}
-                className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-50 transition-opacity duration-500 scale-105 group-hover:scale-110 transition-transform duration-700"
-              />
-              {/* Dark gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
-              {/* Play button */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-                <div className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-sm border-2 border-white/30 flex items-center justify-center group-hover:scale-110 group-hover:bg-brand/80 group-hover:border-brand transition-all duration-300 shadow-[0_0_40px_rgba(0,0,0,0.4)]">
-                  <Play size={36} fill="white" className="text-white ml-1" />
-                </div>
-                <div className="text-center">
-                  <p className="text-white font-black text-lg tracking-tight drop-shadow-lg">
-                    {language === 'vi' ? 'Xem trailer' : 'Watch Trailer'}
-                  </p>
-                  <p className="text-white/60 text-sm font-medium mt-1">{displayTitle}</p>
-                </div>
-              </div>
-              {/* Shimmer effect on hover */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 group-hover:translate-x-full transition-all duration-700 ease-in-out -translate-x-full" />
-            </button>
-          )}
-
           {/* Collapsible trailer iframe with smooth animation */}
           <div
             className="overflow-hidden transition-all duration-500 ease-in-out"
-            style={{ maxHeight: showTrailer ? '800px' : '0px', opacity: showTrailer ? 1 : 0 }}
+            style={{
+              maxHeight: showTrailer ? '800px' : '0px',
+              opacity: showTrailer ? 1 : 0,
+              marginTop: showTrailer ? '1rem' : '0px',
+            }}
           >
-            <div className="relative aspect-video w-full rounded-[2rem] overflow-hidden border border-gray-200 dark:border-gray-700 shadow-[0_30px_60px_rgba(0,0,0,0.2)] bg-black">
-              {showTrailer && (
+            {showTrailer && (
+              <div className="relative aspect-video w-full rounded-[2rem] overflow-hidden border border-gray-200 dark:border-gray-700 shadow-[0_30px_60px_rgba(0,0,0,0.2)] bg-black">
                 <iframe
                   className="absolute inset-0 w-full h-full"
                   src={getEmbedUrl(movie.trailerUrl)}
@@ -402,8 +375,8 @@ export const MovieDetail = ({ movie }) => {
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 />
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}
