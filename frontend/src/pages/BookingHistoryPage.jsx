@@ -195,14 +195,6 @@ export const BookingHistoryPage = () => {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {booking.paymentStatus === 'paid' && (
-                        <button
-                          onClick={() => setTicketToPrint(booking)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 transition-all active:scale-95 shadow-sm"
-                        >
-                          <Printer size={12} /> {language === 'vi' ? 'In vé' : 'Print'}
-                        </button>
-                      )}
                       <button
                         onClick={() => toggleExpand(booking._id)}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold text-white bg-[#3d2310] hover:bg-[#2a170a] border border-[#5c3a21] transition-all active:scale-95 shadow-sm"
