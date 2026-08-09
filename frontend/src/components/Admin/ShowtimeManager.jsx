@@ -55,6 +55,8 @@ export const ShowtimeManager = () => {
   });
   const [autoError, setAutoError] = useState('');
   const [newSlotInput, setNewSlotInput] = useState('');
+  const [newPreviewTimeInput, setNewPreviewTimeInput] = useState('');
+  const [selectedScopeDate, setSelectedScopeDate] = useState('ALL');
 
 
   // ────────────────────────────────────────────────
@@ -68,9 +70,14 @@ export const ShowtimeManager = () => {
       const roomArr = Array.isArray(rmRes) ? rmRes : (Array.isArray(rmRes?.data) ? rmRes.data : []);
       setModalRooms(roomArr);
       if (roomArr.length > 0 && !editingShowtime) {
-        setForm((prev) => ({ ...prev, roomId: roomArr[0]._id }));
+        const firstRm = roomArr[0];
+        setForm((prev) => ({
+          ...prev,
+          roomId: firstRm._id,
+          format: firstRm.type || firstRm.format || '2D',
+        }));
       } else if (roomArr.length === 0) {
-        setForm((prev) => ({ ...prev, roomId: '' }));
+        setForm((prev) => ({ ...prev, roomId: '', format: '2D' }));
       }
     } catch (err) {
       console.error('Lỗi load phòng:', err);
@@ -87,7 +94,14 @@ export const ShowtimeManager = () => {
       const rmRes = await adminService.getRooms(theaterId);
       const roomArr = Array.isArray(rmRes) ? rmRes : (Array.isArray(rmRes?.data) ? rmRes.data : []);
       setAutoModalRooms(roomArr);
-      setAutoForm((prev) => ({ ...prev, roomIds: roomArr.length > 0 ? [roomArr[0]._id] : [] }));
+      if (roomArr.length > 0) {
+        const firstRm = roomArr[0];
+        setAutoForm((prev) => ({
+          ...prev,
+          roomIds: [firstRm._id],
+          format: firstRm.type || firstRm.format || '2D',
+        }));
+      }
     } catch (err) {
       console.error('Lỗi load phòng auto:', err);
       setAutoModalRooms([]);
@@ -189,6 +203,12 @@ export const ShowtimeManager = () => {
     const { name, value } = e.target;
     setForm((prev) => {
       const updated = { ...prev, [name]: value };
+      if (name === 'roomId') {
+        const foundRm = modalRooms.find((r) => r._id === value) || rooms.find((r) => r._id === value);
+        if (foundRm) {
+          updated.format = (foundRm.type || foundRm.format || '2D').toUpperCase();
+        }
+      }
       return updated;
     });
   };
@@ -208,7 +228,15 @@ export const ShowtimeManager = () => {
     setEditingShowtime(null);
     setError('');
     setModalRooms([...rooms]);
-    setForm({ movieId: movies[0]?._id || '', theaterId: selectedTheater, roomId: rooms[0]?._id || '', startTime: '', format: '2D' });
+    const firstRm = rooms[0];
+    const rmFormat = (firstRm?.type || firstRm?.format || '2D').toUpperCase();
+    setForm({
+      movieId: movies[0]?._id || '',
+      theaterId: selectedTheater,
+      roomId: firstRm?._id || '',
+      startTime: '',
+      format: rmFormat,
+    });
     setIsManualOpen(true);
   };
 
@@ -226,13 +254,15 @@ export const ShowtimeManager = () => {
     const theaterId = st.theater?._id || st.theater || selectedTheater;
     const movieId = st.movie?._id || st.movie || '';
     const roomId = st.room?._id || st.room || '';
+    const foundRm = rooms.find((r) => r._id === roomId);
+    const rmFormat = (foundRm?.type || foundRm?.format || st.format || '2D').toUpperCase();
     setModalRooms(rooms.length > 0 ? [...rooms] : []);
     setForm({
       movieId,
       theaterId,
       roomId,
       startTime: localTimeFormatted,
-      format: (st.format || '2D').toUpperCase(),
+      format: rmFormat,
     });
     setIsManualOpen(true);
   };
@@ -255,6 +285,8 @@ export const ShowtimeManager = () => {
     setPreviewList([]);
     const today = new Date().toISOString().split('T')[0];
     const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const firstRm = rooms[0];
+    const rmFormat = (firstRm?.type || firstRm?.format || '2D').toUpperCase();
     setAutoForm({
       movieId: movies[0]?._id || '',
       theaterId: selectedTheater,
@@ -262,8 +294,8 @@ export const ShowtimeManager = () => {
       startDate: today,
       endDate: nextWeek,
       timeSlots: [...DEFAULT_TIME_SLOTS],
-      format: '2D',
-      ticketPrice: 80000,
+      format: rmFormat,
+      ticketPrice: DEFAULT_PRICES[rmFormat] || 80000,
     });
     setAutoModalRooms([...rooms]);
     setIsAutoOpen(true);
@@ -305,13 +337,111 @@ export const ShowtimeManager = () => {
     setNewSlotInput('');
   };
 
+  const handleRemovePreviewItem = (index) => {
+    setPreviewList((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleRemoveAllSlotTimes = (slotStr) => {
+    setPreviewList((prev) => prev.filter((item) => item.slot !== slotStr));
+  };
+
+  const handleAddPreviewSlotByTime = (timeStr, scopeDateIso = 'ALL') => {
+    const trimmed = (timeStr || '').trim();
+    if (!trimmed || !/^\d{2}:\d{2}$/.test(trimmed)) {
+      setAutoError('Vui lòng nhập khung giờ hợp lệ (VD: 09:30)');
+      return;
+    }
+    setAutoError('');
+
+    const selectedMovie = movies.find((m) => m._id === autoForm.movieId);
+    const selectedRoom = autoModalRooms.find((r) => r._id === autoForm.roomIds[0]) || rooms.find((r) => r._id === autoForm.roomIds[0]);
+    const movieDuration = selectedMovie?.duration || 120;
+    const durationMs = movieDuration * 60000;
+    const bufferMs = 20 * 60000;
+    const roomFormat = (selectedRoom?.type || selectedRoom?.format || '2D').toUpperCase();
+
+    let days = [];
+    const start = new Date(autoForm.startDate);
+    const end = new Date(autoForm.endDate);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+
+    if (scopeDateIso && scopeDateIso !== 'ALL') {
+      const d = new Date(scopeDateIso);
+      d.setHours(0, 0, 0, 0);
+      days = [d];
+    } else {
+      const current = new Date(start);
+      while (current <= end) {
+        days.push(new Date(current));
+        current.setDate(current.getDate() + 1);
+      }
+    }
+
+    const [hours, minutes] = trimmed.split(':').map(Number);
+    const newItems = [];
+    const targetRoomId = autoForm.roomIds[0];
+
+    days.forEach((day) => {
+      const startTime = new Date(day);
+      startTime.setHours(hours, minutes, 0, 0);
+      const endTime = new Date(startTime.getTime() + durationMs + bufferMs);
+      const endLimit = new Date(day);
+      endLimit.setHours(23, 59, 59, 999);
+
+      let status = 'valid';
+      let reason = '';
+
+      if (endTime > endLimit) {
+        status = 'invalid';
+        reason = 'Vượt quá 23:59 trong ngày';
+      } else {
+        const conflictDB = showtimes.find((st) => {
+          const stRoomId = st.room?._id || st.room;
+          if (stRoomId !== targetRoomId) return false;
+          const stStart = new Date(st.startTime);
+          const stEnd = new Date(st.endTime);
+          return startTime < stEnd && endTime > stStart;
+        });
+
+        if (conflictDB) {
+          status = 'invalid';
+          const cMovieTitle = conflictDB.movie?.title || 'Phim khác';
+          reason = `Trùng lịch với suất "${cMovieTitle}"`;
+        }
+      }
+
+      newItems.push({
+        id: `${day.toISOString().split('T')[0]}_${trimmed}_${Date.now()}`,
+        dayStr: day.toLocaleDateString('vi-VN'),
+        dateObj: day,
+        slot: trimmed,
+        startTime,
+        endTime,
+        startFmt: startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+        endFmt: new Date(startTime.getTime() + durationMs).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+        movieTitle: selectedMovie?.title || 'Phim đã chọn',
+        roomName: selectedRoom?.name || 'Phòng chiếu',
+        format: roomFormat,
+        ticketPrice: DEFAULT_PRICES[roomFormat] || 80000,
+        status,
+        reason,
+        selected: status === 'valid',
+      });
+    });
+
+    setPreviewList((prev) => [...prev, ...newItems]);
+    setNewPreviewTimeInput('');
+  };
+
   const estimatedShowtimes = (() => {
-    if (!autoForm.startDate || !autoForm.endDate || !autoForm.roomIds.length || !autoForm.timeSlots.length) return 0;
+    if (!autoForm.startDate || !autoForm.endDate || !autoForm.roomIds.length) return 0;
     const start = new Date(autoForm.startDate);
     const end = new Date(autoForm.endDate);
     if (start > end) return 0;
     const days = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
-    return days * autoForm.roomIds.length * autoForm.timeSlots.length;
+    const slotsCount = autoForm.timeSlots?.length > 0 ? autoForm.timeSlots.length : DEFAULT_TIME_SLOTS.length;
+    return days * autoForm.roomIds.length * slotsCount;
   })();
 
   // ── Chuyển từ Màn 1 ➔ Màn 2: Tính toán danh sách suất chiếu dự kiến để xem trước ──
@@ -323,13 +453,13 @@ export const ShowtimeManager = () => {
     if (!autoForm.roomIds.length) { setAutoError('Vui lòng chọn một phòng chiếu'); return; }
     if (!autoForm.startDate || !autoForm.endDate) { setAutoError('Vui lòng chọn ngày bắt đầu và kết thúc'); return; }
     if (new Date(autoForm.startDate) > new Date(autoForm.endDate)) { setAutoError('Ngày bắt đầu phải trước hoặc bằng ngày kết thúc'); return; }
-    if (!autoForm.timeSlots.length) { setAutoError('Vui lòng thêm ít nhất một khung giờ chiếu'); return; }
 
     const selectedMovie = movies.find((m) => m._id === autoForm.movieId);
     const selectedRoom = autoModalRooms.find((r) => r._id === autoForm.roomIds[0]) || rooms.find((r) => r._id === autoForm.roomIds[0]);
     const movieDuration = selectedMovie?.duration || 120;
     const durationMs = movieDuration * 60000;
     const bufferMs = 20 * 60000; // 20 phút dọn vệ sinh phòng
+    const roomFormat = (selectedRoom?.type || selectedRoom?.format || '2D').toUpperCase();
 
     const days = [];
     const current = new Date(autoForm.startDate);
@@ -344,12 +474,13 @@ export const ShowtimeManager = () => {
 
     const generated = [];
     const targetRoomId = autoForm.roomIds[0];
+    const slotsToUse = (autoForm.timeSlots && autoForm.timeSlots.length > 0) ? autoForm.timeSlots : DEFAULT_TIME_SLOTS;
 
     days.forEach((day) => {
       // Mảng lưu trữ khoảng thời gian chiếm dụng phòng của các ca HỢP LỆ đã được duyệt trong ngày
       const dayAcceptedSlots = [];
 
-      autoForm.timeSlots.forEach((slot) => {
+      slotsToUse.forEach((slot) => {
         const [hours, minutes] = slot.split(':').map(Number);
         if (isNaN(hours) || isNaN(minutes)) return;
 
@@ -1089,23 +1220,15 @@ export const ShowtimeManager = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* Thông báo Giá Vé Tự Động & Kế Thừa Định Dạng Phòng */}
+          <div className="bg-blue-50 border border-blue-200 text-blue-700 p-3.5 rounded-xl flex items-start gap-2.5">
+            <AlertCircle size={16} className="mt-0.5 shrink-0" />
             <div>
-              <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Định Dạng Chiếu</label>
-              <select name="format" value={form.format} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer">
-                <option value="2D">2D</option><option value="3D">3D</option><option value="IMAX">IMAX</option><option value="GOLDCLASS">GOLDCLASS</option>
-              </select>
-            </div>
-            
-            {/* Thông báo Giá Vé Tự Động */}
-            <div className="bg-blue-50 border border-blue-200 text-blue-700 p-3 rounded-lg flex items-start gap-2">
-              <AlertCircle size={16} className="mt-0.5 shrink-0" />
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider">Dynamic Pricing (Giá Tự Động)</p>
-                <p className="text-[10px] mt-0.5 leading-relaxed">
-                  Giá vé sẽ được <strong>tự động tính toán</strong> bởi Backend dựa trên "Bảng Giá", bao gồm phụ thu theo Thứ (cuối tuần), Khung giờ (giờ vàng), Định dạng và Loại phòng. <br/>👉 Bạn không cần nhập tay!
-                </p>
-              </div>
+              <p className="text-[11px] font-bold uppercase tracking-wider">Dynamic Pricing & ĐỊNH DẠNG TỰ ĐỘNG theo phòng</p>
+              <p className="text-[10px] mt-0.5 leading-relaxed">
+                Định dạng chiếu được <strong>tự động lấy từ Loại phòng chiếu</strong> (2D, 3D, IMAX, 4DX, GOLDCLASS,...). <br/>
+                Giá vé sẽ được <strong>tự động tính toán</strong> bởi Backend dựa trên "Bảng Giá" và thời gian chiếu.
+              </p>
             </div>
           </div>
 
@@ -1282,7 +1405,7 @@ export const ShowtimeManager = () => {
             <div>
               <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5 flex justify-between items-center">
                 <span>Phòng Chiếu {modalRoomsLoading && <Loader2 size={12} className="inline ml-2 animate-spin text-brand" />}</span>
-                <span className="text-[11px] font-normal text-gray-400">Đề xuất [{form.format}]</span>
+                <span className="text-[11px] font-semibold text-emerald-600">Định dạng phòng: {form.format || '2D'}</span>
               </label>
               <select name="roomId" value={form.roomId} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer disabled:opacity-50 font-medium" required disabled={modalRoomsLoading}>
                 {modalRoomsLoading ? (
@@ -1378,8 +1501,8 @@ export const ShowtimeManager = () => {
         </form>
       </Modal>
 
-      {/* ───── Modal Tạo Tự Động (2 Bước: Màn 1 - Cấu hình, Màn 2 - Xem trước & Kiểm tra) ───── */}
-      <Modal isOpen={isAutoOpen} onClose={() => { setIsAutoOpen(false); setAutoResult(null); setAutoStep(1); }} title={autoStep === 2 ? "⚡ Kiểm Tra Danh Sách Suất Chiếu Tự Động" : "⚡ Tạo Suất Chiếu Tự Động"} size={autoStep === 2 ? "xl" : "lg"}>
+      {/* ───── Modal Tạo Tự Động (2 Bước: Màn 1 - Cấu hình Phim/Phòng/Ngày, Màn 2 - Danh Sách & Quản Lý Khung Giờ) ───── */}
+      <Modal isOpen={isAutoOpen} onClose={() => { setIsAutoOpen(false); setAutoResult(null); setAutoStep(1); }} title={autoStep === 2 ? "⚡ Danh Sách & Quản Lý Khung Giờ Suất Chiếu Tự Động" : "⚡ Tạo Suất Chiếu Tự Động"} size="4xl">
         {autoResult ? (
           <div className="space-y-5">
             <div className="flex flex-col items-center py-4">
@@ -1410,7 +1533,7 @@ export const ShowtimeManager = () => {
             </div>
           </div>
         ) : autoStep === 1 ? (
-          /* ── MÀN 1: Cấu hình tham số ── */
+          /* ── MÀN 1: Cấu hình tham số (Phim, Rạp, Phòng, Ngày) ── */
           <form onSubmit={handleGoToPreview} className="space-y-4">
             {autoError && (
               <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm flex items-center gap-2">
@@ -1466,77 +1589,137 @@ export const ShowtimeManager = () => {
                 <input type="date" name="endDate" value={autoForm.endDate} onChange={handleAutoFormChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none" required />
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-800 mb-2 pl-0.5">
-                Khung Giờ Chiếu <span className="ml-2 text-xs font-normal text-gray-400">({autoForm.timeSlots.length} khung giờ)</span>
-              </label>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {autoForm.timeSlots.map((slot) => (
-                  <span key={slot} className="flex items-center gap-1.5 bg-gray-100 border border-gray-200 text-gray-700 text-xs font-semibold px-3 py-1.5 rounded-full">
-                    <Clock size={11} className="text-gray-500" />{slot}
-                    <button type="button" onClick={() => handleRemoveSlot(slot)} className="ml-0.5 text-gray-400 hover:text-red-500 transition-colors"><X size={12} /></button>
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2 items-center">
-                <input type="time" value={newSlotInput} onChange={(e) => setNewSlotInput(e.target.value)} className="bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg py-2 px-3 focus:border-brand outline-none" />
-                <button type="button" onClick={handleAddSlot} className="flex items-center gap-1.5 bg-gray-100 hover:bg-brand/10 border border-gray-200 hover:border-brand/30 text-gray-600 hover:text-brand text-xs font-semibold px-3 py-2 rounded-lg transition-all">
-                  <Plus size={13} /> Thêm Giờ
-                </button>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            {/* Thông báo Tự Động Tạo Khung Giờ */}
+            <div className="bg-amber-50 border border-amber-200 text-amber-900 p-3.5 rounded-xl flex items-start gap-2.5">
+              <Zap size={18} className="mt-0.5 text-amber-600 shrink-0" />
               <div>
-                <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Định Dạng Chiếu</label>
-                <select name="format" value={autoForm.format} onChange={handleAutoFormChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer">
-                  <option value="2D">2D</option><option value="3D">3D</option><option value="IMAX">IMAX</option><option value="GOLDCLASS">GOLDCLASS</option>
-                </select>
-              </div>
-              {/* Thông báo Giá Vé Tự Động */}
-              <div className="bg-blue-50 border border-blue-200 text-blue-700 p-3 rounded-lg flex items-start gap-2">
-                <AlertCircle size={16} className="mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider">Dynamic Pricing</p>
-                  <p className="text-[10px] mt-0.5 leading-relaxed">
-                    Giá vé sẽ được <strong>tính tự động</strong> dựa trên ngày giờ chiếu.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-3.5 flex items-center gap-3">
-              <Zap size={20} className="text-amber-500 shrink-0" />
-              <div className="flex-1">
-                <p className="text-xs text-amber-700 font-semibold">Dự Kiến Sinh Ra</p>
-                <p className="text-sm text-amber-800 font-bold">
-                  ~{estimatedShowtimes} suất chiếu
-                  {autoForm.startDate && autoForm.endDate && (
-                    <span className="text-xs font-normal ml-1 text-amber-600">
-                      ({Math.floor((new Date(autoForm.endDate) - new Date(autoForm.startDate)) / (1000*60*60*24)) + 1} ngày × {autoForm.roomIds.length} phòng × {autoForm.timeSlots.length} khung giờ)
-                    </span>
-                  )}
+                <p className="text-xs font-bold uppercase tracking-wider text-amber-800">⚡ Tự động tạo danh sách khung giờ</p>
+                <p className="text-xs mt-0.5 leading-relaxed text-amber-700">
+                  Khi bạn bấm <strong>"Kiểm Tra Danh Sách ➔"</strong>, hệ thống sẽ tự động tổng hợp danh sách suất chiếu chuẩn cho các ngày. Tại Bước 2, bạn có thể <strong>thêm mới hoặc xóa bỏ</strong> bất kỳ khung giờ nào cực kỳ dễ dàng!
                 </p>
-                <p className="text-xs text-amber-600 mt-0.5">Bấm "Kiểm Tra Danh Sách" để xem chi tiết danh sách từng suất chiếu trước khi lưu.</p>
               </div>
             </div>
+
             <div className="flex justify-end gap-3 pt-3 border-t border-gray-200">
               <Button onClick={() => setIsAutoOpen(false)} variant="secondary" className="px-5 py-2">Hủy</Button>
               <button
                 type="submit"
-                disabled={!autoForm.roomIds.length || !autoForm.timeSlots.length}
-                className="flex items-center gap-2 px-6 py-2 text-sm font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                disabled={!autoForm.roomIds.length || !autoForm.startDate || !autoForm.endDate}
+                className="flex items-center gap-2 px-6 py-2 text-sm font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
               >
                 Kiểm Tra Danh Sách ➔
               </button>
             </div>
           </form>
         ) : (
-          /* ── MÀN 2: Xem Trước & Kiểm Tra Danh Sách Suất Chiếu Trước Khi Lưu ── */
+          /* ── MÀN 2: Danh Sách & Quản Lý Khung Giờ (Có thể Thêm/Xóa từng khung giờ & Khung to rộng rãi) ── */
           <div className="space-y-4">
             {autoError && (
               <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm flex items-center gap-2">
                 <AlertCircle size={16} /><span>{autoError}</span>
               </div>
             )}
+
+            {/* BẢNG ĐIỀU KHIỂN & TÙY CHỈNH KHUNG GIỜ CHIẾU */}
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-4 rounded-2xl space-y-3.5 shadow-sm">
+              {/* 1. Nút thêm nhanh khung giờ chuẩn */}
+              <div>
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-900 block mb-1.5 flex items-center gap-1.5">
+                  <Zap size={13} className="text-amber-600" /> Gợi ý thêm nhanh khung giờ chiếu:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {['08:00', '10:30', '13:00', '15:30', '18:00', '20:30', '22:30'].map((slot) => {
+                    const isAdded = previewList.some((i) => i.slot === slot);
+                    return (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => handleAddPreviewSlotByTime(slot, selectedScopeDate)}
+                        className={`px-3 py-1 text-xs font-bold rounded-xl border transition-all cursor-pointer flex items-center gap-1 ${
+                          isAdded
+                            ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                            : 'bg-white text-amber-900 border-amber-300 hover:bg-amber-100 hover:border-amber-400'
+                        }`}
+                      >
+                        <Plus size={12} /> {slot}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 2. Nhập giờ tùy chỉnh + Chọn phạm vi ngày */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-amber-200/70">
+                <div className="flex flex-wrap items-center gap-2 flex-1">
+                  <span className="text-xs font-bold text-gray-800">Thêm giờ tùy chỉnh:</span>
+                  <input
+                    type="time"
+                    value={newPreviewTimeInput}
+                    onChange={(e) => setNewPreviewTimeInput(e.target.value)}
+                    className="bg-white border border-amber-300 text-gray-900 text-xs font-bold rounded-xl px-3 py-1.5 focus:border-amber-500 outline-none shadow-xs"
+                  />
+                  <span className="text-xs font-bold text-gray-600">cho:</span>
+                  <select
+                    value={selectedScopeDate}
+                    onChange={(e) => setSelectedScopeDate(e.target.value)}
+                    className="bg-white border border-amber-300 text-gray-800 text-xs font-bold rounded-xl px-3 py-1.5 focus:border-amber-500 outline-none cursor-pointer"
+                  >
+                    <option value="ALL">✨ Tất cả các ngày trong đợt</option>
+                    {(() => {
+                      const uniqueDates = Array.from(new Set(previewList.map((i) => i.dateObj?.toISOString().split('T')[0]))).filter(Boolean);
+                      return uniqueDates.map((iso) => {
+                        const [y, m, d] = iso.split('-');
+                        return <option key={iso} value={iso}>Chỉ ngày {d}/{m}/{y}</option>;
+                      });
+                    })()}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => handleAddPreviewSlotByTime(newPreviewTimeInput, selectedScopeDate)}
+                    className="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-black text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer shrink-0"
+                  >
+                    <Plus size={14} /> Thêm Vào Danh Sách
+                  </button>
+                </div>
+              </div>
+
+              {/* 3. Danh sách các Khung Giờ đang chọn dạng Chips (Click X để xóa toàn bộ ca đó) */}
+              {(() => {
+                const uniqueSlots = Array.from(new Set(previewList.map((i) => i.slot))).sort();
+                if (uniqueSlots.length === 0) return null;
+                return (
+                  <div className="pt-2 border-t border-amber-200/70">
+                    <span className="text-[11px] font-bold text-amber-900 block mb-1">
+                      Khung giờ đang có trong đợt (Bấm '✕' để xóa nhanh tất cả suất của khung giờ này):
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {uniqueSlots.map((slot) => {
+                        const count = previewList.filter((i) => i.slot === slot).length;
+                        return (
+                          <span
+                            key={slot}
+                            className="inline-flex items-center gap-1.5 bg-white border border-amber-300 text-amber-900 text-xs font-extrabold px-2.5 py-1 rounded-full shadow-2xs"
+                          >
+                            <Clock size={11} className="text-amber-600" />
+                            <span>{slot}</span>
+                            <span className="text-[10px] font-semibold text-gray-500">({count} suất)</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveAllSlotTimes(slot)}
+                              className="ml-0.5 text-red-400 hover:text-red-600 transition-colors p-0.5 rounded-full hover:bg-red-50 cursor-pointer"
+                              title={`Xóa tất cả các suất chiếu lúc ${slot}`}
+                            >
+                              <X size={12} />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
 
             {/* Thống kê tóm tắt Màn 2 */}
             <div className="grid grid-cols-3 gap-3 bg-gray-50 p-3 rounded-2xl border border-gray-200">
@@ -1575,10 +1758,10 @@ export const ShowtimeManager = () => {
               </div>
             </div>
 
-            {/* Bảng danh sách suất chiếu xem trước */}
-            <div className="border border-gray-200 rounded-2xl overflow-hidden max-h-[380px] overflow-y-auto">
+            {/* Bảng danh sách suất chiếu xem trước - Khung Rộng & Cao Dễ Nhìn */}
+            <div className="border border-gray-200 rounded-2xl overflow-hidden max-h-[480px] overflow-y-auto shadow-inner">
               <table className="w-full text-left text-xs">
-                <thead className="bg-gray-100/80 sticky top-0 border-b border-gray-200 text-gray-700 font-bold uppercase tracking-wider">
+                <thead className="bg-gray-100/90 sticky top-0 border-b border-gray-200 text-gray-700 font-bold uppercase tracking-wider z-10">
                   <tr>
                     <th className="p-3 text-center w-10">Chọn</th>
                     <th className="p-3">Ngày Chiếu</th>
@@ -1587,6 +1770,7 @@ export const ShowtimeManager = () => {
                     <th className="p-3">Phòng</th>
                     <th className="p-3">Định Dạng / Giá</th>
                     <th className="p-3">Trạng Thái Kiểm Tra</th>
+                    <th className="p-3 text-center w-16">Xóa</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 bg-white">
@@ -1616,7 +1800,7 @@ export const ShowtimeManager = () => {
                         <td className="p-3 font-black text-gray-900">
                           {item.startFmt} - {item.endFmt}
                         </td>
-                        <td className="p-3 font-bold text-gray-700 truncate max-w-[140px]" title={item.movieTitle}>
+                        <td className="p-3 font-bold text-gray-700 truncate max-w-[160px]" title={item.movieTitle}>
                           {item.movieTitle}
                         </td>
                         <td className="p-3 font-semibold text-gray-600">{item.roomName}</td>
@@ -1639,6 +1823,16 @@ export const ShowtimeManager = () => {
                               <AlertCircle size={13} /> {item.reason}
                             </span>
                           )}
+                        </td>
+                        <td className="p-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePreviewItem(idx)}
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
+                            title="Xóa suất chiếu này khỏi danh sách"
+                          >
+                            <Trash2 size={15} />
+                          </button>
                         </td>
                       </tr>
                     );

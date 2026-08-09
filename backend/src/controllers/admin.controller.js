@@ -69,6 +69,16 @@ const checkMovieHasBookings = async (movieId) => {
   return { hasBookings: bookingCount > 0, bookingCount };
 };
 
+const checkMovieBookings = async (req, res, next) => {
+  try {
+    const movieId = req.params.id;
+    const { hasBookings, bookingCount } = await checkMovieHasBookings(movieId);
+    res.json({ success: true, hasBookings, bookingCount });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const updateMovie = async (req, res, next) => {
   try {
     const movieId = req.params.id;
@@ -1794,6 +1804,7 @@ module.exports = {
   createMovie,
   updateMovie,
   deleteMovie,
+  checkMovieBookings,
   createTheater,
   updateTheater,
   deleteTheater,
