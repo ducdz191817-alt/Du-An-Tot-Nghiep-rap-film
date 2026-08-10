@@ -489,12 +489,12 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
   );
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4">
       {/* Backdrop */}
       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-0" onClick={onClose} />
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-6xl bg-white border border-gray-200 rounded-3xl shadow-2xl z-10 flex flex-col max-h-[95vh] overflow-hidden">
+      <div className="relative w-full max-w-[94vw] 2xl:max-w-7xl bg-white dark:bg-[#121827] border border-gray-200 dark:border-gray-800 rounded-3xl shadow-2xl z-10 flex flex-col max-h-[96vh] overflow-hidden">
 
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0 bg-gradient-to-r from-gray-50/80 via-white to-gray-50/80">

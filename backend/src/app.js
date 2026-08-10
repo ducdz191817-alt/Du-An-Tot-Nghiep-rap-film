@@ -40,6 +40,64 @@ setTimeout(async () => {
   } catch (e) {
     console.error('[PricingConfig] Lỗi khởi tạo bảng giá:', e.message);
   }
+
+  // Tự động khởi tạo danh mục loại phòng chiếu (2D, 3D, IMAX, GOLDCLASS) nếu chưa có
+  try {
+    const RoomType = require('./models/RoomType.model');
+    const count = await RoomType.countDocuments();
+    if (count === 0) {
+      const defaultRoomTypes = [
+        {
+          name: 'Phòng Chiếu 2D Tiêu Chuẩn',
+          code: '2D',
+          description: 'Hình ảnh 2D kỹ thuật số độ nét cao, âm thanh vòm sống động.',
+          seatPrices: {
+            standard: 100000,
+            vip: 150000,
+            couple: 300000,
+          },
+          isActive: true,
+        },
+        {
+          name: 'Phòng Chiếu 3D Digital',
+          code: '3D',
+          description: 'Trải nghiệm không gian 3 chiều chân thực với kính 3D thế hệ mới.',
+          seatPrices: {
+            standard: 150000,
+            vip: 200000,
+            couple: 400000,
+          },
+          isActive: true,
+        },
+        {
+          name: 'Phòng Chiếu IMAX Laser',
+          code: 'IMAX',
+          description: 'Màn hình cong khổng lồ, công nghệ chiếu Laser sắc nét vượt trội.',
+          seatPrices: {
+            standard: 200000,
+            vip: 260000,
+            couple: 500000,
+          },
+          isActive: true,
+        },
+        {
+          name: 'Phòng Chiếu 4DX / Gold Class',
+          code: 'GOLDCLASS',
+          description: 'Ghế bọc da ngả lưng tự động, hiệu ứng chuyển động gió, mùi hương đẳng cấp.',
+          seatPrices: {
+            standard: 250000,
+            vip: 320000,
+            couple: 600000,
+          },
+          isActive: true,
+        },
+      ];
+      await RoomType.insertMany(defaultRoomTypes);
+      console.log('[RoomType] Đã khởi tạo danh mục loại phòng chiếu mẫu (2D, 3D, IMAX, GOLDCLASS).');
+    }
+  } catch (e) {
+    console.error('[RoomType] Lỗi khởi tạo loại phòng chiếu:', e.message);
+  }
 }, 3000);
 
 const app = express();

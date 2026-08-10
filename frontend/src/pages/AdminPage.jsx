@@ -10,9 +10,9 @@ import ConcessionManager from '../components/Admin/ConcessionManager';
 import BookingManager from '../components/Admin/BookingManager';
 import RevenueReport from '../components/Admin/RevenueReport';
 import UserManager from '../components/Admin/UserManager';
-import CouponManager from '../components/Admin/CouponManager';
 import PricingManager from '../components/Admin/PricingManager';
 import SeatPriceManager from '../components/Admin/SeatPriceManager';
+import RoomTypeManager from '../components/Admin/RoomTypeManager';
 
 const AdminPage = () => {
   const navigate = useNavigate();
@@ -34,6 +34,7 @@ const AdminPage = () => {
       case 'movies':      return <MovieManager />;
       case 'showtimes':   return <ShowtimeManager />;
       case 'rooms':       return <RoomManager />;
+      case 'room-types':  return <RoomTypeManager />;
       case 'seat-prices': return <SeatPriceManager />;
       case 'concessions': return <ConcessionManager />;
       case 'bookings':    return <BookingManager />;

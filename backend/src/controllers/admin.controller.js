@@ -1,6 +1,7 @@
 const Movie = require('../models/Movie.model');
 const Theater = require('../models/Theater.model');
 const Room = require('../models/Room.model');
+const RoomType = require('../models/RoomType.model');
 const Seat = require('../models/Seat.model');
 const Showtime = require('../models/Showtime.model');
 const Booking = require('../models/Booking.model');
@@ -207,22 +208,32 @@ const createRoom = async (req, res, next) => {
     // Lấy thông tin cấu hình phòng và sơ đồ ghế từ client gửi lên
     const { name, theaterId, type = '2D', capacity = 80, standardRows = 5, vipRows = 3, coupleRows = 1, seatsPerRow = 10 } = req.body;
 
+    // Tìm cấu hình giá theo loại phòng (nếu có trong RoomType)
+    let customSeatPrices = null;
+    let roomTypeDoc = null;
+    if (type) {
+      roomTypeDoc = await RoomType.findOne({ code: type.trim().toUpperCase() });
+      if (roomTypeDoc && roomTypeDoc.seatPrices) {
+        customSeatPrices = roomTypeDoc.seatPrices;
+      }
+    }
+
     // 1. Tạo bản ghi phòng chiếu trong database
     const room = await Room.create({
       name,
       theater: theaterId,
-      type,
+      type: type.trim().toUpperCase(),
+      roomTypeRef: roomTypeDoc?._id,
       capacity,
     });
 
-    // 2. Tự động sinh ra toàn bộ danh sách ghế (Thường, VIP, Đôi) cho phòng chiếu này
-    // Hàm helper generateSeatsForRoom sẽ tạo các bản ghi Seat liên kết với roomId vừa tạo
-    await generateSeatsForRoom(room._id, standardRows, vipRows, coupleRows, seatsPerRow);
+    // 2. Tự động sinh ra toàn bộ danh sách ghế (Thường, VIP, Đôi) cho phòng chiếu này kèm giá theo loại phòng
+    await generateSeatsForRoom(room._id, standardRows, vipRows, coupleRows, seatsPerRow, customSeatPrices);
 
     res.status(201).json({
       success: true,
       data: room,
-      message: `Tạo phòng chiếu thành công và tự động tạo ${capacity} ghế.`,
+      message: `Tạo phòng chiếu thành công và tự động tạo ${capacity} ghế theo bảng giá loại phòng ${type.toUpperCase()}.`,
     });
   } catch (error) {
     next(error);
@@ -251,24 +262,66 @@ const deleteTheater = async (req, res, next) => {
       throw new Error('Theater not found');
     }
 
-    // Cascading delete
+    // Kiểm tra xem rạp có suất chiếu và vé đã đặt chưa
+    const activeShowtimes = await Showtime.find({ theater: theaterId, endTime: { $gte: new Date() } });
+    const showtimeIds = activeShowtimes.map((s) => s._id);
+    const bookingCount = await Booking.countDocuments({
+      showtime: { $in: showtimeIds },
+      paymentStatus: { $in: ['paid', 'pending'] },
+    });
+
+    if (bookingCount > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `🚫 Không thể xóa rạp "${theater.name}" vì đang có ${bookingCount} vé đã được khách hàng đặt cho các suất chiếu sắp tới!`,
+      });
+    }
+
+    // Cascading delete khi không có vé đặt
     const rooms = await Room.find({ theater: theaterId });
     const roomIds = rooms.map((r) => r._id);
 
     await Seat.deleteMany({ room: { $in: roomIds } });
-
-    const showtimes = await Showtime.find({ theater: theaterId });
-    const showtimeIds = showtimes.map((s) => s._id);
-
     await Booking.deleteMany({ showtime: { $in: showtimeIds } });
     await Showtime.deleteMany({ theater: theaterId });
     await Room.deleteMany({ theater: theaterId });
     await Theater.findByIdAndDelete(theaterId);
 
-    res.json({ success: true, message: 'Theater and all associated rooms, seats, showtimes, and bookings deleted successfully' });
+    res.json({ success: true, message: 'Theater and all associated rooms, seats, and showtimes deleted successfully' });
   } catch (error) {
     next(error);
   }
+};
+
+// Helper: Kiểm tra phòng chiếu có vé đã được khách đặt trong các suất chiếu sắp tới hay không
+const checkRoomHasActiveBookings = async (roomId) => {
+  const now = new Date();
+  const showtimes = await Showtime.find({ room: roomId, endTime: { $gte: now } });
+  if (showtimes.length === 0) return { hasBookings: false, bookingCount: 0, showtimesCount: 0 };
+  const showtimeIds = showtimes.map((s) => s._id);
+  const bookingCount = await Booking.countDocuments({
+    showtime: { $in: showtimeIds },
+    paymentStatus: { $in: ['paid', 'pending'] },
+  });
+  return { hasBookings: bookingCount > 0, bookingCount, showtimesCount: showtimes.length };
+};
+
+// Helper: Kiểm tra loại phòng (RoomType) có vé đã được khách đặt tại bất kỳ phòng nào hay không
+const checkRoomTypeHasActiveBookings = async (roomType) => {
+  const rooms = await Room.find({
+    $or: [{ roomTypeRef: roomType._id }, { type: roomType.code }],
+  });
+  if (rooms.length === 0) return { hasBookings: false, bookingCount: 0 };
+  const roomIds = rooms.map((r) => r._id);
+  const now = new Date();
+  const showtimes = await Showtime.find({ room: { $in: roomIds }, endTime: { $gte: now } });
+  if (showtimes.length === 0) return { hasBookings: false, bookingCount: 0 };
+  const showtimeIds = showtimes.map((s) => s._id);
+  const bookingCount = await Booking.countDocuments({
+    showtime: { $in: showtimeIds },
+    paymentStatus: { $in: ['paid', 'pending'] },
+  });
+  return { hasBookings: bookingCount > 0, bookingCount };
 };
 
 const updateRoom = async (req, res, next) => {
@@ -276,18 +329,32 @@ const updateRoom = async (req, res, next) => {
     const roomId = req.params.id;
     const { name, type } = req.body;
 
-    const room = await Room.findByIdAndUpdate(
-      roomId,
-      { name, type },
-      { new: true, runValidators: true }
-    );
-
-    if (!room) {
+    const existingRoom = await Room.findById(roomId);
+    if (!existingRoom) {
       res.status(404);
-      throw new Error('Room not found');
+      throw new Error('Không tìm thấy phòng chiếu');
     }
 
-    res.json({ success: true, data: room });
+    // Nếu thay đổi loại phòng chiếu (type), kiểm tra xem phòng đã có khách đặt vé chưa
+    if (type && type !== existingRoom.type) {
+      const { hasBookings, bookingCount } = await checkRoomHasActiveBookings(roomId);
+      if (hasBookings) {
+        res.status(400);
+        throw new Error(
+          `🚫 Không thể đổi loại phòng chiếu vì phòng này đang có ${bookingCount} vé đã được khách hàng đặt cho các suất chiếu sắp tới.`
+        );
+      }
+    }
+
+    if (name) existingRoom.name = name;
+    if (type) {
+      existingRoom.type = type;
+      const rt = await RoomType.findOne({ code: type });
+      if (rt) existingRoom.roomTypeRef = rt._id;
+    }
+
+    await existingRoom.save();
+    res.json({ success: true, data: existingRoom });
   } catch (error) {
     next(error);
   }
@@ -299,7 +366,15 @@ const deleteRoom = async (req, res, next) => {
     const room = await Room.findById(roomId);
     if (!room) {
       res.status(404);
-      throw new Error('Room not found');
+      throw new Error('Không tìm thấy phòng chiếu');
+    }
+
+    const { hasBookings, bookingCount } = await checkRoomHasActiveBookings(roomId);
+    if (hasBookings) {
+      res.status(400);
+      throw new Error(
+        `🚫 Không thể xóa phòng "${room.name}" vì đang có ${bookingCount} vé đã được khách đặt cho các suất chiếu sắp tới.`
+      );
     }
 
     await Seat.deleteMany({ room: roomId });
@@ -311,7 +386,7 @@ const deleteRoom = async (req, res, next) => {
     await Showtime.deleteMany({ room: roomId });
     await Room.findByIdAndDelete(roomId);
 
-    res.json({ success: true, message: 'Room and all associated seats, showtimes, and bookings deleted successfully' });
+    res.json({ success: true, message: 'Đã xóa phòng chiếu thành công' });
   } catch (error) {
     next(error);
   }
@@ -972,18 +1047,28 @@ const updateSeat = async (req, res, next) => {
     const { id } = req.params; // ID của chiếc ghế cần sửa
     const { type, price, isDisabled } = req.body; // Các trường thông tin mới
 
-    // Tìm và cập nhật thông tin ghế trong database
-    const seat = await Seat.findByIdAndUpdate(
-      id,
-      { type, price, isDisabled },
-      { new: true, runValidators: true } // Trả về bản ghi mới sau khi cập nhật và chạy validate dữ liệu đầu vào
-    );
-
+    const seat = await Seat.findById(id);
     if (!seat) {
       res.status(404);
       throw new Error('Không tìm thấy ghế này');
     }
 
+    // Nếu thay đổi loại ghế hoặc giá ghế, kiểm tra xem phòng này có vé đã đặt không
+    if (type !== undefined || price !== undefined) {
+      const { hasBookings, bookingCount } = await checkRoomHasActiveBookings(seat.room);
+      if (hasBookings) {
+        res.status(400);
+        throw new Error(
+          `🚫 Không thể chỉnh sửa giá hoặc loại ghế vì phòng chiếu này đang có ${bookingCount} vé đã được khách hàng đặt.`
+        );
+      }
+    }
+
+    if (type !== undefined) seat.type = type;
+    if (price !== undefined) seat.price = price;
+    if (isDisabled !== undefined) seat.isDisabled = isDisabled;
+
+    await seat.save();
     res.json({ success: true, data: seat });
   } catch (error) {
     next(error);
@@ -999,6 +1084,21 @@ const bulkUpdateSeats = async (req, res, next) => {
     if (!Array.isArray(updates) || updates.length === 0) {
       res.status(400);
       throw new Error('Không có thông tin cập nhật nào được gửi lên');
+    }
+
+    // Tìm các phòng chiếu liên quan để kiểm tra ràng buộc vé đã đặt
+    const seatIds = updates.map((u) => u.seatId);
+    const targetSeats = await Seat.find({ _id: { $in: seatIds } });
+    const roomIds = [...new Set(targetSeats.map((s) => s.room.toString()))];
+
+    for (const rId of roomIds) {
+      const { hasBookings, bookingCount } = await checkRoomHasActiveBookings(rId);
+      if (hasBookings) {
+        res.status(400);
+        throw new Error(
+          `🚫 Không thể chỉnh sửa giá ghế hàng loạt vì phòng chiếu đang có ${bookingCount} vé đã được khách hàng đặt.`
+        );
+      }
     }
 
     // Chuyển đổi danh sách updates thành mảng các thao tác updateOne cho MongoDB
@@ -1017,7 +1117,7 @@ const bulkUpdateSeats = async (req, res, next) => {
   }
 };
 
-// CHỨC NĂNG: Kiểm tra phòng chiếu có được phép sửa sơ đồ ghế hay không (nếu có suất chiếu active thì khóa)
+// CHỨC NĂNG: Kiểm tra phòng chiếu có được phép sửa sơ đồ ghế hay không (nếu có suất chiếu hoặc vé đã đặt thì khóa)
 const checkRoomEditable = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -1027,22 +1127,23 @@ const checkRoomEditable = async (req, res, next) => {
       throw new Error('Không tìm thấy phòng chiếu');
     }
 
-    const now = new Date();
-    const activeShowtimes = await Showtime.find({
-      room: id,
-      endTime: { $gte: now },
-    });
+    const { hasBookings, bookingCount, showtimesCount } = await checkRoomHasActiveBookings(id);
 
-    if (activeShowtimes.length > 0) {
-      const reasonMsg = `Phòng chiếu này hiện đang có ${activeShowtimes.length} suất chiếu sắp hoặc đang diễn ra. Không thể thay đổi cấu trúc sơ đồ ghế để bảo vệ dữ liệu vé đã bán.`;
+    if (hasBookings || showtimesCount > 0) {
+      const reasonMsg = hasBookings
+        ? `Phòng chiếu này hiện đang có ${bookingCount} vé đã được khách đặt cho các suất chiếu sắp tới. Đã khóa chỉnh sửa sơ đồ và giá ghế để bảo vệ dữ liệu vé.`
+        : `Phòng chiếu này hiện đang có ${showtimesCount} suất chiếu sắp/đang diễn ra. Đã khóa chỉnh sửa cấu trúc sơ đồ ghế.`;
+
       return res.json({
         success: true,
         editable: false,
-        activeShowtimesCount: activeShowtimes.length,
+        activeShowtimesCount: showtimesCount,
+        bookingCount,
         reason: reasonMsg,
         data: {
           editable: false,
-          activeShowtimesCount: activeShowtimes.length,
+          activeShowtimesCount: showtimesCount,
+          bookingCount,
           reason: reasonMsg,
         },
       });
@@ -1052,9 +1153,11 @@ const checkRoomEditable = async (req, res, next) => {
       success: true,
       editable: true,
       activeShowtimesCount: 0,
+      bookingCount: 0,
       data: {
         editable: true,
         activeShowtimesCount: 0,
+        bookingCount: 0,
       },
     });
   } catch (error) {
@@ -1074,15 +1177,14 @@ const saveRoomLayout = async (req, res, next) => {
       throw new Error('Không tìm thấy phòng chiếu');
     }
 
-    const now = new Date();
-    const activeShowtimes = await Showtime.find({
-      room: id,
-      endTime: { $gte: now },
-    });
-
-    if (activeShowtimes.length > 0) {
+    const { hasBookings, bookingCount, showtimesCount } = await checkRoomHasActiveBookings(id);
+    if (hasBookings || showtimesCount > 0) {
       res.status(400);
-      throw new Error(`Phòng chiếu này hiện đang có ${activeShowtimes.length} suất chiếu chưa kết thúc. Không thể thay đổi cấu trúc sơ đồ ghế.`);
+      throw new Error(
+        hasBookings
+          ? `🚫 Phòng chiếu này hiện đang có ${bookingCount} vé đã được đặt. Không thể thay đổi cấu trúc sơ đồ ghế.`
+          : `🚫 Phòng chiếu này hiện đang có ${showtimesCount} suất chiếu chưa kết thúc. Không thể thay đổi sơ đồ ghế.`
+      );
     }
 
     if (!Array.isArray(incomingSeats)) {
@@ -1807,6 +1909,163 @@ const previewTicketPrice = async (req, res, next) => {
   }
 };
 
+// ==========================================
+// 8. Room Type & Seat Price Management
+// ==========================================
+const getRoomTypes = async (req, res, next) => {
+  try {
+    const roomTypes = await RoomType.find().sort({ createdAt: 1 });
+    res.json({ success: true, count: roomTypes.length, data: roomTypes });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const createRoomType = async (req, res, next) => {
+  try {
+    const { name, code, description, seatPrices, isActive } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'Tên loại phòng không được để trống' });
+    }
+    if (!code || !code.trim()) {
+      return res.status(400).json({ success: false, message: 'Mã loại phòng không được để trống' });
+    }
+
+    const cleanCode = code.trim().toUpperCase();
+    const existing = await RoomType.findOne({ code: cleanCode });
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: `Mã loại phòng "${cleanCode}" đã tồn tại trên hệ thống! Vui lòng dùng mã khác.`,
+      });
+    }
+
+    const roomType = await RoomType.create({
+      name: name.trim(),
+      code: cleanCode,
+      description: description?.trim() || '',
+      seatPrices: {
+        standard: Number(seatPrices?.standard) || 100000,
+        vip: Number(seatPrices?.vip) || 150000,
+        couple: Number(seatPrices?.couple) || 300000,
+      },
+      isActive: isActive !== undefined ? isActive : true,
+    });
+
+    res.status(201).json({
+      success: true,
+      data: roomType,
+      message: 'Tạo loại phòng chiếu mới thành công!',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateRoomType = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name, code, description, seatPrices, isActive } = req.body;
+
+    const roomType = await RoomType.findById(id);
+    if (!roomType) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy loại phòng chiếu' });
+    }
+
+    // Kiểm tra nếu có thay đổi về bảng giá ghế hoặc mã loại phòng
+    const isPriceChanged =
+      seatPrices &&
+      ((seatPrices.standard !== undefined && Number(seatPrices.standard) !== roomType.seatPrices?.standard) ||
+        (seatPrices.vip !== undefined && Number(seatPrices.vip) !== roomType.seatPrices?.vip) ||
+        (seatPrices.couple !== undefined && Number(seatPrices.couple) !== roomType.seatPrices?.couple));
+
+    const isCodeChanged = code && code.trim().toUpperCase() !== roomType.code;
+
+    if (isPriceChanged || isCodeChanged) {
+      const { hasBookings, bookingCount } = await checkRoomTypeHasActiveBookings(roomType);
+      if (hasBookings) {
+        return res.status(400).json({
+          success: false,
+          message: `🚫 Không thể sửa ${
+            isPriceChanged ? 'bảng giá vé ghế' : 'mã loại phòng'
+          } của "${roomType.name}" vì đang có ${bookingCount} vé đã được khách hàng đặt tại các phòng chiếu thuộc loại phòng này!`,
+        });
+      }
+    }
+
+    if (code && code.trim().toUpperCase() !== roomType.code) {
+      const cleanCode = code.trim().toUpperCase();
+      const existing = await RoomType.findOne({ _id: { $ne: id }, code: cleanCode });
+      if (existing) {
+        return res.status(400).json({
+          success: false,
+          message: `Mã loại phòng "${cleanCode}" đã tồn tại trên hệ thống!`,
+        });
+      }
+      roomType.code = cleanCode;
+    }
+
+    if (name) roomType.name = name.trim();
+    if (description !== undefined) roomType.description = description.trim();
+    if (seatPrices) {
+      if (seatPrices.standard !== undefined) roomType.seatPrices.standard = Number(seatPrices.standard);
+      if (seatPrices.vip !== undefined) roomType.seatPrices.vip = Number(seatPrices.vip);
+      if (seatPrices.couple !== undefined) roomType.seatPrices.couple = Number(seatPrices.couple);
+    }
+    if (isActive !== undefined) roomType.isActive = isActive;
+
+    await roomType.save();
+
+    res.json({
+      success: true,
+      data: roomType,
+      message: 'Cập nhật thông tin và bảng giá loại phòng thành công!',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteRoomType = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const roomType = await RoomType.findById(id);
+    if (!roomType) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy loại phòng chiếu' });
+    }
+
+    // 1. Kiểm tra xem có phòng chiếu nào đang sử dụng loại phòng này không
+    const count = await Room.countDocuments({
+      $or: [{ roomTypeRef: roomType._id }, { type: roomType.code }],
+    });
+
+    if (count > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `🚫 Không thể xóa loại phòng "${roomType.name}" vì đang có ${count} phòng chiếu trong hệ thống đang sử dụng định dạng này!`,
+      });
+    }
+
+    // 2. Kiểm tra xem có vé nào gắn với loại phòng này không
+    const { hasBookings, bookingCount } = await checkRoomTypeHasActiveBookings(roomType);
+    if (hasBookings) {
+      return res.status(400).json({
+        success: false,
+        message: `🚫 Không thể xóa loại phòng "${roomType.name}" vì đang có ${bookingCount} vé đã được đặt trong hệ thống!`,
+      });
+    }
+
+    await RoomType.findByIdAndDelete(id);
+    res.json({
+      success: true,
+      message: `Đã xóa loại phòng chiếu "${roomType.name}" thành công!`,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createMovie,
   updateMovie,
@@ -1848,4 +2107,8 @@ module.exports = {
   updateUserRole,
   deleteUser,
   toggleUserStatus,
+  getRoomTypes,
+  createRoomType,
+  updateRoomType,
+  deleteRoomType,
 };

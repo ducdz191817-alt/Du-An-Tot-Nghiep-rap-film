@@ -323,7 +323,7 @@ export const UserManager = () => {
                       <td className="py-4 pr-6">
                         <div className="flex items-center justify-center gap-2">
                           {/* Nút Nâng quyền - chỉ hiển thị với người dùng thường */}
-                          {user.role !== 'admin' && (
+                          {user.role !== 'admin' ? (
                             <button
                               onClick={() =>
                                 setConfirmRole({

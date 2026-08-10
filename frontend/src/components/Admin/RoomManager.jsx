@@ -10,6 +10,7 @@ import SeatMapModal from './SeatMapModal';
 export const RoomManager = () => {
   const [theaters, setTheaters] = useState([]);
   const [rooms, setRooms] = useState([]);
+  const [roomTypes, setRoomTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('rooms'); // 'rooms' hoặc 'theaters'
   
@@ -40,17 +41,23 @@ export const RoomManager = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const thRes = await adminService.getTheaters();
-      setTheaters(thRes);
+      const [thRes, rmRes, rtRes] = await Promise.all([
+        adminService.getTheaters(),
+        adminService.getRooms(),
+        adminService.getRoomTypes().catch(() => ({ data: [] })),
+      ]);
+      setTheaters(Array.isArray(thRes) ? thRes : thRes?.data || []);
+      setRooms(Array.isArray(rmRes) ? rmRes : rmRes?.data || []);
       
-      const rmRes = await adminService.getRooms();
-      setRooms(rmRes);
+      const rtList = Array.isArray(rtRes) ? rtRes : rtRes?.data || [];
+      setRoomTypes(rtList);
 
-      if (thRes.length > 0 && !rmForm.theaterId) {
-        setRmForm((prev) => ({ ...prev, theaterId: thRes[0]._id }));
+      const validTheaters = Array.isArray(thRes) ? thRes : thRes?.data || [];
+      if (validTheaters.length > 0 && !rmForm.theaterId) {
+        setRmForm((prev) => ({ ...prev, theaterId: validTheaters[0]._id }));
       }
     } catch (err) {
-      console.error(err);
+      console.error('Lỗi khi tải dữ liệu phòng & rạp:', err);
     } finally {
       setLoading(false);
     }
@@ -312,12 +319,23 @@ export const RoomManager = () => {
                 name="type"
                 value={rmForm.type}
                 onChange={handleRmChange}
-                className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer"
+                disabled={!!editingRoom}
+                className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer font-bold disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <option value="2D">2D</option>
-                <option value="3D">3D</option>
-                <option value="IMAX">IMAX</option>
-                <option value="GOLDCLASS">GOLDCLASS</option>
+                {roomTypes.length > 0 ? (
+                  roomTypes.map((rt) => (
+                    <option key={rt._id} value={rt.code}>
+                      {rt.name} ({rt.code})
+                    </option>
+                  ))
+                ) : (
+                  <>
+                    <option value="2D">Phòng 2D Tiêu Chuẩn</option>
+                    <option value="3D">Phòng 3D Digital</option>
+                    <option value="IMAX">Phòng IMAX Laser</option>
+                    <option value="GOLDCLASS">Phòng Gold Class</option>
+                  </>
+                )}
               </select>
             </div>
 
@@ -325,6 +343,25 @@ export const RoomManager = () => {
               <Input name="seatsPerRow" type="number" label="Số ghế mỗi hàng" placeholder="10" value={rmForm.seatsPerRow} onChange={handleRmChange} required />
             )}
           </div>
+
+          {/* Seat price preview for selected room type */}
+          {(() => {
+            const selectedRt = roomTypes.find((r) => r.code === rmForm.type);
+            if (selectedRt?.seatPrices) {
+              const fmtVnd = (n) => new Intl.NumberFormat('vi-VN').format(n) + '₫';
+              return (
+                <div className="bg-brand/5 border border-brand/20 rounded-xl p-3 text-xs flex items-center justify-between text-gray-700 dark:text-gray-300">
+                  <span className="font-bold text-brand">Giá ghế theo loại phòng:</span>
+                  <div className="flex items-center gap-3 font-semibold text-[11px]">
+                    <span>Thường: <strong className="text-gray-900 dark:text-white">{fmtVnd(selectedRt.seatPrices.standard)}</strong></span>
+                    <span>VIP: <strong className="text-amber-600 dark:text-amber-400">{fmtVnd(selectedRt.seatPrices.vip)}</strong></span>
+                    <span>Đôi: <strong className="text-pink-600 dark:text-pink-400">{fmtVnd(selectedRt.seatPrices.couple)}</strong></span>
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
 
           {!editingRoom ? (
             <>

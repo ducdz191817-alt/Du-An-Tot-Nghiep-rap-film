@@ -14,10 +14,16 @@ const generateSeatsForRoom = async (
   standardRowsCount = 5,
   vipRowsCount = 3,
   coupleRowsCount = 1,
-  seatsPerRow = 10
+  seatsPerRow = 10,
+  customPrices = null // { standard, vip, couple }
 ) => {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'; // Bảng chữ cái để sinh tên hàng (A, B, C...)
   const seats = []; // Mảng tạm thời dùng để chứa toàn bộ các ghế chuẩn bị tạo
+
+  // Xác định giá phụ thu / giá vé của từng loại ghế
+  const priceStandard = customPrices?.standard !== undefined ? customPrices.standard : 0;
+  const priceVip = customPrices?.vip !== undefined ? customPrices.vip : 5000;
+  const priceCouple = customPrices?.couple !== undefined ? customPrices.couple : 120000;
 
   let rowIdx = 0; // Chỉ số để lấy chữ cái tương ứng trong bảng alphabet
 
@@ -31,7 +37,7 @@ const generateSeatsForRoom = async (
         row: rowLetter,     // Hàng ghế
         number: num,        // Số ghế (1, 2, 3...)
         type: 'standard',   // Loại ghế: Thường
-        price: 0,           // Ghế thường không phụ thu thêm tiền
+        price: priceStandard,
       });
     }
   }
@@ -46,7 +52,7 @@ const generateSeatsForRoom = async (
         row: rowLetter,
         number: num,
         type: 'vip',        // Loại ghế: VIP
-        price: 5000,        // Ghế VIP phụ thu thêm 5,000 VND
+        price: priceVip,
       });
     }
   }
@@ -62,7 +68,7 @@ const generateSeatsForRoom = async (
         row: rowLetter,
         number: num,
         type: 'couple',     // Loại ghế: Đôi
-        price: 120000,      // Ghế đôi phụ thu thêm 120,000 VND
+        price: priceCouple,
       });
     }
   }
