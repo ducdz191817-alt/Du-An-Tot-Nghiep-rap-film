@@ -83,6 +83,25 @@ const seedData = async () => {
         }
       }
 
+      // Sửa liên kết movie cho tất cả suất chiếu để đảm bảo không bị null movie
+      const allMovies = await Movie.find().lean();
+      if (allMovies.length > 0) {
+        const allShowtimes = await Showtime.find();
+        let fixedCount = 0;
+        for (let i = 0; i < allShowtimes.length; i++) {
+          const st = allShowtimes[i];
+          const exists = await Movie.exists({ _id: st.movie });
+          if (!exists) {
+            st.movie = allMovies[i % allMovies.length]._id;
+            await st.save();
+            fixedCount++;
+          }
+        }
+        if (fixedCount > 0) {
+          console.log(`🔧 Đã sửa liên kết phim cho ${fixedCount} suất chiếu.`);
+        }
+      }
+
       console.log('\n🎉 DATABASE RESTORED FROM BACKUP SUCCESSFULLY!');
       process.exit(0);
     }

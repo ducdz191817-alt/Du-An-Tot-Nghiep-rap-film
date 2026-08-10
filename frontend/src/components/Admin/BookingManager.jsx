@@ -315,14 +315,7 @@ export const BookingManager = () => {
                 <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
               </button>
 
-              <button
-                id="btn-bulk-email"
-                onClick={() => { setBulkEmailResult(null); setBulkEmailForm({ showtimeId: uniqueShowtimes[0]?.id || '', customMessage: '', subject: '' }); setIsBulkEmailOpen(true); }}
-                className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all active:scale-95"
-                title="Gửi email hàng loạt"
-              >
-                <Mail size={13} /> Gửi Email Hàng Loạt
-              </button>
+
             </div>
           </div>
 
@@ -441,20 +434,7 @@ export const BookingManager = () => {
                               >
                                 <Eye size={13} /> Xem
                               </button>
-                              {b.paymentStatus === 'paid' && b.user?.email && (
-                                <button
-                                  id={`btn-send-email-${b._id}`}
-                                  onClick={(e) => handleSendEmail(e, b)}
-                                  disabled={sendingEmailId === b._id}
-                                  className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all active:scale-95 inline-flex items-center gap-1 disabled:opacity-60 disabled:cursor-not-allowed"
-                                  title={`Gửi email xác nhận tới ${b.user.email}`}
-                                >
-                                  {sendingEmailId === b._id
-                                    ? <><Loader2 size={12} className="animate-spin" /> Đang gửi...</>
-                                    : <><Mail size={12} /> Email</>
-                                  }
-                                </button>
-                              )}
+
                             </div>
                           </td>
                         </tr>

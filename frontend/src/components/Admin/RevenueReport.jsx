@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { DollarSign, Landmark, CheckCircle2, Clock, Layers, Filter } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { DollarSign, Landmark, CheckCircle2, Clock, Layers, Filter, TrendingUp } from 'lucide-react';
 import adminService from '../../services/admin.service';
 import Loading from '../common/Loading';
 
@@ -8,7 +8,9 @@ export const RevenueReport = () => {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAllMovies, setShowAllMovies] = useState(false);
-  const [statusFilter, setStatusFilter] = useState('ended'); // 'ended' (mặc định), 'all', 'upcoming'
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dailyFrom, setDailyFrom] = useState('');
+  const [dailyTo, setDailyTo] = useState('');
 
   useEffect(() => {
     const fetchRevenue = async () => {
@@ -25,14 +27,49 @@ export const RevenueReport = () => {
     fetchRevenue();
   }, [statusFilter]);
 
-  if (loading && !report) return <Loading />;
+  // --- Dữ liệu trích xuất từ report (hỗ trợ cả bọc data và unwrap)
+  const summary = report?.summary || report?.data?.summary || {};
+  const monthlyData = report?.monthlySales || report?.data?.monthlySales || [];
+  const movieData = report?.movieSales || report?.data?.movieSales || [];
+  const theaterData = report?.theaterSales || report?.data?.theaterSales || [];
+  const dailyData = report?.dailySales || report?.data?.dailySales || [];
 
-  const summary = report?.data?.summary || report?.summary || {};
-  const monthlyData = report?.data?.monthlySales || report?.monthlySales || [];
-  const movieData = report?.data?.movieSales || report?.movieSales || [];
-  const theaterData = report?.data?.theaterSales || report?.theaterSales || [];
+  // Lọc daily data theo khoảng ngày
+  const filteredDailyData = React.useMemo(() => {
+    if (!dailyData.length) return [];
+    return dailyData.filter(d => {
+      if (dailyFrom && d.name < dailyFrom) return false;
+      if (dailyTo && d.name > dailyTo) return false;
+      return true;
+    });
+  }, [dailyData, dailyFrom, dailyTo]);
+
+  const filteredDailyTotal = filteredDailyData.reduce((sum, d) => sum + d.value, 0);
+
+  const setDailyPreset = (days) => {
+    if (days === 0) { setDailyFrom(''); setDailyTo(''); return; }
+    const to = new Date();
+    const from = new Date();
+    from.setDate(from.getDate() - days + 1);
+    setDailyTo(to.toISOString().slice(0, 10));
+    setDailyFrom(from.toISOString().slice(0, 10));
+  };
+
+  // Kiểm tra preset nào đang active
+  const isPreset7Active = dailyFrom && dailyTo && (() => {
+    const d = new Date(dailyFrom); d.setDate(d.getDate() + 6);
+    return d.toISOString().slice(0, 10) === dailyTo;
+  })();
+  const isPreset30Active = dailyFrom && dailyTo && (() => {
+    const d = new Date(dailyFrom); d.setDate(d.getDate() + 29);
+    return d.toISOString().slice(0, 10) === dailyTo;
+  })();
+  const isPresetAllActive = !dailyFrom && !dailyTo;
 
   const fmt = (val) => (val || 0).toLocaleString('vi-VN') + ' ₫';
+
+  // Early return SAU khi tất cả hooks đã chạy
+  if (loading && !report) return <Loading />;
 
   return (
     <div className="space-y-8">
@@ -169,7 +206,104 @@ export const RevenueReport = () => {
           </div>
         </div>
 
-        {/* 3. Top Performing Movies (Tỷ trọng doanh thu theo phim - Giao diện Light Mode) */}
+        {/* 3. Biểu đồ doanh thu theo ngày */}
+        <div className="bg-white border border-gray-200 p-6 rounded-3xl space-y-4 shadow-sm lg:col-span-2">
+          {/* Header + Bộ lọc */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <h4 className="font-bold text-gray-800 text-sm flex items-center gap-2">
+              <TrendingUp size={16} className="text-orange-500" /> Doanh Thu Theo Ngày
+            </h4>
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Quick Presets */}
+              {[
+                { label: '7 ngày', days: 7, active: isPreset7Active },
+                { label: '30 ngày', days: 30, active: isPreset30Active },
+                { label: 'Tất cả', days: 0, active: isPresetAllActive },
+              ].map(p => (
+                <button
+                  key={p.days}
+                  onClick={() => setDailyPreset(p.days)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all ${
+                    p.active
+                      ? 'bg-orange-500 text-white border-orange-500'
+                      : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-orange-300'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+              {/* Date Pickers */}
+              <input
+                type="date"
+                value={dailyFrom}
+                max={dailyTo || undefined}
+                onChange={e => setDailyFrom(e.target.value)}
+                className="bg-gray-50 border border-gray-200 text-gray-700 text-[11px] rounded-lg px-2.5 py-1 font-semibold focus:outline-none focus:border-orange-400"
+              />
+              <span className="text-gray-400 text-xs font-bold">→</span>
+              <input
+                type="date"
+                value={dailyTo}
+                min={dailyFrom || undefined}
+                onChange={e => setDailyTo(e.target.value)}
+                className="bg-gray-50 border border-gray-200 text-gray-700 text-[11px] rounded-lg px-2.5 py-1 font-semibold focus:outline-none focus:border-orange-400"
+              />
+              {/* Tổng doanh thu trong khoảng */}
+              {filteredDailyData.length > 0 && (
+                <span className="ml-1 px-3 py-1 bg-orange-50 border border-orange-200 text-orange-700 text-[11px] font-extrabold rounded-xl">
+                  {filteredDailyData.length} ngày · {filteredDailyTotal.toLocaleString('vi-VN')}₫
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="h-72 w-full">
+            {filteredDailyData.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-gray-400 italic text-xs">
+                Không có dữ liệu doanh thu trong khoảng thời gian này.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filteredDailyData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis
+                    dataKey="name"
+                    stroke="#9ca3af"
+                    fontSize={10}
+                    tickLine={false}
+                    tickFormatter={(v) => {
+                      const d = new Date(v);
+                      return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+                    }}
+                  />
+                  <YAxis
+                    stroke="#9ca3af"
+                    fontSize={10}
+                    tickLine={false}
+                    tickFormatter={(v) => v >= 1000000 ? `${(v/1000000).toFixed(1)}M` : v >= 1000 ? `${(v/1000).toFixed(0)}K` : v}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#ffffff', borderColor: '#fed7aa', borderRadius: '12px', fontSize: '12px' }}
+                    labelStyle={{ color: '#1a1a2e', fontWeight: 'bold' }}
+                    labelFormatter={(label) => {
+                      const d = new Date(label);
+                      return d.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                    }}
+                    formatter={(value) => [(value || 0).toLocaleString('vi-VN') + ' ₫', 'Doanh thu']}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#f97316"
+                    strokeWidth={2.5}
+                    dot={{ fill: '#f97316', r: filteredDailyData.length <= 31 ? 5 : 3, strokeWidth: 2, stroke: '#fff' }}
+                    activeDot={{ r: 7, fill: '#ea580c' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
         {/* Phần giao diện đồng bộ với tông màu sáng của màn hình */}
         <div className="bg-white border border-gray-200 p-6 rounded-3xl shadow-sm lg:col-span-2">
           <div className="flex justify-between items-center mb-6">

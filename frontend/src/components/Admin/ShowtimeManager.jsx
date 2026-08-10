@@ -69,7 +69,14 @@ export const ShowtimeManager = () => {
       const roomArr = Array.isArray(rmRes) ? rmRes : (Array.isArray(rmRes?.data) ? rmRes.data : []);
       setModalRooms(roomArr);
       if (roomArr.length > 0 && !editingShowtime) {
-        setForm((prev) => ({ ...prev, roomId: roomArr[0]._id }));
+        const firstRoom = roomArr[0];
+        const roomFmt = (firstRoom?.type || '2D').toUpperCase();
+        setForm((prev) => ({
+          ...prev,
+          roomId: firstRoom._id,
+          format: roomFmt,
+          ticketPrice: DEFAULT_PRICES[roomFmt] || 80000,
+        }));
       } else if (roomArr.length === 0) {
         setForm((prev) => ({ ...prev, roomId: '' }));
       }
@@ -88,7 +95,18 @@ export const ShowtimeManager = () => {
       const rmRes = await adminService.getRooms(theaterId);
       const roomArr = Array.isArray(rmRes) ? rmRes : (Array.isArray(rmRes?.data) ? rmRes.data : []);
       setAutoModalRooms(roomArr);
-      setAutoForm((prev) => ({ ...prev, roomIds: roomArr.length > 0 ? [roomArr[0]._id] : [] }));
+      if (roomArr.length > 0) {
+        const firstRoom = roomArr[0];
+        const roomFmt = (firstRoom?.type || '2D').toUpperCase();
+        setAutoForm((prev) => ({
+          ...prev,
+          roomIds: [firstRoom._id],
+          format: roomFmt,
+          ticketPrice: DEFAULT_PRICES[roomFmt] || 80000,
+        }));
+      } else {
+        setAutoForm((prev) => ({ ...prev, roomIds: [] }));
+      }
     } catch (err) {
       console.error('Lỗi load phòng auto:', err);
       setAutoModalRooms([]);
@@ -188,11 +206,22 @@ export const ShowtimeManager = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => {
-      const updated = { ...prev, [name]: value };
-      if (name === 'format') updated.ticketPrice = DEFAULT_PRICES[value] || 80000;
-      return updated;
-    });
+    if (name === 'roomId') {
+      const targetRoom = modalRooms.find((r) => r._id === value) || rooms.find((r) => r._id === value);
+      const roomFormat = (targetRoom?.type || '2D').toUpperCase();
+      setForm((prev) => ({
+        ...prev,
+        roomId: value,
+        format: roomFormat,
+        ticketPrice: DEFAULT_PRICES[roomFormat] || 80000,
+      }));
+    } else {
+      setForm((prev) => {
+        const updated = { ...prev, [name]: value };
+        if (name === 'format') updated.ticketPrice = DEFAULT_PRICES[value] || 80000;
+        return updated;
+      });
+    }
   };
 
   const handleTheaterChange = async (e) => {
@@ -210,7 +239,16 @@ export const ShowtimeManager = () => {
     setEditingShowtime(null);
     setError('');
     setModalRooms([...rooms]);
-    setForm({ movieId: movies[0]?._id || '', theaterId: selectedTheater, roomId: rooms[0]?._id || '', startTime: '', ticketPrice: 80000, format: '2D' });
+    const firstRoom = rooms[0];
+    const initialFormat = (firstRoom?.type || '2D').toUpperCase();
+    setForm({
+      movieId: movies[0]?._id || '',
+      theaterId: selectedTheater,
+      roomId: firstRoom?._id || '',
+      startTime: '',
+      ticketPrice: DEFAULT_PRICES[initialFormat] || 80000,
+      format: initialFormat,
+    });
     setIsManualOpen(true);
   };
 
@@ -228,14 +266,17 @@ export const ShowtimeManager = () => {
     const theaterId = st.theater?._id || st.theater || selectedTheater;
     const movieId = st.movie?._id || st.movie || '';
     const roomId = st.room?._id || st.room || '';
+    const selectedRoom = rooms.find((r) => r._id === roomId) || st.room;
+    const roomFormat = (selectedRoom?.type || st.format || '2D').toUpperCase();
+
     setModalRooms(rooms.length > 0 ? [...rooms] : []);
     setForm({
       movieId,
       theaterId,
       roomId,
       startTime: localTimeFormatted,
-      ticketPrice: st.ticketPrice || 80000,
-      format: (st.format || '2D').toUpperCase(),
+      ticketPrice: st.ticketPrice || DEFAULT_PRICES[roomFormat] || 80000,
+      format: roomFormat,
     });
     setIsManualOpen(true);
   };
@@ -258,6 +299,8 @@ export const ShowtimeManager = () => {
     setPreviewList([]);
     const today = new Date().toISOString().split('T')[0];
     const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const firstRoom = rooms[0];
+    const initialFormat = (firstRoom?.type || '2D').toUpperCase();
     setAutoForm({
       movieId: movies[0]?._id || '',
       theaterId: selectedTheater,
@@ -265,11 +308,22 @@ export const ShowtimeManager = () => {
       startDate: today,
       endDate: nextWeek,
       timeSlots: [...DEFAULT_TIME_SLOTS],
-      format: '2D',
-      ticketPrice: 80000,
+      format: initialFormat,
+      ticketPrice: DEFAULT_PRICES[initialFormat] || 80000,
     });
     setAutoModalRooms([...rooms]);
     setIsAutoOpen(true);
+  };
+
+  const handleAutoRoomChange = (roomId) => {
+    const targetRoom = autoModalRooms.find((r) => r._id === roomId) || rooms.find((r) => r._id === roomId);
+    const roomFormat = (targetRoom?.type || '2D').toUpperCase();
+    setAutoForm((prev) => ({
+      ...prev,
+      roomIds: roomId ? [roomId] : [],
+      format: roomFormat,
+      ticketPrice: DEFAULT_PRICES[roomFormat] || 80000,
+    }));
   };
 
   const handleAutoFormChange = (e) => {
@@ -1076,13 +1130,7 @@ export const ShowtimeManager = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Định Dạng Chiếu</label>
-              <select name="format" value={form.format} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer">
-                <option value="2D">2D</option><option value="3D">3D</option><option value="IMAX">IMAX</option><option value="GOLDCLASS">GOLDCLASS</option>
-              </select>
-            </div>
+          <div>
             <Input name="ticketPrice" type="number" label="Giá Vé Cơ Bản (VNĐ)" value={form.ticketPrice} onChange={handleChange} required />
           </div>
 
@@ -1375,7 +1423,7 @@ export const ShowtimeManager = () => {
               <select
                 name="roomId"
                 value={autoForm.roomIds[0] || ''}
-                onChange={(e) => setAutoForm((prev) => ({ ...prev, roomIds: e.target.value ? [e.target.value] : [] }))}
+                onChange={(e) => handleAutoRoomChange(e.target.value)}
                 className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer font-medium disabled:opacity-50"
                 required
                 disabled={autoModalRoomsLoading}
@@ -1422,17 +1470,9 @@ export const ShowtimeManager = () => {
                 </button>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Định Dạng Chiếu</label>
-                <select name="format" value={autoForm.format} onChange={handleAutoFormChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer">
-                  <option value="2D">2D</option><option value="3D">3D</option><option value="IMAX">IMAX</option><option value="GOLDCLASS">GOLDCLASS</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Giá Vé Cơ Bản (VNĐ)</label>
-                <input type="number" name="ticketPrice" value={autoForm.ticketPrice} onChange={handleAutoFormChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none" required min={0} />
-              </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Giá Vé Cơ Bản (VNĐ)</label>
+              <input type="number" name="ticketPrice" value={autoForm.ticketPrice} onChange={handleAutoFormChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none" required min={0} />
             </div>
             <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-3.5 flex items-center gap-3">
               <Zap size={20} className="text-amber-500 shrink-0" />

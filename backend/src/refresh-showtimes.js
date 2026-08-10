@@ -42,13 +42,14 @@ const run = async () => {
     console.log('✅ Connected!\n');
 
     // ── 1. Không xóa suất chiếu cũ để giữ dữ liệu cho Báo cáo Doanh thu ──────
+    // ── 1. Xóa các suất chiếu tương lai từ hôm nay để tạo mới sạch đẹp ──────
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    // const deleted = await Showtime.deleteMany({ startTime: { $lt: startOfToday } });
-    // console.log(`🗑️  Đã xóa ${deleted.deletedCount} suất chiếu cũ (trước ${startOfToday.toDateString()}).`);
+    const deleted = await Showtime.deleteMany({ startTime: { $gte: startOfToday } });
+    console.log(`🗑️  Đã xóa ${deleted.deletedCount} suất chiếu cũ/tương lai (từ ${startOfToday.toDateString()}).`);
 
-    // ── 2. Lấy TẤT CẢ phim đang hoạt động (không lọc theo releaseDate) ───────
+    // ── 2. Lấy TẤT CẢ phim đang hoạt động ────────────────────────────────────
     const PROTECTED_STATUSES = ['suspended', 'cancelled', 'hidden', 'stopped', 'ended'];
 
     const allMovies = await Movie.find({
@@ -60,16 +61,11 @@ const run = async () => {
       process.exit(0);
     }
 
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-
     // Chỉ tạo lịch chiếu cho các phim đang chiếu (now-showing)
     const nowShowingMovies = allMovies.filter(m => m.status === 'now-showing');
     console.log(`\n🎬 Lịch chiếu sẽ được tự động tạo cho ${nowShowingMovies.length} phim Đang chiếu (now-showing).\n`);
 
     const movies = nowShowingMovies;
-
-
 
     // ── 3. Lấy phòng chiếu ───────────────────────────────────────────────────
     const rooms = await Room.find({}).populate('theater').lean();
@@ -110,14 +106,13 @@ const run = async () => {
       });
     };
 
-    // ── PASS 1: Đảm bảo mỗi phim đã ra mắt có ÍT NHẤT 1 suất HÔM NAY ────────
+    // ── PASS 1: Đảm bảo mỗi phim now-showing có ÍT NHẤT 1 suất HÔM NAY ────────
     const todayBase = new Date();
     todayBase.setHours(0, 0, 0, 0);
     const todayStr = todayBase.toISOString().slice(0, 10);
 
-    for (const movie of movies) {
+    for (const movie of nowShowingMovies) {
       let assigned = false;
-      // Thử tất cả các slot theo thứ tự để đảm bảo có slot
       for (const slot of SHOWTIME_SLOTS) {
         if (assigned) break;
         for (const room of rooms) {
@@ -137,18 +132,18 @@ const run = async () => {
       }
     }
 
-    // ── PASS 2: Tạo thêm suất chiếu ngẫu nhiên cho ngày 0–7 ─────────────────
+    // ── PASS 2: Tạo thêm suất chiếu ngẫu nhiên cho ngày 0–7 (CHỈ CHO nowShowingMovies) ────────
     for (let dayOffset = 0; dayOffset <= 7; dayOffset++) {
       const baseDate = new Date();
       baseDate.setDate(baseDate.getDate() + dayOffset);
       baseDate.setHours(0, 0, 0, 0);
       const dateStr = baseDate.toISOString().slice(0, 10);
 
-      const shuffledMovies = shuffle(allMovies);
+      const shuffledMovies = shuffle(nowShowingMovies);
 
       for (const movie of shuffledMovies) {
-        // Mỗi phim chiếu tại 1 phòng ngẫu nhiên mỗi ngày (thêm vào)
-        const selectedRooms = shuffle(rooms).slice(0, 1);
+        // Mỗi phim chọn 2 phòng chiếu ngẫu nhiên mỗi ngày
+        const selectedRooms = shuffle(rooms).slice(0, 2);
 
         for (const room of selectedRooms) {
           const shuffledSlots = shuffle(SHOWTIME_SLOTS);
@@ -160,7 +155,7 @@ const run = async () => {
 
             if (!hasConflict(room._id.toString(), dateStr, startTime, endTime)) {
               addShowtime(movie, room, startTime, endTime, dateStr);
-              break; // 1 suất thêm/phim/phòng/ngày là đủ
+              break;
             }
           }
         }

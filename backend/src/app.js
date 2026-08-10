@@ -1,5 +1,7 @@
-// Reloaded environment config
-require('dotenv').config();
+const path = require('path');
+
+// Reload environment config from the backend folder regardless of current working directory
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/database');
@@ -19,13 +21,11 @@ const tmdbRoutes = require('./routes/tmdb.routes');
 const couponRoutes = require('./routes/coupon.routes');
 const uploadRoutes = require('./routes/upload.routes');
 
-// Connect to MongoDB
-connectDB();
+const app = express();
 
-// Auto-update movie statuses after DB is ready
 const { autoUpdateMovieStatus } = require('./utils/autoUpdateMovieStatus');
-// Delay slightly to let the DB connection settle, then run immediately and every hour
-setTimeout(async () => {
+
+const initializeAfterDb = async () => {
   await autoUpdateMovieStatus();
   setInterval(autoUpdateMovieStatus, 60 * 60 * 1000); // every 1 hour
 
@@ -40,9 +40,7 @@ setTimeout(async () => {
   } catch (e) {
     console.error('[PricingConfig] Lỗi khởi tạo bảng giá:', e.message);
   }
-}, 3000);
-
-const app = express();
+};
 
 // Middlewares
 app.use(cors());
@@ -50,7 +48,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded files (poster images, etc.)
-const path = require('path');
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 // Simple request logger
@@ -94,6 +91,19 @@ const { initSocket } = require('./sockets/seatSocket');
 initSocket(server);
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-});
+
+const init = async () => {
+  try {
+    await connectDB();
+    await initializeAfterDb();
+
+    server.listen(PORT, () => {
+      console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error('[Startup] MongoDB initialization failed:', error.message);
+  }
+};
+
+// Connect to MongoDB and run DB-dependent initialization
+init();

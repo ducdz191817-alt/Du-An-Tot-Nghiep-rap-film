@@ -358,17 +358,19 @@ const createShowtime = async (req, res, next) => {
       throw new Error('Chưa có bảng giá được cấu hình. Vui lòng thiết lập bảng giá trong mục “Bảng Giá” trước.');
     }
 
-    // Lấy thông tin phòng để xác định roomType
+    // Lấy thông tin phòng để xác định roomType và định dạng cố định (room.type)
     const room = await Room.findById(roomId);
     if (!room) {
       res.status(404);
       throw new Error('Không tìm thấy phòng chiếu');
     }
 
+    const actualFormat = (room.type || format || '2D').toUpperCase();
+
     // Tự động tính giá (giá ghế thường, chưa tính phụ thu loại ghế)
     const autoPrice = calculateBaseShowtimePrice({
       startTime: start,
-      format,
+      format: actualFormat,
       roomType: room.roomType || 'standard',
       config: pricingConfig,
     });
@@ -380,7 +382,7 @@ const createShowtime = async (req, res, next) => {
       startTime: start,
       endTime: end,
       ticketPrice: autoPrice,
-      format,
+      format: actualFormat,
     });
 
     res.status(201).json({ success: true, data: showtime });
@@ -443,9 +445,13 @@ const updateShowtime = async (req, res, next) => {
       throw new Error(`⚠️ Lịch chiếu bị trùng! Phòng này đã có suất chiếu "${existMovie?.title || 'Khác'}" từ ${existStart} đến ${existEnd}. Vui lòng chọn giờ chiếu khác.`);
     }
 
+    const roomObj = await Room.findById(roomId);
+    const actualFormat = (roomObj?.type || req.body.format || existingShowtime.format || '2D').toUpperCase();
+
     const updateData = {
       ...req.body,
       endTime: end,
+      format: actualFormat,
     };
     if (req.body.movieId) updateData.movie = req.body.movieId;
     if (req.body.roomId) updateData.room = req.body.roomId;
@@ -594,7 +600,7 @@ const getDashboardStats = async (req, res, next) => {
 
 const getRevenueReport = async (req, res, next) => {
   try {
-    const { status = 'ended' } = req.query; // 'ended' (mặc định: chỉ phim chiếu xong), 'all', 'upcoming'
+    const { status = 'all' } = req.query; // 'all' (mặc định: tất cả suất chiếu), 'ended', 'upcoming'
     const now = new Date();
 
     const bookings = await Booking.find({ paymentStatus: 'paid' })
@@ -614,6 +620,7 @@ const getRevenueReport = async (req, res, next) => {
     const movieSales = {};
     const theaterSales = {};
     const monthlySales = {};
+    const dailySales = {};
 
     bookings.forEach((booking) => {
       const showtime = booking.showtime;
@@ -668,6 +675,10 @@ const getRevenueReport = async (req, res, next) => {
 
       // Aggregate Month
       monthlySales[monthYear] = (monthlySales[monthYear] || 0) + booking.totalPrice;
+
+      // Aggregate Day (YYYY-MM-DD)
+      const dayKey = date.toISOString().slice(0, 10);
+      dailySales[dayKey] = (dailySales[dayKey] || 0) + booking.totalPrice;
     });
 
     const formatObjectToArray = (obj) => {
@@ -688,12 +699,23 @@ const getRevenueReport = async (req, res, next) => {
       });
     };
 
+    // Chuyển dailySales thành mảng đã sắp xếp theo ngày tăng dần
+    const dailySalesArray = Object.keys(dailySales)
+      .sort()
+      .map((key) => ({ name: key, value: dailySales[key] }));
+
     res.json({
       success: true,
       data: {
+        summary: {
+          completedRevenue,
+          upcomingRevenue,
+          totalRevenue,
+        },
         movieSales: formatObjectToArray(movieSales),
         theaterSales: formatObjectToArray(theaterSales),
         monthlySales: formatObjectToArray(monthlySales),
+        dailySales: dailySalesArray,
         rawBookingsCount: bookings.length,
       },
     });
@@ -1253,10 +1275,14 @@ const autoGenerateShowtimes = async (req, res, next) => {
       throw new Error('Chưa có bảng giá được cấu hình. Vui lòng thiết lập bảng giá trong mục “Bảng Giá” trước.');
     }
 
-    // Lấy roomType của từng phòng trước
-    const roomDocs = await Room.find({ _id: { $in: roomIds } }).select('_id roomType').lean();
+    // Lấy roomType và type (định dạng phòng) của từng phòng trước
+    const roomDocs = await Room.find({ _id: { $in: roomIds } }).select('_id roomType type').lean();
     const roomTypeMap = {};
-    roomDocs.forEach((r) => { roomTypeMap[r._id.toString()] = r.roomType || 'standard'; });
+    const roomFormatMap = {};
+    roomDocs.forEach((r) => {
+      roomTypeMap[r._id.toString()] = r.roomType || 'standard';
+      roomFormatMap[r._id.toString()] = (r.type || '2D').toUpperCase();
+    });
 
     // Lấy thông tin phim để biết duration
     const movie = await Movie.findById(movieId);
@@ -1321,10 +1347,12 @@ const autoGenerateShowtimes = async (req, res, next) => {
             continue; // Bỏ qua – trùng lịch
           }
 
+          const actualFormat = roomFormatMap[roomId] || (format || '2D').toUpperCase();
+
           // Tự động tính giá theo ngày + giờ + format + roomType
           const autoPrice = calculateBaseShowtimePrice({
             startTime,
-            format,
+            format: actualFormat,
             roomType: roomTypeMap[roomId] || 'standard',
             config: pricingConfig,
           });
@@ -1337,7 +1365,7 @@ const autoGenerateShowtimes = async (req, res, next) => {
             startTime,
             endTime,
             ticketPrice: autoPrice,
-            format,
+            format:      actualFormat,
           });
 
           created++;

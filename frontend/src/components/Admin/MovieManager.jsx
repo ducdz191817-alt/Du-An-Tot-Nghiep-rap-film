@@ -443,11 +443,8 @@ export const MovieManager = () => {
               <option value="now-showing">Đang chiếu</option>
               <option value="coming-soon">Sắp chiếu</option>
               <option value="ended">Đã kết thúc</option>
-              <option value="suspended">Tạm hoãn</option>
               <option value="stopped">Ngừng chiếu</option>
-              <option value="cancelled">Hủy phát hành</option>
               <option value="pre-release">Sắp ra mắt</option>
-              <option value="preview">Chiếu sớm</option>
               <option value="hidden">Ẩn / Bảo trì</option>
             </select>
           </div>
@@ -595,10 +592,7 @@ export const MovieManager = () => {
                 {editingMovie && (
                   <>
                     <option value="now-showing">🟢 Đang chiếu</option>
-                    <option value="preview">🟣 Chiếu sớm / Preview</option>
-                    <option value="suspended">🟠 Tạm hoãn</option>
                     <option value="stopped">🔴 Ngừng chiếu</option>
-                    <option value="cancelled">❌ Hủy phát hành</option>
                     <option value="hidden">🔒 Ẩn / Bảo trì</option>
                   </>
                 )}
