@@ -55,6 +55,15 @@ const BookingSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    // ── SNAPSHOT THÔNG TIN PHIM TẠI THỜI ĐIỂM ĐẶT VÉ ─────────────────────────
+    movieTitle: {
+      type: String,
+      default: '',
+    },
+    moviePosterUrl: {
+      type: String,
+      default: '',
+    },
     // ── QUẢN LÝ TRẠNG THÁI VÉ & IN VÉ ──────────────────────────────────────
     ticketCode: {
       type: String,

@@ -92,8 +92,8 @@ export const BookingHistoryPage = () => {
             const isExpanded = expandedId === booking._id;
 
             const displayTitle = language === 'en'
-              ? (movie.titleEN || movie.title || t('history.movieDeleted'))
-              : (movie.title || t('history.movieDeleted'));
+              ? (booking.movieTitle || movie.titleEN || movie.title || t('history.movieDeleted'))
+              : (booking.movieTitle || movie.title || t('history.movieDeleted'));
 
             const dateString = showtime.startTime
               ? new Date(showtime.startTime).toLocaleDateString(locale, {
@@ -124,7 +124,7 @@ export const BookingHistoryPage = () => {
             const seatsList = (booking.seats || []).join(', ') || t('history.noSeats');
             const priceFormatted = (booking.totalPrice || 0).toLocaleString(locale);
             const posterImage =
-              getPosterUrl(movie.posterUrl) || 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?q=80&w=200';
+              getPosterUrl(booking.moviePosterUrl || movie.posterUrl) || 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?q=80&w=200';
 
             const discountAmount = booking.discountAmount || 0;
             const couponCode = booking.coupon?.code || (typeof booking.coupon === 'string' && !/^[0-9a-fA-F]{24}$/.test(booking.coupon) ? booking.coupon : null);
