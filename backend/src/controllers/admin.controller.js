@@ -5,6 +5,8 @@ const Seat = require('../models/Seat.model');
 const Showtime = require('../models/Showtime.model');
 const Booking = require('../models/Booking.model');
 const User = require('../models/User.model');
+const Payment = require('../models/Payment.model');
+const Review = require('../models/Review.model');
 const Concession = require('../models/Concession.model');
 const PricingConfig = require('../models/PricingConfig.model');
 const { generateSeatsForRoom } = require('../utils/generateSeats');
@@ -1222,13 +1224,13 @@ const updateUserRole = async (req, res, next) => {
   }
 };
 
-// CHỨC NĂNG: Xóa một người dùng (không cho xóa tài khoản admin)
-const deleteUser = async (req, res, next) => {
+// CHỨC NĂNG: Khóa / Mở khóa tài khoản (Soft Delete / Account Lock)
+const toggleUserStatus = async (req, res, next) => {
   try {
-    // Không cho phép admin tự xóa chính mình
+    // Không cho phép admin tự khóa chính mình
     if (req.params.id === req.user._id.toString()) {
       res.status(400);
-      throw new Error('Không thể tự xóa tài khoản của chính bạn');
+      throw new Error('Không thể tự khóa tài khoản của chính bạn');
     }
 
     const user = await User.findById(req.params.id);
@@ -1237,24 +1239,29 @@ const deleteUser = async (req, res, next) => {
       throw new Error('Không tìm thấy người dùng');
     }
 
-    // Xóa toàn bộ lịch sử đặt vé của người dùng này
-    const userBookings = await Booking.find({ user: user._id });
-    for (const booking of userBookings) {
-      // Giải phóng ghế trong các suất chiếu
-      if (booking.seats && booking.seats.length > 0 && booking.showtime) {
-        await Showtime.findByIdAndUpdate(booking.showtime, {
-          $pull: { bookedSeats: { $in: booking.seats } },
-        });
-      }
+    // Không cho phép khóa tài khoản Admin khác
+    if (user.role === 'admin') {
+      res.status(400);
+      throw new Error('Không thể khóa tài khoản Quản trị viên');
     }
-    await Booking.deleteMany({ user: user._id });
 
-    await user.deleteOne();
-    res.json({ success: true, message: `Đã xóa người dùng ${user.username} thành công` });
+    // Chuyển đổi trạng thái: active <-> locked
+    const newStatus = user.status === 'locked' ? 'active' : 'locked';
+    user.status = newStatus;
+    await user.save();
+
+    const actionText = newStatus === 'locked' ? 'khóa' : 'mở khóa';
+    res.json({
+      success: true,
+      message: `Đã ${actionText} tài khoản "${user.username}" thành công!`,
+      data: user,
+    });
   } catch (error) {
     next(error);
   }
 };
+
+const deleteUser = toggleUserStatus;
 
 // ==========================================
 // 6. Auto-Generate Showtimes
@@ -1840,4 +1847,5 @@ module.exports = {
   listUsers,
   updateUserRole,
   deleteUser,
+  toggleUserStatus,
 };

@@ -39,6 +39,8 @@ const {
   sendBulkEmail,
   listUsers,
   updateUserRole,
+  deleteUser,
+  toggleUserStatus,
 } = require("../controllers/admin.controller");
 const { protect, admin } = require("../middleware/auth.middleware");
 
@@ -99,5 +101,7 @@ router.route("/coupons/:id").put(updateCoupon).delete(deleteCoupon);
 // User Management
 router.get('/users', listUsers);
 router.put('/users/:id/role', updateUserRole);
+router.put('/users/:id/toggle-status', toggleUserStatus);
+router.delete('/users/:id', deleteUser);
 
 module.exports = router;
