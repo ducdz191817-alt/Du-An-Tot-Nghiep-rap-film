@@ -127,19 +127,33 @@ export const SeatPriceManager = () => {
     }
   };
 
+  const [roomLockStatus, setRoomLockStatus] = useState({ editable: true, reason: '', bookingCount: 0 });
+
   // 3. Load danh sách ghế của phòng
   const loadSeats = async (roomId) => {
     if (!roomId) {
       setSeats([]);
+      setRoomLockStatus({ editable: true, reason: '', bookingCount: 0 });
       return;
     }
     setSeatsLoading(true);
     setSelectedSeatIds(new Set());
     setMessage({ type: '', text: '' });
     try {
-      const seatRes = await adminService.getRoomSeats(roomId);
+      const [seatRes, lockRes] = await Promise.all([
+        adminService.getRoomSeats(roomId),
+        adminService.checkRoomEditable(roomId).catch(() => ({ data: { editable: true } })),
+      ]);
+
       const seatList = Array.isArray(seatRes) ? seatRes : (seatRes?.data || []);
       setSeats(seatList);
+
+      const lockData = lockRes?.data || lockRes;
+      setRoomLockStatus({
+        editable: lockData?.editable !== false,
+        reason: lockData?.reason || '',
+        bookingCount: lockData?.bookingCount || 0,
+      });
     } catch (err) {
       console.error('Lỗi tải ghế của phòng:', err);
       setMessage({ type: 'error', text: 'Không thể tải sơ đồ ghế của phòng này' });
@@ -352,7 +366,7 @@ export const SeatPriceManager = () => {
             variant="primary"
             className="py-2 px-5 text-sm font-bold shadow-md"
             icon={saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-            disabled={seatsLoading || saving || !selectedRoomId || seats.length === 0}
+            disabled={seatsLoading || saving || !selectedRoomId || seats.length === 0 || !roomLockStatus.editable}
           >
             {saving ? 'Đang Lưu...' : 'Lưu Thay Đổi Giá Ghế'}
           </Button>
@@ -446,6 +460,19 @@ export const SeatPriceManager = () => {
           )}
         </div>
       </div>
+
+      {/* ── CẢNH BÁO KHÓA CHỈNH SỬA KHI CÓ VÉ ĐẶT ── */}
+      {selectedRoomId && !roomLockStatus.editable && (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3.5 text-amber-900 dark:text-amber-200 animate-in fade-in">
+          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <h4 className="text-sm font-bold">🔒 Khóa chỉnh sửa giá và cấu hình ghế</h4>
+            <p className="text-xs text-amber-700/90 dark:text-amber-300/80 mt-0.5">
+              {roomLockStatus.reason || 'Phòng chiếu này hiện đang có vé đã được khách hàng đặt. Không thể thay đổi giá ghế để bảo vệ tính toàn vẹn của dữ liệu.'}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ── BẢNG THIẾT LẬP GIÁ THEO LOẠI GHẾ (BULK TYPE PRICING) ── */}
       {selectedRoomId && (

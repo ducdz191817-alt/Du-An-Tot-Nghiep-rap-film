@@ -243,6 +243,27 @@ const uploadImage = async (file) => {
   return response.data;
 };
 
+// Room Types & Seat Pricing
+const getRoomTypes = async () => {
+  const response = await api.get('/admin/room-types');
+  return response.data;
+};
+
+const createRoomType = async (data) => {
+  const response = await api.post('/admin/room-types', data);
+  return response.data;
+};
+
+const updateRoomType = async (id, data) => {
+  const response = await api.put(`/admin/room-types/${id}`, data);
+  return response.data;
+};
+
+const deleteRoomType = async (id) => {
+  const response = await api.delete(`/admin/room-types/${id}`);
+  return response.data;
+};
+
 const adminService = {
   createMovie,
   updateMovie,
@@ -288,6 +309,10 @@ const adminService = {
   getPricingConfig,
   updatePricingConfig,
   previewTicketPrice,
+  getRoomTypes,
+  createRoomType,
+  updateRoomType,
+  deleteRoomType,
 };
 
 export default adminService;

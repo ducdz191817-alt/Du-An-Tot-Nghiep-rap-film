@@ -41,6 +41,10 @@ const {
   updateUserRole,
   deleteUser,
   toggleUserStatus,
+  getRoomTypes,
+  createRoomType,
+  updateRoomType,
+  deleteRoomType,
 } = require("../controllers/admin.controller");
 const { protect, admin } = require("../middleware/auth.middleware");
 
@@ -63,6 +67,10 @@ router.route("/rooms/:id").put(updateRoom).delete(deleteRoom);
 router.get("/rooms/:id/seats", getRoomSeats);
 router.get("/rooms/:id/check-editable", checkRoomEditable);
 router.put("/rooms/:id/seats/layout", saveRoomLayout);
+
+// Room Types & Seat Pricing
+router.route("/room-types").get(getRoomTypes).post(createRoomType);
+router.route("/room-types/:id").put(updateRoomType).delete(deleteRoomType);
 
 // Seats
 router.patch("/seats/bulk", bulkUpdateSeats);

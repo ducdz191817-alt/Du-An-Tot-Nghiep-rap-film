@@ -4,7 +4,8 @@ import {
   LayoutDashboard, Film, Calendar, Building2, Coffee,
   Ticket, BarChart3, LogOut, Menu, ChevronRight,
   Clapperboard, Zap, Bell, ChevronDown, Activity, Users,
-  Hourglass, X, AlertCircle, Tag, DollarSign, Armchair, Sun, Moon
+  Hourglass, X, AlertCircle, Tag, DollarSign, Armchair, Sun, Moon,
+  Monitor
 } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 import adminService from '../../services/admin.service';
@@ -20,11 +21,12 @@ const NAV_ITEMS = [
   {
     group: 'Nội dung',
     items: [
-      { key: 'movies',     label: 'Quản lý Phim',       icon: Film },
-      { key: 'showtimes',  label: 'Lịch chiếu',          icon: Calendar },
-      { key: 'rooms',      label: 'Rạp & Phòng chiếu',   icon: Building2 },
-      { key: 'seat-prices',label: 'Quản lý giá ghế',    icon: Armchair },
-      { key: 'concessions',label: 'Bắp nước & Combo',    icon: Coffee },
+      { key: 'movies',     label: 'Quản lý Phim',          icon: Film },
+      { key: 'showtimes',  label: 'Lịch chiếu',             icon: Calendar },
+      { key: 'rooms',      label: 'Rạp & Phòng chiếu',      icon: Building2 },
+      { key: 'room-types', label: 'Loại phòng & Giá vé',    icon: Monitor },
+      { key: 'seat-prices',label: 'Quản lý giá ghế',       icon: Armchair },
+      { key: 'concessions',label: 'Bắp nước & Combo',       icon: Coffee },
     ]
   },
   {
