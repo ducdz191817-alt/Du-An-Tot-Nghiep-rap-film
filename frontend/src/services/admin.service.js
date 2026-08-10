@@ -16,6 +16,11 @@ const deleteMovie = async (id) => {
   return response.data;
 };
 
+const checkMovieBookings = async (id) => {
+  const response = await api.get(`/admin/movies/${id}/check-bookings`);
+  return response.data;
+};
+
 const getTheaters = async () => {
   const response = await api.get('/admin/theaters');
   return response.data;
@@ -242,6 +247,7 @@ const adminService = {
   createMovie,
   updateMovie,
   deleteMovie,
+  checkMovieBookings,
   getTheaters,
   createTheater,
   updateTheater,

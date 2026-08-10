@@ -4,6 +4,7 @@ const {
   createMovie,
   updateMovie,
   deleteMovie,
+  checkMovieBookings,
   createTheater,
   updateTheater,
   deleteTheater,
@@ -49,6 +50,7 @@ router.use(admin);
 
 // Movies
 router.post("/movies", createMovie);
+router.get("/movies/:id/check-bookings", checkMovieBookings);
 router.route("/movies/:id").put(updateMovie).delete(deleteMovie);
 
 // Theaters

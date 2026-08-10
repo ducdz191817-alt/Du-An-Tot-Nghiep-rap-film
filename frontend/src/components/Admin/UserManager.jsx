@@ -335,8 +335,10 @@ export const UserManager = () => {
                               title="Nâng lên Quản trị viên"
                               className="p-2 rounded-xl border transition-all duration-300 active:scale-95 inline-flex items-center justify-center bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20 hover:border-blue-500/40 text-blue-500"
                             >
-                              <ShieldCheck size={14} />
+                              <ShieldCheck size={14} /> Nâng quyền
                             </button>
+                          ) : (
+                            <span className="text-[11px] text-gray-400 font-medium italic">Không có thao tác</span>
                           )}
 
                           {/* Lock / Unlock Button (Soft Delete) */}

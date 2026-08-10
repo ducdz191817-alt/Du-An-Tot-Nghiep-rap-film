@@ -102,7 +102,8 @@ export const MovieManager = () => {
     setLoading(true);
     try {
       const result = await movieService.getMovies({ status: 'all' }); // Fetch all status
-      setMovies(result);
+      const movieArr = Array.isArray(result) ? result : (Array.isArray(result?.data) ? result.data : []);
+      setMovies(movieArr);
     } catch (err) {
       console.error(err);
     } finally {
@@ -119,6 +120,7 @@ export const MovieManager = () => {
   };
 
   const handleToggleGenre = (genre) => {
+    if (isMovieLocked) return;
     const currentGenres = form.genre
       ? form.genre.split(',').map((g) => g.trim()).filter((g) => g !== '')
       : [];
@@ -137,6 +139,7 @@ export const MovieManager = () => {
   };
 
   const handleToggleFormat = (format) => {
+    if (isMovieLocked) return;
     const currentFormats = form.availableFormats
       ? form.availableFormats.split(',').map((g) => g.trim()).filter((g) => g !== '')
       : [];
@@ -154,14 +157,10 @@ export const MovieManager = () => {
     });
   };
 
-  const handleOpenAdd = () => {
-    setEditingMovie(null);
-    setForm(initialForm);
-    setPosterPreview('');
-    setError('');
-    setIsOpen(true);
-  };
-
+  // Movie locking states (nếu đã có vé đặt)
+  const [isMovieLocked, setIsMovieLocked] = useState(false);
+  const [movieBookingCount, setMovieBookingCount] = useState(0);
+  const [checkingEditable, setCheckingEditable] = useState(false);
   // === TMDB Auto Import ===
   const handleOpenTMDB = () => {
     setTmdbQuery('');
@@ -258,30 +257,93 @@ export const MovieManager = () => {
     }
   };
 
-  const handleOpenEdit = (movie) => {
-    setEditingMovie(movie);
+  // Helper định dạng ngày an toàn cho <input type="date">
+  const formatDateForInput = (dateVal) => {
+    if (!dateVal) return '';
+    try {
+      const d = new Date(dateVal);
+      if (isNaN(d.getTime())) {
+        if (typeof dateVal === 'string') {
+          if (/^\d{4}-\d{2}-\d{2}/.test(dateVal)) return dateVal.split('T')[0];
+          if (/^\d{2}\/\d{2}\/\d{4}/.test(dateVal)) {
+            const [day, month, year] = dateVal.split('/');
+            return `${year}-${month}-${day}`;
+          }
+        }
+        return '';
+      }
+      return d.toISOString().split('T')[0];
+    } catch (e) {
+      return '';
+    }
+  };
 
-    // Định dạng ngày chính xác
-    const dateFormatted = movie.releaseDate ? new Date(movie.releaseDate).toISOString().split('T')[0] : '';
-    setForm({
-      title: movie.title,
-      description: movie.description,
-      duration: movie.duration,
-      genre: movie.genre.join(', '),
-      language: movie.language,
-      releaseDate: dateFormatted,
-      posterUrl: movie.posterUrl,
-      trailerUrl: movie.trailerUrl,
-      status: movie.status,
-      rating: movie.rating,
-      director: movie.director || '',
-      cast: Array.isArray(movie.cast) ? movie.cast : [],
-      country: movie.country || '',
-      availableFormats: movie.availableFormats ? movie.availableFormats.join(', ') : '2D',
-    });
+  const handleOpenAdd = () => {
+    setEditingMovie(null);
+    setForm(initialForm);
+    setPosterPreview('');
     setError('');
-    setPosterPreview(movie.posterUrl || '');
+    setIsMovieLocked(false);
+    setMovieBookingCount(0);
     setIsOpen(true);
+  };
+
+  const handleOpenEdit = async (movie) => {
+    if (!movie) return;
+    try {
+      setEditingMovie(movie);
+      setIsMovieLocked(false);
+      setMovieBookingCount(0);
+      setCheckingEditable(true);
+
+      const dateFormatted = formatDateForInput(movie.releaseDate);
+      const genreStr = Array.isArray(movie.genre)
+        ? movie.genre.join(', ')
+        : (typeof movie.genre === 'string' ? movie.genre : '');
+
+      const castArr = Array.isArray(movie.cast)
+        ? movie.cast
+        : (typeof movie.cast === 'string' ? movie.cast.split(',').map((c) => c.trim()).filter(Boolean) : []);
+
+      const formatStr = Array.isArray(movie.availableFormats)
+        ? movie.availableFormats.join(', ')
+        : (typeof movie.availableFormats === 'string' ? movie.availableFormats : '2D');
+
+      const editFormValues = {
+        title: movie.title || '',
+        description: movie.description || '',
+        duration: movie.duration !== undefined && movie.duration !== null ? String(movie.duration) : '',
+        genre: genreStr,
+        language: movie.language || 'Tiếng Anh kèm Phụ đề Tiếng Việt',
+        releaseDate: dateFormatted,
+        posterUrl: movie.posterUrl || '',
+        trailerUrl: movie.trailerUrl || '',
+        status: movie.status || 'coming-soon',
+        rating: movie.rating || 'T16',
+        director: movie.director || '',
+        cast: castArr,
+        country: movie.country || '',
+        availableFormats: formatStr,
+      };
+
+      setForm(editFormValues);
+      setError('');
+      setPosterPreview(movie.posterUrl || '');
+      setIsOpen(true);
+
+      if (movie._id) {
+        const res = await adminService.checkMovieBookings(movie._id);
+        if (res && res.hasBookings) {
+          setIsMovieLocked(true);
+          setMovieBookingCount(res.bookingCount || 0);
+        }
+      }
+    } catch (err) {
+      console.error('Lỗi khi mở modal chỉnh sửa phim:', err);
+      setIsOpen(true);
+    } finally {
+      setCheckingEditable(false);
+    }
   };
 
   // === Upload Poster ===
@@ -318,7 +380,8 @@ export const MovieManager = () => {
       setToast({ message: 'Đã xóa phim thành công!', type: 'success' });
       fetchMoviesList();
     } catch (err) {
-      setToast({ message: err.message || 'Lỗi khi xóa phim', type: 'error' });
+      const errMsg = err.response?.data?.message || err.message || 'Lỗi khi xóa phim';
+      setToast({ message: errMsg, type: 'error' });
     }
   };
 
@@ -569,25 +632,41 @@ export const MovieManager = () => {
             </div>
           )}
 
+          {/* Banner thông báo phim đã có vé đặt */}
+          {isMovieLocked && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-2xl flex items-start gap-3 my-1 shadow-xs">
+              <AlertCircle size={22} className="text-amber-600 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider text-amber-800">
+                  🔒 DỮ LIỆU PHIM ĐANG ĐƯỢC GIỮ NGUYÊN
+                </p>
+                <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+                  Bộ phim <strong>"{editingMovie?.title}"</strong> đã phát sinh <strong>{movieBookingCount} lượt đặt vé</strong> từ khách hàng. Để đảm bảo tính toàn vẹn thông tin trên vé đã phát hành, tất cả dữ liệu chi tiết phim được <strong>GIỮ NGUYÊN (Khóa chỉnh sửa)</strong>.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input name="title" label="Tên Phim" placeholder="Ví dụ: Dune: Part Two" value={form.title} onChange={handleChange} required />
+            <Input name="title" label="Tên Phim" placeholder="Ví dụ: Dune: Part Two" value={form.title} onChange={handleChange} required disabled={isMovieLocked} />
             <AutocompleteInput
               label="Đạo Diễn"
               placeholder="Ví dụ: Denis Villeneuve"
               suggestions={allDirectors}
               value={form.director}
-              onChange={(val) => setForm((f) => ({ ...f, director: val }))}
+              onChange={(val) => !isMovieLocked && setForm((f) => ({ ...f, director: val }))}
               mode="single"
+              disabled={isMovieLocked}
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Input name="duration" type="number" label="Thời Lượng (phút)" placeholder="Ví dụ: 166" value={form.duration} onChange={handleChange} required />
+            <Input name="duration" type="number" label="Thời Lượng (phút)" placeholder="Ví dụ: 166" value={form.duration} onChange={handleChange} required disabled={isMovieLocked} />
 
             {/* Trạng thái */}
             <div>
               <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Trạng Thái Phát Hành</label>
-              <select name="status" value={form.status} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer">
+              <select name="status" value={form.status} onChange={handleChange} disabled={isMovieLocked} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
                 {/* Thêm mới: chỉ cho chọn 2 trạng thái hợp lý */}
                 <option value="coming-soon">🟡 Sắp chiếu</option>
                 <option value="pre-release">🔵 Sắp ra mắt</option>
@@ -608,7 +687,7 @@ export const MovieManager = () => {
             {/* Phân loại độ tuổi */}
             <div>
               <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Phân Loại Độ Tuổi</label>
-              <select name="rating" value={form.rating} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer">
+              <select name="rating" value={form.rating} onChange={handleChange} disabled={isMovieLocked} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
                 <option value="P">P (Mọi lứa tuổi)</option>
                 <option value="T13">T13 (Trên 13 tuổi)</option>
                 <option value="T16">T16 (Trên 16 tuổi)</option>
@@ -636,11 +715,12 @@ export const MovieManager = () => {
                     <button
                       key={genre}
                       type="button"
+                      disabled={isMovieLocked}
                       onClick={() => handleToggleGenre(genre)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${isSelected
                         ? 'bg-brand/10 border-brand/40 text-brand shadow-[0_2px_8px_rgba(168,85,247,0.15)]'
                         : 'bg-zinc-800/40 border-zinc-700/40 text-white hover:border-zinc-650 hover:text-white'
-                        }`}
+                        } ${isMovieLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
                     >
                       {genre}
                     </button>
@@ -665,11 +745,12 @@ export const MovieManager = () => {
                   <button
                     key={format}
                     type="button"
+                    disabled={isMovieLocked}
                     onClick={() => handleToggleFormat(format)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${isSelected
                       ? 'bg-brand/10 border-brand/40 text-brand shadow-[0_2px_8px_rgba(168,85,247,0.15)]'
                       : 'bg-zinc-800/40 border-zinc-700/40 text-white hover:border-zinc-650 hover:text-white'
-                      }`}
+                      } ${isMovieLocked ? 'opacity-60 cursor-not-allowed' : ''}`}
                   >
                     {format}
                   </button>
@@ -679,8 +760,8 @@ export const MovieManager = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input name="releaseDate" type="date" label="Ngày Phát Hành" value={form.releaseDate} onChange={handleChange} required />
-            <Input name="country" label="Quốc Gia" placeholder="Ví dụ: Mỹ, Hàn Quốc, Việt Nam" value={form.country} onChange={handleChange} />
+            <Input name="releaseDate" type="date" label="Ngày Phát Hành" value={form.releaseDate} onChange={handleChange} required disabled={isMovieLocked} />
+            <Input name="country" label="Quốc Gia" placeholder="Ví dụ: Mỹ, Hàn Quốc, Việt Nam" value={form.country} onChange={handleChange} disabled={isMovieLocked} />
           </div>
 
           {/* Poster Upload + Trailer URL */}
@@ -693,6 +774,7 @@ export const MovieManager = () => {
               <input
                 ref={posterInputRef}
                 type="file"
+                disabled={isMovieLocked}
                 accept="image/jpeg,image/jpg,image/png,image/webp"
                 className="hidden"
                 onChange={(e) => handlePosterFileChange(e.target.files?.[0])}
@@ -708,7 +790,7 @@ export const MovieManager = () => {
                       <span className="text-white text-xs font-bold">Đang upload...</span>
                     </div>
                   )}
-                  {!posterUploading && (
+                  {!posterUploading && !isMovieLocked && (
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
                       <button
                         type="button"
@@ -729,10 +811,10 @@ export const MovieManager = () => {
                 </div>
               ) : (
                 <div
-                  onDrop={handlePosterDrop}
+                  onDrop={(e) => !isMovieLocked && handlePosterDrop(e)}
                   onDragOver={(e) => e.preventDefault()}
-                  onClick={() => posterInputRef.current?.click()}
-                  className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 hover:border-brand/50 rounded-xl bg-gray-50 hover:bg-brand/5 cursor-pointer transition-all"
+                  onClick={() => !isMovieLocked && posterInputRef.current?.click()}
+                  className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 transition-all ${isMovieLocked ? 'opacity-60 cursor-not-allowed' : 'hover:border-brand/50 hover:bg-brand/5 cursor-pointer'}`}
                   style={{ height: '180px' }}
                 >
                   <ImagePlus size={28} className="text-gray-400" />
@@ -754,13 +836,14 @@ export const MovieManager = () => {
                   name="posterUrl"
                   placeholder="Hoặc dán URL ảnh vào đây..."
                   value={form.posterUrl}
+                  disabled={isMovieLocked}
                   onChange={(e) => { handleChange(e); setPosterPreview(e.target.value); }}
-                  className="flex-1 text-xs bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-1.5 px-2.5 focus:border-brand outline-none placeholder:text-gray-400"
+                  className="flex-1 text-xs bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-1.5 px-2.5 focus:border-brand outline-none placeholder:text-gray-400 disabled:opacity-60"
                 />
               </div>
             </div>
 
-            <Input name="trailerUrl" label="Đường Dẫn Nhúng Trailer YouTube (URL)" placeholder="https://www.youtube.com/embed/..." value={form.trailerUrl} onChange={handleChange} />
+            <Input name="trailerUrl" label="Đường Dẫn Nhúng Trailer YouTube (URL)" placeholder="https://www.youtube.com/embed/..." value={form.trailerUrl} onChange={handleChange} disabled={isMovieLocked} />
           </div>
 
 
@@ -769,8 +852,9 @@ export const MovieManager = () => {
             placeholder="Tìm kiếm tên diễn viên..."
             suggestions={allCast}
             value={form.cast}
-            onChange={(val) => setForm((f) => ({ ...f, cast: val }))}
+            onChange={(val) => !isMovieLocked && setForm((f) => ({ ...f, cast: val }))}
             mode="tags"
+            disabled={isMovieLocked}
           />
 
           <Input
@@ -782,15 +866,22 @@ export const MovieManager = () => {
             value={form.description}
             onChange={handleChange}
             required
+            disabled={isMovieLocked}
           />
 
           <div className="flex justify-end gap-3 pt-3 border-t border-gray-200">
             <Button onClick={() => setIsOpen(false)} variant="secondary" className="px-5 py-2" disabled={submitting}>
               Hủy
             </Button>
-            <Button type="submit" variant="primary" className="px-6 py-2" disabled={submitting || posterUploading} icon={submitting ? <Loader2 size={16} className="animate-spin" /> : null}>
-              {submitting ? 'Đang lưu...' : 'Lưu Phim'}
-            </Button>
+            {isMovieLocked ? (
+              <Button type="button" variant="secondary" className="px-6 py-2 opacity-60 cursor-not-allowed font-bold text-amber-900 border-amber-300 bg-amber-50" disabled>
+                🔒 Giữ Nguyên Dữ Liệu (Phim Đã Có Vé Đặt)
+              </Button>
+            ) : (
+              <Button type="submit" variant="primary" className="px-6 py-2" disabled={submitting || posterUploading} icon={submitting ? <Loader2 size={16} className="animate-spin" /> : null}>
+                {submitting ? 'Đang lưu...' : 'Lưu Phim'}
+              </Button>
+            )}
           </div>
         </form>
       </Modal>

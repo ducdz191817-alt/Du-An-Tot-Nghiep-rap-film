@@ -500,6 +500,7 @@ const getMyBookings = async (req, res, next) => {
       .populate({
         path: 'concessions.concession',
       })
+      .populate('coupon')
       .sort({ bookingDate: -1 });
 
     res.json({
@@ -529,7 +530,8 @@ const getBookingById = async (req, res, next) => {
       })
       .populate({
         path: 'concessions.concession',
-      });
+      })
+      .populate('coupon');
 
     if (!booking) {
       res.status(404);

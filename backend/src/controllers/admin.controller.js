@@ -57,14 +57,54 @@ const createMovie = async (req, res, next) => {
   }
 };
 
+// Helper kiểm tra xem một bộ phim đã phát sinh đơn đặt vé nào chưa
+const checkMovieHasBookings = async (movieId) => {
+  const showtimes = await Showtime.find({ movie: movieId }).select('_id');
+  if (!showtimes || showtimes.length === 0) {
+    return { hasBookings: false, bookingCount: 0 };
+  }
+  const showtimeIds = showtimes.map((s) => s._id);
+  const bookingCount = await Booking.countDocuments({
+    showtime: { $in: showtimeIds },
+    paymentStatus: { $ne: 'cancelled' },
+  });
+  return { hasBookings: bookingCount > 0, bookingCount };
+};
+
+const checkMovieBookings = async (req, res, next) => {
+  try {
+    const movieId = req.params.id;
+    const { hasBookings, bookingCount } = await checkMovieHasBookings(movieId);
+    res.json({ success: true, hasBookings, bookingCount });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const updateMovie = async (req, res, next) => {
   try {
+    const movieId = req.params.id;
+    const movie = await Movie.findById(movieId);
+    if (!movie) {
+      res.status(404);
+      throw new Error('Không tìm thấy phim');
+    }
+
+    // Kiểm tra xem phim đã có vé đặt chưa -> Chặn chỉnh sửa nếu đã phát sinh vé đặt
+    const { hasBookings, bookingCount } = await checkMovieHasBookings(movieId);
+    if (hasBookings) {
+      return res.status(400).json({
+        success: false,
+        message: `🚫 Không thể chỉnh sửa phim "${movie.title}" vì đã có ${bookingCount} lượt đặt vé từ khách hàng!`,
+      });
+    }
+
     const { title } = req.body;
     if (title && title.trim()) {
       const trimmedTitle = title.trim();
       const escapedTitle = trimmedTitle.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
       const existing = await Movie.findOne({
-        _id: { $ne: req.params.id },
+        _id: { $ne: movieId },
         title: { $regex: new RegExp(`^${escapedTitle}$`, 'i') },
       });
       if (existing) {
@@ -74,15 +114,13 @@ const updateMovie = async (req, res, next) => {
         });
       }
     }
-    const movie = await Movie.findByIdAndUpdate(req.params.id, req.body, {
+
+    const updatedMovie = await Movie.findByIdAndUpdate(movieId, req.body, {
       new: true,
       runValidators: true,
     });
-    if (!movie) {
-      res.status(404);
-      throw new Error('Movie not found');
-    }
-    res.json({ success: true, data: movie });
+
+    res.json({ success: true, data: updatedMovie });
   } catch (error) {
     next(error);
   }
@@ -94,10 +132,19 @@ const deleteMovie = async (req, res, next) => {
     const movie = await Movie.findById(movieId);
     if (!movie) {
       res.status(404);
-      throw new Error('Movie not found');
+      throw new Error('Không tìm thấy phim');
     }
 
-    // Kiểm tra xem phim này đã có suất chiếu nào chưa
+    // 1. Kiểm tra xem phim đã có vé đặt chưa -> Chặn xóa nếu đã phát sinh vé
+    const { hasBookings, bookingCount } = await checkMovieHasBookings(movieId);
+    if (hasBookings) {
+      return res.status(400).json({
+        success: false,
+        message: `🚫 Không thể xóa phim "${movie.title}" vì đã có ${bookingCount} lượt đặt vé từ khách hàng!`,
+      });
+    }
+
+    // 2. Kiểm tra xem phim này đã có suất chiếu nào chưa
     const showtimeCount = await Showtime.countDocuments({ movie: movieId });
     if (showtimeCount > 0) {
       return res.status(400).json({
@@ -1764,6 +1811,7 @@ module.exports = {
   createMovie,
   updateMovie,
   deleteMovie,
+  checkMovieBookings,
   createTheater,
   updateTheater,
   deleteTheater,

@@ -21,6 +21,7 @@ const AutocompleteInput = ({
   onChange,
   mode = 'single',
   icon,
+  disabled = false,
 }) => {
   const [inputValue, setInputValue] = useState(mode === 'single' ? (value || '') : '');
   const [isOpen, setIsOpen] = useState(false);
@@ -176,11 +177,12 @@ const AutocompleteInput = ({
           ref={inputRef}
           type="text"
           value={inputValue}
+          disabled={disabled}
           onChange={handleInputChange}
-          onFocus={() => setIsOpen(true)}
+          onFocus={() => !disabled && setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder={mode === 'tags' && tags.length > 0 ? 'Thêm diễn viên...' : placeholder}
-          className="flex-1 min-w-[120px] bg-transparent outline-none text-sm text-gray-800 placeholder-gray-400 py-0.5"
+          className="flex-1 min-w-[120px] bg-transparent outline-none text-sm text-gray-800 placeholder-gray-400 py-0.5 disabled:opacity-60 disabled:cursor-not-allowed"
         />
 
         {/* Dropdown toggle for single mode */}

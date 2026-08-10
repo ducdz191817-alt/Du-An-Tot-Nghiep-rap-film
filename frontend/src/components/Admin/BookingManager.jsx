@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import adminService from '../../services/admin.service';
 import Loading from '../common/Loading';
+import PrintTicketModal from '../Booking/PrintTicketModal';
 
 const fmt = (val) => (val || 0).toLocaleString('vi-VN') + 'đ';
 
@@ -735,6 +736,99 @@ export const BookingManager = () => {
                   </div>
                 </div>
 
+                {/* Chi tiết từng ghế & giá vé */}
+                {(() => {
+                  const seats = b.seats || [];
+                  if (seats.length === 0) return null;
+
+                  const basePrice = showtime.ticketPrice || showtime.price || 0;
+                  const discountAmount = b.discountAmount || 0;
+                  const totalPrice = b.totalPrice || 0;
+                  const originalTotal = totalPrice + discountAmount;
+                  const concessionSubtotal = (b.concessions || []).reduce((acc, c) => {
+                    return acc + ((c.concession?.price || 0) * (c.quantity || 0));
+                  }, 0);
+                  const ticketSubtotal = Math.max(0, originalTotal - concessionSubtotal);
+                  const roomSeats = room.seats || [];
+
+                  const seatPriceList = seats.map((seatCode) => {
+                    const match = seatCode.match(/^([A-Z]+)(\d+)$/);
+                    let seatType = 'standard';
+                    let extraPrice = 0;
+                    let multiplier = 1;
+
+                    if (match) {
+                      const rName = match[1];
+                      const num = parseInt(match[2], 10);
+                      const found = roomSeats.find((s) => s.row === rName && s.number === num);
+                      if (found) {
+                        seatType = found.type || 'standard';
+                        extraPrice = found.price || 0;
+                        multiplier = seatType === 'couple' ? 2 : 1;
+                      }
+                    }
+
+                    let calculatedPrice = 0;
+                    if (basePrice > 0) {
+                      calculatedPrice = (basePrice * multiplier) + extraPrice;
+                    } else {
+                      calculatedPrice = Math.round(ticketSubtotal / seats.length);
+                    }
+
+                    const typeLabel = seatType === 'couple' ? 'Ghế đôi' : seatType === 'vip' ? 'Ghế VIP' : 'Ghế thường';
+
+                    return { seatCode, seatType, typeLabel, price: calculatedPrice };
+                  });
+
+                  return (
+                    <div className="space-y-2">
+                      <h5 className="text-xs font-extrabold text-gray-700 uppercase tracking-wider flex items-center justify-between">
+                        <span>Chi tiết từng ghế & giá vé</span>
+                        <span className="text-[10px] text-gray-500 font-bold">{seats.length} ghế</span>
+                      </h5>
+                      <div className="bg-gray-50 border border-gray-200/80 rounded-2xl p-3.5 space-y-2 text-xs">
+                        {seatPriceList.map((item, idx) => (
+                          <div key={idx} className="flex justify-between items-center py-1 border-b border-gray-200/50 last:border-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-black text-brand bg-brand/10 px-2 py-0.5 rounded-lg border border-brand/20 text-[11px]">
+                                {item.seatCode}
+                              </span>
+                              <span className="text-gray-500 text-[11px]">({item.typeLabel})</span>
+                            </div>
+                            <span className="font-bold text-gray-900">{fmt(item.price)}</span>
+                          </div>
+                        ))}
+
+                        <div className="pt-2 border-t border-gray-200/80 space-y-1 text-[11px]">
+                          <div className="flex justify-between text-gray-600">
+                            <span>Tổng tiền vé:</span>
+                            <span className="font-bold text-gray-900">{fmt(ticketSubtotal)}</span>
+                          </div>
+                          {concessionSubtotal > 0 && (
+                            <div className="flex justify-between text-gray-600">
+                              <span>Tổng tiền bắp nước:</span>
+                              <span className="font-bold text-gray-900">{fmt(concessionSubtotal)}</span>
+                            </div>
+                          )}
+                          {discountAmount > 0 && (() => {
+                            const cCode = b.coupon?.code || (typeof b.coupon === 'string' && !/^[0-9a-fA-F]{24}$/.test(b.coupon) ? b.coupon : null);
+                            return (
+                              <div className="flex justify-between text-emerald-700 font-bold">
+                                <span>Giảm giá mã ưu đãi {cCode ? `(${cCode})` : ''}:</span>
+                                <span>-{fmt(discountAmount)}</span>
+                              </div>
+                            );
+                          })()}
+                          <div className="flex justify-between font-black text-xs text-gray-900 pt-1.5 border-t border-gray-200">
+                            <span>Thành tiền:</span>
+                            <span className="text-brand text-sm">{fmt(totalPrice)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Trạng thái chi tiết */}
                 <div className="space-y-2">
                   <h5 className="text-xs font-extrabold text-gray-700 uppercase tracking-wider">Trạng thái</h5>
@@ -900,142 +994,12 @@ export const BookingManager = () => {
       {/* ════════════════════════════════════════════════════════════════════════ */}
       {/* MODAL: MẪU VÉ IN VÀO MÁY IN (PRINTABLE CINEMA TICKET - CHIA TỪNG GHẾ)   */}
       {/* ════════════════════════════════════════════════════════════════════════ */}
-      {ticketToPrint && (() => {
-        const b = ticketToPrint;
-        const showtime = b.showtime || {};
-        const movie = showtime.movie || {};
-        const theater = showtime.theater || {};
-        const room = showtime.room || {};
-        const user = b.user || {};
-        const code = b.ticketCode || `TKT-${String(b._id).slice(-8).toUpperCase()}`;
-        const seats = b.seats && b.seats.length > 0 ? b.seats : ['N/A'];
-        const seatCount = seats.length;
-        const pricePerTicket = b.totalPrice ? Math.round(b.totalPrice / seatCount) : 0;
-
-        const printStyles = `
-          @media print {
-            body * {
-              visibility: hidden !important;
-            }
-            .print-ticket-container, .print-ticket-container * {
-              visibility: visible !important;
-            }
-            .print-ticket-container {
-              position: absolute !important;
-              left: 0 !important;
-              top: 0 !important;
-              width: 100% !important;
-              margin: 0 !important;
-              padding: 0 !important;
-            }
-            .print-ticket-slip {
-              page-break-after: always !important;
-              break-after: page !important;
-              box-shadow: none !important;
-              border: 1px solid #333 !important;
-              background: #fff !important;
-              color: #000 !important;
-            }
-            .no-print-btn {
-              display: none !important;
-            }
-          }
-        `;
-
-        return (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs overflow-y-auto"
-            onClick={() => setTicketToPrint(null)}
-          >
-            <style>{printStyles}</style>
-
-            <div
-              className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4 border border-gray-200 my-auto max-h-[90vh] flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Modal Header */}
-              <div className="flex justify-between items-center border-b pb-3 no-print-btn">
-                <div>
-                  <h3 className="font-bold text-gray-900 text-sm">Mẫu In Vé Xem Phim</h3>
-                  <p className="text-[11px] text-gray-500">Tự động chia thành {seatCount} tờ vé (mỗi ghế 1 vé)</p>
-                </div>
-                <span className="text-xs font-mono bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold">{code}</span>
-              </div>
-
-              {/* Scrollable Printable Container for preview & print */}
-              <div className="print-ticket-container overflow-y-auto space-y-4 pr-1 max-h-[60vh]">
-                {seats.map((seatCode, index) => (
-                  <div
-                    key={index}
-                    className="print-ticket-slip border-2 border-dashed border-gray-300 p-5 rounded-2xl space-y-4 font-mono text-xs bg-amber-50/30 relative"
-                  >
-                    <div className="text-center space-y-1 border-b border-dashed border-gray-300 pb-3">
-                      <h3 className="font-black text-base uppercase text-gray-900 tracking-wider">NOVA CINEMA</h3>
-                      <p className="text-[10px] text-gray-500">{theater.name || 'Rạp Nova Cinema'}</p>
-                      <p className="text-[10px] font-bold text-brand mt-1">{code}</p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="font-black text-sm text-gray-900 uppercase">{movie.title || 'Phim'}</div>
-                      <div className="flex justify-between text-gray-700">
-                        <span>Định dạng:</span>
-                        <span className="font-bold">{showtime.format || '2D'}</span>
-                      </div>
-                      <div className="flex justify-between text-gray-700">
-                        <span>Suất chiếu:</span>
-                        <span className="font-bold">
-                          {showtime.startTime ? new Date(showtime.startTime).toLocaleString('vi-VN') : 'N/A'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-gray-700">
-                        <span>Phòng chiếu:</span>
-                        <span className="font-bold">{room.name || 'Phòng 1'}</span>
-                      </div>
-
-                      {/* Vị trí ghế duy nhất của tờ vé này */}
-                      <div className="flex justify-between items-center text-gray-700 text-sm bg-amber-100/60 p-2.5 rounded-xl border border-amber-300/70 my-1">
-                        <span className="font-bold text-gray-800">VỊ TRÍ GHẾ:</span>
-                        <span className="font-black text-brand text-lg tracking-wider">{seatCode}</span>
-                      </div>
-
-                      <div className="flex justify-between text-gray-700 border-t border-dashed border-gray-300 pt-2">
-                        <span>Khách hàng:</span>
-                        <span className="font-bold">{user.username || 'Khách vãng lai'}</span>
-                      </div>
-                      <div className="flex justify-between text-gray-700">
-                        <span>Giá vé từng ghế:</span>
-                        <span className="font-black text-gray-900">{fmt(pricePerTicket)}</span>
-                      </div>
-                    </div>
-
-                    {/* Simulated Barcode / QR */}
-                    <div className="text-center pt-2 border-t border-dashed border-gray-300 space-y-1">
-                      <div className="font-mono text-[10px] tracking-widest text-gray-400">||| | |||| ||| || ||||| |||</div>
-                      <p className="text-[9px] text-gray-400">Vui lòng mang theo vé này khi vào phòng chiếu ({seatCode})</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-2 pt-2 border-t no-print-btn">
-                <button
-                  onClick={() => window.print()}
-                  className="flex-1 py-2.5 bg-brand text-white rounded-xl text-xs font-bold hover:bg-brand-hover transition-all flex items-center justify-center gap-1.5 shadow-md active:scale-95"
-                >
-                  <Printer size={14} /> In lệnh ra máy in ({seatCount} vé)
-                </button>
-                <button
-                  onClick={() => setTicketToPrint(null)}
-                  className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-all"
-                >
-                  Đóng
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+      {ticketToPrint && (
+        <PrintTicketModal
+          booking={ticketToPrint}
+          onClose={() => setTicketToPrint(null)}
+        />
+      )}
       {/* ════════════════════════════════════════════════════════════════════════ */}
       {/* MODAL: GỬI EMAIL HÀNG LOẠT                                               */}
       {/* ════════════════════════════════════════════════════════════════════════ */}
