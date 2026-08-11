@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Users, Search, RefreshCw, AlertCircle, X,
   ShieldCheck, UserCheck, Calendar, Phone, Mail, Info, Crown,
-  Lock, Unlock, ShieldAlert, CheckCircle2,
+  Lock, Unlock, CheckCircle2, Ticket, BadgeCheck, UserCog
 } from 'lucide-react';
 import adminService from '../../services/admin.service';
 import Loading from '../common/Loading';
@@ -17,7 +17,7 @@ export const UserManager = () => {
 
   // Confirm modal state: { id, username, currentStatus }
   const [confirmLock, setConfirmLock] = useState(null);
-  const [confirmRole, setConfirmRole] = useState(null);       // { id, username, newRole }
+  const [confirmRole, setConfirmRole] = useState(null); // { id, username, newRole }
   const [actionLoading, setActionLoading] = useState(false);
 
   const currentUser = JSON.parse(localStorage.getItem('userInfo') || '{}');
@@ -53,7 +53,7 @@ export const UserManager = () => {
       const isLocking = confirmLock.currentStatus !== 'locked';
       const res = await adminService.toggleUserStatus(confirmLock.id);
       showMessage(
-        res.message || `Đã ${isLocking ? 'khóa' : 'mở khóa'} tài khoản "${confirmLock.username}" thành công!`,
+        res.message || `Đã ${isLocking ? 'khóa' : 'mở khóa'} tài khoản "${confirmLock.username}" thành công và lưu vào CSDL!`,
         'success'
       );
       setConfirmLock(null);
@@ -69,15 +69,22 @@ export const UserManager = () => {
     if (!confirmRole) return;
     setActionLoading(true);
     try {
-      await adminService.updateUserRole(confirmRole.id, confirmRole.newRole);
+      const res = await adminService.updateUserRole(confirmRole.id, confirmRole.newRole);
+      const roleText =
+        confirmRole.newRole === 'admin'
+          ? 'Quản trị viên'
+          : confirmRole.newRole === 'staff'
+          ? 'Nhân viên quản lý vé'
+          : 'Khách hàng';
+
       showMessage(
-        `Đã cập nhật quyền "${confirmRole.username}" thành ${confirmRole.newRole === 'admin' ? 'Quản trị viên' : 'Người dùng'}!`,
+        res.message || `Đã cập nhật vai trò "${confirmRole.username}" thành ${roleText} và đã lưu trạng thái!`,
         'success'
       );
       setConfirmRole(null);
       fetchUsers();
     } catch (err) {
-      showMessage(err.message || 'Lỗi khi cập nhật quyền.', 'error');
+      showMessage(err.message || 'Lỗi khi cập nhật vai trò.', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -104,9 +111,16 @@ export const UserManager = () => {
         </span>
       );
     }
+    if (role === 'staff') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-purple-50 text-purple-700 border border-purple-200">
+          <Ticket size={10} /> Nhân viên quản lý vé
+        </span>
+      );
+    }
     return (
       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-blue-50 text-blue-700 border border-blue-200">
-        <UserCheck size={10} /> Người dùng
+        <UserCheck size={10} /> Khách hàng
       </span>
     );
   };
@@ -153,15 +167,15 @@ export const UserManager = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h3 className="text-lg font-black text-gray-800 flex items-center gap-2">
-            <Users className="text-brand" size={20} /> Quản lý Người dùng
+            <UserCog className="text-brand" size={22} /> Quản lý Người dùng & Nhân viên
           </h3>
           <p className="text-xs text-gray-500 mt-1">
-            Xem danh sách tài khoản, phân quyền hoặc khóa/vô hiệu hóa tài khoản (Soft Delete).
+            Phân quyền (Quản trị viên, Nhân viên quản lý vé, Khách hàng) và lưu lại trạng thái hoạt động / bị khóa vào CSDL.
           </p>
         </div>
         <button
           onClick={fetchUsers}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-gray-500 hover:text-gray-700 bg-gray-100 border border-gray-200 hover:bg-gray-200 transition-all active:scale-95 shrink-0"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-gray-500 hover:text-gray-700 bg-gray-100 border border-gray-200 hover:bg-gray-200 transition-all active:scale-95 shrink-0 cursor-pointer"
         >
           <RefreshCw size={13} className={loading ? 'animate-spin' : ''} /> Làm mới
         </button>
@@ -180,19 +194,20 @@ export const UserManager = () => {
             <AlertCircle size={18} />
             <span>{message.text}</span>
           </div>
-          <button onClick={() => setMessage({ text: '', type: '' })} className="text-gray-400 hover:text-gray-600">
+          <button onClick={() => setMessage({ text: '', type: '' })} className="text-gray-400 hover:text-gray-600 cursor-pointer">
             <X size={16} />
           </button>
         </div>
       )}
 
       {/* Stats bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
           { label: 'Tổng tài khoản', value: users.length, color: 'text-gray-800' },
-          { label: 'Đang hoạt động', value: users.filter((u) => u.status !== 'locked').length, color: 'text-emerald-600' },
-          { label: 'Đã bị khóa', value: users.filter((u) => u.status === 'locked').length, color: 'text-red-600' },
+          { label: 'Khách hàng', value: users.filter((u) => u.role === 'user' || !u.role).length, color: 'text-blue-600' },
+          { label: 'Nhân viên vé', value: users.filter((u) => u.role === 'staff').length, color: 'text-purple-600' },
           { label: 'Quản trị viên', value: users.filter((u) => u.role === 'admin').length, color: 'text-amber-600' },
+          { label: 'Đã bị khóa', value: users.filter((u) => u.status === 'locked').length, color: 'text-red-600' },
         ].map((s) => (
           <div key={s.label} className="bg-white border border-gray-200 rounded-2xl p-4 text-center shadow-sm">
             <p className={`text-xl font-black ${s.color}`}>{s.value}</p>
@@ -217,10 +232,11 @@ export const UserManager = () => {
         <select
           value={filterRole}
           onChange={(e) => setFilterRole(e.target.value)}
-          className="w-full md:w-44 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-bold text-gray-700 focus:outline-none focus:border-brand/40 cursor-pointer"
+          className="w-full md:w-48 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-bold text-gray-700 focus:outline-none focus:border-brand/40 cursor-pointer"
         >
           <option value="all">Tất cả vai trò</option>
-          <option value="user">Người dùng</option>
+          <option value="user">Khách hàng</option>
+          <option value="staff">Nhân viên quản lý vé</option>
           <option value="admin">Quản trị viên</option>
         </select>
 
@@ -241,12 +257,12 @@ export const UserManager = () => {
       ) : filteredUsers.length === 0 ? (
         <div className="text-center py-16 bg-white border border-dashed border-gray-200 rounded-3xl space-y-4 shadow-sm">
           <Users size={48} className="text-gray-300 mx-auto" />
-          <p className="text-gray-400 font-semibold text-xs">Không tìm thấy người dùng nào phù hợp.</p>
+          <p className="text-gray-400 font-semibold text-xs">Không tìm thấy tài khoản nào phù hợp.</p>
         </div>
       ) : (
         <div className="bg-white border border-gray-200 rounded-3xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[800px]">
+            <table className="w-full text-left border-collapse min-w-[850px]">
               <thead>
                 <tr className="border-b border-gray-200 text-gray-500 text-xs font-bold uppercase tracking-wider bg-gray-50">
                   <th className="py-4 pl-6">Người dùng</th>
@@ -254,7 +270,7 @@ export const UserManager = () => {
                   <th className="py-4">Vai trò</th>
                   <th className="py-4">Trạng thái</th>
                   <th className="py-4">Ngày đăng ký</th>
-                  <th className="py-4 pr-6 text-center">Hành động</th>
+                  <th className="py-4 pr-6 text-center">Phân quyền & Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-xs font-semibold text-gray-700">
@@ -266,6 +282,8 @@ export const UserManager = () => {
                         day: 'numeric',
                       })
                     : 'N/A';
+
+                  const isSelf = user._id === currentUserId;
 
                   return (
                     <tr key={user._id} className="hover:bg-gray-50 transition-colors">
@@ -282,6 +300,9 @@ export const UserManager = () => {
                               {user.username}
                               {user.role === 'admin' && (
                                 <Crown size={11} className="text-amber-400 shrink-0" />
+                              )}
+                              {user.role === 'staff' && (
+                                <Ticket size={11} className="text-purple-500 shrink-0" />
                               )}
                             </div>
                             <div className="text-[10px] text-gray-400 font-mono">{user._id?.slice(-8)}</div>
@@ -319,39 +340,37 @@ export const UserManager = () => {
                         </div>
                       </td>
 
-                      {/* Actions */}
+                      {/* Actions: Role Selector & Lock Toggle */}
                       <td className="py-4 pr-6">
-                        <div className="flex items-center justify-center gap-2">
-                          {/* Nút Nâng quyền - chỉ hiển thị với người dùng thường */}
-                          {user.role !== 'admin' ? (
-                            <button
-                              onClick={() =>
+                        <div className="flex items-center justify-center gap-3">
+                          {/* Selector Phân Quyền */}
+                          {isSelf ? (
+                            <span className="text-[11px] text-gray-400 font-bold bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200">
+                              Tài khoản của bạn
+                            </span>
+                          ) : (
+                            <select
+                              value={user.role || 'user'}
+                              onChange={(e) =>
                                 setConfirmRole({
                                   id: user._id,
                                   username: user.username,
-                                  newRole: 'admin',
+                                  currentRole: user.role || 'user',
+                                  newRole: e.target.value,
                                 })
                               }
-                              title="Nâng lên Quản trị viên"
-                              className="p-2 rounded-xl border transition-all duration-300 active:scale-95 inline-flex items-center justify-center bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20 hover:border-blue-500/40 text-blue-500"
+                              className="bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-gray-700 focus:outline-none focus:border-brand cursor-pointer hover:bg-gray-100 transition-colors"
                             >
-                              <ShieldCheck size={14} /> Nâng quyền
-                            </button>
-                          ) : (
-                            <span className="text-[11px] text-gray-400 font-medium italic">Không có thao tác</span>
+                              <option value="user">👤 Khách hàng</option>
+                              <option value="staff">🎟️ Nhân viên vé</option>
+                              <option value="admin">👑 Quản trị viên</option>
+                            </select>
                           )}
 
-                          {/* Lock / Unlock Button (Soft Delete) */}
-                          {user._id === currentUserId ? (
+                          {/* Lock / Unlock Button */}
+                          {isSelf ? (
                             <span
                               title="Tài khoản của bạn (Không thể tự khóa)"
-                              className="p-2 bg-gray-100 border border-gray-200 text-gray-300 rounded-xl cursor-not-allowed inline-flex items-center justify-center opacity-40"
-                            >
-                              <Lock size={14} />
-                            </span>
-                          ) : user.role === 'admin' ? (
-                            <span
-                              title="Không thể khóa Quản trị viên"
                               className="p-2 bg-gray-100 border border-gray-200 text-gray-300 rounded-xl cursor-not-allowed inline-flex items-center justify-center opacity-40"
                             >
                               <Lock size={14} />
@@ -360,7 +379,7 @@ export const UserManager = () => {
                             <button
                               onClick={() => setConfirmLock({ id: user._id, username: user.username, currentStatus: 'locked' })}
                               title="Mở khóa tài khoản"
-                              className="p-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-600 rounded-xl transition-all duration-300 active:scale-95 inline-flex items-center justify-center"
+                              className="p-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-600 rounded-xl transition-all duration-300 active:scale-95 inline-flex items-center justify-center cursor-pointer"
                             >
                               <Unlock size={14} />
                             </button>
@@ -368,7 +387,7 @@ export const UserManager = () => {
                             <button
                               onClick={() => setConfirmLock({ id: user._id, username: user.username, currentStatus: 'active' })}
                               title="Khóa tài khoản (Vô hiệu hóa)"
-                              className="p-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 rounded-xl transition-all duration-300 active:scale-95 inline-flex items-center justify-center"
+                              className="p-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 rounded-xl transition-all duration-300 active:scale-95 inline-flex items-center justify-center cursor-pointer"
                             >
                               <Lock size={14} />
                             </button>
@@ -407,20 +426,20 @@ export const UserManager = () => {
           description={
             confirmLock.currentStatus === 'locked' ? (
               <>
-                Bạn có chắc muốn mở khóa tài khoản{' '}
-                <span className="font-mono text-emerald-700 font-bold">@{confirmLock.username}</span>? Người dùng sẽ có thể đăng nhập và đặt vé lại bình thường.
+                Mở khóa tài khoản{' '}
+                <span className="font-mono text-emerald-700 font-bold">@{confirmLock.username}</span>? Trạng thái "active" sẽ được lưu trực tiếp vào CSDL.
               </>
             ) : (
               <>
-                Hành động này sẽ khóa tài khoản{' '}
-                <span className="font-mono text-red-600 font-bold">@{confirmLock.username}</span> (Vô hiệu hóa đăng nhập & đặt vé).
+                Khóa tài khoản{' '}
+                <span className="font-mono text-red-600 font-bold">@{confirmLock.username}</span>? Trạng thái "locked" sẽ được lưu vào CSDL (ngăn đăng nhập & đặt vé).
               </>
             )
           }
           note={
             confirmLock.currentStatus === 'locked'
-              ? 'Tài khoản được mở khóa sẽ khôi phục toàn bộ quyền truy cập hệ thống.'
-              : 'Người dùng sẽ không thể đăng nhập hoặc đặt vé trên ứng dụng. Toàn bộ dữ liệu lịch sử đặt vé được bảo lưu an toàn.'
+              ? 'Tài khoản được mở khóa sẽ khôi phục đầy đủ quyền đăng nhập hệ thống.'
+              : 'Tài khoản bị khóa sẽ không thể truy cập hệ thống. Toàn bộ lịch sử giao dịch được giữ nguyên.'
           }
           onCancel={() => setConfirmLock(null)}
           onConfirm={handleToggleLockUser}
@@ -437,22 +456,28 @@ export const UserManager = () => {
       {/* Confirm Role Change Modal */}
       {confirmRole && (
         <ConfirmModal
-          icon={<ShieldCheck size={24} className="text-amber-400" />}
+          icon={<ShieldCheck size={24} className="text-amber-500" />}
           iconBg="bg-amber-500/10 border-amber-500/20"
-          title="Xác nhận nâng quyền?"
+          title="Xác nhận thay đổi phân quyền?"
           description={
             <>
-              Bạn muốn nâng quyền{' '}
-              <span className="font-mono text-brand font-bold">@{confirmRole.username}</span> lên{' '}
-              <span className="font-bold text-amber-400">Quản trị viên</span>?
+              Bạn có chắc chắn muốn thay đổi phân quyền của{' '}
+              <span className="font-mono text-brand font-bold">@{confirmRole.username}</span> sang{' '}
+              <span className="font-bold text-amber-600">
+                {confirmRole.newRole === 'admin'
+                  ? 'Quản trị viên (Admin)'
+                  : confirmRole.newRole === 'staff'
+                  ? 'Nhân viên quản lý vé (Staff)'
+                  : 'Khách hàng (User)'}
+              </span>?
             </>
           }
-          note="Quản trị viên có toàn quyền trên hệ thống. Hãy cân nhắc kỹ trước khi xác nhận."
+          note="Trạng thái phân quyền mới sẽ được lưu trực tiếp vào cơ sở dữ liệu MongoDB."
           onCancel={() => setConfirmRole(null)}
           onConfirm={handleUpdateRole}
           loading={actionLoading}
-          confirmLabel="Xác nhận nâng quyền"
-          confirmClass="bg-amber-500 hover:bg-amber-600 shadow-[0_4px_14px_rgba(245,158,11,0.3)]"
+          confirmLabel="Lưu phân quyền mới"
+          confirmClass="bg-brand hover:bg-brand/90 shadow-[0_4px_14px_rgba(229,9,20,0.3)]"
         />
       )}
     </div>
@@ -480,14 +505,14 @@ const ConfirmModal = ({ icon, iconBg, title, description, note, onCancel, onConf
         <button
           disabled={loading}
           onClick={onCancel}
-          className="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-700 bg-transparent hover:bg-gray-100 rounded-xl transition-colors"
+          className="px-4 py-2 text-xs font-bold text-gray-500 hover:text-gray-700 bg-transparent hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
         >
           Hủy bỏ
         </button>
         <button
           disabled={loading}
           onClick={onConfirm}
-          className={`px-4 py-2 text-xs font-bold text-white rounded-xl flex items-center gap-1.5 transition-all disabled:opacity-50 ${
+          className={`px-4 py-2 text-xs font-bold text-white rounded-xl flex items-center gap-1.5 transition-all disabled:opacity-50 cursor-pointer ${
             confirmClass || 'bg-brand hover:bg-brand-hover shadow-[0_4px_14px_rgba(229,9,20,0.3)]'
           }`}
         >

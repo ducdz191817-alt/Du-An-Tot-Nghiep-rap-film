@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Trash2, AlertCircle, Calendar, Edit2, Loader2, Zap, Clock, CheckCircle2, X } from 'lucide-react';
 import movieService from '../../services/movie.service';
 import adminService from '../../services/admin.service';
+import useAuth from '../../hooks/useAuth';
 import bookingService from '../../services/booking.service';
 import Input from '../common/Input';
 import Button from '../common/Button';
@@ -12,6 +13,9 @@ const DEFAULT_TIME_SLOTS = ['08:00', '10:30', '13:00', '15:30', '18:00', '20:30'
 const DEFAULT_PRICES = { '2D': 80000, '3D': 90000, 'IMAX': 180000, 'GOLDCLASS': 300000 };
 
 export const ShowtimeManager = () => {
+  const { isAdmin, isStaff } = useAuth();
+  const isStaffOnly = isStaff && !isAdmin;
+
   const [theaters, setTheaters] = useState([]);
   const [movies, setMovies] = useState([]);
   const [rooms, setRooms] = useState([]);
@@ -834,9 +838,13 @@ export const ShowtimeManager = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-200 pb-4 gap-4">
         <div>
-          <h3 className="text-lg font-black text-gray-800">Lịch Chiếu Phim</h3>
+          <h3 className="text-lg font-black text-gray-800">
+            {isStaffOnly ? 'Xem Lịch Chiếu Phim' : 'Lịch Chiếu Phim'}
+          </h3>
           <p className="text-xs text-gray-500 mt-1">
-            Cấu hình thời gian chiếu phim, sức chứa phòng và giá vé cơ bản.
+            {isStaffOnly
+              ? 'Tra cứu khung giờ chiếu, phòng chiếu và định dạng suất chiếu để tư vấn khách hàng.'
+              : 'Cấu hình thời gian chiếu phim, sức chứa phòng và giá vé cơ bản.'}
           </p>
         </div>
 
@@ -851,23 +859,27 @@ export const ShowtimeManager = () => {
             ))}
           </select>
 
-          {/* Nút Tạo Tự Động */}
-          <button
-            onClick={handleOpenAutoGenerate}
-            className="flex items-center gap-1.5 py-2 px-4 text-sm font-bold rounded-xl border-2 border-amber-400 text-amber-600 bg-amber-50 hover:bg-amber-100 transition-all"
-          >
-            <Zap size={15} /> Tự Động
-          </button>
+          {!isStaffOnly && (
+            <>
+              {/* Nút Tạo Tự Động */}
+              <button
+                onClick={handleOpenAutoGenerate}
+                className="flex items-center gap-1.5 py-2 px-4 text-sm font-bold rounded-xl border-2 border-amber-400 text-amber-600 bg-amber-50 hover:bg-amber-100 transition-all cursor-pointer"
+              >
+                <Zap size={15} /> Tự Động
+              </button>
 
-          {/* Nút Tạo Thủ Công */}
-          <Button
-            onClick={handleOpenAdd}
-            variant="primary"
-            className="py-2 px-4 text-sm"
-            icon={<Plus size={16} />}
-          >
-            Tạo Thủ Công
-          </Button>
+              {/* Nút Tạo Thủ Công */}
+              <Button
+                onClick={handleOpenAdd}
+                variant="primary"
+                className="py-2 px-4 text-sm cursor-pointer"
+                icon={<Plus size={16} />}
+              >
+                Tạo Thủ Công
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -1150,9 +1162,10 @@ export const ShowtimeManager = () => {
                                       return (
                                         <div key={st._id} className="relative group">
                                           <button
-                                            onClick={() => handleOpenEditShowtime(st)}
-                                            className={`px-3.5 py-1.5 rounded-lg border flex flex-col items-center justify-center transition-all min-w-[85px] shadow-sm ${pillBg}`}
-                                            title={`Sửa suất chiếu: ${startFmt} - ${endFmt} | Giá: ${st.ticketPrice.toLocaleString()} VNĐ`}
+                                            onClick={() => !isStaffOnly && handleOpenEditShowtime(st)}
+                                            disabled={isStaffOnly}
+                                            className={`px-3.5 py-1.5 rounded-lg border flex flex-col items-center justify-center transition-all min-w-[85px] shadow-sm ${pillBg} ${isStaffOnly ? 'cursor-default' : 'cursor-pointer'}`}
+                                            title={isStaffOnly ? `Suất chiếu: ${startFmt} - ${endFmt} | Giá: ${st.ticketPrice.toLocaleString()} VNĐ` : `Sửa suất chiếu: ${startFmt} - ${endFmt} | Giá: ${st.ticketPrice.toLocaleString()} VNĐ`}
                                           >
                                             <span className="text-xs font-black tracking-tight whitespace-nowrap">
                                               {startFmt}{endFmt ? ` - ${endFmt}` : ''}
@@ -1160,17 +1173,19 @@ export const ShowtimeManager = () => {
                                             <span className="text-[9px] font-bold uppercase opacity-80">{st.format}</span>
                                           </button>
                                           
-                                          {/* Nút Xóa (Dấu X) hiện khi hover */}
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation(); // Ngăn mở modal edit
-                                              handleDeleteShowtime(st._id);
-                                            }}
-                                            className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
-                                            title="Xóa suất chiếu này"
-                                          >
-                                            <X size={10} strokeWidth={3} />
-                                          </button>
+                                          {/* Nút Xóa (Dấu X) hiện khi hover (chỉ với Admin) */}
+                                          {!isStaffOnly && (
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation(); // Ngăn mở modal edit
+                                                handleDeleteShowtime(st._id);
+                                              }}
+                                              className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10 cursor-pointer"
+                                              title="Xóa suất chiếu này"
+                                            >
+                                              <X size={10} strokeWidth={3} />
+                                            </button>
+                                          )}
                                         </div>
                                       );
                                     })}

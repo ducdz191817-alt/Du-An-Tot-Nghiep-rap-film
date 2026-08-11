@@ -1288,14 +1288,14 @@ const listUsers = async (req, res, next) => {
   }
 };
 
-// CHỨC NĂNG: Nâng quyền người dùng lên admin (KHÔNG cho phép hạ quyền admin)
+// CHỨC NĂNG: Phân quyền tài khoản (user, staff, admin)
 const updateUserRole = async (req, res, next) => {
   try {
     const { role } = req.body;
 
-    if (!['user', 'admin'].includes(role)) {
+    if (!['user', 'staff', 'admin'].includes(role)) {
       res.status(400);
-      throw new Error('Role không hợp lệ. Chỉ chấp nhận: user, admin');
+      throw new Error('Role không hợp lệ. Chỉ chấp nhận: user, staff, admin');
     }
 
     // Không cho phép tự thay đổi quyền của chính mình
@@ -1311,16 +1311,20 @@ const updateUserRole = async (req, res, next) => {
       throw new Error('Không tìm thấy người dùng');
     }
 
-    // Không cho phép hạ quyền admin xuống thành người dùng thường
-    if (targetUser.role === 'admin' && role === 'user') {
-      res.status(400);
-      throw new Error('Không thể hạ quyền Quản trị viên. Hành động này không được phép.');
-    }
-
     targetUser.role = role;
     await targetUser.save();
 
-    res.json({ success: true, data: targetUser });
+    const roleNameMap = {
+      admin: 'Quản trị viên',
+      staff: 'Nhân viên quản lý vé',
+      user: 'Người dùng',
+    };
+
+    res.json({
+      success: true,
+      message: `Đã cập nhật vai trò của "${targetUser.username}" thành ${roleNameMap[role] || role}!`,
+      data: targetUser,
+    });
   } catch (error) {
     next(error);
   }
@@ -1339,12 +1343,6 @@ const toggleUserStatus = async (req, res, next) => {
     if (!user) {
       res.status(404);
       throw new Error('Không tìm thấy người dùng');
-    }
-
-    // Không cho phép khóa tài khoản Admin khác
-    if (user.role === 'admin') {
-      res.status(400);
-      throw new Error('Không thể khóa tài khoản Quản trị viên');
     }
 
     // Chuyển đổi trạng thái: active <-> locked

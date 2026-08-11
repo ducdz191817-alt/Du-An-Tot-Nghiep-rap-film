@@ -7,12 +7,16 @@ import {
   Filter, Smartphone, Trash2, Camera, Mail, SendHorizontal, Loader2
 } from 'lucide-react';
 import adminService from '../../services/admin.service';
+import useAuth from '../../hooks/useAuth';
 import Loading from '../common/Loading';
 import PrintTicketModal from '../Booking/PrintTicketModal';
 
 const fmt = (val) => (val || 0).toLocaleString('vi-VN') + 'đ';
 
 export const BookingManager = () => {
+  const { isAdmin, isStaff } = useAuth();
+  const isStaffOnly = isStaff && !isAdmin;
+
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -314,14 +318,16 @@ export const BookingManager = () => {
                 <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
               </button>
 
-              <button
-                id="btn-bulk-email"
-                onClick={() => { setBulkEmailResult(null); setBulkEmailForm({ showtimeId: uniqueShowtimes[0]?.id || '', customMessage: '', subject: '' }); setIsBulkEmailOpen(true); }}
-                className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all active:scale-95"
-                title="Gửi email hàng loạt"
-              >
-                <Mail size={13} /> Gửi Email Hàng Loạt
-              </button>
+              {!isStaffOnly && (
+                <button
+                  id="btn-bulk-email"
+                  onClick={() => { setBulkEmailResult(null); setBulkEmailForm({ showtimeId: uniqueShowtimes[0]?.id || '', customMessage: '', subject: '' }); setIsBulkEmailOpen(true); }}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all active:scale-95"
+                  title="Gửi email hàng loạt"
+                >
+                  <Mail size={13} /> Gửi Email Hàng Loạt
+                </button>
+              )}
             </div>
           </div>
 
@@ -440,19 +446,24 @@ export const BookingManager = () => {
                               >
                                 <Eye size={13} /> Xem
                               </button>
-                              {b.paymentStatus === 'paid' && b.user?.email && (
-                                <button
-                                  id={`btn-send-email-${b._id}`}
-                                  onClick={(e) => handleSendEmail(e, b)}
-                                  disabled={sendingEmailId === b._id}
-                                  className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all active:scale-95 inline-flex items-center gap-1 disabled:opacity-60 disabled:cursor-not-allowed"
-                                  title={`Gửi email xác nhận tới ${b.user.email}`}
-                                >
-                                  {sendingEmailId === b._id
-                                    ? <><Loader2 size={12} className="animate-spin" /> Đang gửi...</>
-                                    : <><Mail size={12} /> Email</>
-                                  }
-                                </button>
+                              {b.paymentStatus === 'paid' && (
+                                b.isCheckedIn ? (
+                                  <span className="px-2.5 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold inline-flex items-center gap-1">
+                                    <CheckCircle2 size={13} /> Đã Check-in
+                                  </span>
+                                ) : (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handlePerformCheckIn(b.ticketCode || b._id);
+                                      setActiveTab('checkin');
+                                    }}
+                                    className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all active:scale-95 inline-flex items-center gap-1 shadow-sm cursor-pointer"
+                                    title="Thực hiện Check-in vé"
+                                  >
+                                    <QrCode size={13} /> Check-in vé
+                                  </button>
+                                )
                               )}
                             </div>
                           </td>
@@ -882,27 +893,33 @@ export const BookingManager = () => {
               <div className="p-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between gap-2">
                 <button
                   onClick={() => handlePrintTicket(b)}
-                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <Printer size={14} /> In vé
                 </button>
-                <button
-                  onClick={() => {
-                    handlePerformCheckIn(b.ticketCode || b._id);
-                    setActiveTab('checkin');
-                  }}
-                  disabled={b.isCheckedIn}
-                  className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
-                >
-                  <QrCode size={14} /> Check-in vé
-                </button>
-                <button
-                  onClick={() => handleDeleteBooking(b._id)}
-                  className="py-2.5 px-3 bg-gray-200 hover:bg-red-50 hover:text-red-600 text-gray-700 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1"
-                  title="Hủy vé"
-                >
-                  <Trash2 size={14} />
-                </button>
+                {b.paymentStatus === 'paid' && b.user?.email && (
+                  <button
+                    onClick={(e) => handleSendEmail(e, b)}
+                    disabled={sendingEmailId === b._id}
+                    className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                    title={`Gửi email xác nhận tới ${b.user.email}`}
+                  >
+                    {sendingEmailId === b._id ? (
+                      <><Loader2 size={14} className="animate-spin" /> Đang gửi...</>
+                    ) : (
+                      <><Mail size={14} /> Gửi Email</>
+                    )}
+                  </button>
+                )}
+                {!isStaffOnly && (
+                  <button
+                    onClick={() => handleDeleteBooking(b._id)}
+                    className="py-2.5 px-3 bg-gray-200 hover:bg-red-50 hover:text-red-600 text-gray-700 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer"
+                    title="Hủy vé"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
               </div>
             </div>
           </div>

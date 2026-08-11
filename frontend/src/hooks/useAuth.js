@@ -23,6 +23,8 @@ export const useAuth = () => {
 
   const isAuthenticated = !!user;
   const isAdmin = user?.role === 'admin';
+  const isStaff = user?.role === 'staff';
+  const isStaffOrAdmin = user?.role === 'admin' || user?.role === 'staff';
 
   return {
     user,
@@ -31,6 +33,8 @@ export const useAuth = () => {
     success,
     isAuthenticated,
     isAdmin,
+    isStaff,
+    isStaffOrAdmin,
     login,
     register,
     logout,
