@@ -84,7 +84,20 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
   const handleLogout = () => { logout(); navigate('/login'); };
   const handleNav    = (key) => { setActiveTab(key); setSidebarOpen(false); };
 
-  const currentLabel = NAV_ITEMS.flatMap(g => g.items).find(i => i.key === activeTab)?.label || 'Admin';
+  const isStaffOnly = user?.role === 'staff';
+  const navGroups = isStaffOnly
+    ? [
+        {
+          group: 'Nhiệm vụ Nhân viên vé',
+          items: [
+            { key: 'bookings', label: 'Quản lý & Soát vé', icon: Ticket },
+            { key: 'showtimes', label: 'Xem Lịch chiếu', icon: Calendar },
+          ],
+        },
+      ]
+    : NAV_ITEMS;
+
+  const currentLabel = navGroups.flatMap(g => g.items).find(i => i.key === activeTab)?.label || 'Quản lý';
 
   return (
     <div style={{ display:'flex', height:'100vh', overflow:'hidden', fontFamily:'Be Vietnam Pro, Plus Jakarta Sans, Inter, sans-serif' }} className="admin-layout bg-[#faf7f2] dark:bg-[#0b0f19] text-gray-900 dark:text-gray-100">
@@ -124,9 +137,9 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
           <div style={{ position:'relative', flexShrink: 0 }}>
             <div style={{
               width: 36, height: 36, borderRadius: 10,
-              background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
+              background: user?.role === 'staff' ? 'linear-gradient(135deg, #a855f7, #ec4899)' : 'linear-gradient(135deg, #7c3aed, #a855f7)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 4px 16px rgba(124,58,237,0.4)',
+              boxShadow: user?.role === 'staff' ? '0 4px 16px rgba(168,85,247,0.4)' : '0 4px 16px rgba(124,58,237,0.4)',
             }}>
               <Clapperboard size={18} color="white" />
             </div>
@@ -138,8 +151,12 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
           </div>
           {!collapsed && (
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 900, color: 'white', fontSize: 14, letterSpacing: '-0.02em' }}>CineAdmin</div>
-              <div style={{ fontSize: 9, color: '#a78bfa', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase' }}>Management</div>
+              <div style={{ fontWeight: 900, color: 'white', fontSize: 14, letterSpacing: '-0.02em' }}>
+                {user?.role === 'staff' ? 'Staff Portal' : 'CineAdmin'}
+              </div>
+              <div style={{ fontSize: 9, color: '#a78bfa', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+                {user?.role === 'staff' ? 'Quản lý vé' : 'Management'}
+              </div>
             </div>
           )}
           {/* Collapse toggle */}
@@ -159,7 +176,7 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
 
         {/* Nav */}
         <nav style={{ flex: 1, overflowY: 'auto', padding: '16px 0' }}>
-          {NAV_ITEMS.map(group => (
+          {navGroups.map(group => (
             <div key={group.group} style={{ marginBottom: 8 }}>
               {!collapsed ? (
                 <p style={{
@@ -477,6 +494,18 @@ const AdminLayout = ({ activeTab, setActiveTab, children }) => {
                 <div style={{ padding: '12px 16px', borderBottom: '1px solid #e5e0d5' }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a2e' }}>{user?.username}</div>
                   <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</div>
+                  <div style={{ marginTop: 6 }}>
+                    <span style={{
+                      display: 'inline-block',
+                      fontSize: 9, fontWeight: 900, textTransform: 'uppercase',
+                      padding: '2px 8px', borderRadius: 6,
+                      background: user?.role === 'staff' ? 'rgba(168,85,247,0.1)' : 'rgba(245,158,11,0.1)',
+                      color: user?.role === 'staff' ? '#9333ea' : '#d97706',
+                      border: user?.role === 'staff' ? '1px solid rgba(168,85,247,0.2)' : '1px solid rgba(245,158,11,0.2)',
+                    }}>
+                      {user?.role === 'staff' ? '🎟️ Nhân viên vé' : '👑 Quản trị viên'}
+                    </span>
+                  </div>
                 </div>
                 <div style={{ padding: 6 }}>
                   <button

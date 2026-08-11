@@ -48,4 +48,13 @@ const admin = (req, res, next) => {
   }
 };
 
-module.exports = { protect, admin };
+// Staff or Admin middleware - require staff or admin role
+const staffOrAdmin = (req, res, next) => {
+  if (req.user && (req.user.role === 'admin' || req.user.role === 'staff')) {
+    next();
+  } else {
+    res.status(403).json({ success: false, message: 'Không có quyền truy cập dành cho Nhân viên hoặc Quản trị viên' });
+  }
+};
+
+module.exports = { protect, admin, staffOrAdmin };

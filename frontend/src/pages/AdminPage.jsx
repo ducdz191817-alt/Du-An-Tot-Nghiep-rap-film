@@ -13,20 +13,21 @@ import UserManager from '../components/Admin/UserManager';
 import PricingManager from '../components/Admin/PricingManager';
 import SeatPriceManager from '../components/Admin/SeatPriceManager';
 import RoomTypeManager from '../components/Admin/RoomTypeManager';
+import CouponManager from '../components/Admin/CouponManager';
 
 const AdminPage = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, isAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const { isAuthenticated, isAdmin, isStaff } = useAuth();
+  const [activeTab, setActiveTab] = useState(() => (isStaff && !isAdmin ? 'bookings' : 'dashboard'));
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login?redirect=' + encodeURIComponent('/admin'));
-    } else if (!isAdmin) {
-      alert('Từ chối truy cập: Bạn không có đặc quyền quản trị.');
+    } else if (!isAdmin && !isStaff) {
+      alert('Từ chối truy cập: Bạn không có đặc quyền truy cập trang quản lý.');
       navigate('/');
     }
-  }, [isAuthenticated, isAdmin, navigate]);
+  }, [isAuthenticated, isAdmin, isStaff, navigate]);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -42,11 +43,11 @@ const AdminPage = () => {
       case 'pricing':     return <PricingManager />;
       case 'revenue':     return <RevenueReport />;
       case 'users':       return <UserManager />;
-      default:            return <Dashboard />;
+      default:            return isStaff && !isAdmin ? <BookingManager /> : <Dashboard />;
     }
   };
 
-  if (!isAuthenticated || !isAdmin) return null;
+  if (!isAuthenticated || (!isAdmin && !isStaff)) return null;
 
   return (
     <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab}>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Film, User, LogOut, LayoutDashboard, History, Bell, X, Hourglass, CreditCard, Sun, Moon } from 'lucide-react';
+import { useDispatch } from 'react-redux';
+import { getProfile } from '../../store/authSlice';
 import useAuth from '../../hooks/useAuth';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -43,7 +45,7 @@ const USFlag = () => (
 );
 
 export const Header = () => {
-  const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, isStaff, logout } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
@@ -62,6 +64,15 @@ export const Header = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const dispatch = useDispatch();
+
+  // Auto sync user profile & role from server
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(getProfile());
+    }
+  }, [isAuthenticated, dispatch]);
 
   // Load pending bookings of the current user
   useEffect(() => {
@@ -130,13 +141,13 @@ export const Header = () => {
         <div className="flex items-center space-x-4">
           {isAuthenticated ? (
           <div className="flex items-center space-x-4">
-              {isAdmin && (
+              {(isAdmin || isStaff) && (
                 <Link
                   to="/admin"
-                  className="hidden sm:flex items-center space-x-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg font-bold transition-all duration-300"
+                  className="hidden sm:flex items-center space-x-1.5 text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800 px-3 py-1.5 rounded-lg font-bold transition-all duration-300"
                 >
                   <LayoutDashboard size={14} />
-                  <span>{t('nav.admin')}</span>
+                  <span>{isAdmin ? t('nav.admin') : 'Quản lý vé'}</span>
                 </Link>
               )}
 

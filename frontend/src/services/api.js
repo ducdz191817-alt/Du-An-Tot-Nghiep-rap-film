@@ -34,8 +34,8 @@ api.interceptors.response.use(
         ? error.response.data.message
         : error.message;
 
-    // Auto-logout nếu token hết hạn hoặc không có quyền admin
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+    // Auto-logout chỉ khi token không hợp lệ hoặc đã hết hạn (401 Unauthorized)
+    if (error.response && error.response.status === 401) {
       localStorage.removeItem('userInfo');
       // Chỉ redirect nếu không đang ở trang login
       if (!window.location.pathname.includes('/login')) {
