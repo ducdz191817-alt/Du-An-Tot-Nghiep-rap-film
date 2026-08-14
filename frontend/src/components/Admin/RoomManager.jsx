@@ -432,6 +432,7 @@ export const RoomManager = () => {
           loadData();
         }}
         room={seatMapRoom}
+        roomTypes={roomTypes}
       />
     </div>
   );

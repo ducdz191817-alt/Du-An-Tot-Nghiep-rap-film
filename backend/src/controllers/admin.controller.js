@@ -1225,7 +1225,30 @@ const saveRoomLayout = async (req, res, next) => {
         .map((s) => String(s._id))
     );
 
-    // 2. Xác định các ghế bị xóa khỏi ma trận
+    // 2. Kiểm tra các loại ghế gửi lên có hợp lệ với loại phòng (allowedSeatTypes) không
+    let allowedSeatTypes = ['standard', 'vip', 'couple'];
+    let roomTypeDoc = null;
+    if (room.roomTypeRef) {
+      roomTypeDoc = await RoomType.findById(room.roomTypeRef);
+    } else if (room.type) {
+      roomTypeDoc = await RoomType.findOne({ code: room.type });
+    }
+    if (roomTypeDoc && roomTypeDoc.allowedSeatTypes && roomTypeDoc.allowedSeatTypes.length > 0) {
+      allowedSeatTypes = roomTypeDoc.allowedSeatTypes;
+    }
+
+    for (const s of incomingSeats) {
+      if (s.type && !allowedSeatTypes.includes(s.type)) {
+        res.status(400);
+        throw new Error(
+          `🚫 Loại phòng "${roomTypeDoc?.name || room.type}" không cho phép loại ghế "${
+            s.type === 'standard' ? 'Thường' : s.type === 'vip' ? 'VIP' : 'Đôi'
+          }"! Chỉ được phép: ${allowedSeatTypes.map((t) => (t === 'standard' ? 'Thường' : t === 'vip' ? 'VIP' : 'Đôi')).join(', ')}.`
+        );
+      }
+    }
+
+    // 3. Xác định các ghế bị xóa khỏi ma trận
     const toDeleteIds = existingSeats
       .filter((s) => !incomingIds.has(s._id.toString()))
       .map((s) => s._id);
@@ -1234,7 +1257,7 @@ const saveRoomLayout = async (req, res, next) => {
       await Seat.deleteMany({ _id: { $in: toDeleteIds } });
     }
 
-    // 3. Phân loại ghế cần update và ghế mới cần insert
+    // 4. Phân loại ghế cần update và ghế mới cần insert
     const bulkOps = [];
     const newSeatsToInsert = [];
 
