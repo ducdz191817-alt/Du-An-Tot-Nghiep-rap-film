@@ -517,6 +517,7 @@ const createShowtime = async (req, res, next) => {
       format,
       roomType: room.roomType || 'standard',
       config: pricingConfig,
+      movieReleaseDate: movie.releaseDate,
     });
 
     // Lưu suất chiếu vào DB (Giá vé = autoPrice, phớt lờ input tay)
@@ -1565,6 +1566,7 @@ const autoGenerateShowtimes = async (req, res, next) => {
             format,
             roomType: roomTypeMap[roomId] || 'standard',
             config: pricingConfig,
+            movieReleaseDate: movie.releaseDate,
           });
 
           // Tạo suất chiếu mới

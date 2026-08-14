@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { DollarSign, Landmark, CheckCircle2, Clock, Layers, Filter } from 'lucide-react';
+import { DollarSign, Landmark, CheckCircle2, Clock, Layers, Filter, Search } from 'lucide-react';
 import adminService from '../../services/admin.service';
 import Loading from '../common/Loading';
 
@@ -9,6 +9,7 @@ export const RevenueReport = () => {
   const [loading, setLoading] = useState(true);
   const [showAllMovies, setShowAllMovies] = useState(false);
   const [statusFilter, setStatusFilter] = useState('ended'); // 'ended' (mặc định), 'all', 'upcoming'
+  const [movieSearchTerm, setMovieSearchTerm] = useState(''); // State tìm kiếm phim
 
   useEffect(() => {
     const fetchRevenue = async () => {
@@ -29,8 +30,17 @@ export const RevenueReport = () => {
 
   const summary = report?.data?.summary || report?.summary || {};
   const monthlyData = report?.data?.monthlySales || report?.monthlySales || [];
-  const movieData = report?.data?.movieSales || report?.movieSales || [];
+  const rawMovieData = report?.data?.movieSales || report?.movieSales || [];
   const theaterData = report?.data?.theaterSales || report?.theaterSales || [];
+
+  // [GHI CHÚ BẢO VỆ ĐỒ ÁN] - LỌC DOANH THU THEO TÊN PHIM
+  // Khi người dùng gõ vào ô tìm kiếm, state movieSearchTerm sẽ thay đổi.
+  // Hàm filter() bên dưới sẽ lặp qua toàn bộ mảng rawMovieData và chỉ giữ lại 
+  // những phim có tên (item.name) chứa từ khoá (movieSearchTerm).
+  // Dùng toLowerCase() để việc tìm kiếm không phân biệt chữ hoa, chữ thường.
+  const movieData = rawMovieData.filter(item => 
+    item.name.toLowerCase().includes(movieSearchTerm.toLowerCase())
+  );
 
   const fmt = (val) => (val || 0).toLocaleString('vi-VN') + ' ₫';
 
@@ -172,16 +182,30 @@ export const RevenueReport = () => {
         {/* 3. Top Performing Movies (Tỷ trọng doanh thu theo phim - Giao diện Light Mode) */}
         {/* Phần giao diện đồng bộ với tông màu sáng của màn hình */}
         <div className="bg-white border border-gray-200 p-6 rounded-3xl shadow-sm lg:col-span-2">
-          <div className="flex justify-between items-center mb-6">
-            <h4 className="font-bold text-gray-800 text-lg">Top Performing Movies</h4>
-            {movieData.length > 3 && (
-              <button 
-                onClick={() => setShowAllMovies(!showAllMovies)}
-                className="text-blue-600 text-xs hover:text-blue-700 font-bold transition-colors"
-              >
-                {showAllMovies ? 'Show Less' : 'View All'}
-              </button>
-            )}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <h4 className="font-bold text-gray-800 text-lg flex-shrink-0">Doanh thu & Số vé mỗi phim</h4>
+            
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+              <div className="relative w-full sm:w-64">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Lọc doanh thu theo tên phim..."
+                  value={movieSearchTerm}
+                  onChange={(e) => setMovieSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all"
+                />
+              </div>
+
+              {movieData.length > 3 && (
+                <button 
+                  onClick={() => setShowAllMovies(!showAllMovies)}
+                  className="text-blue-600 text-xs hover:text-blue-700 font-bold transition-colors whitespace-nowrap"
+                >
+                  {showAllMovies ? 'Thu gọn' : 'Xem tất cả'}
+                </button>
+              )}
+            </div>
           </div>
           
           <div className="w-full overflow-x-auto">
@@ -189,22 +213,24 @@ export const RevenueReport = () => {
               {/* Tiêu đề các cột của bảng */}
               <thead>
                 <tr className="border-b border-gray-100">
-                  <th className="pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider w-2/5">Movie</th>
-                  <th className="pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tickets</th>
-                  <th className="pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Occupancy</th>
-                  <th className="pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Revenue</th>
+                  <th className="pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider w-2/5">Tên phim</th>
+                  <th className="pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Số vé (Tickets)</th>
+                  <th className="pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tỷ lệ lấp đầy</th>
+                  <th className="pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Tổng Doanh thu</th>
                 </tr>
               </thead>
               <tbody>
                 {movieData.length === 0 ? (
                   <tr>
-                    <td colSpan="4" className="py-8 text-center text-gray-500 italic text-sm">Chưa có dữ liệu phim.</td>
+                    <td colSpan="4" className="py-8 text-center text-gray-500 italic text-sm">
+                      {movieSearchTerm ? `Không tìm thấy phim nào chứa từ khóa "${movieSearchTerm}"` : 'Chưa có dữ liệu phim.'}
+                    </td>
                   </tr>
                 ) : (
                   // Sắp xếp phim theo doanh thu giảm dần (b.value - a.value) và giới hạn số lượng hiển thị
                   movieData
                     .sort((a, b) => b.value - a.value)
-                    .slice(0, showAllMovies ? movieData.length : 3)
+                    .slice(0, showAllMovies || movieSearchTerm ? movieData.length : 3)
                     .map((item) => (
                     <tr key={item.name} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors group">
                       
