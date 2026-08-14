@@ -68,7 +68,23 @@ export const RoomManager = () => {
   }, []);
 
   const handleThChange = (e) => setThForm({ ...thForm, [e.target.name]: e.target.value });
-  const handleRmChange = (e) => setRmForm({ ...rmForm, [e.target.name]: e.target.value });
+  const handleRmChange = (e) => {
+    const { name, value } = e.target;
+    if (name === 'type') {
+      // Khi đổi loại phòng, reset các hàng ghế không được phép về 0
+      const selectedRt = roomTypes.find((r) => r.code === value);
+      const allowed = selectedRt?.allowedSeatTypes || ['standard', 'vip', 'couple'];
+      setRmForm((prev) => ({
+        ...prev,
+        type: value,
+        standardRows: allowed.includes('standard') ? prev.standardRows : 0,
+        vipRows: allowed.includes('vip') ? prev.vipRows : 0,
+        coupleRows: allowed.includes('couple') ? prev.coupleRows : 0,
+      }));
+    } else {
+      setRmForm({ ...rmForm, [name]: value });
+    }
+  };
 
   // Open Handlers
   const handleOpenAddTheater = () => {
@@ -347,15 +363,16 @@ export const RoomManager = () => {
           {/* Seat price preview for selected room type */}
           {(() => {
             const selectedRt = roomTypes.find((r) => r.code === rmForm.type);
+            const allowed = selectedRt?.allowedSeatTypes || ['standard', 'vip', 'couple'];
             if (selectedRt?.seatPrices) {
               const fmtVnd = (n) => new Intl.NumberFormat('vi-VN').format(n) + '₫';
               return (
                 <div className="bg-brand/5 border border-brand/20 rounded-xl p-3 text-xs flex items-center justify-between text-gray-700 dark:text-gray-300">
                   <span className="font-bold text-brand">Giá ghế theo loại phòng:</span>
                   <div className="flex items-center gap-3 font-semibold text-[11px]">
-                    <span>Thường: <strong className="text-gray-900 dark:text-white">{fmtVnd(selectedRt.seatPrices.standard)}</strong></span>
-                    <span>VIP: <strong className="text-amber-600 dark:text-amber-400">{fmtVnd(selectedRt.seatPrices.vip)}</strong></span>
-                    <span>Đôi: <strong className="text-pink-600 dark:text-pink-400">{fmtVnd(selectedRt.seatPrices.couple)}</strong></span>
+                    {allowed.includes('standard') && <span>Thường: <strong className="text-gray-900 dark:text-white">{fmtVnd(selectedRt.seatPrices.standard)}</strong></span>}
+                    {allowed.includes('vip') && <span>VIP: <strong className="text-amber-600 dark:text-amber-400">{fmtVnd(selectedRt.seatPrices.vip)}</strong></span>}
+                    {allowed.includes('couple') && <span>Đôi: <strong className="text-pink-600 dark:text-pink-400">{fmtVnd(selectedRt.seatPrices.couple)}</strong></span>}
                   </div>
                 </div>
               );
@@ -366,9 +383,23 @@ export const RoomManager = () => {
           {!editingRoom ? (
             <>
               <div className="grid grid-cols-3 gap-4 border-t border-gray-200 pt-4">
-                <Input name="standardRows" type="number" label="Hàng ghế thường" placeholder="5" value={rmForm.standardRows} onChange={handleRmChange} required />
-                <Input name="vipRows" type="number" label="Hàng ghế VIP" placeholder="3" value={rmForm.vipRows} onChange={handleRmChange} required />
-                <Input name="coupleRows" type="number" label="Hàng ghế đôi" placeholder="1" value={rmForm.coupleRows} onChange={handleRmChange} required />
+                {(() => {
+                  const selectedRt = roomTypes.find((r) => r.code === rmForm.type);
+                  const allowed = selectedRt?.allowedSeatTypes || ['standard', 'vip', 'couple'];
+                  return (
+                    <>
+                      {allowed.includes('standard') && (
+                        <Input name="standardRows" type="number" label="Hàng ghế thường" placeholder="5" value={rmForm.standardRows} onChange={handleRmChange} required />
+                      )}
+                      {allowed.includes('vip') && (
+                        <Input name="vipRows" type="number" label="Hàng ghế VIP" placeholder="3" value={rmForm.vipRows} onChange={handleRmChange} required />
+                      )}
+                      {allowed.includes('couple') && (
+                        <Input name="coupleRows" type="number" label="Hàng ghế đôi" placeholder="1" value={rmForm.coupleRows} onChange={handleRmChange} required />
+                      )}
+                    </>
+                  );
+                })()}
               </div>
 
               <p className="text-[10px] text-gray-500 font-bold bg-gray-50 p-3 rounded-lg border border-gray-200 flex items-center gap-2">
@@ -401,6 +432,7 @@ export const RoomManager = () => {
           loadData();
         }}
         room={seatMapRoom}
+        roomTypes={roomTypes}
       />
     </div>
   );

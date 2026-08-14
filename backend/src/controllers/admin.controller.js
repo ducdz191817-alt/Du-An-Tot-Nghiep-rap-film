@@ -218,6 +218,29 @@ const createRoom = async (req, res, next) => {
       }
     }
 
+    // Kiểm tra loại ghế được phép tạo theo cấu hình loại phòng (allowedSeatTypes)
+    if (roomTypeDoc && roomTypeDoc.allowedSeatTypes && roomTypeDoc.allowedSeatTypes.length > 0) {
+      const allowed = roomTypeDoc.allowedSeatTypes;
+      if (standardRows > 0 && !allowed.includes('standard')) {
+        return res.status(400).json({
+          success: false,
+          message: `🚫 Loại phòng "${roomTypeDoc.name}" không cho phép tạo ghế Thường! Chỉ được phép: ${allowed.map(t => t === 'standard' ? 'Thường' : t === 'vip' ? 'VIP' : 'Đôi').join(', ')}.`,
+        });
+      }
+      if (vipRows > 0 && !allowed.includes('vip')) {
+        return res.status(400).json({
+          success: false,
+          message: `🚫 Loại phòng "${roomTypeDoc.name}" không cho phép tạo ghế VIP! Chỉ được phép: ${allowed.map(t => t === 'standard' ? 'Thường' : t === 'vip' ? 'VIP' : 'Đôi').join(', ')}.`,
+        });
+      }
+      if (coupleRows > 0 && !allowed.includes('couple')) {
+        return res.status(400).json({
+          success: false,
+          message: `🚫 Loại phòng "${roomTypeDoc.name}" không cho phép tạo ghế Đôi! Chỉ được phép: ${allowed.map(t => t === 'standard' ? 'Thường' : t === 'vip' ? 'VIP' : 'Đôi').join(', ')}.`,
+        });
+      }
+    }
+
     // 1. Tạo bản ghi phòng chiếu trong database
     const room = await Room.create({
       name,
@@ -1202,7 +1225,30 @@ const saveRoomLayout = async (req, res, next) => {
         .map((s) => String(s._id))
     );
 
-    // 2. Xác định các ghế bị xóa khỏi ma trận
+    // 2. Kiểm tra các loại ghế gửi lên có hợp lệ với loại phòng (allowedSeatTypes) không
+    let allowedSeatTypes = ['standard', 'vip', 'couple'];
+    let roomTypeDoc = null;
+    if (room.roomTypeRef) {
+      roomTypeDoc = await RoomType.findById(room.roomTypeRef);
+    } else if (room.type) {
+      roomTypeDoc = await RoomType.findOne({ code: room.type });
+    }
+    if (roomTypeDoc && roomTypeDoc.allowedSeatTypes && roomTypeDoc.allowedSeatTypes.length > 0) {
+      allowedSeatTypes = roomTypeDoc.allowedSeatTypes;
+    }
+
+    for (const s of incomingSeats) {
+      if (s.type && !allowedSeatTypes.includes(s.type)) {
+        res.status(400);
+        throw new Error(
+          `🚫 Loại phòng "${roomTypeDoc?.name || room.type}" không cho phép loại ghế "${
+            s.type === 'standard' ? 'Thường' : s.type === 'vip' ? 'VIP' : 'Đôi'
+          }"! Chỉ được phép: ${allowedSeatTypes.map((t) => (t === 'standard' ? 'Thường' : t === 'vip' ? 'VIP' : 'Đôi')).join(', ')}.`
+        );
+      }
+    }
+
+    // 3. Xác định các ghế bị xóa khỏi ma trận
     const toDeleteIds = existingSeats
       .filter((s) => !incomingIds.has(s._id.toString()))
       .map((s) => s._id);
@@ -1211,7 +1257,7 @@ const saveRoomLayout = async (req, res, next) => {
       await Seat.deleteMany({ _id: { $in: toDeleteIds } });
     }
 
-    // 3. Phân loại ghế cần update và ghế mới cần insert
+    // 4. Phân loại ghế cần update và ghế mới cần insert
     const bulkOps = [];
     const newSeatsToInsert = [];
 
@@ -1921,13 +1967,22 @@ const getRoomTypes = async (req, res, next) => {
 
 const createRoomType = async (req, res, next) => {
   try {
-    const { name, code, description, seatPrices, isActive } = req.body;
+    const { name, code, description, seatPrices, allowedSeatTypes, isActive } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ success: false, message: 'Tên loại phòng không được để trống' });
     }
     if (!code || !code.trim()) {
       return res.status(400).json({ success: false, message: 'Mã loại phòng không được để trống' });
+    }
+
+    // Validate allowedSeatTypes: phải có ít nhất 1 loại ghế được phép
+    const validSeatTypes = ['standard', 'vip', 'couple'];
+    const cleanAllowed = Array.isArray(allowedSeatTypes)
+      ? allowedSeatTypes.filter((t) => validSeatTypes.includes(t))
+      : validSeatTypes;
+    if (cleanAllowed.length === 0) {
+      return res.status(400).json({ success: false, message: 'Phải cho phép ít nhất 1 loại ghế trong loại phòng này!' });
     }
 
     const cleanCode = code.trim().toUpperCase();
@@ -1943,10 +1998,11 @@ const createRoomType = async (req, res, next) => {
       name: name.trim(),
       code: cleanCode,
       description: description?.trim() || '',
+      allowedSeatTypes: cleanAllowed,
       seatPrices: {
-        standard: Number(seatPrices?.standard) || 100000,
-        vip: Number(seatPrices?.vip) || 150000,
-        couple: Number(seatPrices?.couple) || 300000,
+        standard: cleanAllowed.includes('standard') ? (Number(seatPrices?.standard) || 100000) : 0,
+        vip: cleanAllowed.includes('vip') ? (Number(seatPrices?.vip) || 150000) : 0,
+        couple: cleanAllowed.includes('couple') ? (Number(seatPrices?.couple) || 300000) : 0,
       },
       isActive: isActive !== undefined ? isActive : true,
     });
@@ -1964,11 +2020,23 @@ const createRoomType = async (req, res, next) => {
 const updateRoomType = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, code, description, seatPrices, isActive } = req.body;
+    const { name, code, description, seatPrices, allowedSeatTypes, isActive } = req.body;
 
     const roomType = await RoomType.findById(id);
     if (!roomType) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy loại phòng chiếu' });
+    }
+
+    // Validate allowedSeatTypes nếu có gửi lên
+    const validSeatTypes = ['standard', 'vip', 'couple'];
+    let cleanAllowed = null;
+    if (allowedSeatTypes !== undefined) {
+      cleanAllowed = Array.isArray(allowedSeatTypes)
+        ? allowedSeatTypes.filter((t) => validSeatTypes.includes(t))
+        : null;
+      if (cleanAllowed && cleanAllowed.length === 0) {
+        return res.status(400).json({ success: false, message: 'Phải cho phép ít nhất 1 loại ghế trong loại phòng này!' });
+      }
     }
 
     // Kiểm tra nếu có thay đổi về bảng giá ghế hoặc mã loại phòng
@@ -2006,10 +2074,14 @@ const updateRoomType = async (req, res, next) => {
 
     if (name) roomType.name = name.trim();
     if (description !== undefined) roomType.description = description.trim();
+    if (cleanAllowed) {
+      roomType.allowedSeatTypes = cleanAllowed;
+    }
+    const finalAllowed = cleanAllowed || roomType.allowedSeatTypes || validSeatTypes;
     if (seatPrices) {
-      if (seatPrices.standard !== undefined) roomType.seatPrices.standard = Number(seatPrices.standard);
-      if (seatPrices.vip !== undefined) roomType.seatPrices.vip = Number(seatPrices.vip);
-      if (seatPrices.couple !== undefined) roomType.seatPrices.couple = Number(seatPrices.couple);
+      roomType.seatPrices.standard = finalAllowed.includes('standard') ? (Number(seatPrices.standard) || roomType.seatPrices.standard) : 0;
+      roomType.seatPrices.vip = finalAllowed.includes('vip') ? (Number(seatPrices.vip) || roomType.seatPrices.vip) : 0;
+      roomType.seatPrices.couple = finalAllowed.includes('couple') ? (Number(seatPrices.couple) || roomType.seatPrices.couple) : 0;
     }
     if (isActive !== undefined) roomType.isActive = isActive;
 

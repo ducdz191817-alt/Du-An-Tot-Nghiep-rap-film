@@ -116,7 +116,7 @@ const SeatButton = ({ seat, isSelected, isEditable, onClick }) => {
 };
 
 // ─── Main Modal (Trình biên tập Sơ đồ ghế Ma trận $M \times N$) ───────────────
-const SeatMapModal = ({ isOpen, onClose, room }) => {
+const SeatMapModal = ({ isOpen, onClose, room, roomTypes = [] }) => {
   const [seats, setSeats] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -127,8 +127,37 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
   const [isEditable, setIsEditable] = useState(true);
   const [lockReason, setLockReason] = useState('');
 
+  // Xác định cấu hình loại phòng và danh sách loại ghế được phép
+  const currentRoomType = useMemo(() => {
+    if (!room) return null;
+    return (
+      (roomTypes || []).find(
+        (rt) =>
+          rt.code === room.type ||
+          rt._id === room.roomTypeRef?._id ||
+          rt._id === room.roomTypeRef
+      ) || null
+    );
+  }, [room, roomTypes]);
+
+  const allowedSeatTypes = useMemo(() => {
+    if (currentRoomType?.allowedSeatTypes && currentRoomType.allowedSeatTypes.length > 0) {
+      return currentRoomType.allowedSeatTypes;
+    }
+    if (room?.type === 'SWEETBOX') return ['couple'];
+    return ['standard', 'vip', 'couple'];
+  }, [currentRoomType, room]);
+
+  const isSweetbox =
+    room?.type === 'SWEETBOX' ||
+    (allowedSeatTypes.length === 1 && allowedSeatTypes.includes('couple'));
+
   // Giá trị trong Edit Panel
-  const [editPanel, setEditPanel] = useState({ type: 'standard', price: 0, isDisabled: false });
+  const [editPanel, setEditPanel] = useState({
+    type: 'standard',
+    price: 0,
+    isDisabled: false,
+  });
 
   // ── Helper lấy key duy nhất cho 1 ghế ──
   const getSeatKey = useCallback((seat) => {
@@ -165,9 +194,14 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
   useEffect(() => {
     if (isOpen) {
       setSelectedKeys(new Set());
+      setEditPanel({
+        type: allowedSeatTypes[0] || 'standard',
+        price: currentRoomType?.seatPrices?.[allowedSeatTypes[0]] || 0,
+        isDisabled: false,
+      });
       loadSeatsAndStatus();
     }
-  }, [isOpen, loadSeatsAndStatus]);
+  }, [isOpen, loadSeatsAndStatus, allowedSeatTypes, currentRoomType]);
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : 'unset';
@@ -250,8 +284,14 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
   const handleBulkChangeType = (newType) => {
     if (selectedKeys.size === 0) return;
 
-    // RÀNG BUỘC NGHIỆP VỤ: Ghế Đôi CHỈ ĐƯỢC PHÉP ở hàng cuối cùng của phòng chiếu
-    if (newType === 'couple') {
+    if (!allowedSeatTypes.includes(newType)) {
+      showToast(`Loại phòng "${currentRoomType?.name || room?.type}" không cho phép loại ghế ${getTypeConfig(newType).label}!`, 'error');
+      return;
+    }
+
+    // RÀNG BUỘC NGHIỆP VỤ: Với phòng thông thường có nhiều loại ghế, ghế Đôi chỉ nên ở hàng cuối
+    // Nhưng với phòng SWEETBOX (toàn bộ là giường/ghế đôi), cho phép tạo ở bất kỳ hàng nào!
+    if (newType === 'couple' && !isSweetbox && allowedSeatTypes.includes('standard')) {
       const lastRowLabel = matrixData.rows[matrixData.rows.length - 1];
       const hasUpperRowSeat = seats.some(
         (s) => selectedKeys.has(getSeatKey(s)) && s.row !== lastRowLabel
@@ -296,8 +336,13 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
       return;
     }
 
-    // RÀNG BUỘC NGHIỆP VỤ: Ghế Đôi CHỈ ĐƯỢC PHÉP ở hàng cuối cùng
-    if (editPanel.type === 'couple') {
+    if (!allowedSeatTypes.includes(editPanel.type)) {
+      showToast(`Loại phòng "${currentRoomType?.name || room?.type}" không cho phép loại ghế ${getTypeConfig(editPanel.type).label}!`, 'error');
+      return;
+    }
+
+    // RÀNG BUỘC NGHIỆP VỤ: Ghế Đôi chỉ giới hạn ở hàng cuối đối với phòng thông thường
+    if (editPanel.type === 'couple' && !isSweetbox && allowedSeatTypes.includes('standard')) {
       const lastRowLabel = matrixData.rows[matrixData.rows.length - 1];
       const hasUpperRowSeat = seats.some(
         (s) => selectedKeys.has(getSeatKey(s)) && s.row !== lastRowLabel
@@ -334,10 +379,25 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
     let defaultType = 'standard';
     let defaultPrice = 0;
 
-    if (isVeryBottom) {
-      // Hàng cuối cùng của phòng chiếu -> Mặc định là GHẾ ĐÔI (Couple)
+    if (isSweetbox || (allowedSeatTypes.length === 1 && allowedSeatTypes.includes('couple'))) {
+      // Hàng ghế cho phòng Sweetbox / Ghế đôi toàn phần
       defaultType = 'couple';
-      defaultPrice = 120000;
+      defaultPrice = currentRoomType?.seatPrices?.couple || 800000;
+
+      const lastRowLabel = matrixData.rows[matrixData.rows.length - 1];
+      const lastRowSeats = matrixData.seatsByRow[lastRowLabel] || [];
+      if (lastRowSeats.length > 0) {
+        refColNumbers = lastRowSeats.map((s) => s.number).sort((a, b) => a - b);
+      } else {
+        const maxCol = Math.max(matrixData.maxColNum, 8);
+        for (let c = 1; c <= maxCol; c += 2) {
+          refColNumbers.push(c);
+        }
+      }
+    } else if (isVeryBottom) {
+      // Hàng cuối cùng của phòng chiếu thông thường -> Ưu tiên Ghế Đôi nếu loại phòng cho phép
+      defaultType = allowedSeatTypes.includes('couple') ? 'couple' : allowedSeatTypes[0] || 'standard';
+      defaultPrice = currentRoomType?.seatPrices?.[defaultType] || (defaultType === 'couple' ? 120000 : 0);
 
       // Lấy danh sách số ghế từ hàng đôi cuối cùng nếu có
       const lastRowLabel = matrixData.rows[matrixData.rows.length - 1];
@@ -354,7 +414,7 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
         }
       }
     } else {
-      // Chèn ở giữa hoặc đầu -> Mặc định là Ghế Thường hoặc VIP
+      // Chèn ở giữa hoặc đầu -> Mặc định là loại ghế đầu tiên được phép
       if (matrixData.rows.length > 0) {
         const refIdx = Math.min(Math.max(0, targetRowIdx - 1), matrixData.rows.length - 1);
         const refLabel = matrixData.rows[refIdx] || matrixData.rows[0];
@@ -362,8 +422,8 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
         refColNumbers = refSeats.map((s) => s.number).sort((a, b) => a - b);
 
         const refType = refSeats[0]?.type || 'standard';
-        defaultType = refType === 'vip' ? 'vip' : 'standard';
-        defaultPrice = defaultType === 'vip' ? 5000 : 0;
+        defaultType = allowedSeatTypes.includes(refType) ? refType : allowedSeatTypes[0] || 'standard';
+        defaultPrice = currentRoomType?.seatPrices?.[defaultType] || 0;
       }
 
       if (refColNumbers.length === 0) {
@@ -400,12 +460,13 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
   // Tạo thêm 1 ghế lẻ trực tiếp tại ô khoảng trống
   const handleEmptySlotClick = (rowLabel, colNum) => {
     if (!isEditable) return;
+    const seatType = allowedSeatTypes.includes(editPanel.type) ? editPanel.type : allowedSeatTypes[0] || 'standard';
     const newSeat = {
       _id: `temp_slot_${rowLabel}_${colNum}_${Date.now()}`,
       row: rowLabel,
       number: colNum,
-      type: editPanel.type || 'standard',
-      price: editPanel.price || 0,
+      type: seatType,
+      price: editPanel.price || currentRoomType?.seatPrices?.[seatType] || 0,
       isDisabled: editPanel.isDisabled || false,
     };
     setSeats((prev) => [...prev, newSeat]);
@@ -562,26 +623,32 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
                       Đang chọn ({selectedKeys.size}):
                     </span>
 
-                    <button
-                      onClick={() => handleBulkChangeType('standard')}
-                      className="px-3 py-1.5 text-xs font-bold rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-700 flex items-center gap-1.5 transition-all"
-                    >
-                      <Square size={12} /> Ghế Thường
-                    </button>
+                    {allowedSeatTypes.includes('standard') && (
+                      <button
+                        onClick={() => handleBulkChangeType('standard')}
+                        className="px-3 py-1.5 text-xs font-bold rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-700 flex items-center gap-1.5 transition-all"
+                      >
+                        <Square size={12} /> Ghế Thường
+                      </button>
+                    )}
 
-                    <button
-                      onClick={() => handleBulkChangeType('vip')}
-                      className="px-3 py-1.5 text-xs font-bold rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 flex items-center gap-1.5 transition-all"
-                    >
-                      <Star size={12} /> Ghế VIP
-                    </button>
+                    {allowedSeatTypes.includes('vip') && (
+                      <button
+                        onClick={() => handleBulkChangeType('vip')}
+                        className="px-3 py-1.5 text-xs font-bold rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 flex items-center gap-1.5 transition-all"
+                      >
+                        <Star size={12} /> Ghế VIP
+                      </button>
+                    )}
 
-                    <button
-                      onClick={() => handleBulkChangeType('couple')}
-                      className="px-3 py-1.5 text-xs font-bold rounded-xl bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 border border-pink-500/40 flex items-center gap-1.5 transition-all"
-                    >
-                      <Heart size={12} /> Ghế Đôi
-                    </button>
+                    {allowedSeatTypes.includes('couple') && (
+                      <button
+                        onClick={() => handleBulkChangeType('couple')}
+                        className="px-3 py-1.5 text-xs font-bold rounded-xl bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 border border-pink-500/40 flex items-center gap-1.5 transition-all"
+                      >
+                        <Heart size={12} /> Ghế Đôi
+                      </button>
+                    )}
 
                     <button
                       onClick={handleBulkToggleDisabled}
@@ -766,7 +833,7 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
               {/* ── Legend Bar & Select All ── */}
               <div className="flex flex-wrap items-center justify-between gap-3 pt-2 text-xs">
                 <div className="flex flex-wrap gap-4 items-center">
-                  {SEAT_TYPES.map((t) => (
+                  {SEAT_TYPES.filter((t) => allowedSeatTypes.includes(t.key) || (stats[t.key] && stats[t.key] > 0)).map((t) => (
                     <div key={t.key} className="flex items-center gap-1.5 font-semibold text-gray-600">
                       <span className={`w-3.5 h-3.5 rounded-sm ${t.dot}`} />
                       {t.label} ({stats[t.key] || 0})
@@ -809,8 +876,8 @@ const SeatMapModal = ({ isOpen, onClose, room }) => {
                   <label className="text-[11px] font-bold text-gray-600 uppercase tracking-wide">
                     Loại ghế
                   </label>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {SEAT_TYPES.map((t) => (
+                  <div className={`grid gap-1.5 ${allowedSeatTypes.length === 1 ? 'grid-cols-1' : allowedSeatTypes.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                    {SEAT_TYPES.filter((t) => allowedSeatTypes.includes(t.key)).map((t) => (
                       <button
                         key={t.key}
                         disabled={!isEditable}

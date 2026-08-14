@@ -51,6 +51,7 @@ setTimeout(async () => {
           name: 'Phòng Chiếu 2D Tiêu Chuẩn',
           code: '2D',
           description: 'Hình ảnh 2D kỹ thuật số độ nét cao, âm thanh vòm sống động.',
+          allowedSeatTypes: ['standard', 'vip', 'couple'],
           seatPrices: {
             standard: 100000,
             vip: 150000,
@@ -62,6 +63,7 @@ setTimeout(async () => {
           name: 'Phòng Chiếu 3D Digital',
           code: '3D',
           description: 'Trải nghiệm không gian 3 chiều chân thực với kính 3D thế hệ mới.',
+          allowedSeatTypes: ['standard', 'vip', 'couple'],
           seatPrices: {
             standard: 150000,
             vip: 200000,
@@ -73,6 +75,7 @@ setTimeout(async () => {
           name: 'Phòng Chiếu IMAX Laser',
           code: 'IMAX',
           description: 'Màn hình cong khổng lồ, công nghệ chiếu Laser sắc nét vượt trội.',
+          allowedSeatTypes: ['standard', 'vip', 'couple'],
           seatPrices: {
             standard: 200000,
             vip: 260000,
@@ -84,16 +87,29 @@ setTimeout(async () => {
           name: 'Phòng Chiếu 4DX / Gold Class',
           code: 'GOLDCLASS',
           description: 'Ghế bọc da ngả lưng tự động, hiệu ứng chuyển động gió, mùi hương đẳng cấp.',
+          allowedSeatTypes: ['vip', 'couple'],
           seatPrices: {
-            standard: 250000,
+            standard: 0,
             vip: 320000,
             couple: 600000,
           },
           isActive: true,
         },
+        {
+          name: 'Sweetbox',
+          code: 'SWEETBOX',
+          description: 'Hệ thống phòng private riêng tư với giường nằm và màn hình chiếu.',
+          allowedSeatTypes: ['couple'],
+          seatPrices: {
+            standard: 0,
+            vip: 0,
+            couple: 800000,
+          },
+          isActive: true,
+        },
       ];
       await RoomType.insertMany(defaultRoomTypes);
-      console.log('[RoomType] Đã khởi tạo danh mục loại phòng chiếu mẫu (2D, 3D, IMAX, GOLDCLASS).');
+      console.log('[RoomType] Đã khởi tạo danh mục loại phòng chiếu mẫu (2D, 3D, IMAX, GOLDCLASS, SWEETBOX).');
     }
   } catch (e) {
     console.error('[RoomType] Lỗi khởi tạo loại phòng chiếu:', e.message);
