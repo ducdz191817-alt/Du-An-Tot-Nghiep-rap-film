@@ -23,26 +23,30 @@ const RoomTypeSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    // Danh sách các loại ghế được phép tạo trong loại phòng này
+    // Ví dụ: Phòng Sweetbox chỉ cho phép ['couple'], phòng 2D cho phép ['standard', 'vip', 'couple']
+    allowedSeatTypes: {
+      type: [String],
+      enum: ['standard', 'vip', 'couple'],
+      default: ['standard', 'vip', 'couple'],
+    },
     // Bảng giá vé quy định cho từng loại ghế của loại phòng này
     seatPrices: {
       // Giá vé ghế thường (standard)
       standard: {
         type: Number,
-        required: [true, 'Vui lòng nhập giá ghế thường'],
         default: 100000,
         min: 0,
       },
       // Giá vé ghế VIP
       vip: {
         type: Number,
-        required: [true, 'Vui lòng nhập giá ghế VIP'],
         default: 150000,
         min: 0,
       },
       // Giá vé ghế Đôi (Couple / Sweetbox)
       couple: {
         type: Number,
-        required: [true, 'Vui lòng nhập giá ghế đôi'],
         default: 300000,
         min: 0,
       },

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
+  ToggleLeft,
+  ToggleRight,
   Monitor,
   Plus,
   Edit2,
@@ -78,6 +80,7 @@ export const RoomTypeManager = () => {
     name: '',
     code: '',
     description: '',
+    allowedSeatTypes: ['standard', 'vip', 'couple'],
     seatPrices: {
       standard: 100000,
       vip: 150000,
@@ -85,6 +88,16 @@ export const RoomTypeManager = () => {
     },
     isActive: true,
   });
+
+  const toggleSeatType = (type) => {
+    setFormData((p) => {
+      const current = p.allowedSeatTypes || ['standard', 'vip', 'couple'];
+      const has = current.includes(type);
+      if (has && current.length <= 1) return p; // phải có ít nhất 1
+      const next = has ? current.filter((t) => t !== type) : [...current, type];
+      return { ...p, allowedSeatTypes: next };
+    });
+  };
 
   const showToast = (type, msg) => {
     setToast({ type, msg });
@@ -115,6 +128,7 @@ export const RoomTypeManager = () => {
       name: '',
       code: '',
       description: '',
+      allowedSeatTypes: ['standard', 'vip', 'couple'],
       seatPrices: {
         standard: 100000,
         vip: 150000,
@@ -131,6 +145,9 @@ export const RoomTypeManager = () => {
       name: item.name || '',
       code: item.code || '',
       description: item.description || '',
+      allowedSeatTypes: item.allowedSeatTypes && item.allowedSeatTypes.length > 0
+        ? item.allowedSeatTypes
+        : ['standard', 'vip', 'couple'],
       seatPrices: {
         standard: item.seatPrices?.standard ?? 100000,
         vip: item.seatPrices?.vip ?? 150000,
@@ -323,8 +340,9 @@ export const RoomTypeManager = () => {
                       <span>Bảng giá vé ghế mặc định</span>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className={`grid gap-2 text-center ${(() => { const a = item.allowedSeatTypes || ['standard','vip','couple']; return a.length === 3 ? 'grid-cols-3' : a.length === 2 ? 'grid-cols-2' : 'grid-cols-1'; })()}`}>
                       {/* Ghế Thường */}
+                      {(item.allowedSeatTypes || ['standard','vip','couple']).includes('standard') && (
                       <div className="bg-white dark:bg-[#121827] border border-gray-200/80 dark:border-gray-700/60 rounded-xl p-2.5 flex flex-col justify-between">
                         <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-gray-600 dark:text-gray-300">
                           <Square size={12} className="text-gray-400" />
@@ -334,8 +352,10 @@ export const RoomTypeManager = () => {
                           {fmt(item.seatPrices?.standard ?? 0)}
                         </div>
                       </div>
+                      )}
 
                       {/* Ghế VIP */}
+                      {(item.allowedSeatTypes || ['standard','vip','couple']).includes('vip') && (
                       <div className="bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 rounded-xl p-2.5 flex flex-col justify-between">
                         <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-amber-700 dark:text-amber-400">
                           <Star size={12} className="text-amber-500" />
@@ -345,8 +365,10 @@ export const RoomTypeManager = () => {
                           {fmt(item.seatPrices?.vip ?? 0)}
                         </div>
                       </div>
+                      )}
 
                       {/* Ghế Đôi */}
+                      {(item.allowedSeatTypes || ['standard','vip','couple']).includes('couple') && (
                       <div className="bg-pink-50/50 dark:bg-pink-950/20 border border-pink-200/60 dark:border-pink-800/40 rounded-xl p-2.5 flex flex-col justify-between">
                         <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-pink-700 dark:text-pink-400">
                           <Heart size={12} className="text-pink-500" />
@@ -356,6 +378,7 @@ export const RoomTypeManager = () => {
                           {fmt(item.seatPrices?.couple ?? 0)}
                         </div>
                       </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -432,85 +455,76 @@ export const RoomTypeManager = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {/* Giá ghế thường */}
-              <div className="bg-white dark:bg-[#121827] border border-gray-200 dark:border-gray-700 rounded-xl p-3 space-y-1">
-                <label className="text-[11px] font-bold text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
-                  <Square size={13} className="text-gray-400" />
-                  <span>Ghế Thường</span>
-                </label>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    step="1000"
-                    min="0"
-                    value={formData.seatPrices.standard}
-                    onChange={(e) =>
-                      setFormData((p) => ({
-                        ...p,
-                        seatPrices: { ...p.seatPrices, standard: Number(e.target.value) },
-                      }))
-                    }
-                    className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-2.5 py-1.5 text-xs font-black text-right outline-none focus:border-brand"
-                  />
-                  <span className="text-xs text-gray-400 font-bold">₫</span>
+              {/* Ghế Thường */}
+              <div className={`rounded-xl p-3 space-y-1 border transition-all ${formData.allowedSeatTypes.includes('standard') ? 'bg-white dark:bg-[#121827] border-gray-200 dark:border-gray-700' : 'bg-gray-100 dark:bg-gray-900/50 border-gray-200/50 dark:border-gray-800 opacity-50'}`}>
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
+                    <Square size={13} className="text-gray-400" />
+                    <span>Ghế Thường</span>
+                  </label>
+                  <button type="button" onClick={() => toggleSeatType('standard')} className="text-gray-400 hover:text-brand transition-colors" title={formData.allowedSeatTypes.includes('standard') ? 'Bỏ loại ghế này' : 'Bật loại ghế này'}>
+                    {formData.allowedSeatTypes.includes('standard') ? <ToggleRight size={20} className="text-brand" /> : <ToggleLeft size={20} />}
+                  </button>
                 </div>
-                <p className="text-[10px] text-gray-400 text-right font-medium">
-                  {fmt(formData.seatPrices.standard)}
-                </p>
+                {formData.allowedSeatTypes.includes('standard') ? (
+                  <>
+                    <div className="flex items-center gap-1">
+                      <input type="number" step="1000" min="0" value={formData.seatPrices.standard} onChange={(e) => setFormData((p) => ({ ...p, seatPrices: { ...p.seatPrices, standard: Number(e.target.value) } }))} className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-2.5 py-1.5 text-xs font-black text-right outline-none focus:border-brand" />
+                      <span className="text-xs text-gray-400 font-bold">₫</span>
+                    </div>
+                    <p className="text-[10px] text-gray-400 text-right font-medium">{fmt(formData.seatPrices.standard)}</p>
+                  </>
+                ) : (
+                  <p className="text-[10px] text-gray-400 italic mt-1">Không cho phép</p>
+                )}
               </div>
 
-              {/* Giá ghế VIP */}
-              <div className="bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-3 space-y-1">
-                <label className="text-[11px] font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-                  <Star size={13} className="text-amber-500" />
-                  <span>Ghế VIP</span>
-                </label>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    step="1000"
-                    min="0"
-                    value={formData.seatPrices.vip}
-                    onChange={(e) =>
-                      setFormData((p) => ({
-                        ...p,
-                        seatPrices: { ...p.seatPrices, vip: Number(e.target.value) },
-                      }))
-                    }
-                    className="w-full bg-white dark:bg-gray-900 border border-amber-300 dark:border-amber-700 rounded-lg px-2.5 py-1.5 text-xs font-black text-right text-amber-700 dark:text-amber-300 outline-none focus:border-amber-500"
-                  />
-                  <span className="text-xs text-amber-500 font-bold">₫</span>
+              {/* Ghế VIP */}
+              <div className={`rounded-xl p-3 space-y-1 border transition-all ${formData.allowedSeatTypes.includes('vip') ? 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/40' : 'bg-gray-100 dark:bg-gray-900/50 border-gray-200/50 dark:border-gray-800 opacity-50'}`}>
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                    <Star size={13} className="text-amber-500" />
+                    <span>Ghế VIP</span>
+                  </label>
+                  <button type="button" onClick={() => toggleSeatType('vip')} className="text-gray-400 hover:text-amber-500 transition-colors" title={formData.allowedSeatTypes.includes('vip') ? 'Bỏ loại ghế này' : 'Bật loại ghế này'}>
+                    {formData.allowedSeatTypes.includes('vip') ? <ToggleRight size={20} className="text-amber-500" /> : <ToggleLeft size={20} />}
+                  </button>
                 </div>
-                <p className="text-[10px] text-amber-600/80 text-right font-medium">
-                  {fmt(formData.seatPrices.vip)}
-                </p>
+                {formData.allowedSeatTypes.includes('vip') ? (
+                  <>
+                    <div className="flex items-center gap-1">
+                      <input type="number" step="1000" min="0" value={formData.seatPrices.vip} onChange={(e) => setFormData((p) => ({ ...p, seatPrices: { ...p.seatPrices, vip: Number(e.target.value) } }))} className="w-full bg-white dark:bg-gray-900 border border-amber-300 dark:border-amber-700 rounded-lg px-2.5 py-1.5 text-xs font-black text-right text-amber-700 dark:text-amber-300 outline-none focus:border-amber-500" />
+                      <span className="text-xs text-amber-500 font-bold">₫</span>
+                    </div>
+                    <p className="text-[10px] text-amber-600/80 text-right font-medium">{fmt(formData.seatPrices.vip)}</p>
+                  </>
+                ) : (
+                  <p className="text-[10px] text-gray-400 italic mt-1">Không cho phép</p>
+                )}
               </div>
 
-              {/* Giá ghế Đôi */}
-              <div className="bg-pink-50/50 dark:bg-pink-950/20 border border-pink-200 dark:border-pink-800/40 rounded-xl p-3 space-y-1">
-                <label className="text-[11px] font-bold text-pink-700 dark:text-pink-400 flex items-center gap-1.5">
-                  <Heart size={13} className="text-pink-500" />
-                  <span>Ghế Đôi (Couple)</span>
-                </label>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    step="1000"
-                    min="0"
-                    value={formData.seatPrices.couple}
-                    onChange={(e) =>
-                      setFormData((p) => ({
-                        ...p,
-                        seatPrices: { ...p.seatPrices, couple: Number(e.target.value) },
-                      }))
-                    }
-                    className="w-full bg-white dark:bg-gray-900 border border-pink-300 dark:border-pink-700 rounded-lg px-2.5 py-1.5 text-xs font-black text-right text-pink-700 dark:text-pink-300 outline-none focus:border-pink-500"
-                  />
-                  <span className="text-xs text-pink-500 font-bold">₫</span>
+              {/* Ghế Đôi */}
+              <div className={`rounded-xl p-3 space-y-1 border transition-all ${formData.allowedSeatTypes.includes('couple') ? 'bg-pink-50/50 dark:bg-pink-950/20 border-pink-200 dark:border-pink-800/40' : 'bg-gray-100 dark:bg-gray-900/50 border-gray-200/50 dark:border-gray-800 opacity-50'}`}>
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-pink-700 dark:text-pink-400 flex items-center gap-1.5">
+                    <Heart size={13} className="text-pink-500" />
+                    <span>Ghế Đôi (Couple)</span>
+                  </label>
+                  <button type="button" onClick={() => toggleSeatType('couple')} className="text-gray-400 hover:text-pink-500 transition-colors" title={formData.allowedSeatTypes.includes('couple') ? 'Bỏ loại ghế này' : 'Bật loại ghế này'}>
+                    {formData.allowedSeatTypes.includes('couple') ? <ToggleRight size={20} className="text-pink-500" /> : <ToggleLeft size={20} />}
+                  </button>
                 </div>
-                <p className="text-[10px] text-pink-600/80 text-right font-medium">
-                  {fmt(formData.seatPrices.couple)}
-                </p>
+                {formData.allowedSeatTypes.includes('couple') ? (
+                  <>
+                    <div className="flex items-center gap-1">
+                      <input type="number" step="1000" min="0" value={formData.seatPrices.couple} onChange={(e) => setFormData((p) => ({ ...p, seatPrices: { ...p.seatPrices, couple: Number(e.target.value) } }))} className="w-full bg-white dark:bg-gray-900 border border-pink-300 dark:border-pink-700 rounded-lg px-2.5 py-1.5 text-xs font-black text-right text-pink-700 dark:text-pink-300 outline-none focus:border-pink-500" />
+                      <span className="text-xs text-pink-500 font-bold">₫</span>
+                    </div>
+                    <p className="text-[10px] text-pink-600/80 text-right font-medium">{fmt(formData.seatPrices.couple)}</p>
+                  </>
+                ) : (
+                  <p className="text-[10px] text-gray-400 italic mt-1">Không cho phép</p>
+                )}
               </div>
             </div>
           </div>
