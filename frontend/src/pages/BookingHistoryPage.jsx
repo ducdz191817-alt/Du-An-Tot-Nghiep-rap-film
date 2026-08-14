@@ -245,7 +245,10 @@ export const BookingHistoryPage = () => {
                                     const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
                                     const lastRowLetter = rowCount > 0 ? alphabet[rowCount - 1] : '';
 
-                                    if (row === lastRowLetter || room.type === 'GOLDCLASS') {
+                                    const seatDetail = (booking.seatDetails || []).find((d) => d.seatCode === s);
+                                    const isCouple = seatDetail?.type === 'couple' || room.type === 'SWEETBOX' || room.type === 'GOLDCLASS' || row === lastRowLetter;
+
+                                    if (isCouple) {
                                       displaySeat = `${row}${num}-${row}${num + 1}`;
                                     }
                                   }
@@ -324,19 +327,28 @@ export const BookingHistoryPage = () => {
                                       const basePrice = showtime.ticketPrice || showtime.price || 0;
                                       const roomSeats = room.seats || [];
                                       const seats = booking.seats || [];
+                                      const seatDetails = booking.seatDetails || [];
                                       
                                       const seatList = seats.map((seatCode) => {
+                                        // 1. Kiểm tra snapshot seatDetails lưu trong database
+                                        const detail = seatDetails.find((d) => d.seatCode === seatCode);
+                                        if (detail) {
+                                          const typeLabel = detail.type === 'couple' ? 'Ghế đôi' : detail.type === 'vip' ? 'Ghế VIP' : 'Ghế thường';
+                                          return { seatCode, seatType: detail.type, typeLabel, price: detail.price };
+                                        }
+
+                                        // 2. Dự phòng cho các đơn hàng cũ
                                         const match = seatCode.match(/^([A-Z]+)(\d+)$/);
-                                        let seatType = 'standard';
+                                        let seatType = room.type === 'SWEETBOX' ? 'couple' : 'standard';
                                         let extraPrice = 0;
-                                        let multiplier = 1;
+                                        let multiplier = seatType === 'couple' ? 2 : 1;
 
                                         if (match) {
                                           const rName = match[1];
                                           const num = parseInt(match[2], 10);
                                           const found = roomSeats.find((s) => s.row === rName && s.number === num);
                                           if (found) {
-                                            seatType = found.type || 'standard';
+                                            seatType = found.type || seatType;
                                             extraPrice = found.price || 0;
                                             multiplier = seatType === 'couple' ? 2 : 1;
                                           }

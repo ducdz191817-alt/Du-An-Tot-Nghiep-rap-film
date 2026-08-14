@@ -858,7 +858,7 @@ const listBookings = async (req, res, next) => {
         populate: [
           { path: 'movie', select: 'title posterUrl duration' },
           { path: 'theater', select: 'name' },
-          { path: 'room', select: 'name' },
+          { path: 'room', select: 'name type capacity' },
         ],
       })
       .populate({
@@ -866,8 +866,9 @@ const listBookings = async (req, res, next) => {
       })
       .sort({ createdAt: -1 });
 
-    // Đảm bảo mọi bản ghi vé đều có ticketCode và ticketStatus
+    // Đảm bảo mọi bản ghi vé đều có ticketCode, ticketStatus và seatDetails
     for (const b of bookings) {
+      let needsSave = false;
       if (!b.ticketCode) {
         const d = b.bookingDate || b.createdAt || new Date();
         const yy = String(d.getFullYear()).slice(-2);
@@ -878,6 +879,43 @@ const listBookings = async (req, res, next) => {
         if (b.paymentStatus === 'paid' && b.ticketStatus === 'pending') {
           b.ticketStatus = b.isCheckedIn ? 'checked_in' : 'issued';
         }
+        needsSave = true;
+      }
+      if (!b.seatDetails || b.seatDetails.length === 0) {
+        const showtime = b.showtime;
+        const roomId = showtime?.room?._id || showtime?.room;
+        const isSweetbox = showtime?.room?.type === 'SWEETBOX';
+        const roomSeats = roomId ? await Seat.find({ room: roomId }) : [];
+        const basePrice = showtime?.ticketPrice || showtime?.price || 0;
+
+        b.seatDetails = (b.seats || []).map((seatCode) => {
+          const match = seatCode.match(/^([A-Z]+)(\d+)$/);
+          let type = isSweetbox ? 'couple' : 'standard';
+          let extraPrice = 0;
+          let multiplier = type === 'couple' ? 2 : 1;
+
+          if (match) {
+            const r = match[1];
+            const n = parseInt(match[2], 10);
+            const found = roomSeats.find((s) => s.row === r && s.number === n);
+            if (found) {
+              type = found.type || type;
+              extraPrice = found.price || 0;
+              multiplier = type === 'couple' ? 2 : 1;
+            }
+          }
+
+          const price = (basePrice * multiplier) + extraPrice;
+          return {
+            seatCode,
+            type,
+            price,
+            extraPrice,
+          };
+        });
+        needsSave = true;
+      }
+      if (needsSave) {
         await b.save();
       }
     }
@@ -1643,9 +1681,24 @@ function buildTicketEmailHtml({ booking, movie, showtime, theater, room, seats, 
     ? new Date(showtime.endTime).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit' })
     : '';
 
-  const seatsStr = Array.isArray(seats) && seats.length > 0
-    ? seats.map(s => `${s.row || ''}${s.number || ''}`).join(', ')
-    : (Array.isArray(booking.seats) ? booking.seats.join(', ') : 'Không có thông tin');
+  const seatDetails = booking.seatDetails || [];
+  const seatsStr = Array.isArray(booking.seats) && booking.seats.length > 0
+    ? booking.seats.map((s) => {
+        const match = s.match(/^([A-Z]+)(\d+)$/);
+        const detail = seatDetails.find((d) => d.seatCode === s);
+        const isCouple = detail?.type === 'couple' || room?.type === 'SWEETBOX' || room?.type === 'GOLDCLASS';
+        let code = s;
+        if (match && isCouple) {
+          const row = match[1];
+          const num = parseInt(match[2], 10);
+          code = `${row}${num}-${row}${num + 1}`;
+        }
+        const typeLabel = detail?.type === 'couple' || room?.type === 'SWEETBOX' ? 'Ghế đôi' : detail?.type === 'vip' ? 'Ghế VIP' : 'Ghế thường';
+        return `${code} (${typeLabel})`;
+      }).join(', ')
+    : (Array.isArray(seats) && seats.length > 0
+        ? seats.map(s => `${s.row || ''}${s.number || ''}`).join(', ')
+        : 'Không có thông tin');
 
   const concessionRows = Array.isArray(concessions) && concessions.length > 0
     ? concessions.map(c => {
