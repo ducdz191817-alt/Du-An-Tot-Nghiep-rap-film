@@ -761,21 +761,41 @@ export const BookingManager = () => {
                   }, 0);
                   const ticketSubtotal = Math.max(0, originalTotal - concessionSubtotal);
                   const roomSeats = room.seats || [];
+                  const seatDetails = b.seatDetails || [];
 
                   const seatPriceList = seats.map((seatCode) => {
+                    // 1. Kiểm tra snapshot seatDetails
+                    const detail = seatDetails.find((d) => d.seatCode === seatCode);
+                    if (detail) {
+                      const typeLabel = detail.type === 'couple' ? 'Ghế đôi' : detail.type === 'vip' ? 'Ghế VIP' : 'Ghế thường';
+                      let displayCode = seatCode;
+                      const match = seatCode.match(/^([A-Z]+)(\d+)$/);
+                      if (match && detail.type === 'couple') {
+                        const row = match[1];
+                        const num = parseInt(match[2], 10);
+                        displayCode = `${row}${num}-${row}${num + 1}`;
+                      }
+                      return { seatCode, displayCode, seatType: detail.type, typeLabel, price: detail.price };
+                    }
+
+                    // 2. Dự phòng đơn hàng cũ
                     const match = seatCode.match(/^([A-Z]+)(\d+)$/);
-                    let seatType = 'standard';
+                    let seatType = room.type === 'SWEETBOX' ? 'couple' : 'standard';
                     let extraPrice = 0;
-                    let multiplier = 1;
+                    let multiplier = seatType === 'couple' ? 2 : 1;
+                    let displayCode = seatCode;
 
                     if (match) {
                       const rName = match[1];
                       const num = parseInt(match[2], 10);
                       const found = roomSeats.find((s) => s.row === rName && s.number === num);
                       if (found) {
-                        seatType = found.type || 'standard';
+                        seatType = found.type || seatType;
                         extraPrice = found.price || 0;
                         multiplier = seatType === 'couple' ? 2 : 1;
+                      }
+                      if (seatType === 'couple' || room.type === 'SWEETBOX') {
+                        displayCode = `${rName}${num}-${rName}${num + 1}`;
                       }
                     }
 
@@ -783,12 +803,12 @@ export const BookingManager = () => {
                     if (basePrice > 0) {
                       calculatedPrice = (basePrice * multiplier) + extraPrice;
                     } else {
-                      calculatedPrice = Math.round(ticketSubtotal / seats.length);
+                      calculatedPrice = Math.round(ticketSubtotal / (seats.length || 1));
                     }
 
                     const typeLabel = seatType === 'couple' ? 'Ghế đôi' : seatType === 'vip' ? 'Ghế VIP' : 'Ghế thường';
 
-                    return { seatCode, seatType, typeLabel, price: calculatedPrice };
+                    return { seatCode, displayCode, seatType, typeLabel, price: calculatedPrice };
                   });
 
                   return (
@@ -802,7 +822,7 @@ export const BookingManager = () => {
                           <div key={idx} className="flex justify-between items-center py-1 border-b border-gray-200/50 last:border-0">
                             <div className="flex items-center gap-2">
                               <span className="font-black text-brand bg-brand/10 px-2 py-0.5 rounded-lg border border-brand/20 text-[11px]">
-                                {item.seatCode}
+                                {item.displayCode || item.seatCode}
                               </span>
                               <span className="text-gray-500 text-[11px]">({item.typeLabel})</span>
                             </div>

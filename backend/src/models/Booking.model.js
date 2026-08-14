@@ -16,6 +16,18 @@ const BookingSchema = new mongoose.Schema(
       type: [String], // Array of seat codes, e.g., ['A1', 'A2']
       required: true,
     },
+    seatDetails: [
+      {
+        seatCode: { type: String, required: true },
+        type: {
+          type: String,
+          enum: ['standard', 'vip', 'couple'],
+          default: 'standard',
+        },
+        price: { type: Number, default: 0 },
+        extraPrice: { type: Number, default: 0 },
+      },
+    ],
     concessions: [
       {
         concession: {

@@ -182,41 +182,52 @@ const createBooking = async (req, res, next) => {
     }
 
 
+    const seatDetails = [];
     for (const seatCode of seats) {
       // Tách mã ghế ví dụ: "A12" thành hàng "A" và số "12"
       const match = seatCode.match(/^([A-Z]+)(\d+)$/);
+      let seatType = showtime.room?.type === 'SWEETBOX' ? 'couple' : 'standard';
+      let extraPrice = 0;
+      let singleSeatTotal = showtime.ticketPrice;
+
       if (match) {
         const row = match[1];
         const number = parseInt(match[2], 10);
         
         // Tìm thông tin ghế chi tiết tương ứng trong cơ sở dữ liệu
-        const seatDetail = roomSeats.find((s) => s.row === row && s.number === number);
-        if (seatDetail) {
+        const seatDoc = roomSeats.find((s) => s.row === row && s.number === number);
+        if (seatDoc) {
           // BẢO MẬT: Kiểm tra xem ghế này có đang bị admin khóa/vô hiệu hóa hay không
-          if (seatDetail.isDisabled) {
+          if (seatDoc.isDisabled) {
             res.status(400);
             throw new Error(`Ghế ${seatCode} hiện đang bảo trì và không thể đặt.`);
           }
 
+          seatType = seatDoc.type || seatType;
+          extraPrice = seatDoc.price || 0;
+
           // ==========================================
           // FIX BUG 2: TÍNH TIỀN GHẾ ĐÔI (SWEETBOX) Ở BACKEND
           // ==========================================
-          // Ghế đôi (couple) là ghế dành cho 2 người ngồi.
-          // Do đó, giá của 1 ghế đôi phải bằng: (Giá vé gốc x 2) + Tiền phụ thu ghế đôi
-          // Nếu không nhân 2 giá gốc, rạp sẽ bị lỗ vì 2 người xem nhưng chỉ thu tiền vé của 1 người.
-          if (seatDetail.type === 'couple') {
-            seatPriceSum += (showtime.ticketPrice * 2) + seatDetail.price;
+          if (seatType === 'couple') {
+            singleSeatTotal = (showtime.ticketPrice * 2) + extraPrice;
           } else {
-            // Đối với ghế thường hoặc VIP (chỉ 1 người ngồi): Giá vé gốc + Phụ thu
-            seatPriceSum += showtime.ticketPrice + seatDetail.price;
+            singleSeatTotal = showtime.ticketPrice + extraPrice;
           }
         } else {
-          // Nếu không tìm thấy thông tin ghế trong DB, mặc định lấy giá vé gốc của lịch chiếu
-          seatPriceSum += showtime.ticketPrice;
+          if (seatType === 'couple') {
+            singleSeatTotal = (showtime.ticketPrice * 2);
+          }
         }
-      } else {
-        seatPriceSum += showtime.ticketPrice;
       }
+
+      seatPriceSum += singleSeatTotal;
+      seatDetails.push({
+        seatCode,
+        type: seatType,
+        price: singleSeatTotal,
+        extraPrice,
+      });
     }
 
     // 5. Calculate Concession Prices
@@ -318,6 +329,7 @@ const createBooking = async (req, res, next) => {
       user: userId,
       showtime: showtimeId,
       seats: normalizedSeats,
+      seatDetails,
       concessions: concessions.map((c) => ({
         concession: c.concessionId,
         quantity: c.quantity,
@@ -505,11 +517,49 @@ const getMyBookings = async (req, res, next) => {
       .populate('coupon')
       .sort({ bookingDate: -1 });
 
-    // Auto-fill snapshot movieTitle for legacy bookings if not present
+    // Auto-fill snapshot movieTitle và seatDetails cho các booking đã tạo trước đó
     for (const b of bookings) {
+      let needsSave = false;
       if (!b.movieTitle && b.showtime?.movie?.title) {
         b.movieTitle = b.showtime.movie.title;
         b.moviePosterUrl = b.showtime.movie.posterUrl || '';
+        needsSave = true;
+      }
+      if (!b.seatDetails || b.seatDetails.length === 0) {
+        const showtime = b.showtime;
+        const roomId = showtime?.room?._id || showtime?.room;
+        const isSweetbox = showtime?.room?.type === 'SWEETBOX';
+        const roomSeats = roomId ? await Seat.find({ room: roomId }) : [];
+        const basePrice = showtime?.ticketPrice || showtime?.price || 0;
+
+        b.seatDetails = (b.seats || []).map((seatCode) => {
+          const match = seatCode.match(/^([A-Z]+)(\d+)$/);
+          let type = isSweetbox ? 'couple' : 'standard';
+          let extraPrice = 0;
+          let multiplier = type === 'couple' ? 2 : 1;
+
+          if (match) {
+            const r = match[1];
+            const n = parseInt(match[2], 10);
+            const found = roomSeats.find((s) => s.row === r && s.number === n);
+            if (found) {
+              type = found.type || type;
+              extraPrice = found.price || 0;
+              multiplier = type === 'couple' ? 2 : 1;
+            }
+          }
+
+          const price = (basePrice * multiplier) + extraPrice;
+          return {
+            seatCode,
+            type,
+            price,
+            extraPrice,
+          };
+        });
+        needsSave = true;
+      }
+      if (needsSave) {
         await b.save();
       }
     }
@@ -547,6 +597,42 @@ const getBookingById = async (req, res, next) => {
     if (!booking) {
       res.status(404);
       throw new Error('Booking not found');
+    }
+
+    // Auto-fill seatDetails nếu chưa có
+    if (!booking.seatDetails || booking.seatDetails.length === 0) {
+      const showtime = booking.showtime;
+      const roomId = showtime?.room?._id || showtime?.room;
+      const isSweetbox = showtime?.room?.type === 'SWEETBOX';
+      const roomSeats = roomId ? await Seat.find({ room: roomId }) : [];
+      const basePrice = showtime?.ticketPrice || showtime?.price || 0;
+
+      booking.seatDetails = (booking.seats || []).map((seatCode) => {
+        const match = seatCode.match(/^([A-Z]+)(\d+)$/);
+        let type = isSweetbox ? 'couple' : 'standard';
+        let extraPrice = 0;
+        let multiplier = type === 'couple' ? 2 : 1;
+
+        if (match) {
+          const r = match[1];
+          const n = parseInt(match[2], 10);
+          const found = roomSeats.find((s) => s.row === r && s.number === n);
+          if (found) {
+            type = found.type || type;
+            extraPrice = found.price || 0;
+            multiplier = type === 'couple' ? 2 : 1;
+          }
+        }
+
+        const price = (basePrice * multiplier) + extraPrice;
+        return {
+          seatCode,
+          type,
+          price,
+          extraPrice,
+        };
+      });
+      await booking.save();
     }
 
     // Check if the booking belongs to the current user (or user is admin)

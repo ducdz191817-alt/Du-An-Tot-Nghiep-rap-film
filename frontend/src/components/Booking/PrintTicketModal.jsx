@@ -20,34 +20,61 @@ export const PrintTicketModal = ({ booking, onClose }) => {
   // Calculate individual seat prices
   const basePrice = showtime.ticketPrice || showtime.price || 0;
   const roomSeats = room.seats || [];
+  const seatDetails = booking.seatDetails || [];
   const discountAmount = booking.discountAmount || 0;
   const totalPrice = booking.totalPrice || 0;
   const originalTotal = totalPrice + discountAmount;
   const concessionSubtotal = concessions.reduce((acc, c) => acc + ((c.concession?.price || 0) * (c.quantity || 0)), 0);
   const ticketSubtotal = Math.max(0, originalTotal - concessionSubtotal);
 
-  const getSeatPrice = (seatCode) => {
+  const getSeatInfo = (seatCode) => {
+    // 1. Kiểm tra snapshot seatDetails
+    const detail = seatDetails.find((d) => d.seatCode === seatCode);
+    if (detail) {
+      const typeLabel = detail.type === 'couple' ? 'Ghế đôi' : detail.type === 'vip' ? 'Ghế VIP' : 'Ghế thường';
+      let displayCode = seatCode;
+      const match = seatCode.match(/^([A-Z]+)(\d+)$/);
+      if (match && detail.type === 'couple') {
+        const row = match[1];
+        const num = parseInt(match[2], 10);
+        displayCode = `${row}${num}-${row}${num + 1}`;
+      }
+      return { seatCode, displayCode, seatType: detail.type, typeLabel, price: detail.price };
+    }
+
+    // 2. Dự phòng đơn hàng cũ
     const match = seatCode.match(/^([A-Z]+)(\d+)$/);
-    let seatType = 'standard';
+    let seatType = room.type === 'SWEETBOX' ? 'couple' : 'standard';
     let extraPrice = 0;
-    let multiplier = 1;
+    let multiplier = seatType === 'couple' ? 2 : 1;
+    let displayCode = seatCode;
 
     if (match) {
       const rName = match[1];
       const num = parseInt(match[2], 10);
       const found = roomSeats.find((s) => s.row === rName && s.number === num);
       if (found) {
-        seatType = found.type || 'standard';
+        seatType = found.type || seatType;
         extraPrice = found.price || 0;
         multiplier = seatType === 'couple' ? 2 : 1;
       }
+      if (seatType === 'couple' || room.type === 'SWEETBOX') {
+        displayCode = `${rName}${num}-${rName}${num + 1}`;
+      }
     }
 
+    let calculatedPrice = 0;
     if (basePrice > 0) {
-      return (basePrice * multiplier) + extraPrice;
+      calculatedPrice = (basePrice * multiplier) + extraPrice;
+    } else {
+      calculatedPrice = Math.round(ticketSubtotal / (allSeats.length || 1));
     }
-    return Math.round(ticketSubtotal / (allSeats.length || 1));
+
+    const typeLabel = seatType === 'couple' ? 'Ghế đôi' : seatType === 'vip' ? 'Ghế VIP' : 'Ghế thường';
+    return { seatCode, displayCode, seatType, typeLabel, price: calculatedPrice };
   };
+
+  const getSeatPrice = (seatCode) => getSeatInfo(seatCode).price;
 
   const toggleSeat = (seatCode) => {
     setSelectedSeats((prev) =>
@@ -155,7 +182,7 @@ export const PrintTicketModal = ({ booking, onClose }) => {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {allSeats.map((seatCode) => {
                   const isChecked = selectedSeats.includes(seatCode);
-                  const price = getSeatPrice(seatCode);
+                  const info = getSeatInfo(seatCode);
                   return (
                     <label
                       key={seatCode}
@@ -165,16 +192,19 @@ export const PrintTicketModal = ({ booking, onClose }) => {
                           : 'bg-white border-gray-200 text-gray-400 opacity-60'
                       }`}
                     >
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 min-w-0">
                         <input
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => toggleSeat(seatCode)}
-                          className="accent-brand rounded"
+                          className="accent-brand rounded shrink-0"
                         />
-                        <span>Ghế {seatCode}</span>
+                        <div className="truncate">
+                          <span className="block font-bold">Ghế {info.displayCode}</span>
+                          <span className="text-[9px] text-gray-500 font-normal">({info.typeLabel})</span>
+                        </div>
                       </div>
-                      <span className="text-[10px] font-black text-brand">{fmt(price)}</span>
+                      <span className="text-[10px] font-black text-brand shrink-0">{fmt(info.price)}</span>
                     </label>
                   );
                 })}
@@ -222,7 +252,7 @@ export const PrintTicketModal = ({ booking, onClose }) => {
               {allSeats
                 .filter((seatCode) => selectedSeats.includes(seatCode))
                 .map((seatCode, index) => {
-                  const price = getSeatPrice(seatCode);
+                  const info = getSeatInfo(seatCode);
                   return (
                     <div
                       key={seatCode}
@@ -253,8 +283,11 @@ export const PrintTicketModal = ({ booking, onClose }) => {
 
                         {/* Vị trí ghế duy nhất của tờ vé này */}
                         <div className="flex justify-between items-center text-gray-700 text-sm bg-amber-100/60 p-2.5 rounded-xl border border-amber-300/70 my-1">
-                          <span className="font-bold text-gray-800">VỊ TRÍ GHẾ:</span>
-                          <span className="font-black text-brand text-lg tracking-wider">{seatCode}</span>
+                          <div>
+                            <span className="font-bold text-gray-800 block">VỊ TRÍ GHẾ:</span>
+                            <span className="text-[10px] font-bold text-brand uppercase">({info.typeLabel})</span>
+                          </div>
+                          <span className="font-black text-brand text-lg tracking-wider">{info.displayCode}</span>
                         </div>
 
                         <div className="flex justify-between text-gray-700 border-t border-dashed border-gray-300 pt-2">
@@ -263,14 +296,14 @@ export const PrintTicketModal = ({ booking, onClose }) => {
                         </div>
                         <div className="flex justify-between text-gray-700">
                           <span>Giá vé ghế này:</span>
-                          <span className="font-black text-gray-900">{fmt(price)}</span>
+                          <span className="font-black text-gray-900">{fmt(info.price)}</span>
                         </div>
                       </div>
 
                       {/* Barcode / QR placeholder */}
                       <div className="text-center pt-2 border-t border-dashed border-gray-300 space-y-1">
                         <div className="font-mono text-[10px] tracking-widest text-gray-400">||| | |||| ||| || ||||| |||</div>
-                        <p className="text-[9px] text-gray-400">Vui lòng xuất trình vé này khi vào phòng chiếu (Ghế {seatCode})</p>
+                        <p className="text-[9px] text-gray-400">Vui lòng xuất trình vé này khi vào phòng chiếu (Ghế {info.displayCode})</p>
                       </div>
                     </div>
                   );
