@@ -1,4 +1,5 @@
 const socketIo = require('socket.io');
+const Showtime = require('../models/Showtime.model');
 
 // In-memory store for held seats
 // Structure: Map<showtimeId, Map<seatCode, { userId, expiresAt, timeoutId }>>
@@ -41,8 +42,27 @@ const initSocket = (server) => {
       socket.leave(`showtime_${showtimeId}`);
     });
 
-    // User attempts to hold a seat
-    socket.on('hold_seat', ({ showtimeId, seatCode, userId }) => {
+    // Sự kiện khi người dùng click chọn 1 ghế (cố gắng giữ ghế)
+    socket.on('hold_seat', async ({ showtimeId, seatCode, userId }) => {
+      try {
+        // [GHI CHÚ BẢO VỆ ĐỒ ÁN] - FIX BUG RACE CONDITION (CƯỚP GHẾ)
+        // Mục đích: Tránh trường hợp ghế đã bị người khác thanh toán xong (lưu vào DB) 
+        // nhưng người dùng hiện tại chưa load lại trang nên vẫn thấy ghế trống và click vào.
+        
+        // Bước 1: Query xuống MongoDB (bảng Showtime) để lấy mảng bookedSeats (những ghế đã bán)
+        const showtime = await Showtime.findById(showtimeId).select('bookedSeats');
+        
+        // Bước 2: Kiểm tra xem ghế user vừa click (seatCode) có nằm trong mảng đã bán không
+        if (showtime && showtime.bookedSeats && showtime.bookedSeats.includes(seatCode)) {
+          
+          // Bước 3: Nếu đã bán, emit sự kiện 'hold_seat_failed' trả về Frontend 
+          // để Frontend hiển thị thông báo lỗi cho người dùng và chặn không cho giữ ghế.
+          socket.emit('hold_seat_failed', { seatCode, message: 'Ghế này đã được người khác thanh toán thành công!' });
+          return; // Dừng luồng chạy, không cho thêm vào bộ nhớ đệm heldSeats ở dưới
+        }
+      } catch (err) {
+        console.error('Lỗi khi kiểm tra DB trong hold_seat:', err);
+      }
       if (!heldSeats.has(showtimeId)) {
         heldSeats.set(showtimeId, new Map());
       }
