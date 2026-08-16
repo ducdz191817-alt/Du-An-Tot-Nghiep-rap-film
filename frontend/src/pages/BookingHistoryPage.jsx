@@ -445,7 +445,7 @@ export const BookingHistoryPage = () => {
                               <div className="bg-white p-2 rounded-2xl shadow-lg flex items-center justify-center w-36 h-36 border border-zinc-200">
                                 <img
                                   src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
-                                    `CINEADMIN TICKET\nMã vé: ${booking._id?.slice(-10).toUpperCase()}\nPhim: ${displayTitle}\nRạp: ${theater.name || 'N/A'} - ${room.name || 'N/A'}\nGhế: ${booking.seats?.join(', ')}\nSuất chiếu: ${timeString} - ${dateString}\nTrạng thái: ĐÃ THANH TOÁN`
+                                    `CINEADMIN TICKET\nMã vé: ${booking.ticketCode || booking._id?.slice(-10).toUpperCase()}\nPhim: ${displayTitle}\nRạp: ${theater.name || 'N/A'} - ${room.name || 'N/A'}\nGhế: ${booking.seats?.join(', ')}\nSuất chiếu: ${timeString} - ${dateString}\nTrạng thái: ĐÃ THANH TOÁN`
                                   )}`}
                                   alt="Ticket QR Code"
                                   className="w-full h-full object-contain"

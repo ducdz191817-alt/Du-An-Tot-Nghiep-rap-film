@@ -325,6 +325,8 @@ const createBooking = async (req, res, next) => {
     // 7. Create the Booking
     const isVietQR = paymentMethod === 'vietqr';
     const isPendingPayment = ['vietqr', 'momo', 'vnpay'].includes(paymentMethod);
+    const generatedTicketCode = `TKT-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
     const booking = await Booking.create({
       user: userId,
       showtime: showtimeId,
@@ -341,6 +343,7 @@ const createBooking = async (req, res, next) => {
       discountAmount,
       movieTitle: showtime.movie?.title || '',
       moviePosterUrl: showtime.movie?.posterUrl || '',
+      ticketCode: generatedTicketCode,
     });
 
     // 8. Create Payment Transaction
@@ -906,9 +909,8 @@ const verifyTicket = async (req, res, next) => {
       })
       .populate('concessions.concession', 'name price');
 
-    if (!booking && (cleanCode.length === 24 || normalizedCode.length === 24)) {
-      const searchId = cleanCode.length === 24 ? cleanCode : normalizedCode;
-      booking = await Booking.findById(searchId)
+    if (!booking) {
+      const allBookings = await Booking.find({})
         .populate('user', 'username email phone')
         .populate({
           path: 'showtime',
@@ -919,6 +921,28 @@ const verifyTicket = async (req, res, next) => {
           ],
         })
         .populate('concessions.concession', 'name price');
+
+      const upperCode = cleanCode;
+      const strippedCode = upperCode.replace(/[^A-Z0-9]/g, '');
+
+      booking = allBookings.find((b) => {
+        const bIdFull = b._id.toString().toUpperCase();
+        const bIdLast10 = bIdFull.slice(-10);
+        const bIdCleanLast10 = bIdFull.replace(/[^A-Z0-9]/g, '').slice(-10);
+        const bCode = (b.ticketCode || '').toUpperCase();
+        const bCodeClean = bCode.replace(/[^A-Z0-9]/g, '');
+
+        return (
+          bCode === upperCode ||
+          bCodeClean === strippedCode ||
+          bIdFull === upperCode ||
+          bIdLast10 === upperCode ||
+          bIdCleanLast10 === strippedCode ||
+          (bCode && bCode.endsWith(upperCode)) ||
+          (bCodeClean && bCodeClean.endsWith(strippedCode)) ||
+          (upperCode.length >= 5 && bIdFull.endsWith(upperCode))
+        );
+      });
     }
 
     if (!booking) {

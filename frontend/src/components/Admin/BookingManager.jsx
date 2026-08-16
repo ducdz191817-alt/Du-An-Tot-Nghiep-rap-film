@@ -10,6 +10,7 @@ import adminService from '../../services/admin.service';
 import useAuth from '../../hooks/useAuth';
 import Loading from '../common/Loading';
 import PrintTicketModal from '../Booking/PrintTicketModal';
+import QRScanner from './QRScanner';
 
 const fmt = (val) => (val || 0).toLocaleString('vi-VN') + 'đ';
 
@@ -159,6 +160,40 @@ export const BookingManager = () => {
     } catch (err) {
       console.error(err);
       setMessage({ text: err.message || 'Lỗi khi in vé', type: 'error' });
+    }
+  };
+
+  // Helper: Extract ticket code from scanned QR text
+  const parseTicketCodeFromQR = (rawText) => {
+    if (!rawText) return '';
+    const text = String(rawText).trim();
+
+    // 1. URL pattern: .../ticket-verify/TKT-xxx
+    const urlMatch = text.match(/\/ticket-verify\/([A-Za-z0-9-]+)/);
+    if (urlMatch) return urlMatch[1];
+
+    // 2. Multiline pattern with "Mã vé: TKT-xxx"
+    const codeMatch = text.match(/Mã vé:\s*([A-Za-z0-9-]+)/i);
+    if (codeMatch) return codeMatch[1];
+
+    // 3. Regex TKT- format
+    const tktMatch = text.match(/TKT-[A-Za-z0-9-]+/i);
+    if (tktMatch) return tktMatch[0];
+
+    // 4. Regex 24-char ObjectId
+    const idMatch = text.match(/\b[a-fA-F0-9]{24}\b/);
+    if (idMatch) return idMatch[0];
+
+    // 5. Fallback first line
+    return text.split('\n')[0].trim();
+  };
+
+  // Action: Handle QR Code scanned from camera
+  const handleScanQR = (scannedText) => {
+    const extractedCode = parseTicketCodeFromQR(scannedText);
+    if (extractedCode) {
+      setCheckInInput(extractedCode);
+      handlePerformCheckIn(extractedCode);
     }
   };
 
@@ -494,14 +529,12 @@ export const BookingManager = () => {
                 <p className="text-xs text-gray-500">Đưa mã QR của khách hàng vào khung quét hoặc nhập thủ công mã vé bên dưới.</p>
               </div>
 
-              {/* Khung camera mô phỏng */}
-              <div className="relative w-full aspect-video bg-zinc-900 rounded-2xl overflow-hidden flex flex-col items-center justify-center border border-zinc-800 shadow-inner group">
-                <div className="absolute inset-6 border-2 border-dashed border-emerald-500/60 rounded-xl flex items-center justify-center pointer-events-none">
-                  <div className="w-full h-0.5 bg-emerald-500 shadow-[0_0_12px_#10b981] animate-pulse" />
-                </div>
-                <Camera size={32} className="text-zinc-600 mb-2" />
-                <span className="text-[11px] font-bold text-zinc-400">Đưa mã QR vào khung để quét</span>
-              </div>
+              {/* Camera quét mã QR thực sự */}
+              <QRScanner
+                onScanSuccess={handleScanQR}
+                isProcessing={isCheckingIn}
+                lastScanResult={checkInResult}
+              />
 
               {/* Nhập mã thủ công */}
               <div className="space-y-3 pt-2">
