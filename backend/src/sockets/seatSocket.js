@@ -2,11 +2,15 @@ const socketIo = require('socket.io');
 const Showtime = require('../models/Showtime.model');
 
 // In-memory store for held seats
-// Structure: Map<showtimeId, Map<seatCode, { userId, expiresAt, timeoutId }>>
+// Structure: Map<showtimeId, Map<seatCode, { userId, socketId, expiresAt, timeoutId }>>
 const heldSeats = new Map();
 
-// Hold duration in milliseconds (5 minutes)
-const HOLD_DURATION = 5 * 60 * 1000;
+// Track which seats each socket is holding (for auto-release on disconnect)
+// Structure: Map<socketId, { userId, holds: [{showtimeId, seatCode}] }>
+const socketHolds = new Map();
+
+// Hold duration in milliseconds (10 minutes)
+const HOLD_DURATION = 10 * 60 * 1000;
 
 let io;
 
@@ -26,6 +30,11 @@ const initSocket = (server) => {
       socket.join(`showtime_${showtimeId}`);
       console.log(`User ${userId || socket.id} joined room showtime_${showtimeId}`);
 
+      // Khởi tạo entry tracking cho socket này nếu chưa có
+      if (!socketHolds.has(socket.id)) {
+        socketHolds.set(socket.id, { userId, holds: [] });
+      }
+
       // Send the current held seats for this showtime to the newly connected user
       if (heldSeats.has(showtimeId)) {
         const showtimeHolds = heldSeats.get(showtimeId);
@@ -35,6 +44,8 @@ const initSocket = (server) => {
           expiresAt: data.expiresAt,
         }));
         socket.emit('initial_held_seats', holdsArray);
+      } else {
+        socket.emit('initial_held_seats', []);
       }
     });
 
@@ -76,7 +87,25 @@ const initSocket = (server) => {
           socket.emit('hold_seat_failed', { seatCode, message: 'Seat is currently held by someone else' });
           return;
         } else {
-          // It's already held by the same user, maybe they clicked again or reconnected.
+          // Cùng user nhưng socketId khác (reconnect) → cập nhật socketId mới
+          // GIỮ NGUYÊN expiresAt gốc, chỉ tính lại thời gian còn lại
+          clearTimeout(currentHold.timeoutId);
+          const remainingMs = Math.max(0, currentHold.expiresAt - Date.now());
+          if (remainingMs <= 0) {
+            // Đã hết hạn trong lúc không có socket → release ngay
+            releaseSeat(showtimeId, seatCode);
+            socket.emit('hold_seat_failed', { seatCode, message: 'Thời gian giữ ghế đã hết hạn' });
+            return;
+          }
+          const timeoutId = setTimeout(() => {
+            releaseSeat(showtimeId, seatCode);
+          }, remainingMs); // Dùng thời gian còn lại, KHÔNG reset về HOLD_DURATION
+          showtimeHolds.set(seatCode, { ...currentHold, socketId: socket.id, timeoutId });
+          // Cập nhật tracking
+          const socketData = socketHolds.get(socket.id);
+          if (socketData && !socketData.holds.find(h => h.showtimeId === showtimeId && h.seatCode === seatCode)) {
+            socketData.holds.push({ showtimeId, seatCode });
+          }
           return;
         }
       }
@@ -89,9 +118,16 @@ const initSocket = (server) => {
 
       showtimeHolds.set(seatCode, {
         userId,
+        socketId: socket.id,
         expiresAt: Date.now() + HOLD_DURATION,
         timeoutId,
       });
+
+      // Lưu tracking cho socket này
+      if (!socketHolds.has(socket.id)) {
+        socketHolds.set(socket.id, { userId, holds: [] });
+      }
+      socketHolds.get(socket.id).holds.push({ showtimeId, seatCode });
 
       // Broadcast to everyone else in the room that the seat is held
       socket.to(`showtime_${showtimeId}`).emit('seat_held', { seatCode, userId });
@@ -106,12 +142,41 @@ const initSocket = (server) => {
         const currentHold = showtimeHolds.get(seatCode);
         if (currentHold.userId === userId) {
           releaseSeat(showtimeId, seatCode);
+          // Cập nhật socketHolds tracking
+          const socketData = socketHolds.get(socket.id);
+          if (socketData) {
+            socketData.holds = socketData.holds.filter(
+              h => !(h.showtimeId === showtimeId && h.seatCode === seatCode)
+            );
+          }
         }
       }
     });
 
+    // User chỉ rời trang booking sang trang thanh toán (không phải bỏ cuộc)
+    // Xóa tracking ra khỏi socketHolds nhưng KHÔNG release ghế
+    // Ghế sẽ tiếp tục được giữ bởi backend timeout cho đến khi thanh toán xong hoặc hết hạn
+    socket.on('going_to_payment', ({ showtimeId, userId }) => {
+      const socketData = socketHolds.get(socket.id);
+      if (socketData) {
+        console.log(`User ${userId} going to payment, preserving ${socketData.holds.length} seat hold(s).`);
+        // Xóa khỏi socketHolds để disconnect handler không release
+        socketHolds.delete(socket.id);
+      }
+    });
+
+    // Khi socket disconnect (user tắt tab, mất mạng, quay lại trang...),
+    // tự động release tất cả ghế mà socket này đang giữ
     socket.on('disconnect', () => {
       console.log(`Socket disconnected: ${socket.id}`);
+      const socketData = socketHolds.get(socket.id);
+      if (socketData && socketData.holds.length > 0) {
+        console.log(`Auto-releasing ${socketData.holds.length} held seat(s) for socket ${socket.id} (user: ${socketData.userId})`);
+        socketData.holds.forEach(({ showtimeId, seatCode }) => {
+          releaseSeat(showtimeId, seatCode);
+        });
+      }
+      socketHolds.delete(socket.id);
     });
   });
 };
@@ -165,17 +230,25 @@ const confirmBookingClearHolds = (showtimeId, seatCodes, userId) => {
 // Nếu có, trả về danh sách các ghế đang bị tranh chấp để Controller chặn thanh toán.
 const getConflictingHeldSeats = (showtimeId, seatCodes, userId) => {
   const showtimeHolds = heldSeats.get(showtimeId);
-  if (!showtimeHolds) return []; // Nếu không có ai đang giữ ghế nào ở suất chiếu này -> An toàn
+  if (!showtimeHolds) {
+    console.log(`[getConflictingHeldSeats] No holds for showtime ${showtimeId} → safe`);
+    return [];
+  }
   
+  console.log(`[getConflictingHeldSeats] Checking seats ${seatCodes.join(',')} for userId=${userId.toString()}`);
+  console.log(`[getConflictingHeldSeats] Current holds:`, Array.from(showtimeHolds.entries()).map(([seat, data]) => ({
+    seat, holdUserId: data.userId, matches: data.userId.toString() === userId.toString()
+  })));
+
   const conflicting = [];
   seatCodes.forEach(seatCode => {
-    // Nếu ghế này đang nằm trong danh sách "bị giữ" (màu cam)
     if (showtimeHolds.has(seatCode)) {
       const holdData = showtimeHolds.get(seatCode);
-      // Kiểm tra ID của người đang giữ ghế. Nếu KHÁC với ID của người đang cố thanh toán
-      // -> Đây là hành vi cướp ghế! Đưa vào danh sách vi phạm.
       if (holdData.userId.toString() !== userId.toString()) {
         conflicting.push(seatCode);
+        console.log(`[getConflictingHeldSeats] CONFLICT: seat ${seatCode} held by ${holdData.userId} (booking userId: ${userId})`);
+      } else {
+        console.log(`[getConflictingHeldSeats] OK: seat ${seatCode} held by same user ${userId}`);
       }
     }
   });

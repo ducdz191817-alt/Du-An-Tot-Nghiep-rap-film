@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Clock, Copy, AlertTriangle, RefreshCw } from 'lucide-react';
+import { io } from 'socket.io-client';
 import useBooking from '../hooks/useBooking';
+import useAuth from '../hooks/useAuth';
 import bookingService from '../services/booking.service';
 import paymentService from '../services/payment.service';
 import couponService from '../services/coupon.service';
@@ -13,6 +15,7 @@ import Button from '../components/common/Button';
 
 export const PaymentPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const {
     selectedShowtime,
     selectedSeats,
@@ -25,12 +28,17 @@ export const PaymentPage = () => {
   const [concessionsList, setConcessionsList] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Socket ref để giữ ghế trong khi ở PaymentPage
+  const paymentSocketRef = useRef(null);
+  // Flag: payment success → không release ghế khi unmount
+  const paymentSucceededRef = useRef(false);
+
   // Trạng thái VietQR
   const [showQRScreen, setShowQRScreen] = useState(false);
   const [qrData, setQrData] = useState(null);
   const [showMomoScreen, setShowMomoScreen] = useState(false);
   const [momoData, setMomoData] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(300); // 5 phút (300 giây)
+  const [timeLeft, setTimeLeft] = useState(600); // 10 phút (600 giây)
   const [bookingId, setBookingId] = useState(null);
 
   // Trạng thái modal thành công
@@ -71,7 +79,7 @@ export const PaymentPage = () => {
     const loadConcessions = async () => {
       try {
         // Fix bug: truyền đúng theaterId để lấy đồ ăn của rạp đang đặt vé
-        const theaterId = selectedShowtime.theater?._id || selectedShowtime.theater;
+        const theaterId = selectedShowtime?.theater?._id || selectedShowtime?.theater;
         const result = await bookingService.getConcessions(theaterId);
         setConcessionsList(Array.isArray(result) ? result : []);
       } catch (err) {
@@ -81,6 +89,35 @@ export const PaymentPage = () => {
     loadConcessions();
   }, [selectedShowtime, selectedSeats, showQRScreen, successModal.open]);
 
+  // Socket: giữ ghế trong khi user ở trang thanh toán
+  useEffect(() => {
+    if (!selectedShowtime?._id || !selectedSeats?.length || !user?._id) return;
+
+    const showtimeId = selectedShowtime._id;
+    const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
+    paymentSocketRef.current = socket;
+
+    socket.emit('join_showtime', { showtimeId, userId: user._id });
+
+    // Khi kết nối, re-hold tất cả ghế đã chọn
+    socket.on('initial_held_seats', () => {
+      selectedSeats.forEach(seatCode => {
+        socket.emit('hold_seat', { showtimeId, seatCode, userId: user._id });
+      });
+    });
+
+    return () => {
+      if (paymentSocketRef.current) {
+        if (!paymentSucceededRef.current) {
+          // Thanh toán chưa xong → disconnect, backend sẽ auto-release qua disconnect handler
+          socket.emit('leave_showtime', { showtimeId });
+        }
+        socket.disconnect();
+        paymentSocketRef.current = null;
+      }
+    };
+  }, [selectedShowtime?._id, user?._id]);
+
   // Bộ đếm ngược và Polling trạng thái cho VietQR
   useEffect(() => {
     let timerId;
@@ -88,13 +125,13 @@ export const PaymentPage = () => {
 
     const isWaitingPayment = (showQRScreen || showMomoScreen) && bookingId;
     if (isWaitingPayment) {
-      // 1. Đồng hồ đếm ngược 5 phút
+      // 1. Đồng hồ đếm ngược 10 phút
       timerId = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
             clearInterval(timerId);
             handleCancelBooking(false); // Hủy tự động không hiện confirm
-            alert('Đã quá thời hạn thanh toán (5 phút). Lịch đặt vé này đã bị hủy, ghế của bạn đã được giải phóng.');
+            alert('Đã quá thời hạn thanh toán (10 phút). Lịch đặt vé này đã bị hủy, ghế của bạn đã được giải phóng.');
             return 0;
           }
           return prev - 1;
@@ -158,7 +195,7 @@ export const PaymentPage = () => {
       if (paymentMethod === 'vietqr') {
         setQrData(result.vietqr);
         setShowQRScreen(true);
-        setTimeLeft(300);
+        setTimeLeft(600);
       } else if (paymentMethod === 'momo') {
         const momoResult = await paymentService.createMomoPayment({
           bookingId: bookingIdFromResult,
@@ -171,7 +208,7 @@ export const PaymentPage = () => {
           payload: momoResult.raw,
         });
         setShowMomoScreen(true);
-        setTimeLeft(300);
+        setTimeLeft(600);
       } else if (paymentMethod === 'vnpay') {
         const vnpayResult = await paymentService.createVnpayPayment({
           bookingId: bookingIdFromResult,
@@ -181,6 +218,7 @@ export const PaymentPage = () => {
         // Redirect user to VNPay Sandbox portal
         window.location.href = vnpayResult.payUrl;
       } else {
+        paymentSucceededRef.current = true;
         // Xóa trạng thái đặt vé trong Redux
         clearBooking();
         // Hiển thị modal thành công
@@ -194,6 +232,7 @@ export const PaymentPage = () => {
   };
 
   const handlePaymentSuccess = async () => {
+    paymentSucceededRef.current = true;
     try {
       // Tải chi tiết booking đầy đủ để hiển thị trong Success Modal
       const detailRes = await bookingService.getBookingById(bookingId);
@@ -481,7 +520,14 @@ export const PaymentPage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Nút quay lại */}
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => {
+            const showtimeId = selectedShowtime?._id;
+            if (showtimeId) {
+              navigate(`/booking/${showtimeId}`, { state: { step: 2 } });
+            } else {
+              navigate(-1);
+            }
+          }}
           className="inline-flex items-center text-zinc-400 hover:text-white text-xs font-extrabold uppercase tracking-wider gap-1.5 transition-colors"
         >
           <ChevronLeft size={16} /> Chỉnh sửa ghế hoặc đồ ăn
