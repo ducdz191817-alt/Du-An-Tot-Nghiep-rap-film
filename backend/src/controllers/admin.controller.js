@@ -974,16 +974,50 @@ const printTicket = async (req, res, next) => {
 const checkInTicket = async (req, res, next) => {
   try {
     const { ticketCode, bookingId } = req.body;
-    let booking;
+    const searchTarget = (ticketCode || bookingId || '').toString().trim();
 
-    if (ticketCode) {
-      const cleanCode = ticketCode.trim().toUpperCase();
-      booking = await Booking.findOne({ ticketCode: cleanCode });
-      if (!booking && cleanCode.length === 24) {
-        booking = await Booking.findById(cleanCode);
-      }
-    } else if (bookingId) {
-      booking = await Booking.findById(bookingId);
+    if (!searchTarget) {
+      res.status(400);
+      throw new Error('Vui lòng cung cấp mã vé để check-in');
+    }
+
+    const upperCode = searchTarget.toUpperCase();
+    const cleanCode = upperCode.replace(/[^A-Z0-9]/g, '');
+
+    // 1. Tìm trực tiếp theo ticketCode hoặc _id (nếu 24 ký tự)
+    let booking = await Booking.findOne({
+      $or: [
+        { ticketCode: upperCode },
+        { ticketCode: searchTarget },
+        { ticketCode: cleanCode },
+      ],
+    });
+
+    if (!booking && /^[0-9a-fA-F]{24}$/.test(searchTarget)) {
+      booking = await Booking.findById(searchTarget);
+    }
+
+    // 2. Tìm kiếm mở rộng: So sánh 10 ký tự cuối của _id hoặc ticketCode đuôi ngắn (VD: 7119251E33)
+    if (!booking) {
+      const allBookings = await Booking.find({});
+      booking = allBookings.find((b) => {
+        const bIdFull = b._id.toString().toUpperCase();
+        const bIdLast10 = bIdFull.slice(-10);
+        const bIdCleanLast10 = bIdFull.replace(/[^A-Z0-9]/g, '').slice(-10);
+        const bCode = (b.ticketCode || '').toUpperCase();
+        const bCodeClean = bCode.replace(/[^A-Z0-9]/g, '');
+
+        return (
+          bCode === upperCode ||
+          bCodeClean === cleanCode ||
+          bIdFull === upperCode ||
+          bIdLast10 === upperCode ||
+          bIdCleanLast10 === cleanCode ||
+          (bCode && bCode.endsWith(upperCode)) ||
+          (bCodeClean && bCodeClean.endsWith(cleanCode)) ||
+          (upperCode.length >= 5 && bIdFull.endsWith(upperCode))
+        );
+      });
     }
 
     if (!booking) {
