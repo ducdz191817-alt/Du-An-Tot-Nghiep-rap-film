@@ -4,14 +4,14 @@ const Payment = require('../models/Payment.model');
 
 const checkAndExpirePendingBookings = async () => {
   try {
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
     
-    // Find all bookings that are pending and older than 5 minutes
+    // Find all bookings that are pending and older than 10 minutes
     const expiredBookings = await Booking.find({
       paymentStatus: 'pending',
       $or: [
-        { bookingDate: { $lt: fiveMinutesAgo } },
-        { createdAt: { $lt: fiveMinutesAgo } }
+        { bookingDate: { $lt: tenMinutesAgo } },
+        { createdAt: { $lt: tenMinutesAgo } }
       ]
     });
 

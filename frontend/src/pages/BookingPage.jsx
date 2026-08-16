@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { ChevronLeft, Popcorn, Armchair, Ticket, ShieldAlert, AlertTriangle, Info } from 'lucide-react';
 import bookingService from '../services/booking.service';
 import useBooking from '../hooks/useBooking';
@@ -22,6 +22,7 @@ import { io } from 'socket.io-client';
 export const BookingPage = () => {
   const { showtimeId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated, user } = useAuth();
   const {
     selectedShowtime,
@@ -37,14 +38,20 @@ export const BookingPage = () => {
   const [seatsList, setSeatsList] = useState([]);
   const [concessionsList, setConcessionsList] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeStep, setActiveStep] = useState(1); // Bước 1: Ghế ngồi, Bước 2: Bắp nước
+  const [activeStep, setActiveStep] = useState(location.state?.step || 1); // Bước 1: Ghế ngồi, Bước 2: Bắp nước
   const [heldSeatsByOthers, setHeldSeatsByOthers] = useState([]);
   const [ageWarning, setAgeWarning] = useState({ isOpen: false, movieTitle: '', requiredAge: 0, userAge: 0, movieId: '' });
   const [hasOrphanError, setHasOrphanError] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(300); // 5 phút (300 giây)
+  const [timeLeft, setTimeLeft] = useState(600); // 10 phút (600 giây)
   const [confirmModal, setConfirmModal] = useState(false); // Modal xác nhận trước khi chuyển bước
   const socketRef = useRef(null);
   const timerRef = useRef(null);
+  // Ref để track selectedSeats trong cleanup (closure không thấy state mới nhất)
+  const selectedSeatsRef = useRef(selectedSeats);
+  // Flag: nếu user đang đi sang trang thanh toán thì KHÔNG release ghế
+  const proceedingToPaymentRef = useRef(false);
+  // Lưu expiresAt từ backend để tiếp tục đồng hồ sau khi quay lại
+  const holdExpiresAtRef = useRef(null);
 
   useEffect(() => {
     // Buộc chuyển hướng đăng nhập nếu người dùng đang đặt vé
@@ -99,6 +106,11 @@ export const BookingPage = () => {
     loadBookingData();
   }, [showtimeId, isAuthenticated]);
 
+  // Giữ selectedSeatsRef luôn cập nhật với giá trị mới nhất
+  useEffect(() => {
+    selectedSeatsRef.current = selectedSeats;
+  }, [selectedSeats]);
+
   useEffect(() => {
     if (!showtimeId || !user?._id) return;
 
@@ -112,6 +124,29 @@ export const BookingPage = () => {
     socketRef.current.on('initial_held_seats', (holds) => {
       const others = holds.filter(h => h.userId !== user._id).map(h => h.seatCode);
       setHeldSeatsByOthers(others);
+
+      // Nếu user quay lại trang với ghế đã chọn trong Redux
+      const currentSeats = selectedSeatsRef.current;
+      if (currentSeats && currentSeats.length > 0) {
+        // Kiểm tra xem backend có đang giữ ghế này không (expiresAt còn hiệu lực)
+        const myHolds = holds.filter(h => h.userId === user._id && currentSeats.includes(h.seatCode));
+        
+        if (myHolds.length > 0) {
+          // Backend vẫn đang giữ ghế → tính thời gian còn lại từ expiresAt
+          const minExpiresAt = Math.min(...myHolds.map(h => h.expiresAt));
+          holdExpiresAtRef.current = minExpiresAt;
+          const remainingMs = minExpiresAt - Date.now();
+          const remainingSec = Math.max(0, Math.floor(remainingMs / 1000));
+          setTimeLeft(remainingSec);
+        } else {
+          // Backend không giữ nữa (hết hạn trong lúc ở trang payment)
+          // Re-hold để đặt lại 10 phút mới
+          holdExpiresAtRef.current = Date.now() + 10 * 60 * 1000;
+          currentSeats.forEach(seatCode => {
+            socketRef.current?.emit('hold_seat', { showtimeId, seatCode, userId: user._id });
+          });
+        }
+      }
     });
 
     // Lắng nghe sự kiện ai đó giữ ghế
@@ -137,16 +172,38 @@ export const BookingPage = () => {
 
     return () => {
       if (socketRef.current) {
-        socketRef.current.emit('leave_showtime', { showtimeId });
-        socketRef.current.disconnect();
+        if (proceedingToPaymentRef.current) {
+          // Sang trang thanh toán: chỉ rời phòng, KHÔNG disconnect socket
+          // → Backend giữ nguyên hold tracking, ghế vẫn được giữ
+          // → Tránh race condition của going_to_payment vs disconnect
+          socketRef.current.emit('leave_showtime', { showtimeId });
+          // Không gọi disconnect() - socket vẫn alive, holds vẫn còn
+          // Socket sẽ được cleanup bởi tab close hoặc backend 10-min timeout
+        } else {
+          // User thực sự rời khỏi luồng đặt vé → release ghế + disconnect
+          const currentSeats = selectedSeatsRef.current;
+          if (currentSeats && currentSeats.length > 0) {
+            currentSeats.forEach(seatCode => {
+              socketRef.current.emit('release_seat', { showtimeId, seatCode, userId: user._id });
+            });
+          }
+          socketRef.current.emit('leave_showtime', { showtimeId });
+          socketRef.current.disconnect();
+        }
+        // Reset flag
+        proceedingToPaymentRef.current = false;
       }
     };
   }, [showtimeId, user]);
 
-  // Quản lý đồng hồ đếm ngược 5 phút
+  // Quản lý đồng hồ đếm ngược 10 phút
   useEffect(() => {
     if (selectedSeats.length > 0) {
-      setTimeLeft(300); // Đặt lại 5 phút mỗi khi chọn lại ghế
+      // Chỉ reset về 600 giây khi không có expiresAt từ backend (chọn ghế mới)
+      if (!holdExpiresAtRef.current) {
+        setTimeLeft(600);
+        holdExpiresAtRef.current = Date.now() + 10 * 60 * 1000;
+      }
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => {
@@ -159,7 +216,8 @@ export const BookingPage = () => {
       }, 1000);
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
-      setTimeLeft(300);
+      setTimeLeft(600);
+      holdExpiresAtRef.current = null; // Reset khi bỏ hết ghế
     }
 
     return () => {
@@ -170,7 +228,7 @@ export const BookingPage = () => {
   // Xử lý khi hết giờ
   useEffect(() => {
     if (selectedSeats.length > 0 && timeLeft === 0) {
-      alert('Thời gian giữ ghế đã hết (5 phút). Hệ thống sẽ hủy ghế bạn đã chọn.');
+      alert('Thời gian giữ ghế đã hết (10 phút). Hệ thống sẽ hủy ghế bạn đã chọn.');
       selectedSeats.forEach(seatCode => {
         socketRef.current?.emit('release_seat', { showtimeId, seatCode, userId: user._id });
       });
@@ -203,6 +261,8 @@ export const BookingPage = () => {
       // Hiện modal xác nhận trước khi chuyển sang bước bắp nước
       setConfirmModal(true);
     } else {
+      // Đánh dấu đang đi sang trang thanh toán - không release ghế
+      proceedingToPaymentRef.current = true;
       navigate('/payment');
     }
   };

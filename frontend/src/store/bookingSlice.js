@@ -14,9 +14,14 @@ const bookingSlice = createSlice({
   initialState,
   reducers: {
     setSelectShowtime: (state, action) => {
-      state.selectedShowtime = action.payload;
-      state.selectedSeats = [];
-      state.selectedConcessions = {};
+      const newShowtime = action.payload;
+      // Chỉ xóa ghế đã chọn khi chuyển sang suất chiếu khác
+      const isSameShowtime = state.selectedShowtime?._id === newShowtime?._id;
+      state.selectedShowtime = newShowtime;
+      if (!isSameShowtime) {
+        state.selectedSeats = [];
+        state.selectedConcessions = {};
+      }
     },
     setSelectedSeats: (state, action) => {
       state.selectedSeats = action.payload;
