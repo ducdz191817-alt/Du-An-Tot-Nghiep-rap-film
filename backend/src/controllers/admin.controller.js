@@ -511,10 +511,13 @@ const createShowtime = async (req, res, next) => {
       throw new Error('Không tìm thấy phòng chiếu');
     }
 
+    // Luôn đồng bộ định dạng chiếu chuẩn theo loại phòng (2D, 3D, IMAX, GOLDCLASS...)
+    const actualFormat = (room.type || format || '2D').toUpperCase();
+
     // Tính giá tự động từ Pricing Engine
     const autoPrice = calculateBaseShowtimePrice({
       startTime: start,
-      format,
+      format: actualFormat,
       roomType: room.roomType || 'standard',
       config: pricingConfig,
       movieReleaseDate: movie.releaseDate,
@@ -528,7 +531,7 @@ const createShowtime = async (req, res, next) => {
       startTime: start,
       endTime: end,
       ticketPrice: autoPrice, 
-      format,
+      format: actualFormat,
     });
 
     res.status(201).json({ success: true, data: showtime });
@@ -1526,10 +1529,14 @@ const autoGenerateShowtimes = async (req, res, next) => {
       throw new Error('Chưa có bảng giá được cấu hình. Vui lòng thiết lập bảng giá trong mục “Bảng Giá” trước.');
     }
 
-    // Lấy roomType của từng phòng trước
-    const roomDocs = await Room.find({ _id: { $in: roomIds } }).select('_id roomType').lean();
+    // Lấy roomType và type (định dạng chiếu) của từng phòng trước
+    const roomDocs = await Room.find({ _id: { $in: roomIds } }).select('_id roomType type').lean();
     const roomTypeMap = {};
-    roomDocs.forEach((r) => { roomTypeMap[r._id.toString()] = r.roomType || 'standard'; });
+    const roomFormatMap = {};
+    roomDocs.forEach((r) => {
+      roomTypeMap[r._id.toString()] = r.roomType || 'standard';
+      roomFormatMap[r._id.toString()] = (r.type || '2D').toUpperCase();
+    });
 
     // Lấy thông tin phim để biết duration
     const movie = await Movie.findById(movieId);
@@ -1594,11 +1601,13 @@ const autoGenerateShowtimes = async (req, res, next) => {
             continue; // Bỏ qua – trùng lịch
           }
 
+          const actualFormat = roomFormatMap[roomId.toString()] || (format || '2D').toUpperCase();
+
           // Tự động tính giá theo ngày + giờ + format + roomType
           const autoPrice = calculateBaseShowtimePrice({
             startTime,
-            format,
-            roomType: roomTypeMap[roomId] || 'standard',
+            format: actualFormat,
+            roomType: roomTypeMap[roomId.toString()] || 'standard',
             config: pricingConfig,
             movieReleaseDate: movie.releaseDate,
           });
@@ -1611,7 +1620,7 @@ const autoGenerateShowtimes = async (req, res, next) => {
             startTime,
             endTime,
             ticketPrice: autoPrice,
-            format,
+            format:      actualFormat,
           });
 
           created++;
