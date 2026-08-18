@@ -100,10 +100,12 @@ export const ShowtimeManager = () => {
       setAutoModalRooms(roomArr);
       if (roomArr.length > 0) {
         const firstRm = roomArr[0];
+        const firstFmt = (firstRm.type || firstRm.format || '2D').toUpperCase();
         setAutoForm((prev) => ({
           ...prev,
           roomIds: [firstRm._id],
-          format: firstRm.type || firstRm.format || '2D',
+          format: firstFmt,
+          ticketPrice: DEFAULT_PRICES[firstFmt] || 80000,
         }));
       }
     } catch (err) {
@@ -549,8 +551,8 @@ export const ShowtimeManager = () => {
           endFmt: new Date(startTime.getTime() + durationMs).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
           movieTitle: selectedMovie?.title || 'Phim đã chọn',
           roomName: selectedRoom?.name || 'Phòng chiếu',
-          format: autoForm.format,
-          ticketPrice: Number(autoForm.ticketPrice) || 80000,
+          format: roomFormat,
+          ticketPrice: DEFAULT_PRICES[roomFormat] || 80000,
           status,
           reason,
           selected: status === 'valid', // Mặc định tích chọn các suất hợp lệ
@@ -1576,7 +1578,17 @@ export const ShowtimeManager = () => {
               <select
                 name="roomId"
                 value={autoForm.roomIds[0] || ''}
-                onChange={(e) => setAutoForm((prev) => ({ ...prev, roomIds: e.target.value ? [e.target.value] : [] }))}
+                onChange={(e) => {
+                  const selectedId = e.target.value;
+                  const foundRm = autoModalRooms.find((r) => r._id === selectedId) || rooms.find((r) => r._id === selectedId);
+                  const newFmt = (foundRm?.type || foundRm?.format || '2D').toUpperCase();
+                  setAutoForm((prev) => ({
+                    ...prev,
+                    roomIds: selectedId ? [selectedId] : [],
+                    format: newFmt,
+                    ticketPrice: DEFAULT_PRICES[newFmt] || 80000,
+                  }));
+                }}
                 className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer font-medium disabled:opacity-50"
                 required
                 disabled={autoModalRoomsLoading}
