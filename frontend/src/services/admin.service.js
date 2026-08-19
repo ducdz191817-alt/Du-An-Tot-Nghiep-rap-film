@@ -184,6 +184,16 @@ const getUsers = async (role = '') => {
   return response.data;
 };
 
+const createUser = async (userData) => {
+  const response = await api.post('/admin/users', userData);
+  return response.data;
+};
+
+const updateUser = async (id, userData) => {
+  const response = await api.put(`/admin/users/${id}`, userData);
+  return response.data;
+};
+
 const updateUserRole = async (id, role) => {
   const response = await api.put(`/admin/users/${id}/role`, { role });
   return response.data;
@@ -299,6 +309,8 @@ const adminService = {
   sendBookingEmail,
   sendBulkEmail,
   getUsers,
+  createUser,
+  updateUser,
   updateUserRole,
   deleteUser,
   toggleUserStatus,
