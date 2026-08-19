@@ -3,6 +3,8 @@ import { Star, MessageSquare, Send, Pencil, Trash2, AlertCircle, User, Ticket } 
 import reviewService from '../../services/review.service';
 import useAuth from '../../hooks/useAuth';
 import { useLanguage } from '../../context/LanguageContext';
+import ConfirmModal from '../common/ConfirmModal';
+import Toast from '../common/Toast';
 
 // ─── Component hiển thị sao (chỉ đọc) ───────────────────────────────────────
 const StarDisplay = ({ rating, size = 16 }) => (
@@ -151,15 +153,17 @@ const ReviewCard = ({ review, currentUser, onEdit, onDelete, onReply, onDeleteRe
             </button>
           )}
 
-          {isOwner && (
+          {(isOwner || isAdmin) && (
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={() => onEdit(review)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-amber-500 hover:bg-amber-50 transition-all"
-                title={t('review.edit')}
-              >
-                <Pencil size={14} />
-              </button>
+              {isOwner && (
+                <button
+                  onClick={() => onEdit(review)}
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-amber-500 hover:bg-amber-50 transition-all"
+                  title={t('review.edit')}
+                >
+                  <Pencil size={14} />
+                </button>
+              )}
               <button
                 onClick={() => onDelete(review._id)}
                 className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
@@ -283,6 +287,8 @@ const ReviewSection = ({ movieId }) => {
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [canReview, setCanReview] = useState(false);
+  const [hasBooked, setHasBooked] = useState(false);
+  const [hasWatched, setHasWatched] = useState(false);
   const [checkingEligibility, setCheckingEligibility] = useState(false);
 
   // Form state
@@ -292,6 +298,21 @@ const ReviewSection = ({ movieId }) => {
   const [editingReview, setEditingReview] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Confirm modal state
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+    variant: 'danger',
+    confirmText: '',
+    loading: false,
+  });
+
+  // Toast state
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const showToast = (message, type = 'success') => setToast({ show: true, message, type });
 
   // Tải danh sách đánh giá
   const fetchReviews = async () => {
@@ -313,9 +334,13 @@ const ReviewSection = ({ movieId }) => {
     try {
       const res = await reviewService.checkEligibility(movieId);
       setCanReview(res.canReview || false);
+      setHasBooked(res.hasBooked || false);
+      setHasWatched(res.hasWatched || false);
     } catch (err) {
       console.error('Lỗi kiểm tra quyền đánh giá:', err);
       setCanReview(false);
+      setHasBooked(false);
+      setHasWatched(false);
     } finally {
       setCheckingEligibility(false);
     }
@@ -377,14 +402,27 @@ const ReviewSection = ({ movieId }) => {
   };
 
   // Xóa đánh giá
-  const handleDelete = async (reviewId) => {
-    if (!window.confirm(t('review.confirmDelete'))) return;
-    try {
-      await reviewService.deleteReview(reviewId);
-      await fetchReviews();
-    } catch (err) {
-      alert(err.message);
-    }
+  const handleDelete = (reviewId) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Xóa đánh giá',
+      message: t('review.confirmDelete'),
+      confirmText: 'Xóa',
+      variant: 'danger',
+      loading: false,
+      onConfirm: async () => {
+        setConfirmModal((prev) => ({ ...prev, loading: true }));
+        try {
+          await reviewService.deleteReview(reviewId);
+          setConfirmModal((prev) => ({ ...prev, isOpen: false, loading: false }));
+          showToast('Đã xóa đánh giá thành công', 'success');
+          await fetchReviews();
+        } catch (err) {
+          setConfirmModal((prev) => ({ ...prev, isOpen: false, loading: false }));
+          showToast(err.message || 'Có lỗi xảy ra', 'error');
+        }
+      },
+    });
   };
 
   // Trả lời đánh giá (admin)
@@ -392,21 +430,35 @@ const ReviewSection = ({ movieId }) => {
     try {
       await reviewService.replyReview(reviewId, comment);
       await fetchReviews();
+      showToast('Đã gửi phản hồi thành công', 'success');
     } catch (err) {
-      alert(err.message || t('review.errorGeneral'));
+      showToast(err.message || t('review.errorGeneral'), 'error');
       throw err;
     }
   };
 
   // Xóa phản hồi (admin)
-  const handleDeleteReply = async (reviewId) => {
-    if (!window.confirm(t('review.confirmDeleteReply'))) return;
-    try {
-      await reviewService.deleteReply(reviewId);
-      await fetchReviews();
-    } catch (err) {
-      alert(err.message || t('review.errorGeneral'));
-    }
+  const handleDeleteReply = (reviewId) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Xóa phản hồi',
+      message: t('review.confirmDeleteReply'),
+      confirmText: 'Xóa phản hồi',
+      variant: 'danger',
+      loading: false,
+      onConfirm: async () => {
+        setConfirmModal((prev) => ({ ...prev, loading: true }));
+        try {
+          await reviewService.deleteReply(reviewId);
+          setConfirmModal((prev) => ({ ...prev, isOpen: false, loading: false }));
+          showToast('Đã xóa phản hồi thành công', 'success');
+          await fetchReviews();
+        } catch (err) {
+          setConfirmModal((prev) => ({ ...prev, isOpen: false, loading: false }));
+          showToast(err.message || t('review.errorGeneral'), 'error');
+        }
+      },
+    });
   };
 
   // Hủy form
@@ -451,6 +503,10 @@ const ReviewSection = ({ movieId }) => {
               <Pencil size={16} />
               {t('review.writeReview')}
             </button>
+          ) : hasBooked && !hasWatched ? (
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200">
+              <Ticket size={14} /> Đánh giá sau khi xem phim
+            </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200">
               <Ticket size={14} /> Cần đặt vé để đánh giá
@@ -459,7 +515,7 @@ const ReviewSection = ({ movieId }) => {
         )}
       </div>
 
-      {/* Thông báo chưa mua vé cho phim này */}
+      {/* Thông báo cho user chưa đủ điều kiện đánh giá */}
       {isAuthenticated && isUser && !userReview && !canReview && !showForm && !checkingEligibility && (
         <div className="relative z-10 p-5 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/5 border border-amber-200/80 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -468,21 +524,27 @@ const ReviewSection = ({ movieId }) => {
             </div>
             <div>
               <h4 className="text-sm font-bold text-gray-900">
-                Chỉ dành cho khán giả đã xem phim
+                {hasBooked && !hasWatched
+                  ? 'Bạn đã mua vé thành công!'
+                  : 'Chỉ dành cho khán giả đã xem phim'}
               </h4>
               <p className="text-xs text-gray-600 mt-0.5">
-                {t('review.notBookedPrompt')}
+                {hasBooked && !hasWatched
+                  ? 'Hãy quay lại đánh giá sau khi suất chiếu kết thúc. Chúng tôi rất mong nhận được nhận xét từ bạn!'
+                  : t('review.notBookedPrompt')}
               </p>
             </div>
           </div>
-          <button
-            onClick={() => {
-              window.scrollTo({ top: 300, behavior: 'smooth' });
-            }}
-            className="px-4 py-2 text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-xl transition-all shadow-md shadow-amber-500/20 active:scale-95 shrink-0 cursor-pointer"
-          >
-            {t('review.bookNowBtn')}
-          </button>
+          {!hasBooked && (
+            <button
+              onClick={() => {
+                window.scrollTo({ top: 300, behavior: 'smooth' });
+              }}
+              className="px-4 py-2 text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-xl transition-all shadow-md shadow-amber-500/20 active:scale-95 shrink-0 cursor-pointer"
+            >
+              {t('review.bookNowBtn')}
+            </button>
+          )}
         </div>
       )}
 
@@ -601,6 +663,27 @@ const ReviewSection = ({ movieId }) => {
           ))
         )}
       </div>
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false, loading: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        variant={confirmModal.variant}
+        loading={confirmModal.loading}
+      />
+
+      {/* Toast */}
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ show: false, message: '', type: 'success' })}
+        />
+      )}
     </div>
   );
 };

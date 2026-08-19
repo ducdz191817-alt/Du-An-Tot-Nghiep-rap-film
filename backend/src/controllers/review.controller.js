@@ -25,7 +25,7 @@ const createReview = async (req, res, next) => {
     }
 
     // RÀNG BUỘC: Kiểm tra tài khoản đã từng đặt vé & thanh toán cho phim này chưa
-    const showtimes = await Showtime.find({ movie: movieId }).select('_id');
+    const showtimes = await Showtime.find({ movie: movieId }).select('_id endTime');
     const showtimeIds = showtimes.map((st) => st._id);
 
     const hasPaidBooking = await Booking.findOne({
@@ -37,6 +37,15 @@ const createReview = async (req, res, next) => {
     if (!hasPaidBooking) {
       res.status(403);
       throw new Error('Chỉ tài khoản đã đặt vé xem phim này thành công mới có thể viết đánh giá.');
+    }
+
+    // RÀNG BUỘC BỔ SUNG: Kiểm tra suất chiếu đã kết thúc chưa (phải xem xong mới được đánh giá)
+    const bookedShowtime = showtimes.find(
+      (st) => st._id.toString() === hasPaidBooking.showtime.toString()
+    );
+    if (bookedShowtime && bookedShowtime.endTime > new Date()) {
+      res.status(403);
+      throw new Error('Bạn chỉ có thể đánh giá sau khi suất chiếu kết thúc. Vui lòng quay lại sau khi xem phim.');
     }
 
     // Kiểm tra đã đánh giá chưa
@@ -255,7 +264,7 @@ const checkEligibility = async (req, res, next) => {
     }
 
     // Tìm các suất chiếu của phim này
-    const showtimes = await Showtime.find({ movie: movieId }).select('_id');
+    const showtimes = await Showtime.find({ movie: movieId }).select('_id endTime');
     const showtimeIds = showtimes.map((st) => st._id);
 
     // Kiểm tra có đơn đặt vé nào đã thanh toán thành công không
@@ -265,10 +274,20 @@ const checkEligibility = async (req, res, next) => {
       paymentStatus: 'paid',
     });
 
+    // Kiểm tra suất chiếu đã kết thúc chưa (phải xem xong mới được đánh giá)
+    let hasWatched = false;
+    if (hasPaidBooking) {
+      const bookedShowtime = showtimes.find(
+        (st) => st._id.toString() === hasPaidBooking.showtime.toString()
+      );
+      hasWatched = bookedShowtime ? bookedShowtime.endTime <= new Date() : false;
+    }
+
     res.json({
       success: true,
-      canReview: !!hasPaidBooking,
+      canReview: !!hasPaidBooking && hasWatched,
       hasBooked: !!hasPaidBooking,
+      hasWatched,
     });
   } catch (error) {
     next(error);
