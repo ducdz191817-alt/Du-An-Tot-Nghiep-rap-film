@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Star, MessageSquare, Send, Pencil, Trash2, AlertCircle, User } from 'lucide-react';
+import { Star, MessageSquare, Send, Pencil, Trash2, AlertCircle, User, Ticket } from 'lucide-react';
 import reviewService from '../../services/review.service';
 import useAuth from '../../hooks/useAuth';
 import { useLanguage } from '../../context/LanguageContext';
@@ -282,6 +282,8 @@ const ReviewSection = ({ movieId }) => {
   const [reviews, setReviews] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [canReview, setCanReview] = useState(false);
+  const [checkingEligibility, setCheckingEligibility] = useState(false);
 
   // Form state
   const [showForm, setShowForm] = useState(false);
@@ -304,9 +306,27 @@ const ReviewSection = ({ movieId }) => {
     }
   };
 
+  // Kiểm tra quyền đánh giá (người dùng đã mua vé chưa)
+  const checkUserEligibility = async () => {
+    if (!isAuthenticated || user?.role !== 'user' || !movieId) return;
+    setCheckingEligibility(true);
+    try {
+      const res = await reviewService.checkEligibility(movieId);
+      setCanReview(res.canReview || false);
+    } catch (err) {
+      console.error('Lỗi kiểm tra quyền đánh giá:', err);
+      setCanReview(false);
+    } finally {
+      setCheckingEligibility(false);
+    }
+  };
+
   useEffect(() => {
-    if (movieId) fetchReviews();
-  }, [movieId]);
+    if (movieId) {
+      fetchReviews();
+      checkUserEligibility();
+    }
+  }, [movieId, isAuthenticated, user?._id]);
 
   // Kiểm tra user đã đánh giá chưa
   const userReview = reviews.find((r) => r.user?._id === user?._id);
@@ -423,15 +443,48 @@ const ReviewSection = ({ movieId }) => {
 
         {/* Nút viết bình luận */}
         {isAuthenticated && isUser && !userReview && !showForm && (
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-all active:scale-95 shadow-lg shadow-amber-500/20"
-          >
-            <Pencil size={16} />
-            {t('review.writeReview')}
-          </button>
+          canReview ? (
+            <button
+              onClick={() => setShowForm(true)}
+              className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-all active:scale-95 shadow-lg shadow-amber-500/20 cursor-pointer"
+            >
+              <Pencil size={16} />
+              {t('review.writeReview')}
+            </button>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200">
+              <Ticket size={14} /> Cần đặt vé để đánh giá
+            </span>
+          )
         )}
       </div>
+
+      {/* Thông báo chưa mua vé cho phim này */}
+      {isAuthenticated && isUser && !userReview && !canReview && !showForm && !checkingEligibility && (
+        <div className="relative z-10 p-5 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/5 border border-amber-200/80 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md">
+              <Ticket size={20} />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-gray-900">
+                Chỉ dành cho khán giả đã xem phim
+              </h4>
+              <p className="text-xs text-gray-600 mt-0.5">
+                {t('review.notBookedPrompt')}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              window.scrollTo({ top: 300, behavior: 'smooth' });
+            }}
+            className="px-4 py-2 text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-xl transition-all shadow-md shadow-amber-500/20 active:scale-95 shrink-0 cursor-pointer"
+          >
+            {t('review.bookNowBtn')}
+          </button>
+        </div>
+      )}
 
       {/* Form viết / chỉnh sửa bình luận */}
       {showForm && (

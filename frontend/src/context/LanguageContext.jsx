@@ -260,6 +260,8 @@ const translations = {
     'review.noReviews': 'Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá phim này!',
     'review.loading': 'Đang tải đánh giá...',
     'review.loginPrompt': 'Đăng nhập để viết đánh giá phim',
+    'review.notBookedPrompt': 'Chỉ tài khoản đã mua vé phim này mới có thể viết đánh giá & bình luận. Vui lòng đặt vé để chia sẻ trải nghiệm của bạn!',
+    'review.bookNowBtn': 'Đặt vé xem phim ngay',
     'review.adminNotice': 'Tài khoản quản trị viên không thể viết đánh giá trực tiếp, nhưng có thể phản hồi bình luận của người dùng bên dưới.',
     'review.reply': 'Phản hồi',
     'review.replyTitle': 'Phản hồi từ Ban Quản Trị',

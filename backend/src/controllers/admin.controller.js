@@ -1483,6 +1483,115 @@ const toggleUserStatus = async (req, res, next) => {
   }
 };
 
+// CHỨC NĂNG: Tạo tài khoản mới (Nhân viên / Admin / User) bởi Admin
+const createUser = async (req, res, next) => {
+  try {
+    const { username, email, password, role = 'staff', phone, gender, dob, region, favoriteTheater } = req.body;
+
+    if (!username || !email || !password) {
+      res.status(400);
+      throw new Error('Vui lòng điền đầy đủ Tên đăng nhập, Email và Mật khẩu');
+    }
+
+    if (password.length < 6) {
+      res.status(400);
+      throw new Error('Mật khẩu phải có ít nhất 6 ký tự');
+    }
+
+    if (!['user', 'staff', 'admin'].includes(role)) {
+      res.status(400);
+      throw new Error('Vai trò không hợp lệ');
+    }
+
+    // Kiểm tra xem email đã tồn tại chưa
+    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
+    if (existingUser) {
+      res.status(400);
+      throw new Error(`Email "${email}" đã được đăng ký trên hệ thống!`);
+    }
+
+    const newUser = await User.create({
+      username: username.trim(),
+      email: email.toLowerCase().trim(),
+      password,
+      role,
+      phone: phone || '',
+      gender: gender || 'Nam',
+      dob: dob || '',
+      region: region || '',
+      favoriteTheater: favoriteTheater || '',
+      status: 'active',
+    });
+
+    const userObj = newUser.toObject();
+    delete userObj.password;
+
+    res.status(201).json({
+      success: true,
+      message: `Tạo tài khoản "${newUser.username}" (${role === 'staff' ? 'Nhân viên' : role === 'admin' ? 'Quản trị viên' : 'Khách hàng'}) thành công!`,
+      data: userObj,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// CHỨC NĂNG: Cập nhật thông tin chi tiết tài khoản bởi Admin
+const updateUser = async (req, res, next) => {
+  try {
+    const { username, email, password, role, phone, gender, dob, region, status } = req.body;
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      res.status(404);
+      throw new Error('Không tìm thấy người dùng');
+    }
+
+    if (email && email.toLowerCase().trim() !== user.email) {
+      const existing = await User.findOne({ _id: { $ne: req.params.id }, email: email.toLowerCase().trim() });
+      if (existing) {
+        res.status(400);
+        throw new Error(`Email "${email}" đã được sử dụng bởi tài khoản khác!`);
+      }
+      user.email = email.toLowerCase().trim();
+    }
+
+    if (username) user.username = username.trim();
+    if (phone !== undefined) user.phone = phone.trim();
+    if (gender) user.gender = gender;
+    if (dob !== undefined) user.dob = dob;
+    if (region !== undefined) user.region = region;
+
+    if (role && ['user', 'staff', 'admin'].includes(role)) {
+      if (req.params.id !== req.user._id.toString()) {
+        user.role = role;
+      }
+    }
+
+    if (status && ['active', 'locked'].includes(status)) {
+      if (req.params.id !== req.user._id.toString()) {
+        user.status = status;
+      }
+    }
+
+    if (password && password.trim().length >= 6) {
+      user.password = password.trim();
+    }
+
+    await user.save();
+
+    const updatedObj = user.toObject();
+    delete updatedObj.password;
+
+    res.json({
+      success: true,
+      message: `Cập nhật thông tin tài khoản "${user.username}" thành công!`,
+      data: updatedObj,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const deleteUser = toggleUserStatus;
 
 // ==========================================
@@ -2272,6 +2381,8 @@ module.exports = {
   sendBookingEmail,
   sendBulkEmail,
   listUsers,
+  createUser,
+  updateUser,
   updateUserRole,
   deleteUser,
   toggleUserStatus,

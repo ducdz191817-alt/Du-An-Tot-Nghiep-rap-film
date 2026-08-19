@@ -38,6 +38,8 @@ const {
   sendBookingEmail,
   sendBulkEmail,
   listUsers,
+  createUser,
+  updateUser,
   updateUserRole,
   deleteUser,
   toggleUserStatus,
@@ -116,6 +118,8 @@ router.route("/coupons/:id").put(updateCoupon).delete(deleteCoupon);
 
 // User Management
 router.get('/users', listUsers);
+router.post('/users', createUser);
+router.put('/users/:id', updateUser);
 router.put('/users/:id/role', updateUserRole);
 router.put('/users/:id/toggle-status', toggleUserStatus);
 router.delete('/users/:id', deleteUser);

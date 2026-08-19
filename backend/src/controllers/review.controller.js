@@ -1,5 +1,7 @@
 const Review = require('../models/Review.model');
 const Movie = require('../models/Movie.model');
+const Booking = require('../models/Booking.model');
+const Showtime = require('../models/Showtime.model');
 
 // @desc    Tạo đánh giá mới cho phim
 // @route   POST /api/reviews
@@ -20,6 +22,21 @@ const createReview = async (req, res, next) => {
     if (!movie) {
       res.status(404);
       throw new Error('Phim không tồn tại');
+    }
+
+    // RÀNG BUỘC: Kiểm tra tài khoản đã từng đặt vé & thanh toán cho phim này chưa
+    const showtimes = await Showtime.find({ movie: movieId }).select('_id');
+    const showtimeIds = showtimes.map((st) => st._id);
+
+    const hasPaidBooking = await Booking.findOne({
+      user: userId,
+      showtime: { $in: showtimeIds },
+      paymentStatus: 'paid',
+    });
+
+    if (!hasPaidBooking) {
+      res.status(403);
+      throw new Error('Chỉ tài khoản đã đặt vé xem phim này thành công mới có thể viết đánh giá.');
     }
 
     // Kiểm tra đã đánh giá chưa
@@ -225,6 +242,39 @@ const deleteReply = async (req, res, next) => {
   }
 };
 
+// @desc    Kiểm tra xem người dùng hiện tại có đủ điều kiện đánh giá phim hay không (đã mua vé thành công)
+// @route   GET /api/reviews/check-eligibility/:movieId
+// @access  Private (chỉ role "user")
+const checkEligibility = async (req, res, next) => {
+  try {
+    const { movieId } = req.params;
+    const userId = req.user._id;
+
+    if (req.user.role !== 'user') {
+      return res.json({ success: true, canReview: false, reason: 'not_user' });
+    }
+
+    // Tìm các suất chiếu của phim này
+    const showtimes = await Showtime.find({ movie: movieId }).select('_id');
+    const showtimeIds = showtimes.map((st) => st._id);
+
+    // Kiểm tra có đơn đặt vé nào đã thanh toán thành công không
+    const hasPaidBooking = await Booking.findOne({
+      user: userId,
+      showtime: { $in: showtimeIds },
+      paymentStatus: 'paid',
+    });
+
+    res.json({
+      success: true,
+      canReview: !!hasPaidBooking,
+      hasBooked: !!hasPaidBooking,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createReview,
   getReviewsByMovie,
@@ -232,4 +282,5 @@ module.exports = {
   deleteReview,
   replyReview,
   deleteReply,
+  checkEligibility,
 };

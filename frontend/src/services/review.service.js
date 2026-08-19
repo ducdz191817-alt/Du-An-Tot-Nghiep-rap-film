@@ -7,6 +7,12 @@ const reviewService = {
     return response;
   },
 
+  // Kiểm tra quyền đánh giá (đã mua vé hay chưa)
+  checkEligibility: async (movieId) => {
+    const response = await api.get(`/reviews/check-eligibility/${movieId}`);
+    return response;
+  },
+
   // Tạo đánh giá mới
   createReview: async (movieId, rating, comment) => {
     const response = await api.post('/reviews', { movieId, rating, comment });
