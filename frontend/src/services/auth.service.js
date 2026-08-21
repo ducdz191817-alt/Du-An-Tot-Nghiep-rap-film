@@ -33,6 +33,16 @@ const updateProfile = async (profileData) => {
   return response.data;
 };
 
+const forgotPassword = async (email) => {
+  const response = await api.post('/auth/forgot-password', { email });
+  return response;
+};
+
+const resetPassword = async (token, password) => {
+  const response = await api.post(`/auth/reset-password/${token}`, { password });
+  return response;
+};
+
 const getCurrentUser = () => {
   try {
     const userInfo = localStorage.getItem('userInfo');
@@ -48,6 +58,8 @@ const authService = {
   logout,
   getProfile,
   updateProfile,
+  forgotPassword,
+  resetPassword,
   getCurrentUser,
 };
 

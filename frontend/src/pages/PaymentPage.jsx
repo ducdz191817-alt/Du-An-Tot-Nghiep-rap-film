@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Clock, Copy, AlertTriangle, RefreshCw } from 'lucide-react';
+import { ChevronLeft, Clock, Copy, AlertTriangle, RefreshCw, CheckCircle } from 'lucide-react';
 import { io } from 'socket.io-client';
 import useBooking from '../hooks/useBooking';
 import useAuth from '../hooks/useAuth';
@@ -362,10 +362,21 @@ export const PaymentPage = () => {
                 )}
               </div>
 
-              {/* Status loader */}
-              <div className="flex items-center gap-2 text-xs text-zinc-400 font-semibold bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl">
-                <RefreshCw size={12} className="animate-spin text-emerald-400" />
-                <span>Đang kiểm tra giao dịch tự động...</span>
+              {/* Status loader & Confirm button */}
+              <div className="w-full flex flex-col items-center gap-2 pt-1">
+                <div className="flex items-center gap-2 text-xs text-zinc-400 font-semibold bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl">
+                  <RefreshCw size={12} className="animate-spin text-emerald-400" />
+                  <span>Đang kiểm tra giao dịch tự động...</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSimulatePayment}
+                  disabled={loading}
+                  className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl transition-all shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+                >
+                  <CheckCircle size={16} />
+                  <span>Tôi đã chuyển khoản xong — Xác nhận xuất vé</span>
+                </button>
               </div>
             </div>
 
@@ -428,10 +439,10 @@ export const PaymentPage = () => {
                       <span className="text-zinc-500 font-semibold">Số tiền</span>
                       <div className="flex items-center gap-2">
                         <span className="text-brand font-black text-base">
-                          {finalTotal.toLocaleString()} VND
+                          {qrData.amount ? qrData.amount.toLocaleString('vi-VN') : finalTotal.toLocaleString('vi-VN')} VND
                         </span>
                         <button
-                          onClick={() => copyToClipboard(pricing.grandTotal, 'Số tiền')}
+                          onClick={() => copyToClipboard(String(qrData.amount || finalTotal), 'Số tiền')}
                           className="p-1 text-zinc-500 hover:text-zinc-300 transition-colors"
                           title="Sao chép"
                         >
@@ -443,11 +454,11 @@ export const PaymentPage = () => {
                     <div className="flex justify-between items-center py-3">
                       <span className="text-zinc-500 font-semibold">Nội dung chuyển khoản</span>
                       <div className="flex items-center gap-2">
-                        <span className="bg-emerald-950/40 border border-emerald-800/30 text-emerald-400 font-black px-3 py-1 rounded-lg font-mono tracking-wider">
+                        <span className="text-emerald-400 font-mono font-black text-base bg-emerald-950/50 px-2.5 py-1 rounded-lg border border-emerald-800/30">
                           {qrData.addInfo}
                         </span>
                         <button
-                          onClick={() => copyToClipboard(qrData.addInfo, 'Nội dung')}
+                          onClick={() => copyToClipboard(qrData.addInfo, 'Nội dung chuyển khoản')}
                           className="p-1 text-zinc-500 hover:text-zinc-300 transition-colors"
                           title="Sao chép"
                         >
@@ -461,7 +472,7 @@ export const PaymentPage = () => {
                   <div className="bg-amber-500/5 border border-amber-500/20 text-amber-500/90 p-3.5 rounded-2xl text-[11px] leading-relaxed font-semibold flex gap-2">
                     <AlertTriangle size={18} className="shrink-0 text-amber-500 mt-0.5" />
                     <span>
-                      <strong>Chú ý quan trọng:</strong> Bạn phải điền chính xác nội dung chuyển khoản <strong>{qrData.addInfo}</strong> để hệ thống tự động nhận diện và xuất vé. Giao dịch sai nội dung sẽ không được phê duyệt tự động.
+                      <strong>Chú ý quan trọng:</strong> Sau khi hoàn tất chuyển khoản trên ứng dụng ngân hàng của bạn, nhấn nút <strong>"Tôi đã chuyển khoản xong — Xác nhận xuất vé"</strong> bên dưới hình QR để hệ thống kiểm tra và gửi vé điện tử về Email!
                     </span>
                   </div>
                 </>
@@ -469,35 +480,28 @@ export const PaymentPage = () => {
             </div>
           </div>
 
-          {/* Dưới cùng: Nút thao tác giả lập phát triển */}
+          {/* Dưới cùng: Nút thao tác */}
           <div className="flex flex-col sm:flex-row items-center justify-between border-t border-dark-border pt-6 gap-4">
             
-            {/* Giả lập cho chế độ test */}
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-extrabold bg-zinc-900 border border-zinc-800 px-2.5 py-1.5 rounded-lg">Chế độ test</span>
-              <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={handleSimulatePayment}
+                disabled={loading}
+                className="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl transition-all shadow-md flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+              >
+                <CheckCircle size={15} /> Xác nhận đã chuyển khoản thành công
+              </button>
+              {isMomoScreen && momoData?.payUrl && (
                 <Button
-                  onClick={() => {
-                    if (isMomoScreen && momoData?.payUrl) {
-                      window.open(momoData.payUrl, '_blank');
-                    }
-                  }}
+                  onClick={() => window.open(momoData.payUrl, '_blank')}
                   variant="secondary"
                   loading={loading}
-                  disabled={!isMomoScreen || !momoData?.payUrl}
-                  className="py-1.5 px-3.5 text-xs font-bold border border-emerald-800/30 text-emerald-400 hover:bg-emerald-950/20"
+                  className="py-2 px-3.5 text-xs font-bold border border-emerald-800/30 text-emerald-400"
                 >
                   Mở liên kết MoMo
                 </Button>
-                <Button
-                  onClick={handleSimulatePayment}
-                  variant="secondary"
-                  loading={loading}
-                  className="py-1.5 px-3.5 text-xs font-bold border border-emerald-800/30 text-emerald-400 hover:bg-emerald-950/20"
-                >
-                  Nhấp để giả lập thanh toán thành công
-                </Button>
-              </div>
+              )}
             </div>
 
             <Button

@@ -502,7 +502,10 @@ export const ShowtimeManager = () => {
         let status = 'valid';
         let reason = '';
 
-        if (endTime > endLimit) {
+        if (startTime.getTime() < Date.now()) {
+          status = 'invalid';
+          reason = 'Thời gian chiếu đã qua trong quá khứ';
+        } else if (endTime > endLimit) {
           status = 'invalid';
           reason = 'Vượt quá 23:59 trong ngày';
         } else {
@@ -632,6 +635,16 @@ export const ShowtimeManager = () => {
     if (!form.movieId) { setError('Vui lòng chọn phim'); return; }
     if (!form.startTime) { setError('Vui lòng chọn ngày và giờ chiếu'); return; }
     if (!form.roomId) { setError('Vui lòng chọn một phòng chiếu hợp lệ'); return; }
+    
+    const startTimeDate = new Date(form.startTime);
+    if (isNaN(startTimeDate.getTime())) {
+      setError('Thời gian chiếu không hợp lệ');
+      return;
+    }
+    if (startTimeDate.getTime() < Date.now()) {
+      setError('⚠️ Không thể tạo hoặc cập nhật suất chiếu ở thời gian trong quá khứ! Vui lòng chọn thời gian bắt đầu từ thời điểm hiện tại trở đi.');
+      return;
+    }
     try {
       if (editingShowtime) await adminService.updateShowtime(editingShowtime._id, form);
       else await adminService.createShowtime(form);
@@ -1442,7 +1455,7 @@ export const ShowtimeManager = () => {
               </select>
             </div>
 
-            <Input name="startTime" type="datetime-local" label="Ngày & Giờ Bắt Đầu" value={form.startTime} onChange={handleChange} required />
+            <Input name="startTime" type="datetime-local" label="Ngày & Giờ Bắt Đầu" value={form.startTime} onChange={handleChange} min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)} required />
           </div>
 
 
@@ -1609,11 +1622,11 @@ export const ShowtimeManager = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Ngày Bắt Đầu</label>
-                <input type="date" name="startDate" value={autoForm.startDate} onChange={handleAutoFormChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none" required />
+                <input type="date" name="startDate" value={autoForm.startDate} onChange={handleAutoFormChange} min={new Date().toISOString().split('T')[0]} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none" required />
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Ngày Kết Thúc</label>
-                <input type="date" name="endDate" value={autoForm.endDate} onChange={handleAutoFormChange} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none" required />
+                <input type="date" name="endDate" value={autoForm.endDate} onChange={handleAutoFormChange} min={new Date().toISOString().split('T')[0]} className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none" required />
               </div>
             </div>
 

@@ -7,6 +7,7 @@ const {
   checkMovieBookings,
   createTheater,
   updateTheater,
+  toggleTheaterStatus,
   deleteTheater,
   listTheaters,
   createRoom,
@@ -75,6 +76,7 @@ router.route("/movies/:id").put(updateMovie).delete(deleteMovie);
 
 // Theaters (Mutation)
 router.post("/theaters", createTheater);
+router.patch("/theaters/:id/toggle", toggleTheaterStatus);
 router.route("/theaters/:id").put(updateTheater).delete(deleteTheater);
 
 // Rooms (Mutation)

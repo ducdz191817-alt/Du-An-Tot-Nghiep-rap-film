@@ -16,6 +16,8 @@ import PaymentPage from './pages/PaymentPage';
 import BookingHistoryPage from './pages/BookingHistoryPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import AdminPage from './pages/AdminPage';
 import PromotionsPage from './pages/PromotionsPage';
 import TheatersPage from './pages/TheatersPage';
@@ -56,6 +58,8 @@ function App() {
             <Route path="/history" element={<PublicLayout><BookingHistoryPage /></PublicLayout>} />
             <Route path="/login" element={<PublicLayout><LoginPage /></PublicLayout>} />
             <Route path="/register" element={<PublicLayout><RegisterPage /></PublicLayout>} />
+            <Route path="/forgot-password" element={<PublicLayout><ForgotPasswordPage /></PublicLayout>} />
+            <Route path="/reset-password/:token" element={<PublicLayout><ResetPasswordPage /></PublicLayout>} />
             <Route path="/promotions" element={<PublicLayout><PromotionsPage /></PublicLayout>} />
             <Route path="/theaters" element={<PublicLayout><TheatersPage /></PublicLayout>} />
             <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />

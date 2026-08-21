@@ -21,6 +21,10 @@ const TheaterSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please provide theater contact phone'],
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
     timestamps: true,

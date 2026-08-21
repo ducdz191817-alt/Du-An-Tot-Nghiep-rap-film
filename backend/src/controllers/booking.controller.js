@@ -44,6 +44,11 @@ const createBooking = async (req, res, next) => {
       throw new Error('Showtime not found');
     }
 
+    if (showtime.theater && showtime.theater.isActive === false) {
+      res.status(400);
+      throw new Error(`⚠️ Rạp chiếu "${showtime.theater.name}" hiện đang tạm ngưng hoạt động (Inactive). Không thể thực hiện đặt vé tại rạp này.`);
+    }
+
     // 1.5 KIỂM TRA ĐỘ TUỔI CỦA NGƯỜI DÙNG DỰA TRÊN PHÂN LOẠI PHIM
     const movieRating = showtime.movie.rating; // Ví dụ: 'P', 'T13', 'T16', 'T18'
     const userAge = req.user.age;
@@ -358,9 +363,9 @@ const createBooking = async (req, res, next) => {
 
     if (isVietQR) {
       // 9. VietQR logic
-      const bankId = process.env.VIETQR_BANK_ID || 'VCB';
-      const accountNo = process.env.VIETQR_ACCOUNT_NO || '1049742329';
-      const accountName = process.env.VIETQR_ACCOUNT_NAME || 'NGUYEN TRUONG DUC';
+      const bankId = process.env.VIETQR_BANK_ID || 'TCB';
+      const accountNo = process.env.VIETQR_ACCOUNT_NO || '19073206758013';
+      const accountName = process.env.VIETQR_ACCOUNT_NAME || 'NGUYEN MINH DUC';
       const addInfo = `NOVA${booking._id.toString().slice(-6).toUpperCase()}`;
       
       const qrUrl = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact.png?amount=${totalPrice}&addInfo=${addInfo}&accountName=${encodeURIComponent(accountName)}`;

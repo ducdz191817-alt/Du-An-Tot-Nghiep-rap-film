@@ -117,7 +117,12 @@ export const MovieDetail = ({ movie }) => {
     fetchMovieShowtimes();
   }, [movie?._id, selectedDate]);
 
-  const handleShowtimeClick = (showtimeId, isPastShowtime) => {
+  const handleShowtimeClick = (showtimeId, isPastShowtime, isTheaterInactive, theaterName) => {
+    if (isTheaterInactive) {
+      alert(`⚠️ Rạp chiếu "${theaterName || ''}" hiện đang tạm ngưng hoạt động (Inactive). Bạn không thể thực hiện đặt vé tại rạp này.`);
+      return;
+    }
+
     if (isPastShowtime) {
       alert(t('showtime.alertPastShowtime'));
       return;
@@ -543,42 +548,56 @@ export const MovieDetail = ({ movie }) => {
             </div>
           ) : (
             <div className="divide-y divide-gray-200 dark:divide-gray-800 relative z-10">
-              {Object.keys(groupedShowtimes).map((theaterName) => (
-                <div key={theaterName} className="py-8 flex flex-col md:flex-row md:items-start gap-6 md:gap-10">
-                  <div className="w-full md:w-64 shrink-0">
-                    <h3 className="font-extrabold text-gray-900 dark:text-gray-100 text-lg tracking-tight">
-                      {theaterName}
-                    </h3>
-                    <p className="text-xs text-gray-400 mt-1 font-semibold">{t('movie.formats')}</p>
-                  </div>
+              {Object.keys(groupedShowtimes).map((theaterName) => {
+                const firstShowtime = groupedShowtimes[theaterName][0];
+                const isTheaterInactive = firstShowtime?.theater?.isActive === false;
 
-                  <div className="flex-1 flex flex-wrap gap-4">
-                    {groupedShowtimes[theaterName].map((showtime) => {
-                      const startTimeString = new Date(showtime.startTime).toLocaleTimeString(language === 'vi' ? 'vi-VN' : 'en-US', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: false,
-                      });
-                      return (
-                        <button
-                          key={showtime._id}
-                          onClick={() => handleShowtimeClick(showtime._id, false)}
-                          className="flex items-center space-x-3 px-5 py-3 rounded-2xl transition-all duration-300 text-left group border bg-gray-50 dark:bg-gray-800 hover:bg-brand/10 dark:hover:bg-brand/10 border-gray-200 dark:border-gray-700 hover:border-brand/50 dark:hover:border-brand/50 hover:-translate-y-1 active:scale-95 shadow-sm hover:shadow-[0_10px_20px_rgba(200,135,43,0.15)]"
-                        >
-                          <div className="flex-1">
-                            <span className="text-gray-900 dark:text-gray-100 font-black text-base transition-colors group-hover:text-brand">
-                              {startTimeString}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <ChevronRight size={16} className="text-gray-400 group-hover:text-brand transition-all" />
-                          </div>
-                        </button>
-                      );
-                    })}
+                return (
+                  <div key={theaterName} className={`py-8 flex flex-col md:flex-row md:items-start gap-6 md:gap-10 ${isTheaterInactive ? 'opacity-70' : ''}`}>
+                    <div className="w-full md:w-64 shrink-0 space-y-1">
+                      <h3 className="font-extrabold text-gray-900 dark:text-gray-100 text-lg tracking-tight flex items-center gap-2">
+                        <span>{theaterName}</span>
+                        {isTheaterInactive && (
+                          <span className="px-2.5 py-0.5 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-full text-[10px] font-bold shrink-0">
+                            🔴 Tạm ngưng
+                          </span>
+                        )}
+                      </h3>
+                      <p className="text-xs text-gray-400 font-semibold">{t('movie.formats')}</p>
+                    </div>
+
+                    <div className="flex-1 flex flex-wrap gap-4">
+                      {groupedShowtimes[theaterName].map((showtime) => {
+                        const startTimeString = new Date(showtime.startTime).toLocaleTimeString(language === 'vi' ? 'vi-VN' : 'en-US', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: false,
+                        });
+                        return (
+                          <button
+                            key={showtime._id}
+                            onClick={() => handleShowtimeClick(showtime._id, false, isTheaterInactive, theaterName)}
+                            className={`flex items-center space-x-3 px-5 py-3 rounded-2xl transition-all duration-300 text-left group border ${
+                              isTheaterInactive
+                                ? 'bg-gray-100 dark:bg-gray-800/40 border-gray-200 dark:border-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-75'
+                                : 'bg-gray-50 dark:bg-gray-800 hover:bg-brand/10 dark:hover:bg-brand/10 border-gray-200 dark:border-gray-700 hover:border-brand/50 dark:hover:border-brand/50 hover:-translate-y-1 active:scale-95 shadow-sm hover:shadow-[0_10px_20px_rgba(200,135,43,0.15)]'
+                            }`}
+                          >
+                            <div className="flex-1">
+                              <span className={`font-black text-base transition-colors ${isTheaterInactive ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-gray-100 group-hover:text-brand'}`}>
+                                {startTimeString}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <ChevronRight size={16} className={isTheaterInactive ? 'text-gray-300' : 'text-gray-400 group-hover:text-brand transition-all'} />
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

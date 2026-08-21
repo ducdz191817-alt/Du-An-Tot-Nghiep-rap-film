@@ -7,6 +7,7 @@ import {
   Filter, Smartphone, Trash2, Camera, Mail, SendHorizontal, Loader2
 } from 'lucide-react';
 import adminService from '../../services/admin.service';
+import bookingService from '../../services/booking.service';
 import useAuth from '../../hooks/useAuth';
 import Loading from '../common/Loading';
 import PrintTicketModal from '../Booking/PrintTicketModal';
@@ -232,6 +233,18 @@ export const BookingManager = () => {
       }
     } finally {
       setIsCheckingIn(false);
+    }
+  };
+
+  // Action: Confirm pending payment
+  const handleConfirmPendingPayment = async (bookingId) => {
+    if (!window.confirm('Xác nhận duyệt thanh toán cho đơn đặt vé này và tự động phát hành vé + gửi Email cho khách hàng?')) return;
+    try {
+      await bookingService.simulatePayment(bookingId);
+      setMessage({ text: '✅ Đã duyệt thanh toán thành công, vé và Email đã được gửi tới khách hàng!', type: 'success' });
+      fetchBookings();
+    } catch (err) {
+      setMessage({ text: `❌ Lỗi duyệt thanh toán: ${err.message || 'Không xác định'}`, type: 'error' });
     }
   };
 
@@ -481,6 +494,18 @@ export const BookingManager = () => {
                               >
                                 <Eye size={13} /> Xem
                               </button>
+                              {b.paymentStatus === 'pending' && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleConfirmPendingPayment(b._id);
+                                  }}
+                                  className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all active:scale-95 inline-flex items-center gap-1 shadow-sm cursor-pointer"
+                                  title="Duyệt thanh toán cho vé này"
+                                >
+                                  <CheckCircle2 size={13} /> Duyệt thanh toán
+                                </button>
+                              )}
                               {b.paymentStatus === 'paid' && (
                                 b.isCheckedIn ? (
                                   <span className="px-2.5 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold inline-flex items-center gap-1">
