@@ -11,13 +11,14 @@ const getMovies = async (req, res, next) => {
 
     // Filter by status ('now-showing', 'coming-soon', 'preview', 'pre-release', etc.)
     if (status) {
-      if (status === 'all') {
-        query.status = { $nin: ['hidden', 'suspended', 'cancelled', 'stopped'] };
+      if (status === 'all' || status === 'admin_all') {
+        // Lấy toàn bộ các trạng thái phim cho quản trị viên
+        delete query.status;
       } else {
         query.status = status;
       }
     } else {
-      // Default: do not show admin-only statuses
+      // Default: do not show admin-only statuses for public queries
       query.status = { $nin: ['hidden', 'suspended', 'cancelled', 'stopped'] };
     }
 

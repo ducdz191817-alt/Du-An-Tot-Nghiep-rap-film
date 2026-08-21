@@ -33,14 +33,9 @@ export const RevenueReport = () => {
   const rawMovieData = report?.data?.movieSales || report?.movieSales || [];
   const theaterData = report?.data?.theaterSales || report?.theaterSales || [];
 
-  // [GHI CHÚ BẢO VỆ ĐỒ ÁN] - LỌC DOANH THU THEO TÊN PHIM
-  // Khi người dùng gõ vào ô tìm kiếm, state movieSearchTerm sẽ thay đổi.
-  // Hàm filter() bên dưới sẽ lặp qua toàn bộ mảng rawMovieData và chỉ giữ lại 
-  // những phim có tên (item.name) chứa từ khoá (movieSearchTerm).
-  // Dùng toLowerCase() để việc tìm kiếm không phân biệt chữ hoa, chữ thường.
-  const movieData = rawMovieData.filter(item => 
-    item.name.toLowerCase().includes(movieSearchTerm.toLowerCase())
-  );
+  const movieData = rawMovieData
+    .filter((item) => item && item.name && item.name !== 'Deleted Movie')
+    .filter((item) => item.name.toLowerCase().includes(movieSearchTerm.toLowerCase()));
 
   const fmt = (val) => (val || 0).toLocaleString('vi-VN') + ' ₫';
 
