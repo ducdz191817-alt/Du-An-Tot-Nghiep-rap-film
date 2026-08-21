@@ -783,8 +783,11 @@ const getRevenueReport = async (req, res, next) => {
       if (status === 'ended' && !isEnded) return;
       if (status === 'upcoming' && isEnded) return;
 
-      const movieTitle = showtime.movie ? showtime.movie.title : 'Deleted Movie';
-      const theaterName = showtime.theater ? showtime.theater.name : 'Deleted Theater';
+      // XÓA VÀ BỎ QUA CÁC PHIM ĐÃ XÓA (DELETED MOVIE)
+      if (!showtime.movie) return;
+
+      const movieTitle = showtime.movie.title;
+      const theaterName = showtime.theater ? showtime.theater.name : 'Rạp chưa xác định';
       
       const date = new Date(booking.bookingDate);
       const monthYear = date.toLocaleString('en-US', { month: 'short', year: '2-digit' });
@@ -796,9 +799,9 @@ const getRevenueReport = async (req, res, next) => {
           revenue: 0,
           tickets: 0,
           capacity: 0,
-          posterUrl: showtime.movie ? showtime.movie.posterUrl : null,
-          genre: showtime.movie ? showtime.movie.genre : [],
-          duration: showtime.movie ? showtime.movie.duration : 0,
+          posterUrl: showtime.movie.posterUrl || null,
+          genre: showtime.movie.genre || [],
+          duration: showtime.movie.duration || 0,
           uniqueShowtimes: new Set()
         };
       }
@@ -842,6 +845,11 @@ const getRevenueReport = async (req, res, next) => {
     res.json({
       success: true,
       data: {
+        summary: {
+          completedRevenue,
+          upcomingRevenue,
+          totalRevenue,
+        },
         movieSales: formatObjectToArray(movieSales),
         theaterSales: formatObjectToArray(theaterSales),
         monthlySales: formatObjectToArray(monthlySales),
