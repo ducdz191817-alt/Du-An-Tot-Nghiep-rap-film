@@ -5,11 +5,16 @@ const {
   loginUser,
   getUserProfile,
   updateUserProfile,
+  forgotPassword,
+  resetPassword,
 } = require('../controllers/auth.controller');
 const { protect } = require('../middleware/auth.middleware');
 
 router.post('/register', registerUser);
 router.post('/login', loginUser);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password/:token', resetPassword);
+
 router.route('/profile')
   .get(protect, getUserProfile)
   .put(protect, updateUserProfile);

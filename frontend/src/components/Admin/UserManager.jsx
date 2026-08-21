@@ -332,7 +332,7 @@ export const UserManager = () => {
             }}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-brand hover:bg-brand-hover shadow-[0_4px_14px_rgba(229,9,20,0.3)] transition-all active:scale-95 cursor-pointer shrink-0"
           >
-            <UserPlus size={15} /> Tạo tài khoản nhân viên
+            <UserPlus size={15} /> Tạo tài khoản
           </button>
 
           <button

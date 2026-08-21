@@ -191,6 +191,25 @@ const updateTheater = async (req, res, next) => {
   }
 };
 
+const toggleTheaterStatus = async (req, res, next) => {
+  try {
+    const theater = await Theater.findById(req.params.id);
+    if (!theater) {
+      res.status(404);
+      throw new Error('Theater not found');
+    }
+    theater.isActive = theater.isActive === false ? true : false;
+    await theater.save();
+    res.json({
+      success: true,
+      message: `Đã ${theater.isActive ? 'kích hoạt' : 'vô hiệu hóa'} rạp "${theater.name}" thành công!`,
+      data: theater,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const listTheaters = async (req, res, next) => {
   try {
     const theaters = await Theater.find();
@@ -481,6 +500,14 @@ const createShowtime = async (req, res, next) => {
     }
 
     const start = new Date(startTime);
+    if (isNaN(start.getTime())) {
+      res.status(400);
+      throw new Error('Thời gian chiếu không hợp lệ');
+    }
+    if (start.getTime() < Date.now()) {
+      res.status(400);
+      throw new Error('⚠️ Không thể tạo suất chiếu trong quá khứ! Vui lòng chọn thời gian chiếu từ thời điểm hiện tại trở đi.');
+    }
     const end = new Date(start.getTime() + movie.duration * 60000 + 20 * 60000); // add 20 mins break time
 
     // Prevent showtime overlapping in the same room
@@ -576,6 +603,14 @@ const updateShowtime = async (req, res, next) => {
     }
 
     const start = new Date(startTimeStr);
+    if (isNaN(start.getTime())) {
+      res.status(400);
+      throw new Error('Thời gian chiếu không hợp lệ');
+    }
+    if (start.getTime() < Date.now()) {
+      res.status(400);
+      throw new Error('⚠️ Không thể cập nhật suất chiếu thành thời gian trong quá khứ! Vui lòng chọn thời gian chiếu từ thời điểm hiện tại trở đi.');
+    }
     const end = new Date(start.getTime() + movie.duration * 60000 + 20 * 60000); // add 20 mins break time
 
     // Prevent showtime overlapping in the same room, excluding current showtime
@@ -1510,12 +1545,21 @@ const createUser = async (req, res, next) => {
       throw new Error(`Email "${email}" đã được đăng ký trên hệ thống!`);
     }
 
+    // Kiểm tra xem số điện thoại đã tồn tại chưa
+    if (phone && phone.trim()) {
+      const phoneExists = await User.findOne({ phone: phone.trim() });
+      if (phoneExists) {
+        res.status(400);
+        throw new Error(`Số điện thoại "${phone}" đã được đăng ký trên hệ thống!`);
+      }
+    }
+
     const newUser = await User.create({
       username: username.trim(),
       email: email.toLowerCase().trim(),
       password,
       role,
-      phone: phone || '',
+      phone: phone ? phone.trim() : '',
       gender: gender || 'Nam',
       dob: dob || '',
       region: region || '',
@@ -1555,8 +1599,19 @@ const updateUser = async (req, res, next) => {
       user.email = email.toLowerCase().trim();
     }
 
+    if (phone !== undefined && phone.trim() !== '') {
+      const cleanPhone = phone.trim();
+      if (cleanPhone !== user.phone) {
+        const phoneExists = await User.findOne({ _id: { $ne: req.params.id }, phone: cleanPhone });
+        if (phoneExists) {
+          res.status(400);
+          throw new Error(`Số điện thoại "${cleanPhone}" đã được sử dụng bởi tài khoản khác!`);
+        }
+      }
+      user.phone = cleanPhone;
+    }
+
     if (username) user.username = username.trim();
-    if (phone !== undefined) user.phone = phone.trim();
     if (gender) user.gender = gender;
     if (dob !== undefined) user.dob = dob;
     if (region !== undefined) user.region = region;
@@ -1687,6 +1742,12 @@ const autoGenerateShowtimes = async (req, res, next) => {
 
           const startTime = new Date(day);
           startTime.setHours(hours, minutes, 0, 0);
+
+          // Bỏ qua các suất chiếu ở thời gian trong quá khứ
+          if (startTime.getTime() < Date.now()) {
+            skipped++;
+            continue;
+          }
 
           const endTime = new Date(startTime.getTime() + durationMs + bufferMs);
 
@@ -2350,6 +2411,7 @@ module.exports = {
   checkMovieBookings,
   createTheater,
   updateTheater,
+  toggleTheaterStatus,
   deleteTheater,
   listTheaters,
   createRoom,

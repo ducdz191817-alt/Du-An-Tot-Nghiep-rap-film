@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, DoorOpen, Home, AlertCircle, RefreshCw, Edit2, Trash2, LayoutGrid } from 'lucide-react';
+import { Plus, DoorOpen, Home, AlertCircle, RefreshCw, Edit2, Trash2, LayoutGrid, Building2, Power, PowerOff, CheckCircle2, XCircle, MapPin, Phone } from 'lucide-react';
 import adminService from '../../services/admin.service';
 import Input from '../common/Input';
 import Button from '../common/Button';
@@ -24,7 +24,7 @@ export const RoomManager = () => {
   const [editingRoom, setEditingRoom] = useState(null);
 
   // Forms states
-  const [thForm, setThForm] = useState({ name: '', address: '', city: 'Hà Nội', phone: '' });
+  const [thForm, setThForm] = useState({ name: '', address: '', city: 'Hà Nội', phone: '', isActive: true });
   const [rmForm, setRmForm] = useState({
     name: '',
     theaterId: '',
@@ -67,11 +67,18 @@ export const RoomManager = () => {
     loadData();
   }, []);
 
-  const handleThChange = (e) => setThForm({ ...thForm, [e.target.name]: e.target.value });
+  const handleThChange = (e) => {
+    const { name, value } = e.target;
+    if (name === 'isActive') {
+      setThForm({ ...thForm, isActive: value === 'true' });
+    } else {
+      setThForm({ ...thForm, [name]: value });
+    }
+  };
+
   const handleRmChange = (e) => {
     const { name, value } = e.target;
     if (name === 'type') {
-      // Khi đổi loại phòng, reset các hàng ghế không được phép về 0
       const selectedRt = roomTypes.find((r) => r.code === value);
       const allowed = selectedRt?.allowedSeatTypes || ['standard', 'vip', 'couple'];
       setRmForm((prev) => ({
@@ -89,7 +96,7 @@ export const RoomManager = () => {
   // Open Handlers
   const handleOpenAddTheater = () => {
     setEditingTheater(null);
-    setThForm({ name: '', address: '', city: 'Hà Nội', phone: '' });
+    setThForm({ name: '', address: '', city: 'Hà Nội', phone: '', isActive: true });
     setError('');
     setIsThOpen(true);
   };
@@ -101,9 +108,21 @@ export const RoomManager = () => {
       address: th.address,
       city: th.city,
       phone: th.phone,
+      isActive: th.isActive !== false,
     });
     setError('');
     setIsThOpen(true);
+  };
+
+  const handleToggleTheaterStatus = async (th) => {
+    const actionStr = th.isActive !== false ? 'VÔ HIỆU HÓA' : 'KÍCH HOẠT';
+    if (!window.confirm(`Bạn có chắc chắn muốn ${actionStr} cụm rạp "${th.name}" không?\n${th.isActive !== false ? '⚠️ Khách hàng sẽ KHÔNG THỂ đặt vé tại rạp này nữa!' : '✅ Khách hàng có thể tiếp tục đặt vé tại rạp này.'}`)) return;
+    try {
+      await adminService.toggleTheaterStatus(th._id);
+      loadData();
+    } catch (err) {
+      alert(err.message || 'Lỗi khi thay đổi trạng thái rạp');
+    }
   };
 
   const handleOpenAddRoom = () => {
@@ -149,7 +168,7 @@ export const RoomManager = () => {
         await adminService.createTheater(thForm);
       }
       setIsThOpen(false);
-      setThForm({ name: '', address: '', city: 'Hà Nội', phone: '' });
+      setThForm({ name: '', address: '', city: 'Hà Nội', phone: '', isActive: true });
       setEditingTheater(null);
       loadData();
     } catch (err) {
@@ -226,73 +245,256 @@ export const RoomManager = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header & Tabs */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-200 pb-4 gap-4">
         <div>
-          <h3 className="text-lg font-black text-gray-800">Quản Lý Phòng Chiếu</h3>
-          <p className="text-xs text-gray-500 mt-1">Cấu hình các phòng chiếu và tạo sơ đồ ghế ngồi vật lý.</p>
+          <h3 className="text-lg font-black text-gray-800">Quản Lý Rạp & Phòng Chiếu</h3>
+          <p className="text-xs text-gray-500 mt-1">Cấu hình các rạp chiếu, trạng thái hoạt động, phòng chiếu và sơ đồ ghế.</p>
         </div>
 
+        {/* Tab switch buttons */}
         <div className="flex items-center gap-3">
-          <Button onClick={handleOpenAddRoom} variant="primary" className="py-2 px-4 text-sm" icon={<Plus size={16} />}>
-            Thêm Phòng Chiếu
-          </Button>
+          <div className="bg-gray-100 p-1 rounded-xl flex items-center gap-1 border border-gray-200">
+            <button
+              onClick={() => setActiveTab('rooms')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                activeTab === 'rooms'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              <DoorOpen size={14} />
+              <span>Phòng Chiếu ({rooms.length})</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('theaters')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                activeTab === 'theaters'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              <Building2 size={14} />
+              <span>Cụm Rạp Chiếu ({theaters.length})</span>
+            </button>
+          </div>
+
+          {activeTab === 'rooms' ? (
+            <Button onClick={handleOpenAddRoom} variant="primary" className="py-2 px-4 text-sm" icon={<Plus size={16} />}>
+              Thêm Phòng Chiếu
+            </Button>
+          ) : (
+            <Button onClick={handleOpenAddTheater} variant="primary" className="py-2 px-4 text-sm" icon={<Plus size={16} />}>
+              Thêm Cụm Rạp
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Danh sách lưới Phòng chiếu */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {rooms.length === 0 ? (
-          <div className="col-span-full py-12 text-center text-gray-400 italic border border-dashed border-gray-200 rounded-3xl bg-white">
-            Chưa có phòng chiếu nào được đăng ký. Hãy thêm phòng chiếu ở trên!
-          </div>
-        ) : (
-          rooms.map((rm) => (
-            <div key={rm._id} className="bg-white border border-gray-200 p-5 rounded-3xl space-y-3 shadow-sm hover:border-gray-300 transition-colors relative group">
-              <div className="flex items-start justify-between pr-12">
-                <div>
-                  <h4 className="font-bold text-gray-800 text-sm flex items-center gap-2">
-                    <DoorOpen size={16} className="text-brand" /> {rm.name}
-                  </h4>
-                  <span className="text-[10px] text-gray-400 font-semibold uppercase">{rm.theater?.name || 'Không xác định'}</span>
-                </div>
-                <span className="bg-gray-50 border border-gray-200 px-2 py-0.5 rounded text-[9px] uppercase font-bold text-gray-500 shrink-0">
-                  {rm.type}
-                </span>
-              </div>
-              <div className="text-xs font-semibold text-gray-500 border-t border-gray-200/80 pt-2 flex justify-between items-center">
-                <span>Sơ đồ sức chứa</span>
-                <span className="text-gray-700">{rm.capacity} Ghế đã tạo</span>
-              </div>
-
-              <button
-                onClick={() => setSeatMapRoom(rm)}
-                className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold border border-brand/30 text-brand bg-brand/5 hover:bg-brand/10 hover:border-brand/50 transition-all"
-              >
-                <LayoutGrid size={13} />
-                Quản lý sơ đồ ghế
-              </button>
-
-              {/* Floating Action Controls */}
-              <div className="absolute top-2 right-4 flex space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => handleOpenEditRoom(rm)}
-                  className="p-1.5 bg-gray-50 border border-gray-200 hover:border-brand/40 text-gray-500 hover:text-gray-700 rounded-lg transition-all"
-                  title="Sửa phòng chiếu"
-                >
-                  <Edit2 size={12} />
-                </button>
-                <button
-                  onClick={() => handleDeleteRoom(rm._id)}
-                  className="p-1.5 bg-gray-50 border border-gray-200 hover:border-red-500/40 text-gray-500 hover:text-red-500 rounded-lg transition-all"
-                  title="Xóa phòng chiếu"
-                >
-                  <Trash2 size={12} />
-                </button>
-              </div>
+      {/* TAB 1: Danh sách Phòng chiếu */}
+      {activeTab === 'rooms' && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {rooms.length === 0 ? (
+            <div className="col-span-full py-12 text-center text-gray-400 italic border border-dashed border-gray-200 rounded-3xl bg-white">
+              Chưa có phòng chiếu nào được đăng ký. Hãy thêm phòng chiếu ở trên!
             </div>
-          ))
-        )}
-      </div>
+          ) : (
+            rooms.map((rm) => {
+              const belongsToTheater = theaters.find((t) => (t._id === rm.theater?._id || t._id === rm.theater));
+              const isThInactive = belongsToTheater?.isActive === false;
+
+              return (
+                <div key={rm._id} className={`bg-white border p-5 rounded-3xl space-y-3 shadow-sm transition-colors relative group ${isThInactive ? 'border-amber-200 bg-amber-50/20' : 'border-gray-200 hover:border-gray-300'}`}>
+                  <div className="flex items-start justify-between pr-12">
+                    <div>
+                      <h4 className="font-bold text-gray-800 text-sm flex items-center gap-2">
+                        <DoorOpen size={16} className="text-brand" /> {rm.name}
+                      </h4>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] text-gray-400 font-semibold uppercase">{rm.theater?.name || belongsToTheater?.name || 'Không xác định'}</span>
+                        {isThInactive && (
+                          <span className="px-1.5 py-0.2 bg-red-50 text-red-600 border border-red-200 rounded text-[9px] font-bold">Rạp vô hiệu hóa</span>
+                        )}
+                      </div>
+                    </div>
+                    <span className="bg-gray-50 border border-gray-200 px-2 py-0.5 rounded text-[9px] uppercase font-bold text-gray-500 shrink-0">
+                      {rm.type}
+                    </span>
+                  </div>
+                  <div className="text-xs font-semibold text-gray-500 border-t border-gray-200/80 pt-2 flex justify-between items-center">
+                    <span>Sơ đồ sức chứa</span>
+                    <span className="text-gray-700">{rm.capacity} Ghế đã tạo</span>
+                  </div>
+
+                  <button
+                    onClick={() => setSeatMapRoom(rm)}
+                    className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold border border-brand/30 text-brand bg-brand/5 hover:bg-brand/10 hover:border-brand/50 transition-all"
+                  >
+                    <LayoutGrid size={13} />
+                    Quản lý sơ đồ ghế
+                  </button>
+
+                  {/* Floating Action Controls */}
+                  <div className="absolute top-2 right-4 flex space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => handleOpenEditRoom(rm)}
+                      className="p-1.5 bg-gray-50 border border-gray-200 hover:border-brand/40 text-gray-500 hover:text-gray-700 rounded-lg transition-all"
+                      title="Sửa phòng chiếu"
+                    >
+                      <Edit2 size={12} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteRoom(rm._id)}
+                      className="p-1.5 bg-gray-50 border border-gray-200 hover:border-red-500/40 text-gray-500 hover:text-red-500 rounded-lg transition-all"
+                      title="Xóa phòng chiếu"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* TAB 2: Danh sách Cụm rạp chiếu */}
+      {activeTab === 'theaters' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {theaters.length === 0 ? (
+            <div className="col-span-full py-12 text-center text-gray-400 italic border border-dashed border-gray-200 rounded-3xl bg-white">
+              Chưa có cụm rạp nào được đăng ký. Hãy bấm "Thêm Cụm Rạp" ở trên!
+            </div>
+          ) : (
+            theaters.map((th) => {
+              const isActive = th.isActive !== false;
+              const roomCount = rooms.filter((r) => (r.theater?._id || r.theater) === th._id).length;
+
+              return (
+                <div key={th._id} className={`bg-white border rounded-3xl p-5 space-y-4 shadow-sm transition-all relative group ${isActive ? 'border-gray-200' : 'border-red-200 bg-red-50/10'}`}>
+                  {/* Card Header */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <h4 className="font-extrabold text-gray-900 text-base flex items-center gap-2">
+                        <Building2 size={18} className={isActive ? 'text-brand' : 'text-gray-400'} />
+                        <span>{th.name}</span>
+                      </h4>
+                      <div className="flex items-center gap-2">
+                        {isActive ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <CheckCircle2 size={12} /> Đang hoạt động (Active)
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-50 text-red-700 border border-red-200">
+                            <XCircle size={12} /> Vô hiệu hóa (Inactive)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleOpenEditTheater(th)}
+                        className="p-1.5 text-gray-500 hover:text-brand hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Chỉnh sửa rạp"
+                      >
+                        <Edit2 size={15} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTheater(th._id)}
+                        className="p-1.5 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Xóa cụm rạp"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Address & Info */}
+                  <div className="space-y-2 text-xs text-gray-600 bg-gray-50 border border-gray-100 rounded-2xl p-3">
+                    <div className="flex items-start gap-2">
+                      <MapPin size={14} className="text-gray-400 shrink-0 mt-0.5" />
+                      <span>{th.address}, {th.city}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone size={14} className="text-gray-400 shrink-0" />
+                      <span>{th.phone || 'Chưa cập nhật SĐT'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 pt-1 border-t border-gray-200/60 font-semibold text-gray-700">
+                      <DoorOpen size={14} className="text-brand shrink-0" />
+                      <span>{roomCount} Phòng chiếu trực thuộc</span>
+                    </div>
+                  </div>
+
+                  {/* Bottom Toggle Button */}
+                  <div>
+                    {isActive ? (
+                      <button
+                        onClick={() => handleToggleTheaterStatus(th)}
+                        className="w-full py-2.5 px-4 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer shadow-xs"
+                      >
+                        <PowerOff size={14} />
+                        <span>Vô hiệu hóa rạp (Không cho đặt vé)</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleToggleTheaterStatus(th)}
+                        className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer shadow-sm"
+                      >
+                        <Power size={14} />
+                        <span>Kích hoạt rạp hoạt động trở lại</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* Modal Thêm / Sửa Cụm Rạp */}
+      <Modal isOpen={isThOpen} onClose={() => setIsThOpen(false)} title={editingTheater ? "Chỉnh Sửa Cụm Rạp" : "Thêm Cụm Rạp Mới"}>
+        <form onSubmit={handleTheaterSubmit} className="space-y-4">
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm flex items-center gap-2">
+              <AlertCircle size={16} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <Input name="name" label="Tên Cụm Rạp" placeholder="Nova Cinema Hà Nội" value={thForm.name} onChange={handleThChange} required />
+          <Input name="address" label="Địa Chỉ Rạp" placeholder="123 Đường Láng, Q. Đống Đa" value={thForm.address} onChange={handleThChange} required />
+          
+          <div className="grid grid-cols-2 gap-4">
+            <Input name="city" label="Thành Phố" placeholder="Hà Nội" value={thForm.city} onChange={handleThChange} required />
+            <Input name="phone" label="Số Điện Thoại Liên Hệ" placeholder="0988776655" value={thForm.phone} onChange={handleThChange} required />
+          </div>
+
+          {/* Trạng thái hoạt động của rạp */}
+          <div>
+            <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">Trạng Thái Hoạt Động</label>
+            <select
+              name="isActive"
+              value={thForm.isActive ? 'true' : 'false'}
+              onChange={handleThChange}
+              className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg py-2.5 px-3 focus:border-brand outline-none cursor-pointer font-bold"
+            >
+              <option value="true">🟢 Đang Hoạt Động (Active)</option>
+              <option value="false">🔴 Vô Hiệu Hóa (Inactive - Tạm ngưng đặt vé)</option>
+            </select>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-3 border-t border-gray-200">
+            <Button onClick={() => setIsThOpen(false)} variant="secondary" className="px-5 py-2">
+              Hủy
+            </Button>
+            <Button type="submit" variant="primary" className="px-6 py-2">
+              {editingTheater ? "Lưu thay đổi" : "Tạo Cụm Rạp"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Add / Edit Hall Modal */}
       <Modal isOpen={isRmOpen} onClose={() => setIsRmOpen(false)} title={editingRoom ? "Chỉnh Sửa Phòng Chiếu" : "Đăng Ký Phòng Chiếu & Tạo Sơ Đồ Ghế"} size="lg">
@@ -320,7 +522,7 @@ export const RoomManager = () => {
               >
                 {theaters.map((t) => (
                   <option key={t._id} value={t._id}>
-                    {t.name}
+                    {t.name} {t.isActive === false ? '(Tạm ngưng)' : ''}
                   </option>
                 ))}
               </select>

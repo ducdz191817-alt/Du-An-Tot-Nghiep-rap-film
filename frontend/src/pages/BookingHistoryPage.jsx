@@ -554,9 +554,9 @@ const PendingPaymentModal = ({ booking, onClose, onCancel, onSuccess }) => {
   const [copyStatus, setCopyStatus] = useState('');
   const [checking, setChecking] = useState(false);
 
-  const bankId = 'VCB';
-  const accountNo = '1049742329';
-  const accountName = 'NGUYEN TRUONG DUC';
+  const bankId = 'TCB';
+  const accountNo = '19073206758013';
+  const accountName = 'NGUYEN MINH DUC';
   const addInfo = `NOVA${(booking._id || '').slice(-6).toUpperCase()}`;
   const amount = booking.totalPrice || 0;
   const qrUrl = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact.png?amount=${amount}&addInfo=${addInfo}&accountName=${encodeURIComponent(accountName)}`;

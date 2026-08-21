@@ -1,35 +1,50 @@
-﻿require('dotenv').config();
+require('dotenv').config();
 const nodemailer = require('nodemailer');
 
-const smtpHost = process.env.SMTP_HOST || process.env.EMAIL_HOST;
-const smtpPort = parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '587', 10);
-const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER;
-const smtpPass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
-const smtpSecure = (process.env.SMTP_SECURE || process.env.EMAIL_SECURE || 'false').toLowerCase() === 'true';
-
-const transporter = nodemailer.createTransport({
-  host: smtpHost,
-  port: smtpPort,
-  secure: smtpSecure,
-  auth: smtpUser && smtpPass ? { user: smtpUser, pass: smtpPass } : undefined,
-});
-
 async function sendEmail({ to, subject, html, text }) {
-  if (!smtpHost || !smtpUser || !smtpPass) {
-    console.log('Email skipped because SMTP config is not fully set.');
-    console.log({ to, subject, text, html: html ? html.slice(0, 200) : undefined });
-    return;
+  const smtpHost = process.env.SMTP_HOST || process.env.EMAIL_HOST;
+  const smtpPort = parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '587', 10);
+  const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER;
+  const smtpPassRaw = process.env.SMTP_PASS || process.env.EMAIL_PASS || '';
+  const smtpPass = smtpPassRaw.replace(/\s+/g, ''); // Strip all spaces from app password
+  const smtpSecure = (process.env.SMTP_SECURE || process.env.EMAIL_SECURE || 'false').toLowerCase() === 'true';
+
+  if (!smtpUser || !smtpPass) {
+    console.log('\n======================================================');
+    console.log('⚠️ [SMTP CHƯA ĐƯỢC CẤU HÌNH TRONG .ENV]');
+    console.log('------------------------------------------------------');
+    console.log(`📬 Gửi tới Email: ${to}`);
+    console.log(`📌 Tiêu đề: ${subject}`);
+    if (text) console.log(`🔗 Link / Content:\n${text}`);
+    console.log('👉 Hướng dẫn: Thêm SMTP_USER và SMTP_PASS vào file backend/.env để gửi email thực sự vào hộp thư Gmail.');
+    console.log('======================================================\n');
+    return { skipped: true };
   }
 
+  const transporterOptions = (smtpHost && smtpHost.includes('gmail')) || (!smtpHost && smtpUser.endsWith('@gmail.com'))
+    ? {
+        service: 'gmail',
+        auth: { user: smtpUser, pass: smtpPass },
+      }
+    : {
+        host: smtpHost || 'smtp.gmail.com',
+        port: smtpPort,
+        secure: smtpSecure,
+        auth: { user: smtpUser, pass: smtpPass },
+      };
+
+  const transporter = nodemailer.createTransport(transporterOptions);
+
   const mailOptions = {
-    from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+    from: process.env.EMAIL_FROM || `Nova Cinematic <${smtpUser}>`,
     to,
     subject,
-    text: text || 'Please view this email in an HTML-capable client.',
+    text: text || 'Vui lòng xem email bằng trình duyệt hỗ trợ HTML.',
     html,
   };
 
-  await transporter.sendMail(mailOptions);
+  const info = await transporter.sendMail(mailOptions);
+  return info;
 }
 
 module.exports = sendEmail;

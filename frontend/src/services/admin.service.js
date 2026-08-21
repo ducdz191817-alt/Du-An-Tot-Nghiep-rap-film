@@ -36,6 +36,11 @@ const updateTheater = async (id, theaterData) => {
   return response.data;
 };
 
+const toggleTheaterStatus = async (id) => {
+  const response = await api.patch(`/admin/theaters/${id}/toggle`);
+  return response.data;
+};
+
 const deleteTheater = async (id) => {
   const response = await api.delete(`/admin/theaters/${id}`);
   return response.data;
@@ -282,6 +287,7 @@ const adminService = {
   getTheaters,
   createTheater,
   updateTheater,
+  toggleTheaterStatus,
   deleteTheater,
   getRooms,
   createRoom,

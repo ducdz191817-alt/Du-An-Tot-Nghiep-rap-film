@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Mail, Lock, LogIn } from 'lucide-react';
 import Input from '../common/Input';
 import Button from '../common/Button';
@@ -66,17 +67,27 @@ export const LoginForm = ({ onSuccess }) => {
         required
       />
 
-      <Input
-        name="password"
-        type="password"
-        label="Mật khẩu"
-        placeholder="••••••••"
-        value={formData.password}
-        onChange={handleChange}
-        error={formErrors.password}
-        icon={<Lock size={18} />}
-        required
-      />
+      <div>
+        <Input
+          name="password"
+          type="password"
+          label="Mật khẩu"
+          placeholder="••••••••"
+          value={formData.password}
+          onChange={handleChange}
+          error={formErrors.password}
+          icon={<Lock size={18} />}
+          required
+        />
+        <div className="flex justify-end mt-1.5">
+          <Link
+            to="/forgot-password"
+            className="text-xs font-semibold text-brand hover:underline"
+          >
+            Quên mật khẩu?
+          </Link>
+        </div>
+      </div>
 
       <Button
         type="submit"

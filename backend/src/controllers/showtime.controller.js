@@ -64,6 +64,7 @@ const getShowtimeById = async (req, res, next) => {
       data: {
         showtime,
         seats, // These are master seats in the room
+        isTheaterInactive: showtime.theater?.isActive === false,
       },
     });
   } catch (error) {
