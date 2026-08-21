@@ -490,11 +490,12 @@ export const BookingManager = () => {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handlePerformCheckIn(b.ticketCode || b._id);
+                                      setCheckInInput(b.ticketCode || b._id);
+                                      setCheckInResult(null);
                                       setActiveTab('checkin');
                                     }}
                                     className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all active:scale-95 inline-flex items-center gap-1 shadow-sm cursor-pointer"
-                                    title="Thực hiện Check-in vé"
+                                    title="Mở màn hình Check-in vé"
                                   >
                                     <QrCode size={13} /> Check-in vé
                                   </button>
