@@ -11,15 +11,18 @@ const getMovies = async (req, res, next) => {
 
     // Filter by status ('now-showing', 'coming-soon', 'preview', 'pre-release', etc.)
     if (status) {
-      if (status === 'all' || status === 'admin_all') {
+      if (status === 'admin_all') {
         // Lấy toàn bộ các trạng thái phim cho quản trị viên
         delete query.status;
+      } else if (status === 'all') {
+        // Công khai: "Tất cả phim" chỉ bao gồm các phim đang/sắp chiếu (loại bỏ ended, hidden, stopped, suspended, cancelled)
+        query.status = { $nin: ['hidden', 'suspended', 'cancelled', 'stopped', 'ended'] };
       } else {
         query.status = status;
       }
     } else {
-      // Default: do not show admin-only statuses for public queries
-      query.status = { $nin: ['hidden', 'suspended', 'cancelled', 'stopped'] };
+      // Default: do not show inactive/ended statuses for public queries
+      query.status = { $nin: ['hidden', 'suspended', 'cancelled', 'stopped', 'ended'] };
     }
 
     // Filter by title / description search query

@@ -174,7 +174,7 @@ export const TicketVerifyPage = () => {
 
         {/* Header */}
         <div className="text-center mb-2">
-          <p className="text-xs text-zinc-600 font-bold uppercase tracking-widest">Nova Cinematic</p>
+          <p className="text-xs text-zinc-600 font-bold uppercase tracking-widest">Nova Cinema</p>
           <h1 className="text-lg font-black text-zinc-300 mt-1">Xác Minh Vé Điện Tử</h1>
         </div>
 
@@ -277,7 +277,7 @@ export const TicketVerifyPage = () => {
         {/* Footer note */}
         <p className="text-center text-[10px] text-zinc-600 font-semibold leading-relaxed px-4">
           Trang này dành cho nhân viên soát vé xác minh tính hợp lệ của vé điện tử.<br />
-          Mọi thắc mắc vui lòng liên hệ quầy hỗ trợ Nova Cinematic.
+          Mọi thắc mắc vui lòng liên hệ quầy hỗ trợ Nova Cinema.
         </p>
 
         <div className="text-center">

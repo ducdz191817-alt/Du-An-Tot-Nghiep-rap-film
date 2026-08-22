@@ -32,7 +32,7 @@ export const LoginPage = () => {
         <div className="flex flex-col items-center justify-center space-y-3">
           <img 
             src={myLogo} 
-            alt="Nova Cinematic Logo" 
+            alt="Nova Cinema Logo" 
             className="h-16 w-auto object-contain" 
           />
           <h2 className="text-xl font-bold text-gray-800 uppercase tracking-wider text-center mt-2">
@@ -45,7 +45,7 @@ export const LoginPage = () => {
         <LoginForm onSuccess={handleLoginSuccess} />
 
         <div className="text-center text-xs font-semibold text-zinc-500 border-t border-dark-border/40 pt-4">
-          <span>Chưa có tài khoản Nova Cinematic? </span>
+          <span>Chưa có tài khoản Nova Cinema? </span>
           <Link
             to={`/register?redirect=${encodeURIComponent(redirect)}`}
             className="text-brand font-black hover:underline"

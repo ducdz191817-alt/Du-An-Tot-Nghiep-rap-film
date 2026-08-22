@@ -20,20 +20,23 @@ export const MovieCard = ({ movie }) => {
   // Fallback poster image
   const fallbackPoster = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600"%3E%3Crect fill="%23f3f0eb" width="400" height="600"/%3E%3Ctext x="50%25" y="50%25" font-size="24" fill="%23a89888" text-anchor="middle" dominant-baseline="middle" font-family="Arial"%3EMovie Poster%3C/text%3E%3C/svg%3E';
 
-  // Normalize legacy ended status to now-showing for display
-  const effectiveStatus = movie.status === 'ended' ? 'now-showing' : movie.status;
+  const effectiveStatus = movie.status;
 
   const statusLabel = effectiveStatus === 'now-showing'
     ? (language === 'vi' ? 'ĐANG CHIẾU' : 'NOW SHOWING')
     : effectiveStatus === 'coming-soon'
       ? (language === 'vi' ? 'SẮP CHIẾU' : 'COMING SOON')
-      : (language === 'vi' ? 'SẮP RA MẮT' : 'PRE-RELEASE');
+      : effectiveStatus === 'pre-release'
+        ? (language === 'vi' ? 'SẮP RA MẮT' : 'PRE-RELEASE')
+        : (language === 'vi' ? 'ĐÃ KẾT THÚC' : 'ENDED');
 
   const statusColor = effectiveStatus === 'now-showing'
     ? 'bg-emerald-500'
     : effectiveStatus === 'coming-soon'
       ? 'bg-blue-500'
-      : 'bg-sky-500';
+      : effectiveStatus === 'pre-release'
+        ? 'bg-sky-500'
+        : 'bg-zinc-500';
 
   const releaseDateLabel = movie.releaseDate
     ? new Date(movie.releaseDate).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', {

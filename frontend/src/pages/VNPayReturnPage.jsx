@@ -55,8 +55,8 @@ export const VNPayReturnPage = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4 py-12">
         <Loader2 className="w-12 h-12 text-brand animate-spin" />
-        <h2 className="text-xl font-black text-white">Đang xác thực thanh toán VNPay...</h2>
-        <p className="text-sm text-zinc-500 font-semibold">Vui lòng không tắt trình duyệt hoặc tải lại trang.</p>
+        <h2 className="text-xl font-black text-gray-900 dark:text-white">Đang xác thực thanh toán VNPay...</h2>
+        <p className="text-sm text-gray-600 dark:text-zinc-500 font-semibold">Vui lòng không tắt trình duyệt hoặc tải lại trang.</p>
       </div>
     );
   }
@@ -64,7 +64,7 @@ export const VNPayReturnPage = () => {
   if (status === 'failed') {
     return (
       <div className="max-w-md mx-auto py-16 px-4">
-        <div className="bg-dark-card border border-dark-border rounded-3xl p-8 space-y-6 shadow-2xl text-center relative overflow-hidden">
+        <div className="bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 rounded-3xl p-8 space-y-6 shadow-2xl text-center relative overflow-hidden">
           {/* Top colored bar */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-red-500" />
           
@@ -74,13 +74,13 @@ export const VNPayReturnPage = () => {
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-xl font-black text-white">Thanh toán thất bại</h2>
-            <p className="text-xs text-zinc-400 font-semibold leading-relaxed">
+            <h2 className="text-xl font-black text-gray-900 dark:text-white">Thanh toán thất bại</h2>
+            <p className="text-xs text-gray-600 dark:text-zinc-400 font-semibold leading-relaxed">
               {errorMsg}
             </p>
           </div>
 
-          <div className="border-t border-dark-border/60 pt-4 text-[11px] text-zinc-500 font-medium">
+          <div className="border-t border-gray-200 dark:border-dark-border/60 pt-4 text-[11px] text-gray-500 dark:text-zinc-500 font-medium">
             Nếu tiền đã bị trừ trong tài khoản, vui lòng liên hệ CSKH của chúng tôi để được giải quyết nhanh nhất.
           </div>
 
@@ -100,8 +100,8 @@ export const VNPayReturnPage = () => {
     <>
       {/* Loading state before success modal is fully mounted */}
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4 py-12">
-        <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
-        <p className="text-sm text-zinc-400 font-bold">Thanh toán thành công! Đang hiển thị vé...</p>
+        <Loader2 className="w-8 h-8 text-emerald-600 dark:text-emerald-400 animate-spin" />
+        <p className="text-sm text-gray-600 dark:text-zinc-400 font-bold">Thanh toán thành công! Đang hiển thị vé...</p>
       </div>
 
       <BookingSuccessModal

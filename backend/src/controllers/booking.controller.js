@@ -407,12 +407,12 @@ const createBooking = async (req, res, next) => {
     const emailContentHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #222; border-radius: 16px; padding: 25px; background-color: #13131c; color: #e4e4e7;">
         <div style="text-align: center; border-bottom: 1px solid #27272a; padding-bottom: 20px; margin-bottom: 20px;">
-          <h2 style="color: #a855f7; margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">Nova Cinematic</h2>
+          <h2 style="color: #a855f7; margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">Nova Cinema</h2>
           <p style="color: #a1a1aa; font-size: 14px; margin: 5px 0 0 0;">Vé Xem Phim Của Bạn Đã Sẵn Sàng!</p>
         </div>
 
         <p>Xin chào <strong>${req.user.username}</strong>,</p>
-        <p>Cảm ơn bạn đã lựa chọn Nova Cinematic. Đặt vé và thanh toán của bạn đã hoàn tất thành công. Dưới đây là thông tin chi tiết:</p>
+        <p>Cảm ơn bạn đã lựa chọn Nova Cinema. Đặt vé và thanh toán của bạn đã hoàn tất thành công. Dưới đây là thông tin chi tiết:</p>
 
         <div style="background-color: #1e1e2f; border-left: 4px solid #a855f7; padding: 20px; border-radius: 12px; margin: 20px 0;">
           <h3 style="margin-top: 0; color: #fff; font-size: 20px; font-weight: 800;">${showtime.movie.title}</h3>
@@ -477,7 +477,7 @@ const createBooking = async (req, res, next) => {
         </p>
 
         <div style="text-align: center; border-top: 1px solid #27272a; margin-top: 25px; padding-top: 15px; font-size: 11px; color: #71717a;">
-          Email này được gửi tự động bởi hệ thống đặt vé Nova Cinematic. Vui lòng không trả lời trực tiếp email này.
+          Email này được gửi tự động bởi hệ thống đặt vé Nova Cinema. Vui lòng không trả lời trực tiếp email này.
         </div>
       </div>
     `;
@@ -485,7 +485,7 @@ const createBooking = async (req, res, next) => {
     try {
       await sendEmail({
         to: req.user.email,
-        subject: `[Nova Cinematic] Xác nhận đặt vé thành công - ${showtime.movie.title}`,
+        subject: `[Nova Cinema] Xác nhận đặt vé thành công - ${showtime.movie.title}`,
         html: emailContentHtml,
       });
     } catch (emailErr) {
@@ -765,7 +765,7 @@ const simulatePayment = async (req, res, next) => {
     const emailContentHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #222; border-radius: 16px; padding: 25px; background-color: #13131c; color: #e4e4e7;">
         <div style="text-align: center; border-bottom: 1px solid #27272a; padding-bottom: 20px; margin-bottom: 20px;">
-          <h2 style="color: #a855f7; margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">Nova Cinematic</h2>
+          <h2 style="color: #a855f7; margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">Nova Cinema</h2>
           <p style="color: #a1a1aa; font-size: 14px; margin: 5px 0 0 0;">Vé Xem Phim Của Bạn Đã Sẵn Sàng!</p>
         </div>
 
@@ -810,7 +810,7 @@ const simulatePayment = async (req, res, next) => {
         </p>
 
         <div style="text-align: center; border-top: 1px solid #27272a; margin-top: 25px; padding-top: 15px; font-size: 11px; color: #71717a;">
-          Email này được gửi tự động bởi hệ thống đặt vé Nova Cinematic.
+          Email này được gửi tự động bởi hệ thống đặt vé Nova Cinema.
         </div>
       </div>
     `;
@@ -818,7 +818,7 @@ const simulatePayment = async (req, res, next) => {
     try {
       await sendEmail({
         to: req.user.email,
-        subject: `[Nova Cinematic] Xác nhận đặt vé thành công - ${booking.showtime.movie.title}`,
+        subject: `[Nova Cinema] Xác nhận đặt vé thành công - ${booking.showtime.movie.title}`,
         html: emailContentHtml,
       });
     } catch (emailErr) {

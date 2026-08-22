@@ -83,7 +83,7 @@ export const BookingSuccessModal = ({ isOpen, bookingResult, showtime, selectedS
       }}
     >
       <div
-        className={`relative bg-dark-card border border-dark-border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden
+        className={`relative bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden
           transition-all duration-500 ease-out
           ${visible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-90 translate-y-8'}
         `}
@@ -105,28 +105,28 @@ export const BookingSuccessModal = ({ isOpen, bookingResult, showtime, selectedS
               <span className="absolute inset-0 rounded-full border-2 border-emerald-400/40 animate-ping" />
             </div>
             <div className="text-center space-y-1">
-              <h2 className="text-2xl font-black text-white">Đặt vé thành công! 🎉</h2>
-              <p className="text-xs text-zinc-400 font-semibold">
+              <h2 className="text-2xl font-black text-gray-900 dark:text-white">Đặt vé thành công! 🎉</h2>
+              <p className="text-xs text-gray-600 dark:text-zinc-400 font-semibold">
                 Email xác nhận đã được gửi đến hộp thư của bạn.
               </p>
             </div>
           </div>
 
           {/* Ticket details card */}
-          <div className="bg-zinc-900/80 border border-dark-border rounded-2xl overflow-hidden">
+          <div className="bg-gray-50 dark:bg-zinc-900/80 border border-gray-200 dark:border-dark-border rounded-2xl overflow-hidden">
             {/* Movie name header */}
-            <div className="bg-gradient-to-r from-brand/10 to-transparent p-4 border-b border-dark-border/50">
+            <div className="bg-gradient-to-r from-brand/10 to-transparent p-4 border-b border-gray-200 dark:border-dark-border/50">
               <div className="flex items-center gap-2">
                 <Ticket size={16} className="text-brand shrink-0" />
                 <div>
-                  <p className="text-xs text-zinc-500 font-bold uppercase tracking-wider">Phim</p>
-                  <p className="text-sm font-black text-zinc-100 leading-tight">{movie.title || 'N/A'}</p>
+                  <p className="text-xs text-gray-500 dark:text-zinc-400 font-bold uppercase tracking-wider">Phim</p>
+                  <p className="text-sm font-black text-gray-900 dark:text-zinc-100 leading-tight">{movie.title || 'N/A'}</p>
                 </div>
               </div>
             </div>
 
             {/* Detail rows */}
-            <div className="divide-y divide-dark-border/30">
+            <div className="divide-y divide-gray-200 dark:divide-dark-border/30">
               <DetailRow
                 icon={<MapPin size={13} className="text-brand" />}
                 label="Rạp & Phòng"
@@ -179,23 +179,23 @@ export const BookingSuccessModal = ({ isOpen, bookingResult, showtime, selectedS
             </div>
 
             {/* Total */}
-            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-brand/5 to-transparent border-t border-dark-border/50">
+            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-brand/5 to-transparent border-t border-gray-200 dark:border-dark-border/50">
               <div className="space-y-0.5">
-                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider flex items-center gap-1">
+                <p className="text-[10px] text-gray-500 dark:text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1">
                   <Receipt size={11} /> Mã giao dịch
                 </p>
-                <p className="text-xs font-black text-zinc-300 font-mono">{transactionId}</p>
+                <p className="text-xs font-black text-gray-800 dark:text-zinc-300 font-mono">{transactionId}</p>
               </div>
               <div className="text-right">
-                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Tổng thanh toán</p>
-                <p className="text-xl font-black text-emerald-400">{totalPrice.toLocaleString()} VND</p>
+                <p className="text-[10px] text-gray-500 dark:text-zinc-400 font-bold uppercase tracking-wider">Tổng thanh toán</p>
+                <p className="text-xl font-black text-emerald-600 dark:text-emerald-400">{totalPrice.toLocaleString()} VND</p>
               </div>
             </div>
           </div>
 
           {/* Ticket QR Code */}
-          <div className="flex flex-col items-center justify-center bg-zinc-900/60 border border-dark-border/60 rounded-2xl p-5 space-y-3">
-            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider text-center">
+          <div className="flex flex-col items-center justify-center bg-gray-50 dark:bg-zinc-900/60 border border-gray-200 dark:border-dark-border/60 rounded-2xl p-5 space-y-3">
+            <p className="text-[10px] text-gray-600 dark:text-zinc-400 font-bold uppercase tracking-wider text-center">
               Mã QR vé điện tử — Cho nhân viên quét khi vào rạp
             </p>
             <div className="bg-white p-3 rounded-2xl shadow-lg flex items-center justify-center w-40 h-40 border border-zinc-200">
@@ -209,12 +209,12 @@ export const BookingSuccessModal = ({ isOpen, bookingResult, showtime, selectedS
             </div>
             {/* Mã vé dạng text để nhân viên nhập tay nếu không quét được QR */}
             <div className="flex flex-col items-center gap-1">
-              <span className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider">Mã vé</span>
-              <span className="font-mono text-base font-black text-brand tracking-widest bg-zinc-800 border border-zinc-700 px-3 py-1 rounded-lg select-all">
+              <span className="text-[10px] text-gray-500 dark:text-zinc-400 font-semibold uppercase tracking-wider">Mã vé</span>
+              <span className="font-mono text-base font-black text-brand tracking-widest bg-gray-200 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 px-3 py-1 rounded-lg select-all">
                 {booking?.ticketCode || '---'}
               </span>
             </div>
-            <p className="text-[10px] text-zinc-500 font-semibold text-center max-w-[240px] leading-relaxed">
+            <p className="text-[10px] text-gray-600 dark:text-zinc-400 font-semibold text-center max-w-[240px] leading-relaxed">
               Hoặc nhập mã vé bên trên tại quầy nếu không quét được QR
             </p>
           </div>
@@ -223,7 +223,7 @@ export const BookingSuccessModal = ({ isOpen, bookingResult, showtime, selectedS
           <div className="flex flex-col sm:flex-row gap-3 pt-1">
             <button
               onClick={handleGoHome}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white text-sm font-bold transition-all"
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-gray-300 dark:border-zinc-700 text-gray-800 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 text-sm font-bold transition-all"
             >
               <Home size={16} />
               Về trang chủ
@@ -246,11 +246,11 @@ export const BookingSuccessModal = ({ isOpen, bookingResult, showtime, selectedS
 // Helper row component
 const DetailRow = ({ icon, label, value }) => (
   <div className="flex items-start justify-between gap-3 px-4 py-3">
-    <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-bold uppercase tracking-wider shrink-0 mt-0.5">
+    <div className="flex items-center gap-1.5 text-[10px] text-gray-500 dark:text-zinc-400 font-bold uppercase tracking-wider shrink-0 mt-0.5">
       {icon}
       {label}
     </div>
-    <div className="text-xs font-semibold text-zinc-300 text-right">{value}</div>
+    <div className="text-xs font-semibold text-gray-800 dark:text-zinc-200 text-right">{value}</div>
   </div>
 );
 

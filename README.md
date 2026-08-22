@@ -1,4 +1,4 @@
-# 🎬 Nova Cinematic - Premium Movie Ticket Booking System
+# 🎬 Nova Cinema - Premium Movie Ticket Booking System
 
 A state-of-the-art, premium Movie Ticket Reservation web application featuring real-time seat charts generations, concession snacks aggregators, email receipt invoicing, and a fully featured administrative analytics dashboard.
 

@@ -198,7 +198,7 @@ export const PaymentForm = ({
                 className="mt-0.5 w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-brand focus:ring-brand/30 accent-brand cursor-pointer"
               />
               <span className="text-xs text-zinc-600 dark:text-zinc-400 font-semibold leading-relaxed">
-                Tôi đồng ý với <span className="text-brand hover:underline font-bold">điều khoản sử dụng dịch vụ</span> và <span className="text-brand hover:underline font-bold">chính sách bảo mật</span> của Nova Cinematic. Vé đã mua <strong className="text-zinc-800 dark:text-zinc-200">không được đổi, trả hoặc hoàn tiền</strong>.
+                Tôi đồng ý với <span className="text-brand hover:underline font-bold">điều khoản sử dụng dịch vụ</span> và <span className="text-brand hover:underline font-bold">chính sách bảo mật</span> của Nova Cinema. Vé đã mua <strong className="text-zinc-800 dark:text-zinc-200">không được đổi, trả hoặc hoàn tiền</strong>.
               </span>
             </label>
             {errors.terms && (
@@ -300,7 +300,7 @@ export const PaymentForm = ({
                 className="mt-0.5 w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-brand focus:ring-brand/30 accent-brand cursor-pointer"
               />
               <span className="text-xs text-zinc-600 dark:text-zinc-400 font-semibold leading-relaxed">
-                Tôi đồng ý với <span className="text-brand hover:underline font-bold">điều khoản sử dụng dịch vụ</span> và <span className="text-brand hover:underline font-bold">chính sách bảo mật</span> của Nova Cinematic. Vé đã mua <strong className="text-zinc-800 dark:text-zinc-200">không được đổi, trả hoặc hoàn tiền</strong>.
+                Tôi đồng ý với <span className="text-brand hover:underline font-bold">điều khoản sử dụng dịch vụ</span> và <span className="text-brand hover:underline font-bold">chính sách bảo mật</span> của Nova Cinema. Vé đã mua <strong className="text-zinc-800 dark:text-zinc-200">không được đổi, trả hoặc hoàn tiền</strong>.
               </span>
             </label>
             {errors.terms && (

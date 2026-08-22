@@ -1945,7 +1945,7 @@ function buildTicketEmailHtml({ booking, movie, showtime, theater, room, seats, 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Xác nhận vé - Nova Cinematic</title>
+  <title>Xác nhận vé - Nova Cinema</title>
 </head>
 <body style="margin:0;padding:0;background:#0f0f1a;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#0f0f1a;padding:36px 16px">
@@ -1954,14 +1954,14 @@ function buildTicketEmailHtml({ booking, movie, showtime, theater, room, seats, 
 
         <!-- HEADER -->
         <tr><td style="background:linear-gradient(135deg,#c0392b 0%,#e74c3c 60%,#ff6b6b 100%);border-radius:14px 14px 0 0;padding:28px 36px;text-align:center">
-          <div style="font-size:26px;font-weight:900;color:#fff;letter-spacing:2px">🎬 NOVA CINEMATIC</div>
+          <div style="font-size:26px;font-weight:900;color:#fff;letter-spacing:2px">🎬 NOVA CINEMA</div>
           <div style="color:rgba(255,255,255,0.8);font-size:12px;margin-top:5px;letter-spacing:1px">XÁC NHẬN ĐẶT VÉ THÀNH CÔNG</div>
         </td></tr>
 
         <!-- GREETING -->
         <tr><td style="background:#1a1a2e;padding:24px 36px">
           <div style="color:#fff;font-size:15px;font-weight:600">Xin chào <span style="color:#e74c3c">${userName}</span>,</div>
-          <div style="color:#999;font-size:12px;margin-top:6px;line-height:1.7">Cảm ơn bạn đã tin tưởng đặt vé tại Nova Cinematic. Dưới đây là thông tin chi tiết vé của bạn.</div>
+          <div style="color:#999;font-size:12px;margin-top:6px;line-height:1.7">Cảm ơn bạn đã tin tưởng đặt vé tại Nova Cinema. Dưới đây là thông tin chi tiết vé của bạn.</div>
         </td></tr>
 
         <!-- TICKET CARD -->
@@ -2021,7 +2021,7 @@ function buildTicketEmailHtml({ booking, movie, showtime, theater, room, seats, 
 
         <!-- FOOTER -->
         <tr><td style="background:#0f0f1a;border-radius:0 0 14px 14px;padding:18px 36px;text-align:center;border-top:1px solid rgba(255,255,255,0.05)">
-          <div style="color:#444;font-size:11px">© 2026 Nova Cinematic · Mọi thắc mắc vui lòng liên hệ hotline hoặc email hỗ trợ</div>
+          <div style="color:#444;font-size:11px">© 2026 Nova Cinema · Mọi thắc mắc vui lòng liên hệ hotline hoặc email hỗ trợ</div>
         </td></tr>
 
       </table>
@@ -2169,7 +2169,7 @@ const sendBulkEmail = async (req, res, next) => {
         <!-- CUSTOM MESSAGE -->
         <tr><td style="background:#1a1a2e;padding:16px 36px 0">
           <div style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);border-radius:8px;padding:14px 16px">
-            <div style="color:#e74c3c;font-size:11px;font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:1px">📢 Thông báo từ Nova Cinematic</div>
+            <div style="color:#e74c3c;font-size:11px;font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:1px">📢 Thông báo từ Nova Cinema</div>
             <div style="color:#ddd;font-size:13px;line-height:1.7">${customMessage}</div>
           </div>
         </td></tr>`;

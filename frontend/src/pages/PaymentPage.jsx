@@ -318,25 +318,25 @@ export const PaymentPage = () => {
 
     return (
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-        <div className="bg-dark-card border border-dark-border rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+        <div className="bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
           
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-dark-border pb-4 gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-4 gap-4">
             <div>
-              <h2 className="text-xl sm:text-2xl font-black text-emerald-400 flex items-center gap-2">
+              <h2 className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping inline-block shrink-0" />
                 {title}
               </h2>
-              <p className="text-xs text-zinc-500 mt-1">
+              <p className="text-xs text-gray-600 dark:text-zinc-400 mt-1">
                 {description}
               </p>
             </div>
             
             {/* Đồng hồ đếm ngược */}
-            <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 text-zinc-300 font-extrabold text-sm px-4 py-2 rounded-2xl shrink-0">
-              <Clock size={16} className="text-amber-500" />
+            <div className="flex items-center gap-2 bg-gray-100 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-800 text-gray-800 dark:text-zinc-300 font-extrabold text-sm px-4 py-2 rounded-2xl shrink-0">
+              <Clock size={16} className="text-amber-600 dark:text-amber-500" />
               <span>Giao dịch hết hạn sau:</span>
-              <span className="text-amber-500 font-mono tracking-wider">{timeStr}</span>
+              <span className="text-amber-600 dark:text-amber-500 font-mono tracking-wider">{timeStr}</span>
             </div>
           </div>
 
@@ -364,8 +364,8 @@ export const PaymentPage = () => {
 
               {/* Status loader & Confirm button */}
               <div className="w-full flex flex-col items-center gap-2 pt-1">
-                <div className="flex items-center gap-2 text-xs text-zinc-400 font-semibold bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl">
-                  <RefreshCw size={12} className="animate-spin text-emerald-400" />
+                <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-zinc-400 font-semibold bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 px-4 py-2 rounded-xl">
+                  <RefreshCw size={12} className="animate-spin text-emerald-600 dark:text-emerald-400" />
                   <span>Đang kiểm tra giao dịch tự động...</span>
                 </div>
                 <button
@@ -382,47 +382,47 @@ export const PaymentPage = () => {
 
             {/* Cột phải: Thông tin thanh toán */}
             <div className="space-y-4">
-              <h3 className="text-sm font-extrabold text-zinc-300 uppercase tracking-wider pl-1">
+              <h3 className="text-sm font-extrabold text-gray-900 dark:text-zinc-200 uppercase tracking-wider pl-1">
                 {isMomoScreen ? 'Thông tin thanh toán MoMo' : 'Thông tin chuyển khoản'}
               </h3>
 
               {isMomoScreen ? (
-                <div className="bg-zinc-950 border border-dark-border rounded-2xl p-4 space-y-4 text-sm">
-                  <div className="text-zinc-400 text-sm leading-relaxed">
+                <div className="bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-dark-border rounded-2xl p-4 space-y-4 text-sm">
+                  <div className="text-gray-700 dark:text-zinc-400 text-sm leading-relaxed">
                     Mở ứng dụng MoMo và quét mã QR bên trái hoặc nhấn nút "Mở liên kết MoMo" phía dưới để hoàn tất thanh toán.
                   </div>
 
-                  <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
-                    <div className="flex justify-between gap-2 text-zinc-500">
+                  <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-4 space-y-3">
+                    <div className="flex justify-between gap-2 text-gray-500 dark:text-zinc-500">
                       <span className="font-semibold">Liên kết thanh toán</span>
                       <button
                         onClick={() => {
                           navigator.clipboard.writeText(momoData.payUrl);
                           alert('Đã sao chép liên kết MoMo!');
                         }}
-                        className="text-emerald-400 hover:text-emerald-200 text-xs"
+                        className="text-emerald-600 dark:text-emerald-400 hover:underline text-xs"
                       >
                         Sao chép
                       </button>
                     </div>
-                    <div className="break-all text-zinc-200 text-xs">{momoData.payUrl}</div>
+                    <div className="break-all text-gray-800 dark:text-zinc-200 text-xs">{momoData.payUrl}</div>
                   </div>
                 </div>
               ) : (
                 <>
-                  <div className="bg-zinc-950 border border-dark-border rounded-2xl p-4 divide-y divide-zinc-900 text-sm">
+                  <div className="bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-dark-border rounded-2xl p-4 divide-y divide-gray-200 dark:divide-zinc-900 text-sm">
                     <div className="flex justify-between py-3">
-                      <span className="text-zinc-500 font-semibold">Ngân hàng nhận</span>
-                      <span className="text-zinc-200 font-bold">{qrData.bankId}</span>
+                      <span className="text-gray-600 dark:text-zinc-500 font-semibold">Ngân hàng nhận</span>
+                      <span className="text-gray-900 dark:text-zinc-200 font-bold">{qrData.bankId}</span>
                     </div>
                     
                     <div className="flex justify-between items-center py-3">
-                      <span className="text-zinc-500 font-semibold">Số tài khoản</span>
+                      <span className="text-gray-600 dark:text-zinc-500 font-semibold">Số tài khoản</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-zinc-200 font-bold font-mono text-base">{qrData.accountNo}</span>
+                        <span className="text-gray-900 dark:text-zinc-200 font-bold font-mono text-base">{qrData.accountNo}</span>
                         <button
                           onClick={() => copyToClipboard(qrData.accountNo, 'Số tài khoản')}
-                          className="p-1 text-zinc-500 hover:text-zinc-300 transition-colors"
+                          className="p-1 text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-300 transition-colors"
                           title="Sao chép"
                         >
                           <Copy size={14} />
@@ -431,19 +431,19 @@ export const PaymentPage = () => {
                     </div>
 
                     <div className="flex justify-between py-3">
-                      <span className="text-zinc-500 font-semibold">Chủ tài khoản</span>
-                      <span className="text-zinc-200 font-bold uppercase">{qrData.accountName}</span>
+                      <span className="text-gray-600 dark:text-zinc-500 font-semibold">Chủ tài khoản</span>
+                      <span className="text-gray-900 dark:text-zinc-200 font-bold uppercase">{qrData.accountName}</span>
                     </div>
 
                     <div className="flex justify-between items-center py-3">
-                      <span className="text-zinc-500 font-semibold">Số tiền</span>
+                      <span className="text-gray-600 dark:text-zinc-500 font-semibold">Số tiền</span>
                       <div className="flex items-center gap-2">
                         <span className="text-brand font-black text-base">
                           {qrData.amount ? qrData.amount.toLocaleString('vi-VN') : finalTotal.toLocaleString('vi-VN')} VND
                         </span>
                         <button
                           onClick={() => copyToClipboard(String(qrData.amount || finalTotal), 'Số tiền')}
-                          className="p-1 text-zinc-500 hover:text-zinc-300 transition-colors"
+                          className="p-1 text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-300 transition-colors"
                           title="Sao chép"
                         >
                           <Copy size={14} />
@@ -452,14 +452,14 @@ export const PaymentPage = () => {
                     </div>
 
                     <div className="flex justify-between items-center py-3">
-                      <span className="text-zinc-500 font-semibold">Nội dung chuyển khoản</span>
+                      <span className="text-gray-600 dark:text-zinc-500 font-semibold">Nội dung chuyển khoản</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-emerald-400 font-mono font-black text-base bg-emerald-950/50 px-2.5 py-1 rounded-lg border border-emerald-800/30">
+                        <span className="text-emerald-600 dark:text-emerald-400 font-mono font-black text-base bg-emerald-100 dark:bg-emerald-950/50 px-2.5 py-1 rounded-lg border border-emerald-300 dark:border-emerald-800/30">
                           {qrData.addInfo}
                         </span>
                         <button
                           onClick={() => copyToClipboard(qrData.addInfo, 'Nội dung chuyển khoản')}
-                          className="p-1 text-zinc-500 hover:text-zinc-300 transition-colors"
+                          className="p-1 text-gray-500 dark:text-zinc-500 hover:text-gray-800 dark:hover:text-zinc-300 transition-colors"
                           title="Sao chép"
                         >
                           <Copy size={14} />
@@ -469,8 +469,8 @@ export const PaymentPage = () => {
                   </div>
 
                   {/* Hướng dẫn an toàn */}
-                  <div className="bg-amber-500/5 border border-amber-500/20 text-amber-500/90 p-3.5 rounded-2xl text-[11px] leading-relaxed font-semibold flex gap-2">
-                    <AlertTriangle size={18} className="shrink-0 text-amber-500 mt-0.5" />
+                  <div className="bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-400 p-3.5 rounded-2xl text-[11px] leading-relaxed font-semibold flex gap-2">
+                    <AlertTriangle size={18} className="shrink-0 text-amber-600 dark:text-amber-500 mt-0.5" />
                     <span>
                       <strong>Chú ý quan trọng:</strong> Sau khi hoàn tất chuyển khoản trên ứng dụng ngân hàng của bạn, nhấn nút <strong>"Tôi đã chuyển khoản xong — Xác nhận xuất vé"</strong> bên dưới hình QR để hệ thống kiểm tra và gửi vé điện tử về Email!
                     </span>

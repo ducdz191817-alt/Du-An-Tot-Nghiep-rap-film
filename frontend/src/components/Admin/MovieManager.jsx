@@ -100,7 +100,7 @@ export const MovieManager = () => {
   const fetchMoviesList = async () => {
     setLoading(true);
     try {
-      const result = await movieService.getMovies({ status: 'all' }); // Fetch all status
+      const result = await movieService.getMovies({ status: 'admin_all' }); // Fetch all status for admin
       const movieArr = Array.isArray(result) ? result : (Array.isArray(result?.data) ? result.data : []);
       setMovies(movieArr);
     } catch (err) {
