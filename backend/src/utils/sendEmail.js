@@ -36,7 +36,7 @@ async function sendEmail({ to, subject, html, text }) {
   const transporter = nodemailer.createTransport(transporterOptions);
 
   const mailOptions = {
-    from: process.env.EMAIL_FROM || `Nova Cinematic <${smtpUser}>`,
+    from: process.env.EMAIL_FROM || `Nova Cinema <${smtpUser}>`,
     to,
     subject,
     text: text || 'Vui lòng xem email bằng trình duyệt hỗ trợ HTML.',

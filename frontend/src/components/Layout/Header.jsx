@@ -108,8 +108,8 @@ export const Header = () => {
         <Link to="/" className="flex items-center group">
           <img 
             src={myLogo} 
-            alt="Nova Cinematic Logo" 
-            className="h-16 w-auto object-contain group-hover:scale-105 transition-transform dark:brightness-200 dark:contrast-100 brightness-50 contrast-150" 
+            alt="Nova Cinema Logo" 
+            className="h-16 w-auto object-contain group-hover:scale-105 transition-transform" 
           />
         </Link>
 

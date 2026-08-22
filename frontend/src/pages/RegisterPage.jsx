@@ -32,7 +32,7 @@ export const RegisterPage = () => {
         <div className="flex flex-col items-center justify-center space-y-3">
           <img 
             src={myLogo} 
-            alt="Nova Cinematic Logo" 
+            alt="Nova Cinema Logo" 
             className="h-16 w-auto object-contain" 
           />
           <h2 className="text-xl font-bold text-gray-800 uppercase tracking-wider text-center mt-2">

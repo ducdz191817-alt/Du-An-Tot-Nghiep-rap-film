@@ -38,30 +38,31 @@ const computeMovieStatus = async (movieId) => {
     return 'now-showing';
   }
 
-  // 2. Nếu không có lịch chiếu hôm nay và status đã là coming-soon hoặc pre-release với ngày khởi chiếu ở tương lai -> GIỮ NGUYÊN
-  if (['coming-soon', 'pre-release'].includes(movie.status)) {
+  // 2. Kiểm tra xem có lịch chiếu nào trong tương lai (sau hôm nay) hay không
+  const futureShowtime = await Showtime.findOne({
+    movie: movieId,
+    startTime: { $gt: endOfToday },
+  }).lean();
+
+  if (futureShowtime) {
     if (movie.releaseDate && new Date(movie.releaseDate) > now) {
-      return movie.status;
+      return 'coming-soon';
     }
-  }
-
-  // 3. Khởi chiếu trong vòng 30 ngày tới -> coming-soon
-  const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-  if (movie.releaseDate && new Date(movie.releaseDate) > thirtyDaysLater) {
-    return 'pre-release';
-  }
-
-  if (movie.releaseDate && new Date(movie.releaseDate) > now) {
-    return 'coming-soon';
-  }
-
-  // 4. Nếu releaseDate đã qua (phim đã ra mắt) → giữ now-showing (dù hôm nay không có suất chiếu)
-  if (movie.releaseDate && new Date(movie.releaseDate) <= now) {
     return 'now-showing';
   }
 
-  // 5. Fallback: giữ nguyên status hiện tại
-  return movie.status || 'coming-soon';
+  // 3. Nếu không có lịch chiếu nào hôm nay hoặc tương lai:
+  // Nếu ngày phát hành ở tương lai -> Sắp chiếu / Sắp ra mắt
+  if (movie.releaseDate && new Date(movie.releaseDate) > now) {
+    const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    if (new Date(movie.releaseDate) > thirtyDaysLater) {
+      return 'pre-release';
+    }
+    return 'coming-soon';
+  }
+
+  // 4. Nếu releaseDate đã qua và KHÔNG còn lịch chiếu nào hôm nay/tương lai -> Đã kết thúc (ended)
+  return 'ended';
 };
 
 /**
@@ -69,7 +70,7 @@ const computeMovieStatus = async (movieId) => {
  * Được gọi tại startup và theo định kỳ (cron).
  */
 const autoUpdateMovieStatus = async () => {
-  const PROTECTED_STATUSES = ['suspended', 'cancelled', 'hidden', 'stopped', 'ended'];
+  const PROTECTED_STATUSES = ['suspended', 'cancelled', 'hidden', 'stopped'];
 
   try {
     // Lấy tất cả phim không nằm trong danh sách bảo vệ

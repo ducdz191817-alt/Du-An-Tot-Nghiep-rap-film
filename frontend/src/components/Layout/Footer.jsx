@@ -15,7 +15,7 @@ export const Footer = () => {
           <Link to="/" className="flex items-center group w-max">
             <img 
               src={myLogo} 
-              alt="Nova Cinematic Logo" 
+              alt="Nova Cinema Logo" 
               className="h-16 w-auto object-contain group-hover:scale-105 transition-transform" 
             />
           </Link>
@@ -61,7 +61,7 @@ export const Footer = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-6 border-t border-[#2a2a40] flex flex-col sm:flex-row items-center justify-between text-sm gap-4">
-        <p>&copy; {new Date().getFullYear()} Nova Cinematic Inc. {t('footer.rights')}</p>
+        <p>&copy; {new Date().getFullYear()} Nova Cinema Inc. {t('footer.rights')}</p>
         <div className="flex space-x-6 text-gray-600">
           <a href="#" className="hover:text-gray-400 transition-colors"><Github size={16} /></a>
           <a href="#" className="hover:text-gray-400 transition-colors"><Shield size={16} /></a>

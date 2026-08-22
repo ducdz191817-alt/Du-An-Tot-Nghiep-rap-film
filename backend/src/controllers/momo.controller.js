@@ -164,13 +164,13 @@ const momoCallback = async (req, res) => {
               }).join('');
 
             const html = `<!DOCTYPE html>
-<html lang="vi"><head><meta charset="UTF-8"><title>Xác nhận vé - Nova Cinematic</title></head>
+<html lang="vi"><head><meta charset="UTF-8"><title>Xác nhận vé - Nova Cinema</title></head>
 <body style="margin:0;padding:0;background:#0f0f1a;font-family:'Segoe UI',sans-serif">
 <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;background:#0f0f1a">
 <tr><td align="center">
 <table width="560" style="max-width:560px;width:100%">
   <tr><td style="background:linear-gradient(135deg,#c0392b,#e74c3c,#ff6b6b);border-radius:14px 14px 0 0;padding:26px 32px;text-align:center">
-    <div style="font-size:24px;font-weight:900;color:#fff;letter-spacing:2px">🎬 NOVA CINEMATIC</div>
+    <div style="font-size:24px;font-weight:900;color:#fff;letter-spacing:2px">🎬 NOVA CINEMA</div>
     <div style="color:rgba(255,255,255,0.8);font-size:12px;margin-top:4px">THANH TOÁN MOMO THÀNH CÔNG</div>
   </td></tr>
   <tr><td style="background:#1a1a2e;padding:22px 32px">
@@ -199,7 +199,7 @@ const momoCallback = async (req, res) => {
     📌 Vui lòng có mặt trước <strong style="color:#e74c3c">15 phút</strong> trước giờ chiếu.
   </td></tr>
   <tr><td style="background:#0f0f1a;border-radius:0 0 14px 14px;padding:16px 32px;text-align:center;border-top:1px solid rgba(255,255,255,0.05)">
-    <div style="color:#444;font-size:11px">© 2026 Nova Cinematic</div>
+    <div style="color:#444;font-size:11px">© 2026 Nova Cinema</div>
   </td></tr>
 </table></td></tr></table>
 </body></html>`;

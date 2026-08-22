@@ -172,7 +172,7 @@ export const Dashboard = () => {
       <div className="hidden print:block print-header border-b-2 border-zinc-200 pb-4 mb-6">
         <h1 className="text-2xl font-black uppercase text-black">CineAdmin - Báo Cáo Doanh Thu</h1>
         <p className="text-xs text-zinc-600 mt-1">
-          Hệ thống đặt vé phim Nova Cinematic | Ngày xuất báo cáo: {new Date().toLocaleString('vi-VN')}
+          Hệ thống đặt vé phim Nova Cinema | Ngày xuất báo cáo: {new Date().toLocaleString('vi-VN')}
         </p>
         <p className="text-xs text-zinc-600 mt-0.5">
           Thời gian lọc: {filterType === 'all' ? 'Tất cả thời gian' : filterType === 'date' ? filterDate : filterType === 'month' ? filterMonth : filterYear}

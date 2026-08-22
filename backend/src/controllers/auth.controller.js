@@ -249,12 +249,12 @@ const forgotPassword = async (req, res, next) => {
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #eaee00; border-radius: 16px; background-color: #ffffff;">
         <div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #e50914;">
-          <h2 style="color: #e50914; margin: 0; font-size: 26px; font-weight: 900; letter-spacing: 1px;">NOVA CINEMATIC</h2>
+          <h2 style="color: #e50914; margin: 0; font-size: 26px; font-weight: 900; letter-spacing: 1px;">NOVA CINEMA</h2>
           <p style="color: #666; font-size: 13px; margin-top: 4px;">Hệ Thống Đặt Vé Phim Trực Tuyến</p>
         </div>
         <div style="padding: 24px 0; color: #333; line-height: 1.6;">
           <h3 style="color: #111; font-size: 18px; margin-bottom: 12px;">Xin chào ${user.username || 'Quý khách'},</h3>
-          <p style="font-size: 14px; color: #444;">Bạn nhận được email này vì đã gửi yêu cầu đặt lại mật khẩu cho tài khoản <strong>${user.email}</strong> tại Nova Cinematic.</p>
+          <p style="font-size: 14px; color: #444;">Bạn nhận được email này vì đã gửi yêu cầu đặt lại mật khẩu cho tài khoản <strong>${user.email}</strong> tại Nova Cinema.</p>
           <p style="font-size: 14px; color: #444;">Vui lòng nhấp vào nút bên dưới để tiến hành thiết lập lại mật khẩu mới (Liên kết có hiệu lực trong <strong>15 phút</strong>):</p>
           
           <div style="text-align: center; margin: 32px 0;">
@@ -271,7 +271,7 @@ const forgotPassword = async (req, res, next) => {
           <p style="font-size: 13px; color: #888; margin-top: 24px; font-style: italic;">Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này. Mật khẩu hiện tại của bạn vẫn được bảo mật an toàn.</p>
         </div>
         <div style="border-top: 1px solid #eeeeee; padding-top: 16px; text-align: center; font-size: 12px; color: #999999;">
-          <p style="margin: 0;">© 2026 Nova Cinematic. Tất cả quyền được bảo lưu.</p>
+          <p style="margin: 0;">© 2026 Nova Cinema. Tất cả quyền được bảo lưu.</p>
         </div>
       </div>
     `;
@@ -279,9 +279,9 @@ const forgotPassword = async (req, res, next) => {
     try {
       const mailRes = await sendEmail({
         to: user.email,
-        subject: '[NOVA CINEMATIC] Yêu cầu khôi phục mật khẩu tài khoản',
+        subject: '[NOVA CINEMA] Yêu cầu khôi phục mật khẩu tài khoản',
         html: htmlContent,
-        text: `Yêu cầu khôi phục mật khẩu Nova Cinematic: ${resetUrl}`,
+        text: `Yêu cầu khôi phục mật khẩu Nova Cinema: ${resetUrl}`,
       });
 
       if (mailRes && mailRes.skipped) {
