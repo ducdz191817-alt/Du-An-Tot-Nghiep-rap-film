@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Lock, LogIn } from 'lucide-react';
+import { Mail, Lock, LogIn, Eye, EyeOff } from 'lucide-react';
 import Input from '../common/Input';
 import Button from '../common/Button';
 import useAuth from '../../hooks/useAuth';
@@ -8,6 +8,7 @@ import useAuth from '../../hooks/useAuth';
 export const LoginForm = ({ onSuccess }) => {
   const { login, loading, error } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const [showPassword, setShowPassword] = useState(false);
   const [formErrors, setFormErrors] = useState({});
 
   const validate = () => {
@@ -70,13 +71,22 @@ export const LoginForm = ({ onSuccess }) => {
       <div>
         <Input
           name="password"
-          type="password"
+          type={showPassword ? 'text' : 'password'}
           label="Mật khẩu"
           placeholder="••••••••"
           value={formData.password}
           onChange={handleChange}
           error={formErrors.password}
           icon={<Lock size={18} />}
+          rightIcon={
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="text-gray-400 hover:text-gray-600 focus:outline-none"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          }
           required
         />
         <div className="flex justify-end mt-1.5">
