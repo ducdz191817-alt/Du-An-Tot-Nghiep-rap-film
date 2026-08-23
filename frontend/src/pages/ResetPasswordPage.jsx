@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Lock, CheckCircle2, AlertCircle, ArrowLeft, KeyRound } from 'lucide-react';
+import { Lock, CheckCircle2, AlertCircle, ArrowLeft, KeyRound, Eye, EyeOff } from 'lucide-react';
 import authService from '../services/auth.service';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
@@ -15,6 +15,8 @@ export const ResetPasswordPage = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null); // { type: 'success' | 'error', text: '' }
   const [isSuccess, setIsSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -101,23 +103,41 @@ export const ResetPasswordPage = () => {
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <Input
               name="password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               label="Mật khẩu mới"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               icon={<Lock size={18} />}
+              rightIcon={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              }
               required
             />
 
             <Input
               name="confirmPassword"
-              type="password"
+              type={showConfirmPassword ? 'text' : 'password'}
               label="Xác nhận mật khẩu mới"
               placeholder="••••••••"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               icon={<KeyRound size={18} />}
+              rightIcon={
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              }
               required
             />
 
