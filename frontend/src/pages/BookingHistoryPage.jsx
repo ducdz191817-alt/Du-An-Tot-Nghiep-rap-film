@@ -10,6 +10,7 @@ import Button from '../components/common/Button';
 import { getPosterUrl } from '../utils/constants';
 import { useLanguage } from '../context/LanguageContext';
 import PrintTicketModal from '../components/Booking/PrintTicketModal';
+import Toast from '../components/common/Toast';
 
 export const BookingHistoryPage = () => {
   const { language, t } = useLanguage();
@@ -593,10 +594,19 @@ const PendingPaymentModal = ({ booking, onClose, onCancel, onSuccess }) => {
       if (currentBooking && currentBooking.paymentStatus === 'paid') {
         onSuccess();
       } else {
-        alert(language === 'vi' ? 'Hệ thống chưa nhận được giao dịch. Vui lòng thử lại sau vài giây hoặc kiểm tra nội dung chuyển khoản.' : 'Payment not detected yet. Please try again shortly.');
+        setToast({
+          show: true,
+          message: language === 'vi' ? 'Hệ thống chưa nhận được giao dịch. Vui lòng thử lại sau vài giây hoặc kiểm tra nội dung chuyển khoản.' : 'Payment not detected yet. Please try again shortly.',
+          type: 'warning',
+        });
       }
     } catch (err) {
       console.error(err);
+      setToast({
+        show: true,
+        message: err.message || 'Lỗi kiểm tra thanh toán',
+        type: 'error',
+      });
     } finally {
       setChecking(false);
     }
@@ -742,6 +752,15 @@ const PendingPaymentModal = ({ booking, onClose, onCancel, onSuccess }) => {
           </div>
         </div>
       </div>
+
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          duration={5000}
+          onClose={() => setToast({ show: false, message: '', type: 'warning' })}
+        />
+      )}
     </div>
   );
 };

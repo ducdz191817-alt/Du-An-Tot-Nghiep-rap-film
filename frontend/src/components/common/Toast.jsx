@@ -45,7 +45,7 @@ export const Toast = ({
       className={`fixed top-5 left-1/2 -translate-x-1/2 z-50 flex items-center space-x-3 border px-4 py-3 rounded-xl backdrop-blur-md animate-in slide-in-from-top-5 fade-in duration-300 ${styles[type].bg} ${styles[type].glow}`}
     >
       <span>{styles[type].icon}</span>
-      <p className="text-sm font-semibold max-w-[250px]">{message}</p>
+      <p className="text-sm font-medium max-w-sm md:max-w-md leading-snug">{message}</p>
       <button
         onClick={onClose}
         className="text-zinc-500 hover:text-zinc-300 transition-colors pl-2 border-l border-zinc-800"

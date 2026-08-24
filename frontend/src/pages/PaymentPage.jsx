@@ -12,6 +12,7 @@ import BookingSummary from '../components/Booking/BookingSummary';
 import BookingSuccessModal from '../components/Booking/BookingSuccessModal';
 import Loading from '../components/common/Loading';
 import Button from '../components/common/Button';
+import Toast from '../components/common/Toast';
 
 export const PaymentPage = () => {
   const navigate = useNavigate();
@@ -46,6 +47,10 @@ export const PaymentPage = () => {
     open: false,
     bookingResult: null,
   });
+
+  // Trạng thái Toast thông báo
+  const [toast, setToast] = useState({ show: false, message: '', type: 'warning' });
+  const showToast = (message, type = 'warning') => setToast({ show: true, message, type });
 
   // Snapshot showtime & seats trước khi clear (để hiển thị trong modal)
   const [snapshotShowtime, setSnapshotShowtime] = useState(null);
@@ -281,14 +286,17 @@ export const PaymentPage = () => {
     }
   };
 
-  const handleSimulatePayment = async () => {
+  const handleCheckPayment = async () => {
     setLoading(true);
     try {
-      await bookingService.simulatePayment(bookingId);
-      // Xử lý thành công
-      handlePaymentSuccess();
+      const statusRes = await bookingService.getBookingStatus(bookingId);
+      if (statusRes.paymentStatus === 'paid') {
+        handlePaymentSuccess();
+      } else {
+        showToast('Hệ thống chưa nhận được giao dịch chuyển khoản của bạn. Vui lòng chờ vài giây hoặc kiểm tra lại nội dung chuyển khoản.', 'warning');
+      }
     } catch (err) {
-      alert(`Lỗi giả lập thanh toán: ${err.message}`);
+      showToast(`Lỗi khi kiểm tra thanh toán: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -301,7 +309,7 @@ export const PaymentPage = () => {
 
   const copyToClipboard = (text, field) => {
     navigator.clipboard.writeText(text);
-    alert(`Đã sao chép ${field}!`);
+    showToast(`Đã sao chép ${field}!`, 'info');
   };
 
   // Render màn hình thanh toán VietQR
@@ -370,12 +378,12 @@ export const PaymentPage = () => {
                 </div>
                 <button
                   type="button"
-                  onClick={handleSimulatePayment}
+                  onClick={handleCheckPayment}
                   disabled={loading}
                   className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl transition-all shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
                 >
                   <CheckCircle size={16} />
-                  <span>Tôi đã chuyển khoản xong — Xác nhận xuất vé</span>
+                  <span>Tôi đã chuyển khoản xong — Kiểm tra thanh toán</span>
                 </button>
               </div>
             </div>
@@ -472,7 +480,7 @@ export const PaymentPage = () => {
                   <div className="bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-400 p-3.5 rounded-2xl text-[11px] leading-relaxed font-semibold flex gap-2">
                     <AlertTriangle size={18} className="shrink-0 text-amber-600 dark:text-amber-500 mt-0.5" />
                     <span>
-                      <strong>Chú ý quan trọng:</strong> Sau khi hoàn tất chuyển khoản trên ứng dụng ngân hàng của bạn, nhấn nút <strong>"Tôi đã chuyển khoản xong — Xác nhận xuất vé"</strong> bên dưới hình QR để hệ thống kiểm tra và gửi vé điện tử về Email!
+                      <strong>Chú ý quan trọng:</strong> Sau khi hoàn tất chuyển khoản trên ứng dụng ngân hàng, hệ thống sẽ tự động xác nhận. Bạn cũng có thể bấm nút <strong>"Kiểm tra thanh toán"</strong> bên dưới để kiểm tra ngay!
                     </span>
                   </div>
                 </>
@@ -484,14 +492,6 @@ export const PaymentPage = () => {
           <div className="flex flex-col sm:flex-row items-center justify-between border-t border-dark-border pt-6 gap-4">
             
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <button
-                type="button"
-                onClick={handleSimulatePayment}
-                disabled={loading}
-                className="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl transition-all shadow-md flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
-              >
-                <CheckCircle size={15} /> Xác nhận đã chuyển khoản thành công
-              </button>
               {isMomoScreen && momoData?.payUrl && (
                 <Button
                   onClick={() => window.open(momoData.payUrl, '_blank')}
@@ -515,6 +515,16 @@ export const PaymentPage = () => {
           </div>
 
         </div>
+
+        {/* Toast thông báo đẹp */}
+        {toast.show && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            duration={5000}
+            onClose={() => setToast({ show: false, message: '', type: 'warning' })}
+          />
+        )}
       </div>
     );
   }
@@ -574,6 +584,16 @@ export const PaymentPage = () => {
         selectedSeats={snapshotSeats}
         onClose={handleCloseSuccessModal}
       />
+
+      {/* Toast thông báo đẹp */}
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          duration={5000}
+          onClose={() => setToast({ show: false, message: '', type: 'warning' })}
+        />
+      )}
     </>
   );
 };
