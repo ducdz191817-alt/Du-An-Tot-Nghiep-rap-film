@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ override: true });
 const nodemailer = require('nodemailer');
 
 async function sendEmail({ to, subject, html, text }) {

@@ -59,8 +59,14 @@ const sendConfirmationEmail = async (booking, user) => {
               </div>
             </div>
           </div>
-          <div style="text-align: center; margin-top: 20px;">
-            <a href="${verifyUrl}" style="background: linear-gradient(135deg, #a855f7, #7c3aed); color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">Xem vé của tôi</a>
+          <div style="background-color: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: center;">
+            <p style="color: #94a3b8; font-size: 13px; margin: 0 0 12px 0; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Mã QR Vé Điện Tử (Check-in Quầy)</p>
+            <div style="background-color: #ffffff; padding: 12px; border-radius: 12px; display: inline-block; margin-bottom: 12px; border: 1px solid #e2e8f0;">
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&amp;data=${encodeURIComponent(verifyUrl)}" alt="Ticket QR Code" width="180" height="180" style="display: block; border: 0;" />
+            </div>
+            <div style="margin-top: 4px;">
+              <a href="${verifyUrl}" style="display: inline-block; background: linear-gradient(135deg, #7c3aed, #a855f7); color: white; font-weight: bold; font-size: 14px; text-decoration: none; padding: 10px 24px; border-radius: 8px;">Xem Vé Điện Tử Trên Web</a>
+            </div>
           </div>
           <p style="color: #71717a; font-size: 12px; text-align: center; margin-top: 20px;">Nova Cinematic · Xác nhận bởi SePay Automatic Webhook</p>
         </div>
