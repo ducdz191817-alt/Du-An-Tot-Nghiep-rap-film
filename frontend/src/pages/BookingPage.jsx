@@ -18,6 +18,7 @@ import Loading from '../components/common/Loading';
 import Modal from '../components/common/Modal';
 import Button from '../components/common/Button';
 import { io } from 'socket.io-client';
+import { SOCKET_URL } from '../utils/constants';
 
 export const BookingPage = () => {
   const { showtimeId } = useParams();
@@ -113,45 +114,42 @@ export const BookingPage = () => {
 
   useEffect(() => {
     if (!showtimeId || !user?._id) return;
+    const currentUserId = String(user._id);
 
     // Khởi tạo kết nối Socket.io
-    socketRef.current = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
+    const socket = io(SOCKET_URL);
+    socketRef.current = socket;
 
-    // Tham gia vào phòng của suất chiếu
-    socketRef.current.emit('join_showtime', { showtimeId, userId: user._id });
-
-    // Lắng nghe danh sách ghế đang được giữ ban đầu
-    socketRef.current.on('initial_held_seats', (holds) => {
-      const others = holds.filter(h => h.userId !== user._id).map(h => h.seatCode);
+    // Lắng nghe danh sách ghế đang được giữ ban đầu (đăng ký TRƯỚC khi join_showtime)
+    socket.on('initial_held_seats', (holds) => {
+      const others = holds
+        .filter(h => String(h.userId) !== currentUserId)
+        .map(h => h.seatCode);
       setHeldSeatsByOthers(others);
 
       // Nếu user quay lại trang với ghế đã chọn trong Redux
       const currentSeats = selectedSeatsRef.current;
       if (currentSeats && currentSeats.length > 0) {
-        // Kiểm tra xem backend có đang giữ ghế này không (expiresAt còn hiệu lực)
-        const myHolds = holds.filter(h => h.userId === user._id && currentSeats.includes(h.seatCode));
+        const myHolds = holds.filter(h => String(h.userId) === currentUserId && currentSeats.includes(h.seatCode));
         
         if (myHolds.length > 0) {
-          // Backend vẫn đang giữ ghế → tính thời gian còn lại từ expiresAt
           const minExpiresAt = Math.min(...myHolds.map(h => h.expiresAt));
           holdExpiresAtRef.current = minExpiresAt;
           const remainingMs = minExpiresAt - Date.now();
           const remainingSec = Math.max(0, Math.floor(remainingMs / 1000));
           setTimeLeft(remainingSec);
         } else {
-          // Backend không giữ nữa (hết hạn trong lúc ở trang payment)
-          // Re-hold để đặt lại 10 phút mới
           holdExpiresAtRef.current = Date.now() + 10 * 60 * 1000;
           currentSeats.forEach(seatCode => {
-            socketRef.current?.emit('hold_seat', { showtimeId, seatCode, userId: user._id });
+            socket.emit('hold_seat', { showtimeId, seatCode, userId: user._id });
           });
         }
       }
     });
 
     // Lắng nghe sự kiện ai đó giữ ghế
-    socketRef.current.on('seat_held', ({ seatCode, userId }) => {
-      if (userId !== user._id) {
+    socket.on('seat_held', ({ seatCode, userId }) => {
+      if (String(userId) !== currentUserId) {
         setHeldSeatsByOthers(prev => {
           if (!prev.includes(seatCode)) return [...prev, seatCode];
           return prev;
@@ -160,27 +158,29 @@ export const BookingPage = () => {
     });
 
     // Lắng nghe sự kiện ai đó nhả ghế
-    socketRef.current.on('seat_released', ({ seatCode }) => {
+    socket.on('seat_released', ({ seatCode }) => {
       setHeldSeatsByOthers(prev => prev.filter(s => s !== seatCode));
     });
 
     // Lắng nghe sự kiện ghế đã được đặt thành công
-    socketRef.current.on('seat_booked', ({ seatCodes }) => {
+    socket.on('seat_booked', ({ seatCodes }) => {
       setHeldSeatsByOthers(prev => prev.filter(s => !seatCodes.includes(s)));
-      // Note: Ideally, we could re-fetch showtime data here to get the X marks instantly
     });
+
+    // Tham gia vào phòng suất chiếu khi socket kết nối thành công
+    socket.on('connect', () => {
+      socket.emit('join_showtime', { showtimeId, userId: user._id });
+    });
+
+    if (socket.connected) {
+      socket.emit('join_showtime', { showtimeId, userId: user._id });
+    }
 
     return () => {
       if (socketRef.current) {
         if (proceedingToPaymentRef.current) {
-          // Sang trang thanh toán: chỉ rời phòng, KHÔNG disconnect socket
-          // → Backend giữ nguyên hold tracking, ghế vẫn được giữ
-          // → Tránh race condition của going_to_payment vs disconnect
           socketRef.current.emit('leave_showtime', { showtimeId });
-          // Không gọi disconnect() - socket vẫn alive, holds vẫn còn
-          // Socket sẽ được cleanup bởi tab close hoặc backend 10-min timeout
         } else {
-          // User thực sự rời khỏi luồng đặt vé → release ghế + disconnect
           const currentSeats = selectedSeatsRef.current;
           if (currentSeats && currentSeats.length > 0) {
             currentSeats.forEach(seatCode => {
@@ -190,11 +190,10 @@ export const BookingPage = () => {
           socketRef.current.emit('leave_showtime', { showtimeId });
           socketRef.current.disconnect();
         }
-        // Reset flag
         proceedingToPaymentRef.current = false;
       }
     };
-  }, [showtimeId, user]);
+  }, [showtimeId, user?._id]);
 
   // Quản lý đồng hồ đếm ngược 10 phút
   useEffect(() => {
@@ -242,13 +241,17 @@ export const BookingPage = () => {
   const pricing = calculateTotal(concessionsList, seatsList);
 
   const handleSeatClick = (block) => {
-    // Giải phóng tất cả các ghế đang chọn cũ
-    selectedSeats.forEach(seatCode => {
+    const currentSelected = selectedSeatsRef.current || [];
+
+    // Chỉ giải phóng những ghế KHÔNG còn nằm trong block mới chọn
+    const removedSeats = currentSelected.filter(code => !block.includes(code));
+    removedSeats.forEach(seatCode => {
       socketRef.current?.emit('release_seat', { showtimeId, seatCode, userId: user._id });
     });
 
-    // Bắt đầu giữ cụm ghế mới
-    block.forEach(seatCode => {
+    // Chỉ emit hold_seat cho những ghế MỚI thêm vào
+    const addedSeats = block.filter(code => !currentSelected.includes(code));
+    addedSeats.forEach(seatCode => {
       socketRef.current?.emit('hold_seat', { showtimeId, seatCode, userId: user._id });
     });
 

@@ -175,7 +175,7 @@ const SeatMapModal = ({ isOpen, onClose, room, roomTypes = [] }) => {
     setLoading(true);
     try {
       const statusRes = await adminService.checkRoomEditable(room._id);
-      const isEdit = statusRes?.editable ?? statusRes?.data?.editable ?? true;
+      const isEdit = statusRes?.canEditLayout ?? statusRes?.editable ?? statusRes?.data?.canEditLayout ?? statusRes?.data?.editable ?? true;
       const reasonMsg = statusRes?.reason || statusRes?.data?.reason || '';
       setIsEditable(isEdit);
       setLockReason(reasonMsg);

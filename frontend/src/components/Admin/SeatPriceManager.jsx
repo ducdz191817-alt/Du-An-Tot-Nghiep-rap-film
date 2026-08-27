@@ -127,13 +127,29 @@ export const SeatPriceManager = () => {
     }
   };
 
-  const [roomLockStatus, setRoomLockStatus] = useState({ editable: true, reason: '', bookingCount: 0 });
+  const [roomLockStatus, setRoomLockStatus] = useState({
+    canEditPrice: true,
+    canEditLayout: true,
+    editable: true,
+    hasBookings: false,
+    reason: '',
+    bookingCount: 0,
+    activeShowtimesCount: 0,
+  });
 
   // 3. Load danh sách ghế của phòng
   const loadSeats = async (roomId) => {
     if (!roomId) {
       setSeats([]);
-      setRoomLockStatus({ editable: true, reason: '', bookingCount: 0 });
+      setRoomLockStatus({
+        canEditPrice: true,
+        canEditLayout: true,
+        editable: true,
+        hasBookings: false,
+        reason: '',
+        bookingCount: 0,
+        activeShowtimesCount: 0,
+      });
       return;
     }
     setSeatsLoading(true);
@@ -149,10 +165,17 @@ export const SeatPriceManager = () => {
       setSeats(seatList);
 
       const lockData = lockRes?.data || lockRes;
+      const hasBookings = lockData?.hasBookings ?? ((lockData?.bookingCount || 0) > 0);
+      const canEditPrice = lockData?.canEditPrice ?? !hasBookings;
+
       setRoomLockStatus({
+        canEditPrice,
+        canEditLayout: lockData?.canEditLayout ?? (lockData?.editable !== false),
         editable: lockData?.editable !== false,
+        hasBookings,
         reason: lockData?.reason || '',
         bookingCount: lockData?.bookingCount || 0,
+        activeShowtimesCount: lockData?.activeShowtimesCount || lockData?.showtimesCount || 0,
       });
     } catch (err) {
       console.error('Lỗi tải ghế của phòng:', err);
@@ -213,6 +236,7 @@ export const SeatPriceManager = () => {
 
   // Chọn / Bỏ chọn 1 ghế
   const toggleSelectSeat = (seatId) => {
+    if (!roomLockStatus.canEditPrice) return;
     setSelectedSeatIds((prev) => {
       const next = new Set(prev);
       if (next.has(seatId)) next.delete(seatId);
@@ -223,6 +247,7 @@ export const SeatPriceManager = () => {
 
   // Chọn toàn bộ ghế thuộc 1 hàng (Row)
   const toggleSelectRow = (rowKey) => {
+    if (!roomLockStatus.canEditPrice) return;
     const rowSeats = seatGridByRow.map[rowKey] || [];
     const rowSeatIds = rowSeats.map((s) => s._id);
     const allSelected = rowSeatIds.every((id) => selectedSeatIds.has(id));
@@ -239,6 +264,7 @@ export const SeatPriceManager = () => {
 
   // Chọn tất cả ghế
   const handleSelectAll = () => {
+    if (!roomLockStatus.canEditPrice) return;
     if (selectedSeatIds.size === seats.length) {
       setSelectedSeatIds(new Set());
     } else {
@@ -248,6 +274,7 @@ export const SeatPriceManager = () => {
 
   // Áp dụng giá phụ thu nhanh cho tất cả ghế của 1 loại (ví dụ: tất cả ghế VIP = +30k)
   const applyTypePriceToAll = (typeKey, priceVal) => {
+    if (!roomLockStatus.canEditPrice) return;
     const val = Number(priceVal) || 0;
     setSeats((prevSeats) =>
       prevSeats.map((s) => {
@@ -259,13 +286,13 @@ export const SeatPriceManager = () => {
     );
     setMessage({
       type: 'success',
-      text: `Đã cập nhật phụ thu +${val.toLocaleString()} VNĐ cho toàn bộ ghế ${SEAT_TYPES.find((t) => t.key === typeKey)?.label}. Hãy nhấn "Lưu Thay Đổi" để lưu vào hệ thống!`,
+      text: `Đã cập nhật phụ thu +${val.toLocaleString()} VNĐ cho toàn bộ ghế ${SEAT_TYPES.find((t) => t.key === typeKey)?.label}. Hãy nhấn "Lưu Thay Đổi Giá Ghế" để hoàn tất!`,
     });
   };
 
   // Áp dụng loại ghế & giá cho các ghế ĐANG CHỌN (selectedSeatIds)
   const applyToSelectedSeats = () => {
-    if (selectedSeatIds.size === 0) return;
+    if (!roomLockStatus.canEditPrice || selectedSeatIds.size === 0) return;
     const priceVal = Number(bulkPrice) || 0;
 
     setSeats((prevSeats) =>
@@ -285,7 +312,7 @@ export const SeatPriceManager = () => {
 
   // Khóa / Mở khóa các ghế được chọn
   const toggleDisableSelectedSeats = (disableStatus) => {
-    if (selectedSeatIds.size === 0) return;
+    if (!roomLockStatus.canEditPrice || selectedSeatIds.size === 0) return;
 
     setSeats((prevSeats) =>
       prevSeats.map((s) => {
@@ -299,7 +326,7 @@ export const SeatPriceManager = () => {
 
   // Lưu toàn bộ sơ đồ & giá ghế lên Server
   const handleSaveSeatPrices = async () => {
-    if (!selectedRoomId || seats.length === 0) return;
+    if (!selectedRoomId || seats.length === 0 || !roomLockStatus.canEditPrice) return;
     setSaving(true);
     setMessage({ type: '', text: '' });
 
@@ -314,7 +341,7 @@ export const SeatPriceManager = () => {
       await adminService.bulkUpdateSeats(updates);
       setMessage({
         type: 'success',
-        text: '🎉 Đã lưu toàn bộ giá ghế và cấu hình sơ đồ phòng thành công!',
+        text: '🎉 Đã lưu toàn bộ giá ghế thành công!',
       });
     } catch (err) {
       console.error('Lỗi khi lưu giá ghế:', err);
@@ -366,7 +393,7 @@ export const SeatPriceManager = () => {
             variant="primary"
             className="py-2 px-5 text-sm font-bold shadow-md"
             icon={saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-            disabled={seatsLoading || saving || !selectedRoomId || seats.length === 0 || !roomLockStatus.editable}
+            disabled={seatsLoading || saving || !selectedRoomId || seats.length === 0 || !roomLockStatus.canEditPrice}
           >
             {saving ? 'Đang Lưu...' : 'Lưu Thay Đổi Giá Ghế'}
           </Button>
@@ -461,14 +488,37 @@ export const SeatPriceManager = () => {
         </div>
       </div>
 
-      {/* ── CẢNH BÁO KHÓA CHỈNH SỬA KHI CÓ VÉ ĐẶT ── */}
-      {selectedRoomId && !roomLockStatus.editable && (
-        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3.5 text-amber-900 dark:text-amber-200 animate-in fade-in">
-          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+      {/* ── CẢNH BÁO KHÓA CHỈNH SỬA KHI CÓ VÉ ĐẶT HOẶC CÓ SUẤT CHIẾU ── */}
+      {selectedRoomId && (!roomLockStatus.canEditPrice || roomLockStatus.activeShowtimesCount > 0) && (
+        <div
+          className={`p-4 rounded-2xl border flex items-start gap-3.5 animate-in fade-in ${
+            !roomLockStatus.canEditPrice
+              ? 'bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200'
+              : 'bg-blue-500/10 border-blue-500/30 text-blue-900 dark:text-blue-200'
+          }`}
+        >
+          <AlertCircle
+            className={`w-5 h-5 shrink-0 mt-0.5 ${
+              !roomLockStatus.canEditPrice ? 'text-amber-600' : 'text-blue-600'
+            }`}
+          />
           <div>
-            <h4 className="text-sm font-bold">🔒 Khóa chỉnh sửa giá và cấu hình ghế</h4>
-            <p className="text-xs text-amber-700/90 dark:text-amber-300/80 mt-0.5">
-              {roomLockStatus.reason || 'Phòng chiếu này hiện đang có vé đã được khách hàng đặt. Không thể thay đổi giá ghế để bảo vệ tính toàn vẹn của dữ liệu.'}
+            <h4 className="text-sm font-bold">
+              {!roomLockStatus.canEditPrice
+                ? '🔒 Khóa chỉnh sửa giá và cấu hình ghế'
+                : 'ℹ️ Khóa chỉnh sửa cấu trúc sơ đồ ghế (Vẫn được phép chỉnh sửa giá ghế)'}
+            </h4>
+            <p
+              className={`text-xs mt-0.5 ${
+                !roomLockStatus.canEditPrice
+                  ? 'text-amber-700/90 dark:text-amber-300/80'
+                  : 'text-blue-700/90 dark:text-blue-300/80'
+              }`}
+            >
+              {roomLockStatus.reason ||
+                (!roomLockStatus.canEditPrice
+                  ? 'Phòng chiếu này hiện đang có vé đã được khách hàng đặt. Không thể thay đổi giá ghế để bảo vệ tính toàn vẹn của dữ liệu.'
+                  : `Phòng chiếu này hiện đang có ${roomLockStatus.activeShowtimesCount} suất chiếu sắp/đang diễn ra. Đã khóa chỉnh sửa cấu trúc sơ đồ ghế (vẫn được phép chỉnh sửa giá ghế).`)}
             </p>
           </div>
         </div>

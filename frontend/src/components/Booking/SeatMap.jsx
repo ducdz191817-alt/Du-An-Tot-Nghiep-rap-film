@@ -29,6 +29,10 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
     (bookedSeats || []).map((seatCodeItem) => String(seatCodeItem).trim().toUpperCase())
   ), [bookedSeats]);
 
+  const normalizedHeldSeatsByOthers = useMemo(() => new Set(
+    (heldSeatsByOthers || []).map((seatCodeItem) => String(seatCodeItem).trim().toUpperCase())
+  ), [heldSeatsByOthers]);
+
   // Tính toán số ghế trống
   const seatStats = useMemo(() => {
     let total = 0;
@@ -37,20 +41,20 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
       total++;
       const seatCode = `${seat.row}${seat.number}`.toUpperCase();
       const isBooked = normalizedBookedSeats.has(seatCode);
-      const isHeld = heldSeatsByOthers.includes(seatCode);
+      const isHeld = normalizedHeldSeatsByOthers.has(seatCode);
       const isDisabled = seat.isDisabled === true;
       if (!isBooked && !isHeld && !isDisabled) {
         available++;
       }
     });
     return { total, available };
-  }, [seats, normalizedBookedSeats, heldSeatsByOthers]);
+  }, [seats, normalizedBookedSeats, normalizedHeldSeatsByOthers]);
 
   // Helper: Trả về state của một ghế
   const getSeatState = (seat) => {
     const seatCode = `${seat.row}${seat.number}`.toUpperCase();
     const isBooked = normalizedBookedSeats.has(seatCode);
-    const isHeld = heldSeatsByOthers.includes(seatCode);
+    const isHeld = normalizedHeldSeatsByOthers.has(seatCode);
     const isDisabled = seat.isDisabled === true;
     const isAvailable = !isBooked && !isHeld && !isDisabled;
     return { ...seat, seatCode, isBooked, isHeld, isDisabled, isAvailable };
@@ -251,7 +255,7 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
                   } else if (seatInfo.isBooked) {
                     activeBg = seatStyle.bookedColor;
                   } else if (seatInfo.isHeld) {
-                    activeBg = 'bg-orange-100 border border-orange-300 text-orange-600 cursor-not-allowed dark:bg-orange-900/40 dark:border-orange-700 dark:text-orange-400';
+                    activeBg = 'bg-amber-500 border border-amber-600 text-white font-extrabold cursor-not-allowed shadow-xs dark:bg-amber-600 dark:border-amber-500 opacity-90';
                   } else if (isSelected) {
                     activeBg = seatStyle.selectedColor + ' shadow-[0_0_12px_rgba(168,85,247,0.6)] border-brand scale-110';
                   } else {
@@ -265,6 +269,11 @@ export const SeatMap = ({ seats = [], bookedSeats = [], selectedSeats = [], held
                       <button
                         disabled={!seatInfo.isAvailable}
                         onClick={() => handleSeatClick(seatInfo.seatCode, rowLetter)}
+                        style={
+                          seatInfo.isHeld
+                            ? { backgroundColor: '#f59e0b', color: '#ffffff', borderColor: '#d97706', cursor: 'not-allowed', opacity: 0.95 }
+                            : undefined
+                        }
                         className={`h-8 rounded-lg font-bold text-[9px] transition-all duration-200 ease-out flex items-center justify-center transform active:scale-90 border ${
                           isCouple ? 'w-[72px]' : 'w-8'
                         } ${activeBg}`}

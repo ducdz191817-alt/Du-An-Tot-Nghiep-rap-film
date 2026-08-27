@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Clock, Copy, AlertTriangle, RefreshCw, CheckCircle, Zap } from 'lucide-react';
 import { io } from 'socket.io-client';
+import { SOCKET_URL } from '../utils/constants';
 import useBooking from '../hooks/useBooking';
 import useAuth from '../hooks/useAuth';
 import bookingService from '../services/booking.service';
@@ -99,10 +100,8 @@ export const PaymentPage = () => {
     if (!selectedShowtime?._id || !selectedSeats?.length || !user?._id) return;
 
     const showtimeId = selectedShowtime._id;
-    const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
+    const socket = io(SOCKET_URL);
     paymentSocketRef.current = socket;
-
-    socket.emit('join_showtime', { showtimeId, userId: user._id });
 
     // Khi kết nối, re-hold tất cả ghế đã chọn
     socket.on('initial_held_seats', () => {
@@ -110,6 +109,14 @@ export const PaymentPage = () => {
         socket.emit('hold_seat', { showtimeId, seatCode, userId: user._id });
       });
     });
+
+    socket.on('connect', () => {
+      socket.emit('join_showtime', { showtimeId, userId: user._id });
+    });
+
+    if (socket.connected) {
+      socket.emit('join_showtime', { showtimeId, userId: user._id });
+    }
 
     return () => {
       if (paymentSocketRef.current) {

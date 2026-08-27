@@ -46,8 +46,8 @@ export const SeatLegend = () => {
 
       {/* Đang giữ */}
       <div className="flex items-center space-x-1.5">
-        <span className="w-3.5 h-3.5 rounded bg-orange-100 dark:bg-orange-900/50 border border-orange-300 dark:border-orange-700 block shrink-0" />
-        <span>Đang giữ</span>
+        <span className="w-3.5 h-3.5 rounded bg-amber-500 border border-amber-600 block shrink-0" />
+        <span className="text-amber-600 dark:text-amber-400 font-bold">Đang giữ</span>
       </div>
     </div>
   );

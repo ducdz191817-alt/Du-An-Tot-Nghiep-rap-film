@@ -1259,7 +1259,7 @@ const bulkUpdateSeats = async (req, res, next) => {
   }
 };
 
-// CHỨC NĂNG: Kiểm tra phòng chiếu có được phép sửa sơ đồ ghế hay không (nếu có suất chiếu hoặc vé đã đặt thì khóa)
+// CHỨC NĂNG: Kiểm tra phòng chiếu có được phép sửa sơ đồ ghế hay giá ghế hay không
 const checkRoomEditable = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -1271,35 +1271,33 @@ const checkRoomEditable = async (req, res, next) => {
 
     const { hasBookings, bookingCount, showtimesCount } = await checkRoomHasActiveBookings(id);
 
-    if (hasBookings || showtimesCount > 0) {
-      const reasonMsg = hasBookings
-        ? `Phòng chiếu này hiện đang có ${bookingCount} vé đã được khách đặt cho các suất chiếu sắp tới. Đã khóa chỉnh sửa sơ đồ và giá ghế để bảo vệ dữ liệu vé.`
-        : `Phòng chiếu này hiện đang có ${showtimesCount} suất chiếu sắp/đang diễn ra. Đã khóa chỉnh sửa cấu trúc sơ đồ ghế.`;
+    const canEditLayout = !hasBookings && showtimesCount === 0;
+    const canEditPrice = !hasBookings;
 
-      return res.json({
-        success: true,
-        editable: false,
-        activeShowtimesCount: showtimesCount,
-        bookingCount,
-        reason: reasonMsg,
-        data: {
-          editable: false,
-          activeShowtimesCount: showtimesCount,
-          bookingCount,
-          reason: reasonMsg,
-        },
-      });
+    let reasonMsg = '';
+    if (hasBookings) {
+      reasonMsg = `Phòng chiếu này hiện đang có ${bookingCount} vé đã được khách đặt cho các suất chiếu sắp tới. Đã khóa chỉnh sửa sơ đồ và giá ghế để bảo vệ dữ liệu vé.`;
+    } else if (showtimesCount > 0) {
+      reasonMsg = `Phòng chiếu này hiện đang có ${showtimesCount} suất chiếu sắp/đang diễn ra. Đã khóa chỉnh sửa cấu trúc sơ đồ ghế (vẫn được phép chỉnh sửa giá ghế).`;
     }
 
     res.json({
       success: true,
-      editable: true,
-      activeShowtimesCount: 0,
-      bookingCount: 0,
+      editable: canEditLayout,
+      canEditLayout,
+      canEditPrice,
+      hasBookings,
+      activeShowtimesCount: showtimesCount,
+      bookingCount,
+      reason: reasonMsg,
       data: {
-        editable: true,
-        activeShowtimesCount: 0,
-        bookingCount: 0,
+        editable: canEditLayout,
+        canEditLayout,
+        canEditPrice,
+        hasBookings,
+        activeShowtimesCount: showtimesCount,
+        bookingCount,
+        reason: reasonMsg,
       },
     });
   } catch (error) {

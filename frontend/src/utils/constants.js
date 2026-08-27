@@ -1,5 +1,6 @@
 const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 export const API_URL = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
+export const SOCKET_URL = baseUrl.replace(/\/api\/?$/, '');
 
 export const MOVIE_GENRES = [
   'Action',
