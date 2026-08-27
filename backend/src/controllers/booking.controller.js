@@ -4,6 +4,7 @@
  * - API chính: POST /api/bookings -> createBooking
  */
 
+const mongoose = require('mongoose');
 const Booking = require('../models/Booking.model');
 const Showtime = require('../models/Showtime.model');
 const Seat = require('../models/Seat.model');
@@ -363,9 +364,9 @@ const createBooking = async (req, res, next) => {
 
     if (isVietQR) {
       // 9. VietQR logic
-      const bankId = process.env.VIETQR_BANK_ID || 'TCB';
-      const accountNo = process.env.VIETQR_ACCOUNT_NO || '19073206758013';
-      const accountName = process.env.VIETQR_ACCOUNT_NAME || 'NGUYEN MINH DUC';
+      const bankId = process.env.VIETQR_BANK_ID || 'MB';
+      const accountNo = process.env.VIETQR_ACCOUNT_NO || '5725042006';
+      const accountName = process.env.VIETQR_ACCOUNT_NAME || 'NGUYEN VAN VIET DUC';
       const addInfo = `NOVA${booking._id.toString().slice(-6).toUpperCase()}`;
       
       const qrUrl = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact.png?amount=${totalPrice}&addInfo=${addInfo}&accountName=${encodeURIComponent(accountName)}`;
@@ -885,24 +886,28 @@ const cancelBooking = async (req, res, next) => {
 // @access  Public
 const verifyTicket = async (req, res, next) => {
   try {
-    const { ticketCode } = req.params;
-    if (!ticketCode) {
+    const rawCode = req.params.ticketCode;
+    if (!rawCode) {
       return res.status(400).json({ success: false, error: 'Thiếu mã vé' });
     }
 
-    const cleanCode = ticketCode.trim().toUpperCase();
-    // Thay thế khoảng trắng bằng gạch nối nếu có
+    const cleanCode = decodeURIComponent(rawCode).trim().toUpperCase();
     const normalizedCode = cleanCode.replace(/\s+/g, '-');
     const flexPattern = new RegExp('^' + cleanCode.replace(/[\s-]+/g, '[-_\\s]?') + '$', 'i');
 
-    // Tìm theo ticketCode (chính xác hoặc chuẩn hóa hoặc regex) hoặc ObjectId
-    let booking = await Booking.findOne({
-      $or: [
-        { ticketCode: cleanCode },
-        { ticketCode: normalizedCode },
-        { ticketCode: flexPattern },
-      ],
-    })
+    const orConditions = [
+      { ticketCode: cleanCode },
+      { ticketCode: normalizedCode },
+      { ticketCode: flexPattern },
+    ];
+
+    // Nếu mã vé là ObjectId MongoDB 24 ký tự
+    if (mongoose.Types.ObjectId.isValid(rawCode.trim()) && rawCode.trim().length === 24) {
+      orConditions.push({ _id: new mongoose.Types.ObjectId(rawCode.trim()) });
+    }
+
+    // Tìm theo ticketCode hoặc ObjectId
+    let booking = await Booking.findOne({ $or: orConditions })
       .populate('user', 'username email phone')
       .populate({
         path: 'showtime',
@@ -945,7 +950,8 @@ const verifyTicket = async (req, res, next) => {
           bIdCleanLast10 === strippedCode ||
           (bCode && bCode.endsWith(upperCode)) ||
           (bCodeClean && bCodeClean.endsWith(strippedCode)) ||
-          (upperCode.length >= 5 && bIdFull.endsWith(upperCode))
+          (upperCode.length >= 4 && bCode.includes(upperCode)) ||
+          (upperCode.length >= 4 && bIdFull.endsWith(upperCode))
         );
       });
     }

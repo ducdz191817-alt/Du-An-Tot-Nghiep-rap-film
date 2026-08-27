@@ -1,7 +1,12 @@
 import api from './api';
 
-const validateCoupon = async (code, totalPrice) => {
-  const response = await api.post('/coupons/validate', { code, totalPrice });
+const validateCoupon = async (code, totalPrice, context = {}) => {
+  const response = await api.post('/coupons/validate', {
+    code,
+    totalPrice,
+    seatCount: context.seatCount,
+    showtimeStartTime: context.showtimeStartTime,
+  });
   return response;
 };
 

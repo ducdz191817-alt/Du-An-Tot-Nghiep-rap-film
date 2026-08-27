@@ -34,11 +34,11 @@ const sendConfirmationEmail = async (booking, user) => {
 
     await sendEmail({
       to: user.email,
-      subject: `🎬 Nova Cinematic — Xác nhận thanh toán chuyển khoản! Mã vé: ${ticketCode}`,
+      subject: `🎬 Nova Cinema — Xác nhận thanh toán chuyển khoản! Mã vé: ${ticketCode}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #222; border-radius: 16px; padding: 25px; background-color: #13131c; color: #e4e4e7;">
           <div style="text-align: center; border-bottom: 1px solid #27272a; padding-bottom: 20px; margin-bottom: 20px;">
-            <h2 style="color: #a855f7; margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">Nova Cinematic</h2>
+            <h2 style="color: #a855f7; margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 2px;">Nova Cinema</h2>
             <p style="color: #a1a1aa; font-size: 14px; margin: 5px 0 0 0;">Đã nhận thanh toán chuyển khoản SePay!</p>
           </div>
           <p>Xin chào <strong>${user.username || user.email}</strong>,</p>
@@ -67,8 +67,9 @@ const sendConfirmationEmail = async (booking, user) => {
             <div style="margin-top: 4px;">
               <a href="${verifyUrl}" style="display: inline-block; background: linear-gradient(135deg, #7c3aed, #a855f7); color: white; font-weight: bold; font-size: 14px; text-decoration: none; padding: 10px 24px; border-radius: 8px;">Xem Vé Điện Tử Trên Web</a>
             </div>
+            <p style="color: #64748b; font-size: 11px; margin: 10px 0 0 0; word-break: break-all;">${verifyUrl}</p>
           </div>
-          <p style="color: #71717a; font-size: 12px; text-align: center; margin-top: 20px;">Nova Cinematic · Xác nhận bởi SePay Automatic Webhook</p>
+          <p style="color: #71717a; font-size: 12px; text-align: center; margin-top: 20px;">Nova Cinema · Xác nhận bởi SePay Automatic Webhook</p>
         </div>
       `,
     });

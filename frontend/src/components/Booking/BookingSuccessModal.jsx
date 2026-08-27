@@ -77,68 +77,61 @@ export const BookingSuccessModal = ({ isOpen, bookingResult, showtime, selectedS
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget) handleGoHome();
       }}
     >
       <div
-        className={`relative bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden
-          transition-all duration-500 ease-out
-          ${visible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-90 translate-y-8'}
+        className={`relative bg-white dark:bg-[#131622] border border-gray-200 dark:border-gray-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden my-auto max-h-[94vh] flex flex-col
+          transition-all duration-300 ease-out
+          ${visible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}
         `}
       >
         {/* Decorative gradient top bar */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-brand to-emerald-500" />
+        <div className="h-1.5 bg-gradient-to-r from-emerald-500 via-brand to-emerald-500 shrink-0" />
 
-        {/* Confetti / glow background */}
-        <div className="absolute top-8 left-1/2 -translate-x-1/2 w-48 h-48 bg-emerald-500/10 rounded-full blur-[60px] pointer-events-none" />
-
-        <div className="relative p-8 space-y-7">
-          {/* Success icon */}
-          <div className="flex flex-col items-center gap-3">
-            <div className="relative">
-              <div className="w-20 h-20 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center">
-                <CheckCircle size={44} className="text-emerald-400" strokeWidth={1.8} />
-              </div>
-              {/* Ping animation */}
-              <span className="absolute inset-0 rounded-full border-2 border-emerald-400/40 animate-ping" />
+        {/* Scrollable Modal Content */}
+        <div className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1">
+          
+          {/* Success icon & header */}
+          <div className="flex flex-col items-center text-center gap-2">
+            <div className="w-14 h-14 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center text-emerald-400">
+              <CheckCircle size={32} strokeWidth={2} />
             </div>
-            <div className="text-center space-y-1">
-              <h2 className="text-2xl font-black text-gray-900 dark:text-white">Đặt vé thành công! 🎉</h2>
-              <p className="text-xs text-gray-600 dark:text-zinc-400 font-semibold">
+            <div>
+              <h2 className="text-xl font-black text-gray-900 dark:text-white">Đặt vé thành công! 🎉</h2>
+              <p className="text-xs text-gray-600 dark:text-zinc-400 font-medium mt-0.5">
                 Email xác nhận đã được gửi đến hộp thư của bạn.
               </p>
             </div>
           </div>
 
           {/* Ticket details card */}
-          <div className="bg-gray-50 dark:bg-zinc-900/80 border border-gray-200 dark:border-dark-border rounded-2xl overflow-hidden">
-            {/* Movie name header */}
-            <div className="bg-gradient-to-r from-brand/10 to-transparent p-4 border-b border-gray-200 dark:border-dark-border/50">
-              <div className="flex items-center gap-2">
-                <Ticket size={16} className="text-brand shrink-0" />
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-zinc-400 font-bold uppercase tracking-wider">Phim</p>
-                  <p className="text-sm font-black text-gray-900 dark:text-zinc-100 leading-tight">{movie.title || 'N/A'}</p>
-                </div>
+          <div className="bg-gray-50 dark:bg-zinc-900/90 border border-gray-200 dark:border-zinc-800 rounded-2xl overflow-hidden text-xs">
+            {/* Movie header */}
+            <div className="bg-gradient-to-r from-brand/15 to-transparent px-4 py-2.5 border-b border-gray-200 dark:border-zinc-800/60 flex items-center gap-2.5">
+              <Ticket size={16} className="text-brand shrink-0" />
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] text-gray-500 dark:text-zinc-400 font-bold uppercase tracking-wider block">Phim</span>
+                <p className="text-sm font-black text-gray-900 dark:text-white truncate leading-tight">{movie.title || 'N/A'}</p>
               </div>
             </div>
 
             {/* Detail rows */}
-            <div className="divide-y divide-gray-200 dark:divide-dark-border/30">
+            <div className="divide-y divide-gray-200 dark:divide-zinc-800/50 text-xs">
               <DetailRow
-                icon={<MapPin size={13} className="text-brand" />}
+                icon={<MapPin size={12} className="text-brand" />}
                 label="Rạp & Phòng"
                 value={`${theater.name || 'N/A'} • ${room.name && showtime?.format && room.name.toUpperCase().includes(showtime.format.toUpperCase()) ? room.name : `${room.name || ''}${showtime?.format ? ` (${showtime.format})` : ''}`}`}
               />
               <DetailRow
-                icon={<Calendar size={13} className="text-brand" />}
+                icon={<Calendar size={12} className="text-brand" />}
                 label="Thời gian"
                 value={`${dateString} — ${timeString}`}
               />
               <DetailRow
-                icon={<Ticket size={13} className="text-brand" />}
+                icon={<Ticket size={12} className="text-brand" />}
                 label="Ghế đã chọn"
                 value={
                   <div className="flex flex-wrap gap-1 justify-end">
@@ -148,7 +141,6 @@ export const BookingSuccessModal = ({ isOpen, bookingResult, showtime, selectedS
                       if (match) {
                         const row = match[1];
                         const num = parseInt(match[2], 10);
-                        
                         const capacity = room.capacity || 0;
                         const cols = capacity <= 30 ? 6 : capacity <= 60 ? 10 : 12;
                         const rowCount = Math.ceil(capacity / cols);
@@ -172,67 +164,63 @@ export const BookingSuccessModal = ({ isOpen, bookingResult, showtime, selectedS
                 }
               />
               <DetailRow
-                icon={<CreditCard size={13} className="text-brand" />}
+                icon={<CreditCard size={12} className="text-brand" />}
                 label="Phương thức"
                 value={paymentMethodLabel}
               />
             </div>
 
-            {/* Total */}
-            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-brand/5 to-transparent border-t border-gray-200 dark:border-dark-border/50">
+            {/* Total price footer */}
+            <div className="flex items-center justify-between px-4 py-2.5 bg-brand/5 border-t border-gray-200 dark:border-zinc-800/60">
               <div className="space-y-0.5">
-                <p className="text-[10px] text-gray-500 dark:text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                  <Receipt size={11} /> Mã giao dịch
-                </p>
-                <p className="text-xs font-black text-gray-800 dark:text-zinc-300 font-mono">{transactionId}</p>
+                <span className="text-[10px] text-gray-500 dark:text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                  <Receipt size={10} /> Mã GD
+                </span>
+                <span className="text-xs font-black text-gray-800 dark:text-zinc-300 font-mono">{transactionId}</span>
               </div>
               <div className="text-right">
-                <p className="text-[10px] text-gray-500 dark:text-zinc-400 font-bold uppercase tracking-wider">Tổng thanh toán</p>
-                <p className="text-xl font-black text-emerald-600 dark:text-emerald-400">{totalPrice.toLocaleString()} VND</p>
+                <span className="text-[10px] text-gray-500 dark:text-zinc-400 font-bold uppercase tracking-wider block">Tổng tiền</span>
+                <span className="text-base font-black text-emerald-600 dark:text-emerald-400">{totalPrice.toLocaleString()} VND</span>
               </div>
             </div>
           </div>
 
           {/* Ticket QR Code */}
-          <div className="flex flex-col items-center justify-center bg-gray-50 dark:bg-zinc-900/60 border border-gray-200 dark:border-dark-border/60 rounded-2xl p-5 space-y-3">
-            <p className="text-[10px] text-gray-600 dark:text-zinc-400 font-bold uppercase tracking-wider text-center">
-              Mã QR vé điện tử — Cho nhân viên quét khi vào rạp
-            </p>
-            <div className="bg-white p-3 rounded-2xl shadow-lg flex items-center justify-center w-40 h-40 border border-zinc-200">
+          <div className="flex flex-col items-center justify-center bg-gray-50 dark:bg-zinc-900/60 border border-gray-200 dark:border-zinc-800/60 rounded-2xl p-3.5 space-y-2">
+            <span className="text-[10px] text-gray-600 dark:text-zinc-400 font-bold uppercase tracking-wider text-center">
+              Mã QR vé điện tử — Quét khi vào rạp
+            </span>
+            <div className="bg-white p-2 rounded-xl shadow-md flex items-center justify-center w-32 h-32 border border-zinc-200">
               <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(
                   `${window.location.origin}/ticket/${booking?.ticketCode || booking?._id}`
                 )}`}
                 alt="Ticket QR Code"
                 className="w-full h-full object-contain"
               />
             </div>
-            {/* Mã vé dạng text để nhân viên nhập tay nếu không quét được QR */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-[10px] text-gray-500 dark:text-zinc-400 font-semibold uppercase tracking-wider">Mã vé</span>
-              <span className="font-mono text-base font-black text-brand tracking-widest bg-gray-200 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 px-3 py-1 rounded-lg select-all">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-gray-500 dark:text-zinc-400 font-semibold">Mã vé:</span>
+              <span className="font-mono text-sm font-black text-brand tracking-widest bg-gray-200 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 px-2.5 py-0.5 rounded-md select-all">
                 {booking?.ticketCode || '---'}
               </span>
             </div>
-            <p className="text-[10px] text-gray-600 dark:text-zinc-400 font-semibold text-center max-w-[240px] leading-relaxed">
-              Hoặc nhập mã vé bên trên tại quầy nếu không quét được QR
-            </p>
           </div>
 
           {/* Action buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-1">
+          <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
             <button
               onClick={handleGoHome}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-gray-300 dark:border-zinc-700 text-gray-800 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 text-sm font-bold transition-all"
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-300 dark:border-zinc-700 text-gray-800 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 text-xs font-bold transition-all active:scale-95"
             >
-              <Home size={16} />
+              <Home size={14} />
               Về trang chủ
             </button>
             <Button
               onClick={handleGoHistory}
               variant="primary"
-              className="flex-1 py-3 rounded-2xl font-black text-sm"
-              icon={<History size={16} />}
+              className="flex-1 py-2.5 rounded-xl font-black text-xs"
+              icon={<History size={14} />}
             >
               Xem lịch sử đặt vé
             </Button>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Clock, Copy, AlertTriangle, RefreshCw, CheckCircle } from 'lucide-react';
+import { ChevronLeft, Clock, Copy, AlertTriangle, RefreshCw, CheckCircle, Zap } from 'lucide-react';
 import { io } from 'socket.io-client';
 import useBooking from '../hooks/useBooking';
 import useAuth from '../hooks/useAuth';
@@ -170,7 +170,11 @@ export const PaymentPage = () => {
 
   const handleApplyCoupon = async (code) => {
     try {
-      const result = await couponService.validateCoupon(code, pricing.grandTotal);
+      const context = {
+        seatCount: selectedSeats.length,
+        showtimeStartTime: selectedShowtime?.startTime,
+      };
+      const result = await couponService.validateCoupon(code, pricing.grandTotal, context);
       if (result.success && result.data) {
         setAppliedCoupon(result.data);
       } else {
@@ -286,6 +290,20 @@ export const PaymentPage = () => {
     }
   };
 
+  const handleSimulatePayment = async () => {
+    if (!bookingId) return;
+    setLoading(true);
+    try {
+      await bookingService.simulatePayment(bookingId);
+      showToast('Đã giả lập thanh toán MoMo thành công!', 'success');
+      await handlePaymentSuccess();
+    } catch (err) {
+      alert(`Giả lập thanh toán thất bại: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCheckPayment = async () => {
     setLoading(true);
     try {
@@ -321,7 +339,7 @@ export const PaymentPage = () => {
 
     const title = isMomoScreen ? 'Thanh Toán MoMo' : 'Thanh Toán Chuyển Khoản VietQR';
     const description = isMomoScreen
-      ? 'Quét mã QR này bằng ứng dụng MoMo để hoàn tất giao dịch, hoặc nhấn vào nút mở liên kết MoMo.'
+      ? 'Quét mã QR này bằng ứng dụng MoMo để hoàn tất giao dịch, hoặc nhấn vào nút "Giả lập thanh toán MoMo" bên dưới để kiểm thử ngay.'
       : 'Hãy mở ứng dụng ngân hàng và quét mã để tiến hành đặt vé tự động.';
 
     return (
@@ -370,21 +388,46 @@ export const PaymentPage = () => {
                 )}
               </div>
 
-              {/* Status loader & Confirm button */}
+              {/* Status loader & Confirm / Simulate button */}
               <div className="w-full flex flex-col items-center gap-2 pt-1">
-                <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-zinc-400 font-semibold bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 px-4 py-2 rounded-xl">
-                  <RefreshCw size={12} className="animate-spin text-emerald-600 dark:text-emerald-400" />
-                  <span>Đang kiểm tra giao dịch tự động...</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleCheckPayment}
-                  disabled={loading}
-                  className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl transition-all shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
-                >
-                  <CheckCircle size={16} />
-                  <span>Tôi đã chuyển khoản xong — Kiểm tra thanh toán</span>
-                </button>
+                {isMomoScreen ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleSimulatePayment}
+                      disabled={loading}
+                      className="w-full py-3 px-4 bg-gradient-to-r from-[#a50064] to-[#d82d8b] hover:from-[#880052] hover:to-[#be2077] text-white font-black text-xs rounded-xl transition-all shadow-lg shadow-pink-950/40 flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+                    >
+                      <Zap size={16} />
+                      <span>⚡ Giả lập thanh toán MoMo thành công (Demo)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCheckPayment}
+                      disabled={loading}
+                      className="w-full py-2 px-4 bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer border border-zinc-300 dark:border-zinc-800"
+                    >
+                      <CheckCircle size={15} />
+                      <span>Kiểm tra trạng thái thanh toán</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-zinc-400 font-semibold bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 px-4 py-2 rounded-xl">
+                      <RefreshCw size={12} className="animate-spin text-emerald-600 dark:text-emerald-400" />
+                      <span>Đang kiểm tra giao dịch tự động...</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCheckPayment}
+                      disabled={loading}
+                      className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl transition-all shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+                    >
+                      <CheckCircle size={16} />
+                      <span>Tôi đã chuyển khoản xong — Kiểm tra thanh toán</span>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -397,7 +440,7 @@ export const PaymentPage = () => {
               {isMomoScreen ? (
                 <div className="bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-dark-border rounded-2xl p-4 space-y-4 text-sm">
                   <div className="text-gray-700 dark:text-zinc-400 text-sm leading-relaxed">
-                    Mở ứng dụng MoMo và quét mã QR bên trái hoặc nhấn nút "Mở liên kết MoMo" phía dưới để hoàn tất thanh toán.
+                    Mở ứng dụng MoMo và quét mã QR bên trái, hoặc nhấn nút <strong>"⚡ Giả lập thanh toán MoMo thành công"</strong> để hoàn tất đơn hàng ngay lập tức khi thuyết trình hoặc kiểm thử.
                   </div>
 
                   <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-4 space-y-3">
@@ -408,7 +451,7 @@ export const PaymentPage = () => {
                           navigator.clipboard.writeText(momoData.payUrl);
                           alert('Đã sao chép liên kết MoMo!');
                         }}
-                        className="text-emerald-600 dark:text-emerald-400 hover:underline text-xs"
+                        className="text-pink-600 dark:text-pink-400 hover:underline text-xs font-bold"
                       >
                         Sao chép
                       </button>
@@ -493,14 +536,25 @@ export const PaymentPage = () => {
             
             <div className="flex items-center gap-2 w-full sm:w-auto">
               {isMomoScreen && momoData?.payUrl && (
-                <Button
-                  onClick={() => window.open(momoData.payUrl, '_blank')}
-                  variant="secondary"
-                  loading={loading}
-                  className="py-2 px-3.5 text-xs font-bold border border-emerald-800/30 text-emerald-400"
-                >
-                  Mở liên kết MoMo
-                </Button>
+                <>
+                  <Button
+                    onClick={() => window.open(momoData.payUrl, '_blank')}
+                    variant="secondary"
+                    loading={loading}
+                    className="py-2 px-3.5 text-xs font-bold border border-pink-500/30 text-pink-500 hover:bg-pink-500/10"
+                  >
+                    Mở liên kết MoMo
+                  </Button>
+                  <Button
+                    onClick={handleSimulatePayment}
+                    variant="primary"
+                    loading={loading}
+                    className="py-2 px-3.5 text-xs font-bold bg-gradient-to-r from-[#a50064] to-[#d82d8b] text-white border-0 shadow-md shadow-pink-900/30"
+                  >
+                    <Zap size={14} className="mr-1 inline" />
+                    Giả lập thành công
+                  </Button>
+                </>
               )}
             </div>
 

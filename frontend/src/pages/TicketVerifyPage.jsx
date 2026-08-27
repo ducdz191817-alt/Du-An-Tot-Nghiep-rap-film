@@ -134,14 +134,39 @@ export const TicketVerifyPage = () => {
             <p className="text-xs text-zinc-500 font-semibold">
               {errorMsg || 'Mã vé không hợp lệ hoặc không tồn tại trong hệ thống.'}
             </p>
-            <p className="font-mono text-xs text-zinc-600 mt-2 bg-zinc-900 px-3 py-1 rounded-lg inline-block">{ticketCode}</p>
+            <p className="font-mono text-xs text-zinc-400 mt-2 bg-zinc-900 px-3 py-1.5 rounded-lg inline-block border border-zinc-800 tracking-wider">
+              {ticketCode}
+            </p>
           </div>
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center justify-center gap-2 mx-auto text-zinc-400 hover:text-white text-sm font-bold transition-colors"
-          >
-            <ArrowLeft size={16} /> Về trang chủ
-          </button>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => {
+                setStatus('loading');
+                bookingService.verifyTicket(ticketCode)
+                  .then(res => {
+                    if (res?.success && res?.data) {
+                      setTicketData(res.data);
+                      setStatus('found');
+                    } else {
+                      setStatus('not_found');
+                    }
+                  })
+                  .catch(err => {
+                    setStatus('not_found');
+                    setErrorMsg(err.message);
+                  });
+              }}
+              className="py-2 px-4 bg-brand hover:bg-brand/80 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-brand/20 active:scale-95"
+            >
+              Thử lại
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center justify-center gap-1.5 py-2 px-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-colors active:scale-95"
+            >
+              <ArrowLeft size={14} /> Về trang chủ
+            </button>
+          </div>
         </div>
       </div>
     );

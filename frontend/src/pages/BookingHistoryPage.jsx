@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Ticket, Calendar, MapPin, Receipt, Compass, ChevronDown, ChevronUp,
   CreditCard, ShoppingBag, Clock, Hash, Film, Tag, Printer,
-  QrCode, XCircle, Copy, AlertCircle, RefreshCw, CheckCircle2,
+  QrCode, XCircle, Copy, AlertCircle, RefreshCw, CheckCircle2, Zap,
 } from 'lucide-react';
 import bookingService from '../services/booking.service';
 import Loading from '../components/common/Loading';
@@ -554,10 +554,11 @@ const PendingPaymentModal = ({ booking, onClose, onCancel, onSuccess }) => {
   const { language } = useLanguage();
   const [copyStatus, setCopyStatus] = useState('');
   const [checking, setChecking] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'warning' });
 
-  const bankId = 'TCB';
-  const accountNo = '19073206758013';
-  const accountName = 'NGUYEN MINH DUC';
+  const bankId = 'MB';
+  const accountNo = '5725042006';
+  const accountName = 'NGUYEN VAN VIET DUC';
   const addInfo = `NOVA${(booking._id || '').slice(-6).toUpperCase()}`;
   const amount = booking.totalPrice || 0;
   const qrUrl = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact.png?amount=${amount}&addInfo=${addInfo}&accountName=${encodeURIComponent(accountName)}`;
@@ -612,6 +613,22 @@ const PendingPaymentModal = ({ booking, onClose, onCancel, onSuccess }) => {
     }
   };
 
+  const handleSimulatePayment = async () => {
+    setChecking(true);
+    try {
+      await bookingService.simulatePayment(booking._id);
+      onSuccess();
+    } catch (err) {
+      setToast({
+        show: true,
+        message: err.message || 'Lỗi giả lập thanh toán',
+        type: 'error',
+      });
+    } finally {
+      setChecking(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white dark:bg-[#121622] border border-dark-border rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl space-y-4">
@@ -654,7 +671,7 @@ const PendingPaymentModal = ({ booking, onClose, onCancel, onSuccess }) => {
           <div className="bg-zinc-100 dark:bg-zinc-900/80 rounded-2xl p-4 divide-y divide-zinc-200 dark:divide-zinc-800 text-xs space-y-2">
             <div className="flex justify-between items-center pb-2">
               <span className="text-zinc-500 font-semibold">{language === 'vi' ? 'Ngân hàng' : 'Bank'}</span>
-              <span className="font-bold text-zinc-800 dark:text-zinc-100">{bankId} (Vietcombank)</span>
+              <span className="font-bold text-zinc-800 dark:text-zinc-100">MB (Ngân hàng Quân Đội)</span>
             </div>
 
             <div className="flex justify-between items-center py-2">
@@ -734,6 +751,15 @@ const PendingPaymentModal = ({ booking, onClose, onCancel, onSuccess }) => {
           </button>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              className="text-xs py-2 px-3 bg-pink-500/10 text-pink-500 border-pink-500/30 hover:bg-pink-500/20"
+              onClick={handleSimulatePayment}
+              disabled={checking}
+            >
+              <Zap size={13} className="mr-1 inline" />
+              {language === 'vi' ? 'Giả lập TT' : 'Simulate'}
+            </Button>
             <Button
               variant="outline"
               className="text-xs py-2 px-4"
