@@ -1332,17 +1332,7 @@ const saveRoomLayout = async (req, res, next) => {
       throw new Error('Dữ liệu sơ đồ ghế không hợp lệ');
     }
 
-    // 1. Lấy tất cả các ghế đang có trong DB của phòng này
-    const existingSeats = await Seat.find({ room: id });
-    const existingMap = new Map(existingSeats.map((s) => [s._id.toString(), s]));
-
-    const incomingIds = new Set(
-      incomingSeats
-        .filter((s) => s._id && !String(s._id).startsWith('temp_'))
-        .map((s) => String(s._id))
-    );
-
-    // 2. Kiểm tra các loại ghế gửi lên có hợp lệ với loại phòng (allowedSeatTypes) không
+    // 1. Kiểm tra các loại ghế gửi lên có hợp lệ với loại phòng (allowedSeatTypes) không
     let allowedSeatTypes = ['standard', 'vip', 'couple'];
     let roomTypeDoc = null;
     if (room.roomTypeRef) {
@@ -1365,54 +1355,21 @@ const saveRoomLayout = async (req, res, next) => {
       }
     }
 
-    // 3. Xác định các ghế bị xóa khỏi ma trận
-    const toDeleteIds = existingSeats
-      .filter((s) => !incomingIds.has(s._id.toString()))
-      .map((s) => s._id);
+    // 2. Xóa toàn bộ ghế cũ của phòng này để tránh xung đột Unique Index ({ room, row, number }) khi thay đổi vị trí ghế
+    await Seat.deleteMany({ room: id });
 
-    if (toDeleteIds.length > 0) {
-      await Seat.deleteMany({ _id: { $in: toDeleteIds } });
-    }
+    // 3. Khởi tạo danh sách ghế mới chuẩn hóa
+    const seatsToInsert = incomingSeats.map((seat) => ({
+      room: id,
+      row: seat.row,
+      number: seat.number,
+      type: seat.type || 'standard',
+      price: seat.price || 0,
+      isDisabled: seat.isDisabled ?? false,
+    }));
 
-    // 4. Phân loại ghế cần update và ghế mới cần insert
-    const bulkOps = [];
-    const newSeatsToInsert = [];
-
-    for (const seat of incomingSeats) {
-      const isExisting = seat._id && !String(seat._id).startsWith('temp_') && existingMap.has(String(seat._id));
-
-      if (isExisting) {
-        bulkOps.push({
-          updateOne: {
-            filter: { _id: seat._id },
-            update: {
-              $set: {
-                row: seat.row,
-                number: seat.number,
-                type: seat.type || 'standard',
-                price: seat.price || 0,
-                isDisabled: seat.isDisabled ?? false,
-              },
-            },
-          },
-        });
-      } else {
-        newSeatsToInsert.push({
-          room: id,
-          row: seat.row,
-          number: seat.number,
-          type: seat.type || 'standard',
-          price: seat.price || 0,
-          isDisabled: seat.isDisabled ?? false,
-        });
-      }
-    }
-
-    if (bulkOps.length > 0) {
-      await Seat.bulkWrite(bulkOps);
-    }
-    if (newSeatsToInsert.length > 0) {
-      await Seat.insertMany(newSeatsToInsert);
+    if (seatsToInsert.length > 0) {
+      await Seat.insertMany(seatsToInsert);
     }
 
     // 4. Lấy lại danh sách ghế mới và cập nhật sức chứa (capacity) của phòng
