@@ -526,10 +526,10 @@ const createShowtime = async (req, res, next) => {
     }
 
     // --- DYNAMIC PRICING: Tự động tính giá vé theo ngày & giờ ---
-    const pricingConfig = await PricingConfig.findOne().lean();
+    let pricingConfig = await PricingConfig.findOne().lean();
     if (!pricingConfig) {
-      res.status(400);
-      throw new Error('Chưa có bảng giá được cấu hình. Vui lòng thiết lập bảng giá trong mục “Bảng Giá” trước.');
+      const newConfig = await PricingConfig.create({});
+      pricingConfig = newConfig.toObject();
     }
 
     const room = await Room.findById(roomId);
@@ -1649,11 +1649,11 @@ const autoGenerateShowtimes = async (req, res, next) => {
       throw new Error('Thiếu thông tin bắt buộc: movieId, theaterId, roomIds, startDate, endDate, timeSlots');
     }
 
-    // Lấy bảng giá
-    const pricingConfig = await PricingConfig.findOne().lean();
+    // Lấy bảng giá (tự khởi tạo nếu chưa có)
+    let pricingConfig = await PricingConfig.findOne().lean();
     if (!pricingConfig) {
-      res.status(400);
-      throw new Error('Chưa có bảng giá được cấu hình. Vui lòng thiết lập bảng giá trong mục “Bảng Giá” trước.');
+      const newConfig = await PricingConfig.create({});
+      pricingConfig = newConfig.toObject();
     }
 
     // Lấy roomType và type (định dạng chiếu) của từng phòng trước

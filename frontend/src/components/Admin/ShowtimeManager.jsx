@@ -597,22 +597,29 @@ export const ShowtimeManager = () => {
 
     let createdCount = 0;
     let skippedCount = 0;
+    let lastErrorMsg = '';
 
     for (const item of selectedValidItems) {
       try {
+        const startTimeStr = item.startTime instanceof Date ? item.startTime.toISOString() : new Date(item.startTime).toISOString();
         await adminService.createShowtime({
           movieId: autoForm.movieId,
           theaterId: autoForm.theaterId,
           roomId: autoForm.roomIds[0],
-          startTime: item.startTime.toISOString(),
+          startTime: startTimeStr,
           ticketPrice: item.ticketPrice,
           format: item.format,
         });
         createdCount++;
       } catch (err) {
-        console.error(`Không thể tạo suất ${item.slot} ngày ${item.dayStr}:`, err.message);
+        lastErrorMsg = err.response?.data?.message || err.message;
+        console.error(`Không thể tạo suất ${item.slot} ngày ${item.dayStr}:`, lastErrorMsg);
         skippedCount++;
       }
+    }
+
+    if (createdCount === 0 && lastErrorMsg) {
+      setAutoError(`⚠️ Không thể lưu suất chiếu: ${lastErrorMsg}`);
     }
 
     setAutoResult({
