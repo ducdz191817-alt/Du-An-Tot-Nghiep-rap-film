@@ -31,8 +31,9 @@ const ShowtimeSchema = new mongoose.Schema(
     },
     format: {
       type: String,
-      enum: ['2D', '3D', 'IMAX', 'GOLDCLASS'],
       default: '2D',
+      uppercase: true,
+      trim: true,
     },
     bookedSeats: {
       type: [String], // Array of seat codes that are booked, e.g., 'A1', 'B5'

@@ -512,7 +512,7 @@ export const ShowtimeManager = () => {
           // 1. Kiểm tra trùng lịch với suất chiếu đã có sẵn trong CSDL
           const conflictDB = showtimes.find((st) => {
             const stRoomId = st.room?._id || st.room;
-            if (stRoomId !== targetRoomId) return false;
+            if (String(stRoomId) !== String(targetRoomId)) return false;
             const stStart = new Date(st.startTime);
             const stEnd = new Date(st.endTime);
             return startTime < stEnd && endTime > stStart;
@@ -618,8 +618,12 @@ export const ShowtimeManager = () => {
       }
     }
 
-    if (createdCount === 0 && lastErrorMsg) {
-      setAutoError(`⚠️ Không thể lưu suất chiếu: ${lastErrorMsg}`);
+    await reloadShowtimesAndRooms(selectedTheater);
+    setAutoGenerating(false);
+
+    if (createdCount === 0) {
+      setAutoError(`⚠️ Không thể lưu suất chiếu: ${lastErrorMsg || 'Có lỗi xảy ra khi lưu'}`);
+      return;
     }
 
     setAutoResult({
@@ -631,9 +635,6 @@ export const ShowtimeManager = () => {
       rooms: 1,
       slots: autoForm.timeSlots.length,
     });
-
-    await reloadShowtimesAndRooms(selectedTheater);
-    setAutoGenerating(false);
   };
 
   const handleManualSubmit = async (e) => {
