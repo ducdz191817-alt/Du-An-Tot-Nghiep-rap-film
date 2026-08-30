@@ -465,8 +465,30 @@ const listConcessions = async (req, res, next) => {
     if (req.query.theaterId) {
       query.theater = req.query.theaterId;
     }
-    const concessions = await Concession.find(query).populate('theater');
+    // Nếu khách hàng gọi hoặc có tham số activeOnly: chỉ trả về các món đang kinh doanh (active !== false)
+    if (req.query.activeOnly === 'true' || (req.user && req.user.role === 'user')) {
+      query.active = { $ne: false };
+    }
+    const concessions = await Concession.find(query).populate('theater').sort({ createdAt: -1 });
     res.json({ success: true, count: concessions.length, data: concessions });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const toggleConcessionStatus = async (req, res, next) => {
+  try {
+    const concession = await Concession.findById(req.params.id);
+    if (!concession) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy món ăn/nước uống' });
+    }
+    concession.active = concession.active === false ? true : false;
+    await concession.save();
+    res.json({
+      success: true,
+      message: `Đã chuyển món "${concession.name}" sang trạng thái ${concession.active ? '🟢 Đang kinh doanh' : '🔴 Tạm ngừng bán'}!`,
+      data: concession,
+    });
   } catch (error) {
     next(error);
   }
@@ -474,12 +496,10 @@ const listConcessions = async (req, res, next) => {
 
 const deleteConcession = async (req, res, next) => {
   try {
-    const concession = await Concession.findByIdAndDelete(req.params.id);
-    if (!concession) {
-      res.status(404);
-      throw new Error('Concession not found');
-    }
-    res.json({ success: true, data: {} });
+    return res.status(400).json({
+      success: false,
+      message: '🚫 Hệ thống không cho phép xóa món ăn/thức uống nhằm bảo toàn lịch sử hóa đơn và báo cáo tài chính. Vui lòng sử dụng tính năng "Tạm ngừng bán (Ẩn món)".',
+    });
   } catch (error) {
     next(error);
   }
@@ -2389,6 +2409,7 @@ module.exports = {
   createConcession,
   updateConcession,
   deleteConcession,
+  toggleConcessionStatus,
   listConcessions,
   createShowtime,
   updateShowtime,
