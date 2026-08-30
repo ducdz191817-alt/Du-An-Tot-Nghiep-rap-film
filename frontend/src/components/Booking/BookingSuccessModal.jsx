@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, Ticket, MapPin, Calendar, CreditCard, Receipt, Home, History } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import Button from '../common/Button';
 
 /**
@@ -191,12 +192,12 @@ export const BookingSuccessModal = ({ isOpen, bookingResult, showtime, selectedS
               Mã QR vé điện tử — Quét khi vào rạp
             </span>
             <div className="bg-white p-2 rounded-xl shadow-md flex items-center justify-center w-32 h-32 border border-zinc-200">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(
-                  `${window.location.origin}/ticket/${booking?.ticketCode || booking?._id}`
-                )}`}
-                alt="Ticket QR Code"
-                className="w-full h-full object-contain"
+              <QRCodeSVG
+                value={booking?.ticketCode || booking?._id || 'N/A'}
+                size={112}
+                bgColor="#ffffff"
+                fgColor="#000000"
+                level="M"
               />
             </div>
             <div className="flex items-center gap-2">

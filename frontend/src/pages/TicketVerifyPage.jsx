@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   CheckCircle2,
@@ -294,6 +295,21 @@ export const TicketVerifyPage = () => {
                 <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Tổng thanh toán</p>
                 <p className="text-lg font-black text-emerald-400">{(ticket.totalPrice || 0).toLocaleString()} VND</p>
               </div>
+            </div>
+
+            {/* QR Code */}
+            <div className="flex flex-col items-center gap-3 py-2">
+              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Mã QR Vé Điện Tử</p>
+              <div className="bg-white p-3 rounded-2xl shadow-lg border border-zinc-200">
+                <QRCodeSVG
+                  value={ticket.ticketCode || 'N/A'}
+                  size={160}
+                  bgColor="#ffffff"
+                  fgColor="#000000"
+                  level="M"
+                />
+              </div>
+              <p className="text-[10px] text-zinc-600 font-semibold text-center">Quét mã để xác nhận vé tại quầy</p>
             </div>
 
           </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import {
   Ticket, Calendar, MapPin, Receipt, Compass, ChevronDown, ChevronUp,
   CreditCard, ShoppingBag, Clock, Hash, Film, Tag, Printer,
@@ -444,12 +445,12 @@ export const BookingHistoryPage = () => {
                           {isPaid && (
                             <div className="flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-dark-border/40 pt-5 md:pt-0 md:pl-6 space-y-2.5">
                               <div className="bg-white p-2 rounded-2xl shadow-lg flex items-center justify-center w-36 h-36 border border-zinc-200">
-                                <img
-                                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
-                                    `CINEADMIN TICKET\nMã vé: ${booking.ticketCode || booking._id?.slice(-10).toUpperCase()}\nPhim: ${displayTitle}\nRạp: ${theater.name || 'N/A'} - ${room.name || 'N/A'}\nGhế: ${booking.seats?.join(', ')}\nSuất chiếu: ${timeString} - ${dateString}\nTrạng thái: ĐÃ THANH TOÁN`
-                                  )}`}
-                                  alt="Ticket QR Code"
-                                  className="w-full h-full object-contain"
+                                <QRCodeSVG
+                                  value={booking.ticketCode || booking._id?.slice(-10).toUpperCase() || 'N/A'}
+                                  size={120}
+                                  bgColor="#ffffff"
+                                  fgColor="#000000"
+                                  level="M"
                                 />
                               </div>
                               <p className="text-[10px] text-[#6b4728] font-bold uppercase tracking-wider text-center max-w-[180px] leading-relaxed">
