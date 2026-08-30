@@ -138,11 +138,6 @@ const deleteConcession = async (id) => {
   return response.data;
 };
 
-const toggleConcessionStatus = async (id) => {
-  const response = await api.patch(`/admin/concessions/${id}/toggle`);
-  return response.data;
-};
-
 // Dashboard Stats & Revenue Reports
 const getDashboardStats = async (params = {}) => {
   const response = await api.get('/admin/dashboard/stats', { params });
@@ -311,7 +306,6 @@ const adminService = {
   createConcession,
   updateConcession,
   deleteConcession,
-  toggleConcessionStatus,
   getDashboardStats,
   getRevenueReport,
   getBookings,

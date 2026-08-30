@@ -22,7 +22,6 @@ const {
   createConcession,
   updateConcession,
   deleteConcession,
-  toggleConcessionStatus,
   listConcessions,
   createShowtime,
   updateShowtime,
@@ -96,7 +95,6 @@ router.put("/seats/:id", updateSeat);
 
 // Concessions
 router.route("/concessions").get(listConcessions).post(createConcession);
-router.patch("/concessions/:id/toggle", toggleConcessionStatus);
 router.route("/concessions/:id").put(updateConcession).delete(deleteConcession);
 
 // Showtimes
