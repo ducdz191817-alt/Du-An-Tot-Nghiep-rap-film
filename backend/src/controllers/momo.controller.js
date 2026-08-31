@@ -158,7 +158,7 @@ const momoCallback = async (req, res) => {
 
             const appUrl = process.env.APP_URL || 'http://localhost:5173';
             const verifyUrl = `${appUrl}/ticket/${ticketCode}`;
-            const qrDataUrl = await QRCode.toDataURL(ticketCode, { width: 180, margin: 1 });
+            const qrBuffer = await QRCode.toBuffer(String(ticketCode), { width: 180, margin: 1 });
 
             const concessionRows = (updatedBooking.concessions || [])
               .filter(c => c.concession)
@@ -200,10 +200,9 @@ const momoCallback = async (req, res) => {
       </div>
       <div style="background-color: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; margin: 16px 0; text-align: center;">
         <p style="color: #94a3b8; font-size: 13px; margin: 0 0 12px 0; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Mã QR Vé Điện Tử (Check-in Quầy)</p>
-        <div style="background-color: #ffffff; padding: 12px; border-radius: 12px; display: inline-block; margin-bottom: 12px; border: 1px solid #e2e8f0;">
-          <img src="${qrDataUrl}" alt="Ticket QR Code" width="180" height="180" style="display: block; border: 0;" />
+        <div style="background-color: #ffffff; padding: 12px; border-radius: 12px; display: inline-block; border: 1px solid #e2e8f0;">
+          <img src="cid:ticket_qr_code" alt="Ticket QR Code" width="180" height="180" style="display: block; margin: 0 auto; border: 0;" />
         </div>
-
       </div>
     </div>
   </td></tr>
@@ -220,6 +219,13 @@ const momoCallback = async (req, res) => {
               to: updatedBooking.user.email,
               subject: `🎬 Xác nhận vé MoMo - "${movie?.title || 'Phim'}" - Mã vé: ${ticketCode}`,
               html,
+              attachments: [
+                {
+                  filename: 'ticket-qr.png',
+                  content: qrBuffer,
+                  cid: 'ticket_qr_code',
+                },
+              ],
             });
           } catch (emailErr) {
             console.error('MoMo email send failed (non-fatal):', emailErr.message);

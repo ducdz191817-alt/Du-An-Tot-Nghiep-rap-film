@@ -32,7 +32,7 @@ const sendBookingConfirmationEmail = async (booking) => {
     const ticketCode = booking.ticketCode || booking._id.toString().slice(-10).toUpperCase();
     const appUrl = process.env.APP_URL || 'http://localhost:5173';
     const verifyUrl = `${appUrl}/ticket/${ticketCode}`;
-    const qrDataUrl = await QRCode.toDataURL(ticketCode, { width: 180, margin: 1 });
+    const qrBuffer = await QRCode.toBuffer(String(ticketCode), { width: 180, margin: 1 });
 
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #222; border-radius: 16px; padding: 25px; background-color: #13131c; color: #e4e4e7;">
@@ -93,9 +93,9 @@ const sendBookingConfirmationEmail = async (booking) => {
         </div>
 
         <div style="background-color: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; margin: 16px 0; text-align: center;">
-          <p style="color: #94a3b8; font-size: 13px; margin: 0 0 12px 0; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Mã QR Vé Điện Tử</p>
-          <div style="background-color: #ffffff; padding: 12px; border-radius: 12px; display: inline-block; margin-bottom: 12px; border: 1px solid #e2e8f0;">
-            <img src="${qrDataUrl}" alt="Ticket QR Code" width="180" height="180" style="display: block; border: 0;" />
+          <p style="color: #94a3b8; font-size: 13px; margin: 0 0 12px 0; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Mã QR Vé Điện Tử (Check-in Quầy)</p>
+          <div style="background-color: #ffffff; padding: 12px; border-radius: 12px; display: inline-block; border: 1px solid #e2e8f0;">
+            <img src="cid:ticket_qr_code" alt="Ticket QR Code" width="180" height="180" style="display: block; margin: 0 auto; border: 0;" />
           </div>
         </div>
         
@@ -113,6 +113,13 @@ const sendBookingConfirmationEmail = async (booking) => {
       to: booking.user.email,
       subject: `[Nova Cinema] Xác nhận đặt vé xem phim thành công - ${booking.showtime.movie.title}`,
       html: emailHtml,
+      attachments: [
+        {
+          filename: 'ticket-qr.png',
+          content: qrBuffer,
+          cid: 'ticket_qr_code',
+        },
+      ],
     });
     console.log(`Confirmation email sent successfully to ${booking.user.email}`);
   } catch (error) {

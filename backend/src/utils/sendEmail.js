@@ -1,7 +1,7 @@
 require('dotenv').config({ override: true });
 const nodemailer = require('nodemailer');
 
-async function sendEmail({ to, subject, html, text }) {
+async function sendEmail({ to, subject, html, text, attachments }) {
   const smtpHost = process.env.SMTP_HOST || process.env.EMAIL_HOST;
   const smtpPort = parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '587', 10);
   const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER;
@@ -41,6 +41,7 @@ async function sendEmail({ to, subject, html, text }) {
     subject,
     text: text || 'Vui lòng xem email bằng trình duyệt hỗ trợ HTML.',
     html,
+    ...(attachments && attachments.length > 0 ? { attachments } : {}),
   };
 
   const info = await transporter.sendMail(mailOptions);
