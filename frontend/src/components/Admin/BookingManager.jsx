@@ -990,15 +990,7 @@ export const BookingManager = () => {
                     )}
                   </button>
                 )}
-                {!isStaffOnly && (
-                  <button
-                    onClick={() => handleDeleteBooking(b._id)}
-                    className="py-2.5 px-3 bg-gray-200 hover:bg-red-50 hover:text-red-600 text-gray-700 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer"
-                    title="Hủy vé"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                )}
+
               </div>
             </div>
           </div>

@@ -302,7 +302,6 @@ export const PricingManager = () => {
           <Section icon={<Tag size={16} />} title="Giá Cơ Bản Theo Loại Ngày" subtitle="Nền tảng tính toán">
             <PriceInput label="Ngày thường (T2–T5)" value={config.basePrice?.weekday} onChange={(v) => setField('basePrice.weekday', v)} description="Áp dụng từ Thứ Hai đến Thứ Năm" />
             <PriceInput label="Cuối tuần (T6–CN)" value={config.basePrice?.weekend} onChange={(v) => setField('basePrice.weekend', v)} description="Thứ Sáu, Thứ Bảy, Chủ Nhật" />
-            <PriceInput label="Ngày lễ" value={config.basePrice?.holiday} onChange={(v) => setField('basePrice.holiday', v)} description="Ngày lễ được khai báo dưới đây" />
           </Section>
 
           {/* 2. Phụ thu thứ */}
