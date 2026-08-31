@@ -12,25 +12,42 @@ const WD_KEYS  = ['sun','mon','tue','wed','thu','fri','sat'];
 const WD_LABELS = ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
 
 // ── PriceInput ──────────────────────────────────────────────────────────────
-const PriceInput = ({ label, value, onChange, description }) => (
-  <div className="flex items-center justify-between py-2.5 border-b border-gray-100 last:border-0 gap-4">
-    <div className="flex-1 min-w-0">
-      <p className="text-sm font-semibold text-gray-800">{label}</p>
-      {description && <p className="text-[11px] text-gray-400 mt-0.5">{description}</p>}
+// Dùng local string state để user nhập tự nhiên (không bị "001"),
+// chỉ commit giá trị số về parent khi blur (rời khỏi ô).
+const PriceInput = ({ label, value, onChange, description }) => {
+  const [localVal, setLocalVal] = React.useState(String(value ?? 0));
+
+  // Đồng bộ khi prop value thay đổi từ bên ngoài (ví dụ load lại data)
+  React.useEffect(() => {
+    setLocalVal(String(value ?? 0));
+  }, [value]);
+
+  return (
+    <div className="flex items-center justify-between py-2.5 border-b border-gray-100 last:border-0 gap-4">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-gray-800">{label}</p>
+        {description && <p className="text-[11px] text-gray-400 mt-0.5">{description}</p>}
+      </div>
+      <div className="flex items-center gap-1.5 shrink-0">
+        <input
+          type="number"
+          value={localVal}
+          onChange={(e) => setLocalVal(e.target.value)}
+          onBlur={(e) => {
+            const num = Number(e.target.value);
+            const safe = isNaN(num) || num < 0 ? 0 : Math.round(num);
+            setLocalVal(String(safe));
+            onChange(safe);
+          }}
+          className="w-28 text-right bg-gray-50 border border-gray-200 text-gray-800 rounded-lg px-3 py-1.5 text-sm font-bold focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none"
+          step="1000"
+          min="0"
+        />
+        <span className="text-xs text-gray-400 font-semibold w-4">₫</span>
+      </div>
     </div>
-    <div className="flex items-center gap-1.5 shrink-0">
-      <input
-        type="number"
-        value={value ?? 0}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-28 text-right bg-gray-50 border border-gray-200 text-gray-800 rounded-lg px-3 py-1.5 text-sm font-bold focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none"
-        step="1000"
-        min="0"
-      />
-      <span className="text-xs text-gray-400 font-semibold w-4">₫</span>
-    </div>
-  </div>
-);
+  );
+};
 
 // ── Section card ────────────────────────────────────────────────────────────
 const Section = ({ icon, title, subtitle, children, defaultOpen = true }) => {
@@ -58,9 +75,7 @@ const Section = ({ icon, title, subtitle, children, defaultOpen = true }) => {
 const PricePreview = ({ config }) => {
   const [params, setParams] = useState({
     date: new Date().toISOString().slice(0, 10),
-    hour: '19',
     format: '3D',
-    roomType: 'premium',
     seatType: 'vip',
   });
   const [result, setResult] = useState(null);
@@ -68,7 +83,7 @@ const PricePreview = ({ config }) => {
   const calculate = useCallback(() => {
     if (!config) return;
     try {
-      const startTime = new Date(`${params.date}T${String(params.hour).padStart(2,'0')}:00:00+07:00`);
+      const startTime = new Date(`${params.date}T12:00:00+07:00`);
       const vnDate = new Date(startTime.getTime() + 7 * 3600 * 1000);
       const dateStr = `${vnDate.getUTCFullYear()}-${String(vnDate.getUTCMonth()+1).padStart(2,'0')}-${String(vnDate.getUTCDate()).padStart(2,'0')}`;
 
@@ -76,17 +91,13 @@ const PricePreview = ({ config }) => {
       const dow      = vnDate.getUTCDay();
       const wdKey    = WD_KEYS[dow];
       const dayType  = holidays.includes(dateStr) ? 'holiday' : (dow===0||dow===6) ? 'weekend' : 'weekday';
-      const vnHour   = (startTime.getUTCHours() + 7) % 24;
-      const timeSlot = vnHour>=17&&vnHour<22 ? 'evening' : vnHour>=22 ? 'latenight' : 'morning';
 
-      const base        = config.basePrice?.[dayType]                   ?? 90000;
-      const weekdayExtra = config.weekdaySurcharge?.[wdKey]             ?? 0;
-      const timeExtra   = config.timeSlotSurcharge?.[timeSlot]          ?? 0;
-      const formatExtra = config.formatSurcharge?.[params.format]       ?? 0;
-      const roomExtra   = config.roomTypeSurcharge?.[params.roomType]   ?? 0;
-      const seatExtra   = config.seatTypeSurcharge?.[params.seatType]   ?? 0;
+      const base         = config.basePrice?.[dayType]                 ?? 90000;
+      const weekdayExtra = config.weekdaySurcharge?.[wdKey]            ?? 0;
+      const formatExtra  = config.formatSurcharge?.[params.format]     ?? 0;
+      const seatExtra    = config.seatTypeSurcharge?.[params.seatType] ?? 0;
 
-      setResult({ dayType, timeSlot, dow, wdKey, breakdown: { base, weekdayExtra, timeExtra, formatExtra, roomExtra, seatExtra }, total: base+weekdayExtra+timeExtra+formatExtra+roomExtra+seatExtra });
+      setResult({ dayType, dow, wdKey, breakdown: { base, weekdayExtra, formatExtra, seatExtra }, total: base + weekdayExtra + formatExtra + seatExtra });
     } catch (e) {
       console.error('Preview error:', e);
     }
@@ -95,7 +106,6 @@ const PricePreview = ({ config }) => {
   useEffect(() => { calculate(); }, [calculate]);
 
   const DAY_TYPE_LABELS = { weekday: 'Ngày thường', weekend: 'Cuối tuần', holiday: 'Ngày lễ' };
-  const TIME_LABELS = { morning: 'Sáng / Chiều (< 17h)', evening: 'Buổi tối (17–22h)', latenight: 'Khuya (≥ 22h)' };
 
   return (
     <div className="bg-gradient-to-br from-brand/5 to-sky-50 border border-brand/20 rounded-2xl p-5 space-y-4">
@@ -107,17 +117,9 @@ const PricePreview = ({ config }) => {
       <div className="grid grid-cols-2 gap-2">
         {[
           { label: 'Ngày chiếu', el: <input type="date" value={params.date} onChange={(e)=>setParams(p=>({...p,date:e.target.value}))} className="w-full mt-1 bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-semibold outline-none focus:border-brand" /> },
-          { label: 'Giờ chiếu', el:
-            <select value={params.hour} onChange={(e)=>setParams(p=>({...p,hour:e.target.value}))} className="w-full mt-1 bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-semibold outline-none focus:border-brand cursor-pointer">
-              {Array.from({length:16},(_,i)=>i+8).map(h=><option key={h} value={String(h)}>{String(h).padStart(2,'0')}:00</option>)}
-            </select> },
           { label: 'Format', el:
             <select value={params.format} onChange={(e)=>setParams(p=>({...p,format:e.target.value}))} className="w-full mt-1 bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-semibold outline-none focus:border-brand cursor-pointer">
               {['2D','3D','IMAX','GOLDCLASS'].map(f=><option key={f} value={f}>{f==='GOLDCLASS'?'4DX/GOLD':f}</option>)}
-            </select> },
-          { label: 'Loại phòng', el:
-            <select value={params.roomType} onChange={(e)=>setParams(p=>({...p,roomType:e.target.value}))} className="w-full mt-1 bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-semibold outline-none focus:border-brand cursor-pointer">
-              <option value="standard">Standard</option><option value="premium">Premium</option><option value="dolby">Dolby Atmos</option>
             </select> },
           { label: 'Loại ghế', el:
             <select value={params.seatType} onChange={(e)=>setParams(p=>({...p,seatType:e.target.value}))} className="w-full mt-1 bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-semibold outline-none focus:border-brand cursor-pointer">
@@ -137,18 +139,12 @@ const PricePreview = ({ config }) => {
             <span>Loại ngày</span>
             <span className="font-bold text-gray-700">{DAY_TYPE_LABELS[result.dayType]} ({WD_LABELS[result.dow]})</span>
           </div>
-          <div className="flex justify-between text-xs text-gray-500 font-semibold">
-            <span>Khung giờ</span>
-            <span className="font-bold text-gray-700">{TIME_LABELS[result.timeSlot]}</span>
-          </div>
           <div className="border-t border-dashed border-gray-100 pt-2 mt-1 space-y-1">
             {[
-              ['Giá cơ bản',      result.breakdown.base],
-              ['Phụ thu thứ',     result.breakdown.weekdayExtra],
-              ['Phụ thu giờ',     result.breakdown.timeExtra],
-              ['Phụ thu format',  result.breakdown.formatExtra],
-              ['Phụ thu phòng',   result.breakdown.roomExtra],
-              ['Phụ thu ghế',     result.breakdown.seatExtra],
+              ['Giá cơ bản',     result.breakdown.base],
+              ['Phụ thu thứ',    result.breakdown.weekdayExtra],
+              ['Phụ thu format', result.breakdown.formatExtra],
+              ['Phụ thu ghế',    result.breakdown.seatExtra],
             ].map(([label, val])=>(
               <div key={label} className="flex justify-between text-xs">
                 <span className="text-gray-500">{label}</span>
@@ -156,6 +152,7 @@ const PricePreview = ({ config }) => {
                   {val > 0 ? `+${fmt(val)}` : fmt(0)}
                 </span>
               </div>
+
             ))}
           </div>
           <div className="flex justify-between items-center border-t border-gray-200 pt-2">
@@ -378,7 +375,7 @@ export const PricingManager = () => {
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-700 font-medium space-y-1.5">
               <p className="font-bold flex items-center gap-1.5"><AlertCircle size={13} /> Lưu ý quan trọng</p>
               <p>• Giá tự động tính khi <strong>tạo suất chiếu mới</strong>.</p>
-              <p>• Suất chiếu đã tạo <strong>không bị thay đổi</strong> khi sửa bảng giá.</p>
+              <p>• Khi <strong>Lưu Bảng Giá</strong>, hệ thống tự động cập nhật lại giá cho tất cả suất chiếu <strong>chưa diễn ra</strong>.</p>
               <p>• Phụ thu ghế VIP/Couple được cộng thêm lúc khách <strong>chọn ghế</strong>.</p>
             </div>
           </div>

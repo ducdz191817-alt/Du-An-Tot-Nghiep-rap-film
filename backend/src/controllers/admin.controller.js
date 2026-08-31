@@ -1837,16 +1837,63 @@ const getPricingConfig = async (req, res, next) => {
 
 /**
  * PUT /api/admin/pricing
- * Cập nhật bảng giá (upsert singleton)
+ * Cập nhật bảng giá (upsert singleton) và tái tính giá cho toàn bộ suất chiếu tương lai
  */
 const updatePricingConfig = async (req, res, next) => {
   try {
+    // 1. Lưu bảng giá mới vào DB
     const config = await PricingConfig.findOneAndUpdate(
       {},
       { $set: req.body },
       { new: true, upsert: true, runValidators: true }
     );
-    res.json({ success: true, data: config });
+
+    // 2. Lấy toàn bộ suất chiếu còn trong tương lai (chưa diễn ra)
+    const now = new Date();
+    const futureShowtimes = await Showtime.find({ startTime: { $gt: now } }).populate('room').populate('movie');
+
+    // 3. Tái tính giá vé cho từng suất chiếu theo bảng giá mới
+    const configObj = config.toObject();
+    let updatedCount = 0;
+    const bulkOps = [];
+
+    for (const st of futureShowtimes) {
+      const roomType = st.room?.roomType || 'standard';
+      const format = st.format || '2D';
+      const movieReleaseDate = st.movie?.releaseDate;
+
+      const newPrice = calculateBaseShowtimePrice({
+        startTime: st.startTime,
+        format,
+        roomType,
+        config: configObj,
+        movieReleaseDate,
+      });
+
+      if (newPrice !== st.ticketPrice) {
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: st._id },
+            update: { $set: { ticketPrice: newPrice } },
+          },
+        });
+        updatedCount++;
+      }
+    }
+
+    // 4. Thực hiện bulk update (hiệu quả hơn từng update riêng lẻ)
+    if (bulkOps.length > 0) {
+      await Showtime.bulkWrite(bulkOps);
+    }
+
+    console.log(`[PricingConfig] Đã cập nhật bảng giá. Tái tính giá ${updatedCount}/${futureShowtimes.length} suất chiếu tương lai.`);
+
+    res.json({
+      success: true,
+      data: config,
+      message: `Đã lưu bảng giá và cập nhật giá vé cho ${updatedCount} suất chiếu tương lai.`,
+      updatedShowtimes: updatedCount,
+    });
   } catch (error) {
     next(error);
   }
