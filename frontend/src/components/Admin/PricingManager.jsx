@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Save, Tag, Clock, Calendar, Film, Sofa, Monitor,
+  Save, Clock, Calendar, Film, Sofa, Monitor,
   AlertCircle, CheckCircle2, Loader2, ChevronDown, ChevronUp, Calculator,
 } from 'lucide-react';
 import adminService from '../../services/admin.service';
@@ -297,12 +297,6 @@ export const PricingManager = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
-
-          {/* 1. Giá cơ bản */}
-          <Section icon={<Tag size={16} />} title="Giá Cơ Bản Theo Loại Ngày" subtitle="Nền tảng tính toán">
-            <PriceInput label="Ngày thường (T2–T5)" value={config.basePrice?.weekday} onChange={(v) => setField('basePrice.weekday', v)} description="Áp dụng từ Thứ Hai đến Thứ Năm" />
-            <PriceInput label="Cuối tuần (T6–CN)" value={config.basePrice?.weekend} onChange={(v) => setField('basePrice.weekend', v)} description="Thứ Sáu, Thứ Bảy, Chủ Nhật" />
-          </Section>
 
           {/* 2. Phụ thu thứ */}
           <Section icon={<Calendar size={16} />} title="Phụ Thu Theo Thứ" subtitle="Cộng thêm vào giá cơ bản" defaultOpen={false}>
