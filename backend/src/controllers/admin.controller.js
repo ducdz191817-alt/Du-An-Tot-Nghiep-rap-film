@@ -434,6 +434,17 @@ const deleteRoom = async (req, res, next) => {
   }
 };
 
+/**
+ * =========================================================================
+ * 🍿 QUẢN LÝ DỊCH VỤ BẮP NƯỚC (CONCESSIONS / F&B)
+ * =========================================================================
+ */
+
+/**
+ * @desc    Tạo mới món bắp nước / combo đồ ăn uống (Admin)
+ * @route   POST /api/admin/concessions
+ * @access  Private/Admin
+ */
 const createConcession = async (req, res, next) => {
   try {
     const concession = await Concession.create(req.body);
@@ -443,6 +454,11 @@ const createConcession = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Cập nhật thông tin món bắp nước / combo (Admin)
+ * @route   PUT /api/admin/concessions/:id
+ * @access  Private/Admin
+ */
 const updateConcession = async (req, res, next) => {
   try {
     const concession = await Concession.findByIdAndUpdate(req.params.id, req.body, {
@@ -451,7 +467,7 @@ const updateConcession = async (req, res, next) => {
     });
     if (!concession) {
       res.status(404);
-      throw new Error('Concession not found');
+      throw new Error('Không tìm thấy món ăn/nước uống');
     }
     res.json({ success: true, data: concession });
   } catch (error) {
@@ -459,9 +475,15 @@ const updateConcession = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Lấy danh sách bắp nước & combo (Hỗ trợ lọc theo rạp hoặc chỉ lấy món đang bán)
+ * @route   GET /api/admin/concessions hoặc GET /api/concessions
+ * @access  Public / Private
+ */
 const listConcessions = async (req, res, next) => {
   try {
     const query = {};
+    // Lọc theo rạp nếu có truyền tham số theaterId
     if (req.query.theaterId) {
       query.theater = req.query.theaterId;
     }
@@ -476,12 +498,18 @@ const listConcessions = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Chuyển đổi trạng thái Bật / Tắt kinh doanh của món bắp nước (Ẩn / Hiện)
+ * @route   PATCH /api/admin/concessions/:id/toggle
+ * @access  Private/Admin
+ */
 const toggleConcessionStatus = async (req, res, next) => {
   try {
     const concession = await Concession.findById(req.params.id);
     if (!concession) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy món ăn/nước uống' });
     }
+    // Đảo trạng thái kinh doanh
     concession.active = concession.active === false ? true : false;
     await concession.save();
     res.json({
@@ -494,6 +522,11 @@ const toggleConcessionStatus = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Chặn xóa vĩnh viễn món bắp nước nhằm bảo vệ tính toàn vẹn dữ liệu hóa đơn
+ * @route   DELETE /api/admin/concessions/:id
+ * @access  Private/Admin
+ */
 const deleteConcession = async (req, res, next) => {
   try {
     return res.status(400).json({
@@ -798,11 +831,24 @@ const getDashboardStats = async (req, res, next) => {
   }
 };
 
+/**
+ * =========================================================================
+ * 📊 BÁO CÁO & THỐNG KÊ DOANH THU (ANALYTICS & REPORTS)
+ * =========================================================================
+ */
+
+/**
+ * @desc    Lấy dữ liệu báo cáo doanh thu chi tiết (theo phim, theo rạp, theo tháng, tỷ lệ lấp đầy)
+ * @route   GET /api/admin/dashboard/revenue
+ * @access  Private/Admin
+ * @query   status: 'ended' (mặc định: chỉ phim chiếu xong), 'all' (tất cả), 'upcoming' (phim sắp chiếu)
+ */
 const getRevenueReport = async (req, res, next) => {
   try {
     const { status = 'ended' } = req.query; // 'ended' (mặc định: chỉ phim chiếu xong), 'all', 'upcoming'
     const now = new Date();
 
+    // 1. Truy vấn tất cả các đơn đặt vé đã thanh toán thành công (paymentStatus: 'paid')
     const bookings = await Booking.find({ paymentStatus: 'paid' })
       .populate({
         path: 'showtime',
@@ -813,20 +859,23 @@ const getRevenueReport = async (req, res, next) => {
         ],
       });
 
-    let completedRevenue = 0;
-    let upcomingRevenue = 0;
-    let totalRevenue = 0;
+    let completedRevenue = 0; // Doanh thu từ các suất chiếu đã kết thúc
+    let upcomingRevenue = 0;  // Doanh thu từ các suất chiếu chưa diễn ra
+    let totalRevenue = 0;     // Tổng doanh thu
 
-    const movieSales = {};
-    const theaterSales = {};
-    const monthlySales = {};
+    const movieSales = {};    // Thống kê doanh thu & vé theo từng phim
+    const theaterSales = {};  // Thống kê doanh thu theo từng rạp
+    const monthlySales = {};  // Thống kê doanh thu theo từng tháng
 
+    // 2. Duyệt qua từng đơn vé để tổng hợp dữ liệu
     bookings.forEach((booking) => {
       const showtime = booking.showtime;
       if (!showtime) return;
 
+      // Kiểm tra xem suất chiếu đã kết thúc tại thời điểm hiện tại hay chưa
       const isEnded = showtime.endTime ? new Date(showtime.endTime) <= now : true;
 
+      // Phân loại doanh thu đã hoàn thành vs sắp chiếu
       if (isEnded) {
         completedRevenue += booking.totalPrice;
       } else {
@@ -834,11 +883,11 @@ const getRevenueReport = async (req, res, next) => {
       }
       totalRevenue += booking.totalPrice;
 
-      // Lọc theo query status: 'ended' (chỉ phim đã kết thúc), 'upcoming', 'all'
+      // Lọc dữ liệu theo query param status: 'ended' / 'upcoming' / 'all'
       if (status === 'ended' && !isEnded) return;
       if (status === 'upcoming' && isEnded) return;
 
-      // XÓA VÀ BỎ QUA CÁC PHIM ĐÃ XÓA (DELETED MOVIE)
+      // Bỏ qua nếu dữ liệu phim bị xóa
       if (!showtime.movie) return;
 
       const movieTitle = showtime.movie.title;
@@ -847,7 +896,7 @@ const getRevenueReport = async (req, res, next) => {
       const date = new Date(booking.bookingDate);
       const monthYear = date.toLocaleString('en-US', { month: 'short', year: '2-digit' });
 
-      // Aggregate Movie
+      // 3. Gom nhóm dữ liệu theo Phim (Movie Aggregation)
       if (!movieSales[movieTitle]) {
         movieSales[movieTitle] = {
           name: movieTitle,
@@ -864,6 +913,7 @@ const getRevenueReport = async (req, res, next) => {
       movieSales[movieTitle].revenue += booking.totalPrice;
       movieSales[movieTitle].tickets += (booking.seats ? booking.seats.length : 0);
       
+      // Tính tổng số ghế khả dụng của tất cả suất chiếu của phim để tính tỷ lệ lấp đầy
       const showtimeId = showtime._id.toString();
       if (!movieSales[movieTitle].uniqueShowtimes.has(showtimeId)) {
          movieSales[movieTitle].uniqueShowtimes.add(showtimeId);
@@ -872,18 +922,20 @@ const getRevenueReport = async (req, res, next) => {
          }
       }
 
-      // Aggregate Theater
+      // 4. Gom nhóm dữ liệu theo Rạp (Theater Aggregation)
       theaterSales[theaterName] = (theaterSales[theaterName] || 0) + booking.totalPrice;
 
-      // Aggregate Month
+      // 5. Gom nhóm dữ liệu theo Tháng (Monthly Aggregation)
       monthlySales[monthYear] = (monthlySales[monthYear] || 0) + booking.totalPrice;
     });
 
+    // Hàm tiện ích: Chuyển đổi Object tổng hợp thành mảng kèm tính toán tỷ lệ lấp đầy (%)
     const formatObjectToArray = (obj) => {
       return Object.keys(obj).map((key) => {
         if (typeof obj[key] === 'object' && obj[key] !== null) {
           const item = { ...obj[key] };
           item.value = item.revenue;
+          // Tỷ lệ lấp đầy (Occupancy Rate) = (Số vé đã bán / Tổng sức chứa) * 100
           if (item.capacity > 0) {
              item.occupancy = Math.round((item.tickets / item.capacity) * 100);
              if (item.occupancy > 100) item.occupancy = 100;
@@ -897,6 +949,7 @@ const getRevenueReport = async (req, res, next) => {
       });
     };
 
+    // 6. Trả về kết quả báo cáo cho Frontend Dashboard / Charts
     res.json({
       success: true,
       data: {
