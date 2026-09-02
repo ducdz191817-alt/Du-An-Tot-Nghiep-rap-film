@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, AlertCircle, Apple, GlassWater, Popcorn, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus, Edit2, AlertCircle, Apple, GlassWater, Popcorn, Eye, EyeOff, CheckCircle2, Upload, ImagePlus, X, Loader2 } from 'lucide-react';
 import adminService from '../../services/admin.service';
 import Input from '../common/Input';
 import Button from '../common/Button';
@@ -16,6 +16,11 @@ export const ConcessionManager = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [editingConcession, setEditingConcession] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
+
+  // Image Upload states
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState('');
+  const fileInputRef = useRef(null);
 
   // Form states
   const [form, setForm] = useState({
@@ -78,6 +83,8 @@ export const ConcessionManager = () => {
   const handleOpenAdd = () => {
     setEditingConcession(null);
     setError('');
+    setImagePreview('');
+    setImageUploading(false);
     setForm({
       name: '',
       description: '',
@@ -93,6 +100,8 @@ export const ConcessionManager = () => {
   const handleOpenEdit = (item) => {
     setEditingConcession(item);
     setError('');
+    setImagePreview(item.imageUrl || '');
+    setImageUploading(false);
     setForm({
       name: item.name,
       description: item.description,
@@ -103,6 +112,37 @@ export const ConcessionManager = () => {
       active: item.active !== false,
     });
     setIsOpen(true);
+  };
+
+  // Upload File ảnh trực tiếp
+  const handleImageFileChange = async (file) => {
+    if (!file) return;
+    const localUrl = URL.createObjectURL(file);
+    setImagePreview(localUrl);
+    setImageUploading(true);
+    setError('');
+    try {
+      const result = await adminService.uploadImage(file);
+      const data = result?.data ?? result;
+      if (data?.url) {
+        const fullUrl = data.url.startsWith('http') ? data.url : `http://localhost:5000${data.url}`;
+        setForm((f) => ({ ...f, imageUrl: fullUrl }));
+        setImagePreview(fullUrl);
+      } else {
+        throw new Error(data?.message || 'Upload không thành công');
+      }
+    } catch (err) {
+      setError('Lỗi tải ảnh lên: ' + (err.message || 'Vui lòng thử lại'));
+      setImagePreview(form.imageUrl || '');
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  const handleImageDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleImageFileChange(file);
   };
 
   // Xử lý chuyển đổi trạng thái kinh doanh (Bật / Tắt bán)
@@ -132,6 +172,11 @@ export const ConcessionManager = () => {
 
     if (!form.theaterId) {
       setError('Vui lòng chọn cụm rạp quản lý đồ ăn này');
+      return;
+    }
+
+    if (!form.imageUrl) {
+      setError('Vui lòng tải ảnh lên cho món ăn / thức uống');
       return;
     }
 
@@ -325,7 +370,71 @@ export const ConcessionManager = () => {
           )}
 
           <Input name="name" label="Tên Món Ăn / Thức Uống" placeholder="Ví dụ: Bắp Ngọt Cỡ Lớn" value={form.name} onChange={handleChange} required />
-          <Input name="imageUrl" label="Đường Dẫn Hình Ảnh (URL)" placeholder="https://images.unsplash.com/..." value={form.imageUrl} onChange={handleChange} required />
+
+          {/* Tải hình ảnh lên từ máy */}
+          <div>
+            <label className="block text-sm font-bold text-gray-800 mb-1.5 pl-0.5">
+              Hình Ảnh Món Ăn / Combo <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/png, image/jpeg, image/webp"
+              className="hidden"
+              onChange={(e) => handleImageFileChange(e.target.files?.[0])}
+            />
+
+            {imagePreview ? (
+              <div className="relative group rounded-2xl overflow-hidden border border-gray-200 bg-gray-50 h-44 flex items-center justify-center">
+                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                {imageUploading && (
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center gap-2">
+                    <Loader2 size={24} className="text-white animate-spin" />
+                    <span className="text-white text-xs font-bold">Đang tải ảnh lên...</span>
+                  </div>
+                )}
+                {!imageUploading && (
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-3.5 py-2 bg-white text-gray-800 text-xs font-bold rounded-xl shadow-lg hover:bg-gray-100 transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Upload size={13} /> Đổi ảnh
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImagePreview('');
+                        setForm((f) => ({ ...f, imageUrl: '' }));
+                      }}
+                      className="px-3.5 py-2 bg-red-600 text-white text-xs font-bold rounded-xl shadow-lg hover:bg-red-700 transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <X size={13} /> Xóa ảnh
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div
+                onDrop={handleImageDrop}
+                onDragOver={(e) => e.preventDefault()}
+                onClick={() => fileInputRef.current?.click()}
+                className="flex flex-col items-center justify-center gap-2.5 border-2 border-dashed border-gray-300 hover:border-brand/60 rounded-2xl bg-gray-50/80 hover:bg-brand/5 transition-all p-6 cursor-pointer"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-brand/10 text-brand flex items-center justify-center">
+                  <ImagePlus size={24} />
+                </div>
+                <div className="text-center">
+                  <p className="text-xs font-bold text-gray-700">Nhấn để tải ảnh lên hoặc kéo thả vào đây</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">Hỗ trợ JPG, PNG, WEBP (Tối đa 10MB)</p>
+                </div>
+                <span className="px-3.5 py-1.5 bg-brand text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5">
+                  <Upload size={13} /> Chọn tệp từ máy
+                </span>
+              </div>
+            )}
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>

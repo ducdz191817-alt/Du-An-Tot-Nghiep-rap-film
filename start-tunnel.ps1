@@ -1,4 +1,4 @@
-﻿# ============================================================
+# ============================================================
 #  Nova Cinema - Cloudflare Tunnel (ON DINH NHAT)
 #  Khong bi timeout, URL duoc cap moi lan nhung rat on dinh
 #  Chay: PowerShell -> .\start-tunnel.ps1
@@ -35,7 +35,7 @@ while ($true) {
     $retryCount++
     Write-Host "[$(Get-Date -Format 'HH:mm:ss')] Lan thu ${retryCount} - Dang ket noi Cloudflare Tunnel..." -ForegroundColor Green
 
-    & $CLOUDFLARED tunnel --url http://localhost:5000 2>&1
+    & $CLOUDFLARED tunnel --protocol http2 --url http://localhost:5000 2>&1
 
     Write-Host ""
     Write-Host "[$(Get-Date -Format 'HH:mm:ss')] Tunnel ngat. Cho 2 giay roi ket noi lai..." -ForegroundColor Red

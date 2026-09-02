@@ -353,10 +353,11 @@ export const MovieManager = () => {
     setPosterUploading(true);
     try {
       const result = await adminService.uploadImage(file);
-      if (result.success) {
-        const fullUrl = `http://localhost:5000${result.url}`;
+      const data = result?.data ?? result;
+      if (data?.url) {
+        const fullUrl = data.url.startsWith('http') ? data.url : `http://localhost:5000${data.url}`;
         setForm((f) => ({ ...f, posterUrl: fullUrl }));
-        setPosterPreview(fullUrl);
+        setImagePreview(fullUrl);
       }
     } catch (err) {
       setError('Lỗi upload ảnh: ' + (err.message || 'Vui lòng thử lại'));

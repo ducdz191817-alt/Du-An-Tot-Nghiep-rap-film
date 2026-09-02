@@ -55,7 +55,7 @@ setTimeout(async () => {
           description: 'Hình ảnh 2D kỹ thuật số độ nét cao, âm thanh vòm sống động.',
           allowedSeatTypes: ['standard', 'vip', 'couple'],
           seatPrices: {
-            standard: 100000,
+            standard: 80000,
             vip: 150000,
             couple: 300000,
           },

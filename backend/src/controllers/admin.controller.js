@@ -1890,7 +1890,7 @@ const getPricingConfig = async (req, res, next) => {
 
 /**
  * PUT /api/admin/pricing
- * Cập nhật bảng giá (upsert singleton) và tái tính giá cho toàn bộ suất chiếu tương lai
+ * Cập nhật bảng giá (upsert singleton), tự động đồng bộ sang RoomType, Seat và tái tính giá cho toàn bộ suất chiếu tương lai
  */
 const updatePricingConfig = async (req, res, next) => {
   try {
@@ -1901,12 +1901,44 @@ const updatePricingConfig = async (req, res, next) => {
       { new: true, upsert: true, runValidators: true }
     );
 
-    // 2. Lấy toàn bộ suất chiếu còn trong tương lai (chưa diễn ra)
+    const configObj = config.toObject();
+    const baseWeekday = configObj.basePrice?.weekday ?? 80000;
+    const vipExtra = configObj.seatTypeSurcharge?.vip ?? 20000;
+    const coupleExtra = configObj.seatTypeSurcharge?.couple ?? 40000;
+    const formatSurcharges = configObj.formatSurcharge || {};
+
+    // 2. Tự động đồng bộ sang bảng giá khuôn mẫu của RoomType
+    const roomTypes = await RoomType.find();
+    for (const rt of roomTypes) {
+      const code = (rt.code || '').toUpperCase();
+      const fmtExtra = formatSurcharges[code] ?? 0;
+      const stdPrice = baseWeekday + fmtExtra;
+      const vipPrice = stdPrice + vipExtra;
+      const couplePrice = (stdPrice * 2) + coupleExtra;
+
+      if (code === 'GOLDCLASS') {
+        rt.seatPrices = { standard: 0, vip: stdPrice + vipExtra, couple: (stdPrice * 2) + coupleExtra };
+      } else if (code === 'SWEETBOX') {
+        rt.seatPrices = { standard: 0, vip: 0, couple: (stdPrice * 2) + coupleExtra };
+      } else {
+        rt.seatPrices = {
+          standard: rt.allowedSeatTypes?.includes('standard') ? stdPrice : 0,
+          vip: rt.allowedSeatTypes?.includes('vip') ? vipPrice : 0,
+          couple: rt.allowedSeatTypes?.includes('couple') ? couplePrice : 0,
+        };
+      }
+      await rt.save();
+    }
+
+    // 3. Tự động đồng bộ phụ thu ghế trong phòng (Seat.price)
+    await Seat.updateMany({ type: 'standard' }, { price: configObj.seatTypeSurcharge?.standard || 0 });
+    await Seat.updateMany({ type: 'vip' }, { price: vipExtra });
+    await Seat.updateMany({ type: 'couple' }, { price: coupleExtra });
+
+    // 4. Lấy toàn bộ suất chiếu còn trong tương lai (chưa diễn ra) và tái tính giá
     const now = new Date();
     const futureShowtimes = await Showtime.find({ startTime: { $gt: now } }).populate('room').populate('movie');
 
-    // 3. Tái tính giá vé cho từng suất chiếu theo bảng giá mới
-    const configObj = config.toObject();
     let updatedCount = 0;
     const bulkOps = [];
 
@@ -1934,17 +1966,16 @@ const updatePricingConfig = async (req, res, next) => {
       }
     }
 
-    // 4. Thực hiện bulk update (hiệu quả hơn từng update riêng lẻ)
     if (bulkOps.length > 0) {
       await Showtime.bulkWrite(bulkOps);
     }
 
-    console.log(`[PricingConfig] Đã cập nhật bảng giá. Tái tính giá ${updatedCount}/${futureShowtimes.length} suất chiếu tương lai.`);
+    console.log(`[PricingConfig] Đã đồng bộ toàn hệ thống: RoomType, Seat và ${updatedCount}/${futureShowtimes.length} suất chiếu tương lai.`);
 
     res.json({
       success: true,
       data: config,
-      message: `Đã lưu bảng giá và cập nhật giá vé cho ${updatedCount} suất chiếu tương lai.`,
+      message: `Đã lưu bảng giá và tự động đồng bộ sang Loại phòng, Ghế và ${updatedCount} suất chiếu tương lai.`,
       updatedShowtimes: updatedCount,
     });
   } catch (error) {
@@ -2309,8 +2340,18 @@ const previewTicketPrice = async (req, res, next) => {
 // ==========================================
 const getRoomTypes = async (req, res, next) => {
   try {
-    const roomTypes = await RoomType.find().sort({ createdAt: 1 });
-    res.json({ success: true, count: roomTypes.length, data: roomTypes });
+    const roomTypes = await RoomType.find().sort({ createdAt: 1 }).lean();
+    const roomTypesWithBookings = await Promise.all(
+      roomTypes.map(async (rt) => {
+        const { hasBookings, bookingCount } = await checkRoomTypeHasActiveBookings(rt);
+        return {
+          ...rt,
+          hasActiveBookings: hasBookings,
+          bookingCount: bookingCount || 0,
+        };
+      })
+    );
+    res.json({ success: true, count: roomTypesWithBookings.length, data: roomTypesWithBookings });
   } catch (error) {
     next(error);
   }
@@ -2351,7 +2392,7 @@ const createRoomType = async (req, res, next) => {
       description: description?.trim() || '',
       allowedSeatTypes: cleanAllowed,
       seatPrices: {
-        standard: cleanAllowed.includes('standard') ? (Number(seatPrices?.standard) || 100000) : 0,
+        standard: cleanAllowed.includes('standard') ? (Number(seatPrices?.standard) || 80000) : 0,
         vip: cleanAllowed.includes('vip') ? (Number(seatPrices?.vip) || 150000) : 0,
         couple: cleanAllowed.includes('couple') ? (Number(seatPrices?.couple) || 300000) : 0,
       },
@@ -2390,25 +2431,17 @@ const updateRoomType = async (req, res, next) => {
       }
     }
 
-    // Kiểm tra nếu có thay đổi về bảng giá ghế hoặc mã loại phòng
-    const isPriceChanged =
-      seatPrices &&
-      ((seatPrices.standard !== undefined && Number(seatPrices.standard) !== roomType.seatPrices?.standard) ||
-        (seatPrices.vip !== undefined && Number(seatPrices.vip) !== roomType.seatPrices?.vip) ||
-        (seatPrices.couple !== undefined && Number(seatPrices.couple) !== roomType.seatPrices?.couple));
-
-    const isCodeChanged = code && code.trim().toUpperCase() !== roomType.code;
-
-    if (isPriceChanged || isCodeChanged) {
-      const { hasBookings, bookingCount } = await checkRoomTypeHasActiveBookings(roomType);
-      if (hasBookings) {
+    // Cho phép chỉnh sửa cấu hình giá và loại ghế (các vé đã đặt trước đó lưu snapshot riêng nên không bị ảnh hưởng)
+    if (code && code.trim().toUpperCase() !== roomType.code) {
+      const cleanCode = code.trim().toUpperCase();
+      const existing = await RoomType.findOne({ _id: { $ne: id }, code: cleanCode });
+      if (existing) {
         return res.status(400).json({
           success: false,
-          message: `🚫 Không thể sửa ${
-            isPriceChanged ? 'bảng giá vé ghế' : 'mã loại phòng'
-          } của "${roomType.name}" vì đang có ${bookingCount} vé đã được khách hàng đặt tại các phòng chiếu thuộc loại phòng này!`,
+          message: `Mã loại phòng "${cleanCode}" đã tồn tại trên hệ thống!`,
         });
       }
+      roomType.code = cleanCode;
     }
 
     if (code && code.trim().toUpperCase() !== roomType.code) {
@@ -2438,10 +2471,69 @@ const updateRoomType = async (req, res, next) => {
 
     await roomType.save();
 
+    // ── Tự động đồng bộ ngược lại sang PricingConfig, Seat và Suất chiếu ──
+    try {
+      let config = await PricingConfig.findOne();
+      if (!config) config = await PricingConfig.create({});
+
+      const code = (roomType.code || '').toUpperCase();
+      const std = roomType.seatPrices?.standard || 0;
+      const vip = roomType.seatPrices?.vip || 0;
+      const couple = roomType.seatPrices?.couple || 0;
+
+      if (code === '2D' && std > 0) {
+        config.basePrice.weekday = std;
+        if (vip > std) config.seatTypeSurcharge.vip = vip - std;
+        if (couple > (std * 2)) config.seatTypeSurcharge.couple = couple - (std * 2);
+      } else if (['3D', 'IMAX', 'GOLDCLASS'].includes(code)) {
+        if (!config.formatSurcharge) config.formatSurcharge = {};
+        const baseWd = config.basePrice?.weekday || 80000;
+        config.formatSurcharge[code] = Math.max(0, std - baseWd);
+      }
+      await config.save();
+
+      // Cập nhật phụ thu ghế
+      if (config.seatTypeSurcharge?.vip) {
+        await Seat.updateMany({ type: 'vip' }, { price: config.seatTypeSurcharge.vip });
+      }
+      if (config.seatTypeSurcharge?.couple) {
+        await Seat.updateMany({ type: 'couple' }, { price: config.seatTypeSurcharge.couple });
+      }
+
+      // Tái tính giá các suất chiếu tương lai
+      const now = new Date();
+      const futureShowtimes = await Showtime.find({ startTime: { $gt: now } }).populate('room').populate('movie');
+      const bulkOps = [];
+      for (const st of futureShowtimes) {
+        const rType = st.room?.roomType || 'standard';
+        const format = st.format || '2D';
+        const newPrice = calculateBaseShowtimePrice({
+          startTime: st.startTime,
+          format,
+          roomType: rType,
+          config: config.toObject(),
+          movieReleaseDate: st.movie?.releaseDate,
+        });
+        if (newPrice !== st.ticketPrice) {
+          bulkOps.push({
+            updateOne: {
+              filter: { _id: st._id },
+              update: { $set: { ticketPrice: newPrice } },
+            },
+          });
+        }
+      }
+      if (bulkOps.length > 0) {
+        await Showtime.bulkWrite(bulkOps);
+      }
+    } catch (syncErr) {
+      console.error('[updateRoomType] Lỗi đồng bộ hệ thống:', syncErr.message);
+    }
+
     res.json({
       success: true,
       data: roomType,
-      message: 'Cập nhật thông tin và bảng giá loại phòng thành công!',
+      message: 'Cập nhật loại phòng và tự động đồng bộ toàn hệ thống thành công!',
     });
   } catch (error) {
     next(error);

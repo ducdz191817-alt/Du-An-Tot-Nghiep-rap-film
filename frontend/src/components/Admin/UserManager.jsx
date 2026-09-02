@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Users, Search, RefreshCw, AlertCircle, X,
   ShieldCheck, UserCheck, Calendar, Phone, Mail, Info, Crown,
-  Lock, Unlock, CheckCircle2, Ticket, BadgeCheck, UserCog,
+  Ticket, BadgeCheck, UserCog,
   UserPlus, Edit3, Eye, EyeOff, Save, KeyRound
 } from 'lucide-react';
 import adminService from '../../services/admin.service';
@@ -13,11 +13,9 @@ export const UserManager = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
-  const [filterStatus, setFilterStatus] = useState('all');
   const [message, setMessage] = useState({ text: '', type: '' });
 
   // Modal states
-  const [confirmLock, setConfirmLock] = useState(null); // { id, username, currentStatus }
   const [confirmRole, setConfirmRole] = useState(null); // { id, username, newRole }
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(null); // user object to edit
@@ -80,25 +78,6 @@ export const UserManager = () => {
     setTimeout(() => setMessage({ text: '', type: '' }), 4000);
   };
 
-  // --- Lock / Unlock Handler ---
-  const handleToggleLockUser = async () => {
-    if (!confirmLock) return;
-    setActionLoading(true);
-    try {
-      const isLocking = confirmLock.currentStatus !== 'locked';
-      const res = await adminService.toggleUserStatus(confirmLock.id);
-      showMessage(
-        res.message || `Đã ${isLocking ? 'khóa' : 'mở khóa'} tài khoản "${confirmLock.username}" thành công!`,
-        'success'
-      );
-      setConfirmLock(null);
-      fetchUsers();
-    } catch (err) {
-      showMessage(err.message || 'Lỗi khi thay đổi trạng thái tài khoản.', 'error');
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
   // --- Role Update Handler ---
   const handleUpdateRole = async () => {
@@ -246,11 +225,7 @@ export const UserManager = () => {
       u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.phone?.includes(searchTerm);
     const matchRole = filterRole === 'all' || u.role === filterRole;
-    const matchStatus =
-      filterStatus === 'all' ||
-      (filterStatus === 'locked' && u.status === 'locked') ||
-      (filterStatus === 'active' && u.status !== 'locked');
-    return matchSearch && matchRole && matchStatus;
+    return matchSearch && matchRole;
   });
 
   const roleBadge = (role) => {
@@ -271,21 +246,6 @@ export const UserManager = () => {
     return (
       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-blue-50 text-blue-700 border border-blue-200">
         <UserCheck size={10} /> Khách hàng
-      </span>
-    );
-  };
-
-  const statusBadge = (status) => {
-    if (status === 'locked') {
-      return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-red-50 text-red-600 border border-red-200">
-          <Lock size={10} /> Đã khóa
-        </span>
-      );
-    }
-    return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
-        <CheckCircle2 size={10} /> Hoạt động
       </span>
     );
   };
@@ -364,21 +324,19 @@ export const UserManager = () => {
       )}
 
       {/* Interactive Stats Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Tổng tài khoản', value: users.length, color: 'text-gray-800', roleFilter: 'all', statusFilter: 'all' },
-          { label: 'Khách hàng', value: users.filter((u) => u.role === 'user' || !u.role).length, color: 'text-blue-600', roleFilter: 'user', statusFilter: 'all' },
-          { label: 'Nhân viên vé', value: users.filter((u) => u.role === 'staff').length, color: 'text-purple-600', roleFilter: 'staff', statusFilter: 'all' },
-          { label: 'Quản trị viên', value: users.filter((u) => u.role === 'admin').length, color: 'text-amber-600', roleFilter: 'admin', statusFilter: 'all' },
-          { label: 'Đã bị khóa', value: users.filter((u) => u.status === 'locked').length, color: 'text-red-600', roleFilter: 'all', statusFilter: 'locked' },
+          { label: 'Tổng tài khoản', value: users.length, color: 'text-gray-800', roleFilter: 'all' },
+          { label: 'Khách hàng', value: users.filter((u) => u.role === 'user' || !u.role).length, color: 'text-blue-600', roleFilter: 'user' },
+          { label: 'Nhân viên vé', value: users.filter((u) => u.role === 'staff').length, color: 'text-purple-600', roleFilter: 'staff' },
+          { label: 'Quản trị viên', value: users.filter((u) => u.role === 'admin').length, color: 'text-amber-600', roleFilter: 'admin' },
         ].map((s) => {
-          const isSelected = filterRole === s.roleFilter && filterStatus === s.statusFilter;
+          const isSelected = filterRole === s.roleFilter;
           return (
             <button
               key={s.label}
               onClick={() => {
                 setFilterRole(s.roleFilter);
-                setFilterStatus(s.statusFilter);
               }}
               className={`bg-white border rounded-2xl p-4 text-center shadow-sm transition-all cursor-pointer text-left ${
                 isSelected ? 'border-brand ring-2 ring-brand/20 bg-brand/5' : 'border-gray-200 hover:border-gray-300'
@@ -414,16 +372,6 @@ export const UserManager = () => {
           <option value="admin">👑 Quản trị viên</option>
           <option value="user">👤 Khách hàng</option>
         </select>
-
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="w-full md:w-44 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-bold text-gray-700 focus:outline-none focus:border-brand/40 cursor-pointer"
-        >
-          <option value="all">Tất cả trạng thái</option>
-          <option value="active">Đang hoạt động</option>
-          <option value="locked">Đã bị khóa</option>
-        </select>
       </div>
 
       {/* User List Table */}
@@ -437,13 +385,12 @@ export const UserManager = () => {
       ) : (
         <div className="bg-white border border-gray-200 rounded-3xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[900px]">
+            <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="border-b border-gray-200 text-gray-500 text-xs font-bold uppercase tracking-wider bg-gray-50">
                   <th className="py-4 pl-6">Người dùng</th>
                   <th className="py-4">Liên hệ</th>
                   <th className="py-4">Vai trò</th>
-                  <th className="py-4">Trạng thái</th>
                   <th className="py-4">Ngày đăng ký</th>
                   <th className="py-4 pr-6 text-center">Phân quyền & Thao tác</th>
                 </tr>
@@ -504,9 +451,6 @@ export const UserManager = () => {
                       {/* Role */}
                       <td className="py-4">{roleBadge(user.role)}</td>
 
-                      {/* Status */}
-                      <td className="py-4">{statusBadge(user.status)}</td>
-
                       {/* Join date */}
                       <td className="py-4">
                         <div className="flex items-center gap-1 text-gray-500">
@@ -515,7 +459,7 @@ export const UserManager = () => {
                         </div>
                       </td>
 
-                      {/* Actions: Quick Role Selector, Edit, Lock */}
+                      {/* Actions: Quick Role Selector, Edit */}
                       <td className="py-4 pr-6">
                         <div className="flex items-center justify-center gap-2">
                           {/* Selector Phân Quyền */}
@@ -528,10 +472,10 @@ export const UserManager = () => {
                               value={user.role || 'user'}
                               onChange={(e) =>
                                 setConfirmRole({
-                                  id: user._id,
-                                  username: user.username,
-                                  currentRole: user.role || 'user',
-                                  newRole: e.target.value,
+                                   id: user._id,
+                                   username: user.username,
+                                   currentRole: user.role || 'user',
+                                   newRole: e.target.value,
                                 })
                               }
                               className="bg-gray-50 border border-gray-200 rounded-xl px-2 py-1.5 text-xs font-bold text-gray-700 focus:outline-none focus:border-brand cursor-pointer hover:bg-gray-100 transition-colors"
@@ -550,32 +494,6 @@ export const UserManager = () => {
                           >
                             <Edit3 size={14} />
                           </button>
-
-                          {/* Lock / Unlock Button */}
-                          {isSelf ? (
-                            <span
-                              title="Tài khoản của bạn (Không thể tự khóa)"
-                              className="p-2 bg-gray-100 border border-gray-200 text-gray-300 rounded-xl cursor-not-allowed opacity-40"
-                            >
-                              <Lock size={14} />
-                            </span>
-                          ) : user.status === 'locked' ? (
-                            <button
-                              onClick={() => setConfirmLock({ id: user._id, username: user.username, currentStatus: 'locked' })}
-                              title="Mở khóa tài khoản"
-                              className="p-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-600 rounded-xl transition-all active:scale-95 cursor-pointer"
-                            >
-                              <Unlock size={14} />
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => setConfirmLock({ id: user._id, username: user.username, currentStatus: 'active' })}
-                              title="Khóa tài khoản"
-                              className="p-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 rounded-xl transition-all active:scale-95 cursor-pointer"
-                            >
-                              <Lock size={14} />
-                            </button>
-                          )}
                         </div>
                       </td>
                     </tr>
@@ -825,34 +743,19 @@ export const UserManager = () => {
                 </div>
               </div>
 
-              {/* Role & Status */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-gray-700 font-bold mb-1">Vai trò</label>
-                  <select
-                    value={editForm.role}
-                    disabled={showEditModal._id === currentUserId}
-                    onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-gray-800 focus:outline-none focus:border-brand cursor-pointer disabled:opacity-50"
-                  >
-                    <option value="staff">🎟️ Nhân viên quản lý vé</option>
-                    <option value="admin">👑 Quản trị viên</option>
-                    <option value="user">👤 Khách hàng</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 font-bold mb-1">Trạng thái tài khoản</label>
-                  <select
-                    value={editForm.status}
-                    disabled={showEditModal._id === currentUserId}
-                    onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-gray-800 focus:outline-none focus:border-brand cursor-pointer disabled:opacity-50"
-                  >
-                    <option value="active">🟢 Đang hoạt động</option>
-                    <option value="locked">🔴 Đã bị khóa</option>
-                  </select>
-                </div>
+              {/* Role */}
+              <div>
+                <label className="block text-gray-700 font-bold mb-1">Vai trò</label>
+                <select
+                  value={editForm.role}
+                  disabled={showEditModal._id === currentUserId}
+                  onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-gray-800 focus:outline-none focus:border-brand cursor-pointer disabled:opacity-50"
+                >
+                  <option value="staff">🎟️ Nhân viên quản lý vé</option>
+                  <option value="admin">👑 Quản trị viên</option>
+                  <option value="user">👤 Khách hàng</option>
+                </select>
               </div>
 
               {/* Phone & Gender */}
@@ -932,56 +835,6 @@ export const UserManager = () => {
             </form>
           </div>
         </div>
-      )}
-
-      {/* Confirm Lock Modal */}
-      {confirmLock && (
-        <ConfirmModal
-          icon={
-            confirmLock.currentStatus === 'locked' ? (
-              <Unlock size={24} className="text-emerald-600" />
-            ) : (
-              <Lock size={24} className="text-red-600" />
-            )
-          }
-          iconBg={
-            confirmLock.currentStatus === 'locked'
-              ? 'bg-emerald-50 border-emerald-200'
-              : 'bg-red-50 border-red-200'
-          }
-          title={
-            confirmLock.currentStatus === 'locked'
-              ? 'Xác nhận mở khóa tài khoản?'
-              : 'Xác nhận khóa tài khoản?'
-          }
-          description={
-            confirmLock.currentStatus === 'locked' ? (
-              <>
-                Mở khóa tài khoản{' '}
-                <span className="font-mono text-emerald-700 font-bold">@{confirmLock.username}</span>? Trạng thái "active" sẽ được lưu vào CSDL.
-              </>
-            ) : (
-              <>
-                Khóa tài khoản{' '}
-                <span className="font-mono text-red-600 font-bold">@{confirmLock.username}</span>? Trạng thái "locked" sẽ được lưu vào CSDL (ngăn đăng nhập).
-              </>
-            )
-          }
-          note={
-            confirmLock.currentStatus === 'locked'
-              ? 'Tài khoản được mở khóa sẽ khôi phục đầy đủ quyền đăng nhập hệ thống.'
-              : 'Tài khoản bị khóa sẽ không thể truy cập hệ thống. Lịch sử giao dịch được giữ nguyên.'
-          }
-          onCancel={() => setConfirmLock(null)}
-          onConfirm={handleToggleLockUser}
-          loading={actionLoading}
-          confirmLabel={confirmLock.currentStatus === 'locked' ? 'Mở khóa tài khoản' : 'Xác nhận khóa'}
-          confirmClass={
-            confirmLock.currentStatus === 'locked'
-              ? 'bg-emerald-600 hover:bg-emerald-700 shadow-[0_4px_14px_rgba(16,185,129,0.3)]'
-              : 'bg-red-600 hover:bg-red-700 shadow-[0_4px_14px_rgba(239,68,68,0.3)]'
-          }
-        />
       )}
 
       {/* Confirm Role Change Modal */}

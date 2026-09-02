@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Save, Clock, Calendar, Film, Sofa, Monitor,
+  Save, Clock, Calendar, Film, Sofa,
   AlertCircle, CheckCircle2, Loader2, ChevronDown, ChevronUp, Calculator,
 } from 'lucide-react';
 import adminService from '../../services/admin.service';
@@ -92,7 +92,7 @@ const PricePreview = ({ config }) => {
       const wdKey    = WD_KEYS[dow];
       const dayType  = holidays.includes(dateStr) ? 'holiday' : (dow===0||dow===6) ? 'weekend' : 'weekday';
 
-      const base         = config.basePrice?.[dayType]                 ?? 90000;
+      const base         = config.basePrice?.[dayType]                 ?? 80000;
       const weekdayExtra = config.weekdaySurcharge?.[wdKey]            ?? 0;
       const formatExtra  = config.formatSurcharge?.[params.format]     ?? 0;
       const seatExtra    = config.seatTypeSurcharge?.[params.seatType] ?? 0;
@@ -273,7 +273,7 @@ export const PricingManager = () => {
         <div>
           <h3 className="text-lg font-black text-gray-800">Cấu Hình Bảng Giá Vé</h3>
           <p className="text-xs text-gray-500 mt-1">
-            Giá vé tự động tính khi tạo suất chiếu. Công thức: <strong>Cơ bản + Thứ + Giờ + Format + Phòng + Ghế</strong>
+            Giá vé tự động tính khi tạo suất chiếu. Công thức: <strong>Cơ bản + Thứ + Giờ + Format + Ghế</strong>
           </p>
         </div>
         <button
@@ -320,12 +320,6 @@ export const PricingManager = () => {
             <PriceInput label="4DX / GOLDCLASS" value={config.formatSurcharge?.['GOLDCLASS']} onChange={(v) => setField('formatSurcharge.GOLDCLASS', v)} />
           </Section>
 
-          {/* 5. Phụ thu phòng */}
-          <Section icon={<Monitor size={16} />} title="Phụ Thu Theo Loại Phòng" defaultOpen={false}>
-            <PriceInput label="Standard" value={config.roomTypeSurcharge?.standard} onChange={(v) => setField('roomTypeSurcharge.standard', v)} />
-            <PriceInput label="Premium" value={config.roomTypeSurcharge?.premium} onChange={(v) => setField('roomTypeSurcharge.premium', v)} />
-            <PriceInput label="Dolby Atmos" value={config.roomTypeSurcharge?.dolby} onChange={(v) => setField('roomTypeSurcharge.dolby', v)} />
-          </Section>
 
           {/* 6. Phụ thu ghế */}
           <Section icon={<Sofa size={16} />} title="Phụ Thu Theo Loại Ghế" defaultOpen={false}>

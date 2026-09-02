@@ -19,6 +19,7 @@ import {
   Eye,
   Check,
   X,
+  Lock,
 } from 'lucide-react';
 import adminService from '../../services/admin.service';
 import Button from '../common/Button';
@@ -71,6 +72,9 @@ export const RoomTypeManager = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Check if current editing item is locked by active bookings
+  const isLocked = Boolean(editingItem && (editingItem.hasActiveBookings || editingItem.bookingCount > 0));
 
   // Delete State
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null, loading: false });
@@ -130,7 +134,7 @@ export const RoomTypeManager = () => {
       description: '',
       allowedSeatTypes: ['standard', 'vip', 'couple'],
       seatPrices: {
-        standard: 100000,
+        standard: 80000,
         vip: 150000,
         couple: 300000,
       },
@@ -149,7 +153,7 @@ export const RoomTypeManager = () => {
         ? item.allowedSeatTypes
         : ['standard', 'vip', 'couple'],
       seatPrices: {
-        standard: item.seatPrices?.standard ?? 100000,
+        standard: item.seatPrices?.standard ?? 80000,
         vip: item.seatPrices?.vip ?? 150000,
         couple: item.seatPrices?.couple ?? 300000,
       },
@@ -294,12 +298,18 @@ export const RoomTypeManager = () => {
                   {/* Top: Code badge & Name */}
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span
                           className={`px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider border ${theme.badge}`}
                         >
                           {item.code}
                         </span>
+                        {item.hasActiveBookings && (
+                          <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1">
+                            <Lock size={11} className="text-amber-500" />
+                            <span>{item.bookingCount} vé đã đặt</span>
+                          </span>
+                        )}
                         {!item.isActive && (
                           <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-500 border border-gray-200 dark:border-gray-700">
                             Tạm ẩn
@@ -402,6 +412,18 @@ export const RoomTypeManager = () => {
         size="lg"
       >
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
+          {editingItem && (editingItem.hasActiveBookings || editingItem.bookingCount > 0) && (
+            <div className="p-3.5 bg-blue-500/10 border border-blue-500/30 rounded-2xl flex items-start gap-2.5 text-xs text-blue-800 dark:text-blue-300 animate-in fade-in">
+              <Info size={16} className="shrink-0 text-blue-600 dark:text-blue-400 mt-0.5" />
+              <div className="leading-relaxed">
+                <span className="font-bold text-blue-900 dark:text-blue-200">
+                  Đang có {editingItem.bookingCount} vé đã được khách đặt:
+                </span>{' '}
+                Các thay đổi về bảng giá và bật/tắt loại ghế dưới đây sẽ áp dụng cho các suất chiếu và cấu hình mới trong tương lai. Dữ liệu vé và số tiền khách đã đặt trước đó được bảo lưu nguyên vẹn và <strong className="underline">không bị ảnh hưởng</strong>.
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
@@ -462,14 +484,26 @@ export const RoomTypeManager = () => {
                     <Square size={13} className="text-gray-400" />
                     <span>Ghế Thường</span>
                   </label>
-                  <button type="button" onClick={() => toggleSeatType('standard')} className="text-gray-400 hover:text-brand transition-colors" title={formData.allowedSeatTypes.includes('standard') ? 'Bỏ loại ghế này' : 'Bật loại ghế này'}>
+                  <button
+                    type="button"
+                    onClick={() => toggleSeatType('standard')}
+                    className="text-gray-400 hover:text-brand transition-colors"
+                    title={formData.allowedSeatTypes.includes('standard') ? 'Bỏ loại ghế này' : 'Bật loại ghế này'}
+                  >
                     {formData.allowedSeatTypes.includes('standard') ? <ToggleRight size={20} className="text-brand" /> : <ToggleLeft size={20} />}
                   </button>
                 </div>
                 {formData.allowedSeatTypes.includes('standard') ? (
                   <>
                     <div className="flex items-center gap-1">
-                      <input type="number" step="1000" min="0" value={formData.seatPrices.standard} onChange={(e) => setFormData((p) => ({ ...p, seatPrices: { ...p.seatPrices, standard: Number(e.target.value) } }))} className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-2.5 py-1.5 text-xs font-black text-right outline-none focus:border-brand" />
+                      <input
+                        type="number"
+                        step="1000"
+                        min="0"
+                        value={formData.seatPrices.standard}
+                        onChange={(e) => setFormData((p) => ({ ...p, seatPrices: { ...p.seatPrices, standard: Number(e.target.value) } }))}
+                        className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-2.5 py-1.5 text-xs font-black text-right outline-none focus:border-brand transition-all"
+                      />
                       <span className="text-xs text-gray-400 font-bold">₫</span>
                     </div>
                     <p className="text-[10px] text-gray-400 text-right font-medium">{fmt(formData.seatPrices.standard)}</p>
@@ -486,14 +520,26 @@ export const RoomTypeManager = () => {
                     <Star size={13} className="text-amber-500" />
                     <span>Ghế VIP</span>
                   </label>
-                  <button type="button" onClick={() => toggleSeatType('vip')} className="text-gray-400 hover:text-amber-500 transition-colors" title={formData.allowedSeatTypes.includes('vip') ? 'Bỏ loại ghế này' : 'Bật loại ghế này'}>
+                  <button
+                    type="button"
+                    onClick={() => toggleSeatType('vip')}
+                    className="text-gray-400 hover:text-amber-500 transition-colors"
+                    title={formData.allowedSeatTypes.includes('vip') ? 'Bỏ loại ghế này' : 'Bật loại ghế này'}
+                  >
                     {formData.allowedSeatTypes.includes('vip') ? <ToggleRight size={20} className="text-amber-500" /> : <ToggleLeft size={20} />}
                   </button>
                 </div>
                 {formData.allowedSeatTypes.includes('vip') ? (
                   <>
                     <div className="flex items-center gap-1">
-                      <input type="number" step="1000" min="0" value={formData.seatPrices.vip} onChange={(e) => setFormData((p) => ({ ...p, seatPrices: { ...p.seatPrices, vip: Number(e.target.value) } }))} className="w-full bg-white dark:bg-gray-900 border border-amber-300 dark:border-amber-700 rounded-lg px-2.5 py-1.5 text-xs font-black text-right text-amber-700 dark:text-amber-300 outline-none focus:border-amber-500" />
+                      <input
+                        type="number"
+                        step="1000"
+                        min="0"
+                        value={formData.seatPrices.vip}
+                        onChange={(e) => setFormData((p) => ({ ...p, seatPrices: { ...p.seatPrices, vip: Number(e.target.value) } }))}
+                        className="w-full bg-white dark:bg-gray-900 border border-amber-300 dark:border-amber-700 rounded-lg px-2.5 py-1.5 text-xs font-black text-right text-amber-700 dark:text-amber-300 outline-none focus:border-amber-500 transition-all"
+                      />
                       <span className="text-xs text-amber-500 font-bold">₫</span>
                     </div>
                     <p className="text-[10px] text-amber-600/80 text-right font-medium">{fmt(formData.seatPrices.vip)}</p>
@@ -510,14 +556,26 @@ export const RoomTypeManager = () => {
                     <Heart size={13} className="text-pink-500" />
                     <span>Ghế Đôi (Couple)</span>
                   </label>
-                  <button type="button" onClick={() => toggleSeatType('couple')} className="text-gray-400 hover:text-pink-500 transition-colors" title={formData.allowedSeatTypes.includes('couple') ? 'Bỏ loại ghế này' : 'Bật loại ghế này'}>
+                  <button
+                    type="button"
+                    onClick={() => toggleSeatType('couple')}
+                    className="text-gray-400 hover:text-pink-500 transition-colors"
+                    title={formData.allowedSeatTypes.includes('couple') ? 'Bỏ loại ghế này' : 'Bật loại ghế này'}
+                  >
                     {formData.allowedSeatTypes.includes('couple') ? <ToggleRight size={20} className="text-pink-500" /> : <ToggleLeft size={20} />}
                   </button>
                 </div>
                 {formData.allowedSeatTypes.includes('couple') ? (
                   <>
                     <div className="flex items-center gap-1">
-                      <input type="number" step="1000" min="0" value={formData.seatPrices.couple} onChange={(e) => setFormData((p) => ({ ...p, seatPrices: { ...p.seatPrices, couple: Number(e.target.value) } }))} className="w-full bg-white dark:bg-gray-900 border border-pink-300 dark:border-pink-700 rounded-lg px-2.5 py-1.5 text-xs font-black text-right text-pink-700 dark:text-pink-300 outline-none focus:border-pink-500" />
+                      <input
+                        type="number"
+                        step="1000"
+                        min="0"
+                        value={formData.seatPrices.couple}
+                        onChange={(e) => setFormData((p) => ({ ...p, seatPrices: { ...p.seatPrices, couple: Number(e.target.value) } }))}
+                        className="w-full bg-white dark:bg-gray-900 border border-pink-300 dark:border-pink-700 rounded-lg px-2.5 py-1.5 text-xs font-black text-right text-pink-700 dark:text-pink-300 outline-none focus:border-pink-500 transition-all"
+                      />
                       <span className="text-xs text-pink-500 font-bold">₫</span>
                     </div>
                     <p className="text-[10px] text-pink-600/80 text-right font-medium">{fmt(formData.seatPrices.couple)}</p>

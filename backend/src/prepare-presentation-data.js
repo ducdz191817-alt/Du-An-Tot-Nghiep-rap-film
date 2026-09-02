@@ -44,11 +44,11 @@ const TIME_SLOTS = [
 const PRICES = {
   IMAX: 180000,
   '3D': 110000,
-  '2D': 90000,
+  '2D': 80000,
   GOLDCLASS: 250000,
   SWEETBOX: 140000,
   VIP: 130000,
-  STANDARD: 85000,
+  STANDARD: 80000,
 };
 
 const PAYMENT_METHODS = ['vietqr', 'vnpay', 'momo', 'card', 'cash'];
