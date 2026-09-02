@@ -1,45 +1,50 @@
 const socketIo = require('socket.io');
 const Showtime = require('../models/Showtime.model');
 
-// In-memory store for held seats
-// Structure: Map<showtimeId, Map<seatCode, { userId, socketId, expiresAt, timeoutId }>>
+// Bộ lưu trữ bộ nhớ RAM tạm thời quản lý các ghế đang giữ chỗ theo thời gian thực (Real-time held seats)
+// Cấu trúc: Map<showtimeId, Map<seatCode, { userId, socketId, expiresAt, timeoutId }>>
 const heldSeats = new Map();
 
-// Track which seats each socket is holding (for auto-release on disconnect)
-// Structure: Map<socketId, { userId, holds: [{showtimeId, seatCode}] }>
+// Theo dõi danh sách ghế mà mỗi Socket kết nối đang giữ (phục vụ tự động giải phóng khi người dùng mất kết nối)
+// Cấu trúc: Map<socketId, { userId, holds: [{showtimeId, seatCode}] }>
 const socketHolds = new Map();
 
-// Hold duration in milliseconds (10 minutes)
+// Thời gian giữ ghế tối đa (10 phút = 600.000 ms)
 const HOLD_DURATION = 10 * 60 * 1000;
 
 let io;
 
+/**
+ * @function initSocket
+ * @desc     Khởi tạo và cấu hình các sự kiện WebSocket (Socket.IO) cho tính năng đặt ghế thời gian thực
+ * @param    {Server} server - Đối tượng HTTP Server của Node.js
+ */
 const initSocket = (server) => {
   io = socketIo(server, {
     cors: {
-      origin: '*', // Adjust this in production to match frontend URL
+      origin: '*', // Trong môi trường sản xuất nên cấu hình cụ thể địa chỉ Frontend
       methods: ['GET', 'POST'],
     },
   });
 
   io.on('connection', (socket) => {
-    console.log(`Socket connected: ${socket.id}`);
+    console.log(`Socket kết nối mới: ${socket.id}`);
 
-    // User joins a specific showtime room to receive seat updates
+    // 1. Sự kiện khi người dùng tham gia vào phòng (Room) của một suất chiếu cụ thể
     socket.on('join_showtime', ({ showtimeId, userId }) => {
       if (!showtimeId) return;
       const sId = String(showtimeId).trim();
       const strUserId = userId ? String(userId) : socket.id;
 
       socket.join(`showtime_${sId}`);
-      console.log(`User ${strUserId} joined room showtime_${sId}`);
+      console.log(`Người dùng ${strUserId} đã vào phòng showtime_${sId}`);
 
-      // Khởi tạo entry tracking cho socket này nếu chưa có
+      // Khởi tạo thông tin theo dõi ghế cho socket này nếu chưa có
       if (!socketHolds.has(socket.id)) {
         socketHolds.set(socket.id, { userId: strUserId, holds: [] });
       }
 
-      // Send the current held seats for this showtime to the newly connected user
+      // Trả về danh sách các ghế đang bị giữ chỗ hiện tại cho client vừa kết nối
       if (heldSeats.has(sId)) {
         const showtimeHolds = heldSeats.get(sId);
         const holdsArray = Array.from(showtimeHolds.entries()).map(([seatCode, data]) => ({
@@ -53,19 +58,21 @@ const initSocket = (server) => {
       }
     });
 
+    // 2. Sự kiện khi người dùng rời khỏi phòng xem suất chiếu
     socket.on('leave_showtime', ({ showtimeId }) => {
       if (showtimeId) {
         socket.leave(`showtime_${String(showtimeId).trim()}`);
       }
     });
 
-    // Sự kiện khi người dùng click chọn 1 ghế (cố gắng giữ ghế)
+    // 3. Sự kiện khi người dùng click chọn 1 ghế để giữ chỗ tạm thời trong 10 phút
     socket.on('hold_seat', async ({ showtimeId, seatCode, userId }) => {
       if (!showtimeId || !seatCode || !userId) return;
       const sId = String(showtimeId).trim();
       const sCode = String(seatCode).trim().toUpperCase();
       const strUserId = String(userId).trim();
 
+      // Kiểm tra trong CSDL xem ghế này đã được mua và thanh toán hoàn tất chưa
       try {
         const showtime = await Showtime.findById(sId).select('bookedSeats');
         if (showtime && showtime.bookedSeats && showtime.bookedSeats.includes(sCode)) {
@@ -81,14 +88,15 @@ const initSocket = (server) => {
       }
       const showtimeHolds = heldSeats.get(sId);
 
-      // Check if seat is already held
+      // Kiểm tra xem ghế đã có người giữ chưa
       if (showtimeHolds.has(sCode)) {
         const currentHold = showtimeHolds.get(sCode);
         if (String(currentHold.userId) !== strUserId) {
+          // Người khác đang giữ -> Từ chối giữ ghế
           socket.emit('hold_seat_failed', { seatCode: sCode, message: 'Ghế này đang được người khác giữ!' });
           return;
         } else {
-          // Cùng user nhưng socketId khác (reconnect / chuyển trang) → cập nhật socketId mới
+          // Cùng người dùng nhưng socketId khác (do làm mới trang hoặc reconnect) -> Cập nhật socketId mới
           if (currentHold.socketId && currentHold.socketId !== socket.id) {
             const oldSocketData = socketHolds.get(currentHold.socketId);
             if (oldSocketData) {
@@ -131,7 +139,7 @@ const initSocket = (server) => {
         }
       }
 
-      // Set hold mới
+      // Tạo thời gian đếm ngược 10 phút tự động hủy giữ ghế
       const timeoutId = setTimeout(() => {
         releaseSeat(sId, sCode);
       }, HOLD_DURATION);
@@ -148,12 +156,12 @@ const initSocket = (server) => {
       }
       socketHolds.get(socket.id).holds.push({ showtimeId: sId, seatCode: sCode });
 
-      // Broadcast cho tất cả user khác trong phòng
+      // Gửi thông báo tới tất cả các client khác trong phòng
       socket.to(`showtime_${sId}`).emit('seat_held', { seatCode: sCode, userId: strUserId });
       socket.emit('hold_seat_success', { seatCode: sCode });
     });
 
-    // User explicitly releases a seat
+    // 4. Sự kiện khi người dùng chủ động bỏ chọn (hủy giữ) 1 ghế
     socket.on('release_seat', ({ showtimeId, seatCode, userId }) => {
       if (!showtimeId || !seatCode) return;
       const sId = String(showtimeId).trim();
@@ -173,20 +181,21 @@ const initSocket = (server) => {
       }
     });
 
+    // 5. Sự kiện khi người dùng chuyển sang trang thanh toán (Bảo lưu danh sách ghế giữ, không tự động nhả khi chuyển trang)
     socket.on('going_to_payment', ({ showtimeId, userId }) => {
       const socketData = socketHolds.get(socket.id);
       if (socketData) {
-        console.log(`User ${userId} going to payment, preserving ${socketData.holds.length} seat hold(s).`);
+        console.log(`Người dùng ${userId} đang tiến hành thanh toán, bảo lưu ${socketData.holds.length} ghế đã giữ.`);
         socketHolds.delete(socket.id);
       }
     });
 
-    // Khi socket disconnect
+    // 6. Xử lý khi người dùng mất kết nối Socket (đóng trình duyệt / rớt mạng)
     socket.on('disconnect', () => {
-      console.log(`Socket disconnected: ${socket.id}`);
+      console.log(`Socket ngắt kết nối: ${socket.id}`);
       const socketData = socketHolds.get(socket.id);
       if (socketData && socketData.holds.length > 0) {
-        console.log(`Auto-releasing ${socketData.holds.length} held seat(s) for socket ${socket.id} (user: ${socketData.userId})`);
+        console.log(`Tự động nhả ${socketData.holds.length} ghế đang giữ của socket ${socket.id} (user: ${socketData.userId})`);
         socketData.holds.forEach(({ showtimeId, seatCode }) => {
           releaseSeat(showtimeId, seatCode, socket.id);
         });
@@ -196,7 +205,12 @@ const initSocket = (server) => {
   });
 };
 
-// Internal function to release a seat and broadcast
+/**
+ * @helper   Giải phóng một ghế đã giữ chỗ và phát thông báo qua Socket cho tất cả client
+ * @param    {string} showtimeId - ID suất chiếu
+ * @param    {string} seatCode - Mã ghế (ví dụ: A5)
+ * @param    {string} [requestingSocketId] - ID của Socket yêu cầu giải phóng (nếu có)
+ */
 const releaseSeat = (showtimeId, seatCode, requestingSocketId = null) => {
   const sId = String(showtimeId).trim();
   const sCode = String(seatCode).trim().toUpperCase();
@@ -204,9 +218,9 @@ const releaseSeat = (showtimeId, seatCode, requestingSocketId = null) => {
   if (showtimeHolds && showtimeHolds.has(sCode)) {
     const holdData = showtimeHolds.get(sCode);
 
-    // Nếu có requestingSocketId (từ socket disconnect/release), chỉ giải phóng nếu ghế VẪN ĐANG giữ bởi socket đó
+    // Nếu có requestingSocketId, chỉ giải phóng nếu ghế VẪN ĐANG thuộc socket đó
     if (requestingSocketId && holdData.socketId && holdData.socketId !== requestingSocketId) {
-      console.log(`[releaseSeat] Ignored release for ${sCode} (requested by old socket ${requestingSocketId}, active socket is ${holdData.socketId})`);
+      console.log(`[releaseSeat] Bỏ qua yêu cầu giải phóng ${sCode} từ socket cũ ${requestingSocketId}, socket hoạt động là ${holdData.socketId}`);
       return;
     }
 
@@ -217,13 +231,20 @@ const releaseSeat = (showtimeId, seatCode, requestingSocketId = null) => {
       heldSeats.delete(sId);
     }
 
+    // Phát sự kiện seat_released thông báo ghế đã trống
     if (io) {
       io.to(`showtime_${sId}`).emit('seat_released', { seatCode: sCode });
     }
   }
 };
 
-// Call this from booking.controller.js when payment succeeds
+/**
+ * @function confirmBookingClearHolds
+ * @desc     Xóa trạng thái giữ chỗ tạm thời và phát thông báo ghế đã được mua thành công (được gọi từ booking.controller.js)
+ * @param    {string} showtimeId - ID suất chiếu
+ * @param    {Array<string>} seatCodes - Danh sách mã ghế đã thanh toán
+ * @param    {string} userId - ID người dùng vừa thanh toán
+ */
 const confirmBookingClearHolds = (showtimeId, seatCodes, userId) => {
   const showtimeHolds = heldSeats.get(showtimeId);
   if (showtimeHolds) {
@@ -239,39 +260,35 @@ const confirmBookingClearHolds = (showtimeId, seatCodes, userId) => {
     }
   }
 
-  // Broadcast to all clients that these seats are now fully booked
+  // Phát thông báo seat_booked tới tất cả mọi người trong phòng suất chiếu
   if (io) {
     io.to(`showtime_${showtimeId}`).emit('seat_booked', { seatCodes });
   }
 };
 
-// ==========================================
-// FIX BUG TỐT NGHIỆP: CHỐNG CƯỚP GHẾ (RACE CONDITION)
-// ==========================================
-// Hàm này dùng để kiểm tra xem trong danh sách các ghế mà khách đang muốn thanh toán,
-// có ghế nào ĐANG BỊ GIỮ bởi một người dùng KHÁC hay không.
-// Nếu có, trả về danh sách các ghế đang bị tranh chấp để Controller chặn thanh toán.
+/**
+ * @function getConflictingHeldSeats
+ * @desc     CHỐNG CƯỚP GHẾ (RACE CONDITION): Kiểm tra xem các ghế người dùng đang cố gắng thanh toán
+ *           có đang bị người dùng KHÁC giữ chỗ hay không. Nếu có, trả về mảng các ghế bị tranh chấp để Controller chặn thanh toán.
+ * @param    {string} showtimeId - ID suất chiếu
+ * @param    {Array<string>} seatCodes - Danh sách ghế định thanh toán
+ * @param    {string} userId - ID người dùng hiện tại
+ * @returns  {Array<string>} Danh sách mã ghế đang bị tranh chấp bởi người khác
+ */
 const getConflictingHeldSeats = (showtimeId, seatCodes, userId) => {
   const showtimeHolds = heldSeats.get(showtimeId);
   if (!showtimeHolds) {
-    console.log(`[getConflictingHeldSeats] No holds for showtime ${showtimeId} → safe`);
     return [];
   }
-  
-  console.log(`[getConflictingHeldSeats] Checking seats ${seatCodes.join(',')} for userId=${userId.toString()}`);
-  console.log(`[getConflictingHeldSeats] Current holds:`, Array.from(showtimeHolds.entries()).map(([seat, data]) => ({
-    seat, holdUserId: data.userId, matches: data.userId.toString() === userId.toString()
-  })));
 
   const conflicting = [];
   seatCodes.forEach(seatCode => {
     if (showtimeHolds.has(seatCode)) {
       const holdData = showtimeHolds.get(seatCode);
+      // Nếu ghế đang bị giữ bởi một ID người dùng khác
       if (holdData.userId.toString() !== userId.toString()) {
         conflicting.push(seatCode);
-        console.log(`[getConflictingHeldSeats] CONFLICT: seat ${seatCode} held by ${holdData.userId} (booking userId: ${userId})`);
-      } else {
-        console.log(`[getConflictingHeldSeats] OK: seat ${seatCode} held by same user ${userId}`);
+        console.log(`[getConflictingHeldSeats] TRANH CHẤP: Ghế ${seatCode} đang bị giữ bởi user ${holdData.userId} (Booking userId: ${userId})`);
       }
     }
   });
@@ -284,3 +301,4 @@ module.exports = {
   confirmBookingClearHolds,
   getConflictingHeldSeats,
 };
+

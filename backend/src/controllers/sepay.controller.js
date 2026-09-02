@@ -12,7 +12,11 @@ const Payment = require('../models/Payment.model');
 const sendEmail = require('../utils/sendEmail');
 const QRCode = require('qrcode');
 
-// ─── Helper: Gửi email xác nhận vé sau khi SePay báo có tiền ─────────────────
+/**
+ * @helper   Gửi Email xác nhận vé tự động cho khách hàng sau khi SePay báo có tiền về tài khoản
+ * @param    {Object} booking - Thông tin đơn đặt vé hoàn chỉnh
+ * @param    {Object} user - Thông tin người dùng (chứa Email)
+ */
 const sendConfirmationEmail = async (booking, user) => {
   try {
     const showtime = booking.showtime;
@@ -84,9 +88,11 @@ const sendConfirmationEmail = async (booking, user) => {
   }
 };
 
-// ─── @desc  Nhận Webhook từ SePay ─────────────────────────────────────────────
-// ─── @route POST /api/payments/sepay/webhook
-// ─── @access Public (SePay server gửi sang)
+/**
+ * @desc    Nhận và xử lý Webhook tự động từ hệ thống SePay khi có biến động số dư ngân hàng
+ * @route   POST /api/payments/sepay/webhook
+ * @access  Public (SePay Server gửi dữ liệu sang)
+ */
 const sepayWebhook = async (req, res) => {
   try {
     console.log('[SePay Webhook] Payload nhận được:', JSON.stringify(req.body));
@@ -99,7 +105,7 @@ const sepayWebhook = async (req, res) => {
       referenceCode,
     } = req.body;
 
-    // Chỉ xử lý tiền VÀO (transferType === 'in')
+    // 1. Chỉ xử lý các giao dịch tiền VÀO (transferType === 'in')
     if (transferType && transferType !== 'in') {
       console.log('[SePay Webhook] Không phải giao dịch tiền vào, bỏ qua.');
       return res.json({ success: true, message: 'Not an incoming transfer, ignored' });
@@ -110,18 +116,18 @@ const sepayWebhook = async (req, res) => {
       return res.json({ success: true, message: 'Empty content, ignored' });
     }
 
-    // Trích xuất mã giao dịch từ nội dung (chấp nhận cả chữ cái và số, VD: NOVA701C3E)
+    // 2. Trích xuất mã giao dịch từ nội dung chuyển khoản (VD: NOVA701C3E)
     const match = content.match(/NOVA([A-Za-z0-9]{6,8})/i);
     let booking = null;
 
     if (match && match[1]) {
       const codeStr = match[1].toLowerCase();
-      // Tìm booking có _id kết thúc bằng codeStr
+      // Tìm booking có ID kết thúc bằng chuỗi mã vừa bóc tách
       const pendingBookings = await Booking.find({ paymentStatus: 'pending' });
       booking = pendingBookings.find(b => b._id.toString().toLowerCase().endsWith(codeStr));
     }
 
-    // Fallback 1: Thử khớp 6 ký tự cuối của bất kỳ booking pending nào
+    // Fallback 1: Thử khớp 6 ký tự cuối của bất kỳ đơn pending nào trong nội dung
     if (!booking) {
       const pendingBookings = await Booking.find({ paymentStatus: 'pending' });
       booking = pendingBookings.find(b =>
@@ -129,27 +135,27 @@ const sepayWebhook = async (req, res) => {
       );
     }
 
-    // Fallback 2: Lấy booking pending gần nhất nếu không khớp nội dung (dành cho môi trường test)
+    // Fallback 2: Lấy đơn pending mới nhất nếu nội dung chuyển khoản không có mã (hỗ trợ Test Mode)
     if (!booking) {
       booking = await Booking.findOne({ paymentStatus: 'pending' }).sort({ createdAt: -1 });
     }
 
     if (!booking) {
-      console.error('[SePay Webhook] Không tìm thấy Booking pending nào.');
+      console.error('[SePay Webhook] Không tìm thấy đơn đặt vé (Booking) ở trạng thái pending.');
       return res.json({ success: true, message: 'No matching pending booking found' });
     }
 
-    // Idempotent: nếu đã paid thì bỏ qua
+    // 3. Đảm bảo tính nhất quán (Idempotence): Nếu đơn đã được thanh toán trước đó thì bỏ qua
     if (booking.paymentStatus === 'paid') {
       console.log(`[SePay Webhook] Booking ${booking._id} đã được thanh toán trước đó.`);
       return res.json({ success: true, message: 'Already paid' });
     }
 
-    // Cập nhật trạng thái
+    // 4. Cập nhật trạng thái đơn đặt vé thành 'paid' (Đã thanh toán)
     booking.paymentStatus = 'paid';
     await booking.save();
 
-    // Cập nhật Payment record
+    // 5. Cập nhật bản ghi thanh toán trong CSDL
     await Payment.findOneAndUpdate(
       { booking: booking._id },
       {
@@ -162,7 +168,7 @@ const sepayWebhook = async (req, res) => {
 
     console.log(`[SePay Webhook] 🎉 Booking ${booking._id} đã được XÁC NHẬN THANH TOÁN THÀNH CÔNG!`);
 
-    // Fetch full booking data & gửi email
+    // 6. Truy vấn dữ liệu đơn đầy đủ và thực hiện gửi Email vé tự động
     const fullBooking = await Booking.findById(booking._id)
       .populate({
         path: 'showtime',
@@ -188,3 +194,4 @@ const sepayWebhook = async (req, res) => {
 module.exports = {
   sepayWebhook,
 };
+

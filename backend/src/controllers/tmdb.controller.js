@@ -27,7 +27,11 @@ const TMDB_GENRE_MAP = {
   37: 'Western',
 };
 
-// Map TMDB certification → hệ thống phân loại Việt Nam
+/**
+ * @helper   Chuyển đổi phân loại độ tuổi (certification) từ TMDB sang hệ thống phân loại phim Việt Nam
+ * @param    {Array} certifications - Danh sách thông tin phát hành từ TMDB
+ * @returns  {string} Nhãn độ tuổi tương ứng (P, T13, T16, T18)
+ */
 const mapCertification = (certifications) => {
   if (!certifications || certifications.length === 0) return 'T16';
   
@@ -50,10 +54,11 @@ const mapCertification = (certifications) => {
   }
 };
 
-// ==========================================
-// 1. Tìm kiếm phim trên TMDB
-// GET /api/admin/tmdb/search?query=...&page=1
-// ==========================================
+/**
+ * @desc    Tìm kiếm danh sách phim trực tiếp từ TMDB API theo từ khóa
+ * @route   GET /api/admin/tmdb/search
+ * @access  Private/Admin
+ */
 const searchTMDB = async (req, res, next) => {
   try {
     const { query, page = 1 } = req.query;
@@ -73,6 +78,7 @@ const searchTMDB = async (req, res, next) => {
       });
     }
 
+    // Gửi yêu cầu tìm kiếm tới API của TMDB
     const response = await axios.get(`${TMDB_BASE_URL}/search/movie`, {
       params: {
         api_key: TMDB_API_KEY,
@@ -83,7 +89,7 @@ const searchTMDB = async (req, res, next) => {
       },
     });
 
-    // Map kết quả thành format gọn cho frontend
+    // Chuẩn hóa định dạng kết quả trả về cho Frontend
     const results = response.data.results.map((movie) => ({
       tmdbId: movie.id,
       title: movie.title,
@@ -115,10 +121,11 @@ const searchTMDB = async (req, res, next) => {
   }
 };
 
-// ==========================================
-// 2. Lấy danh sách phim trending/mới nhất từ TMDB
-// GET /api/admin/tmdb/trending?page=1
-// ==========================================
+/**
+ * @desc    Lấy danh sách các phim nổi bật / đang chiếu nóng nhất từ TMDB
+ * @route   GET /api/admin/tmdb/trending
+ * @access  Private/Admin
+ */
 const getTMDBTrending = async (req, res, next) => {
   try {
     const { page = 1 } = req.query;
@@ -131,7 +138,7 @@ const getTMDBTrending = async (req, res, next) => {
       });
     }
 
-    // Lấy phim đang trending trong tuần + phim đang chiếu tại rạp
+    // Lấy song song danh sách phim trending trong tuần + phim đang chiếu tại rạp
     const [trendingRes, nowPlayingRes] = await Promise.all([
       axios.get(`${TMDB_BASE_URL}/trending/movie/week`, {
         params: { api_key: TMDB_API_KEY, language: 'vi-VN', page },
@@ -141,7 +148,7 @@ const getTMDBTrending = async (req, res, next) => {
       }),
     ]);
 
-    // Gộp 2 danh sách, loại trùng theo ID, ưu tiên trending trước
+    // Gộp 2 danh sách, loại bỏ phim trùng lặp theo tmdbId
     const seen = new Set();
     const combined = [];
 
@@ -164,7 +171,7 @@ const getTMDBTrending = async (req, res, next) => {
 
     res.json({
       success: true,
-      data: combined.slice(0, 20), // Trả tối đa 20 phim
+      data: combined.slice(0, 20), // Trả về tối đa 20 phim nổi bật
     });
   } catch (error) {
     console.error('TMDB Trending Error:', error.message);
@@ -172,10 +179,11 @@ const getTMDBTrending = async (req, res, next) => {
   }
 };
 
-// ==========================================
-// 3. Lấy chi tiết phim từ TMDB theo ID
-// GET /api/admin/tmdb/movie/:tmdbId
-// ==========================================
+/**
+ * @desc    Lấy thông tin chi tiết đầy đủ của một bộ phim từ TMDB để phục vụ tính năng import tự động
+ * @route   GET /api/admin/tmdb/movie/:tmdbId
+ * @access  Private/Admin
+ */
 const getTMDBMovieDetail = async (req, res, next) => {
   try {
     const { tmdbId } = req.params;
@@ -209,7 +217,7 @@ const getTMDBMovieDetail = async (req, res, next) => {
     const videos = videosRes.data;
     const releaseDates = releaseDatesRes.data;
 
-    // Lấy đạo diễn (crew có job = "Director")
+    // 1. Trích xuất tên Đạo diễn
     const director = credits.crew
       ? credits.crew
           .filter((c) => c.job === 'Director')
@@ -217,12 +225,12 @@ const getTMDBMovieDetail = async (req, res, next) => {
           .join(', ')
       : '';
 
-    // Lấy top 6 diễn viên chính
+    // 2. Trích xuất top 6 Diễn viên chính
     const cast = credits.cast
       ? credits.cast.slice(0, 6).map((c) => c.name)
       : [];
 
-    // Tìm trailer YouTube (ưu tiên Official Trailer)
+    // 3. Tìm đường dẫn video Trailer YouTube chính thức
     let trailerUrl = '';
     if (videos.results && videos.results.length > 0) {
       const officialTrailer = videos.results.find(
@@ -239,21 +247,20 @@ const getTMDBMovieDetail = async (req, res, next) => {
       }
     }
 
-    // Map genre TMDB → hệ thống
+    // 4. Ánh xạ danh sách thể loại từ TMDB sang hệ thống
     const genres = (movie.genres || [])
       .map((g) => TMDB_GENRE_MAP[g.id] || g.name)
       .filter(Boolean);
 
-    // Lấy rating/certification
+    // 5. Chuyển đổi mã phân loại độ tuổi
     const rating = mapCertification(releaseDates.results);
 
-    // Lấy quốc gia sản xuất
+    // 6. Lấy quốc gia sản xuất
     const country = (movie.production_countries || [])
       .map((c) => c.name)
       .join(', ');
 
-    // Lấy tiêu đề tiếng Anh (original_title) nếu khác tiếng Việt
-    // Cũng fetch thêm bản tiếng Anh cho description
+    // 7. Lấy tiêu đề và mô tả bản tiếng Anh
     let descriptionEN = '';
     let titleEN = movie.original_title || '';
     try {
@@ -263,21 +270,21 @@ const getTMDBMovieDetail = async (req, res, next) => {
       descriptionEN = enRes.data.overview || '';
       titleEN = enRes.data.title || movie.original_title || '';
     } catch (e) {
-      // fallback: dùng original_title
+      // Bỏ qua nếu không lấy được bản tiếng Anh
     }
 
-    // Tính status thông minh dựa vào releaseDate
+    // 8. Tự động tính toán trạng thái phim khởi tạo
     const computedStatus = (() => {
       if (!movie.release_date) return 'coming-soon';
       const release = new Date(movie.release_date);
       const now = new Date();
       const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-      if (release <= now) return 'coming-soon';           // Đã ra mắt nhưng chưa xếp lịch → Sắp chiếu
-      if (release <= thirtyDaysLater) return 'coming-soon'; // Trong 30 ngày tới → Sắp chiếu
-      return 'pre-release';                               // Còn xa → Sắp ra mắt
+      if (release <= now) return 'coming-soon';
+      if (release <= thirtyDaysLater) return 'coming-soon';
+      return 'pre-release';
     })();
 
-    // Trả về data đã map sang format Movie model
+    // 9. Chuẩn hóa dữ liệu theo cấu trúc Model Movie của ứng dụng
     const mappedMovie = {
       title: movie.title || movie.original_title,
       titleEN,
@@ -318,3 +325,4 @@ module.exports = {
   getTMDBMovieDetail,
   getTMDBTrending,
 };
+

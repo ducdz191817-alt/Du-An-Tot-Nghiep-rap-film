@@ -6,32 +6,40 @@ const Seat = require('../models/Seat.model');
 const sendEmail = require('../utils/sendEmail');
 const QRCode = require('qrcode');
 
+/**
+ * @desc    Tạo yêu cầu thanh toán vé phim qua ví điện tử MoMo (Tạo chữ ký HMAC SHA256)
+ * @route   POST /api/payment/momo/create
+ * @access  Private
+ */
 const createPayment = async (req, res) => {
   try {
     const { bookingId, amount, orderInfo } = req.body;
-    if (!bookingId || !amount) return res.status(400).json({ error: 'Missing bookingId or amount' });
+    if (!bookingId || !amount) return res.status(400).json({ error: 'Thiếu bookingId hoặc số tiền thanh toán' });
 
+    // 1. Lấy các thông số cấu hình MoMo từ biến môi trường .env
     const partnerCode = process.env.MOMO_PARTNER_CODE?.trim();
     const accessKey = process.env.MOMO_ACCESS_KEY?.trim();
     const secretKey = process.env.MOMO_SECRET_KEY?.trim();
-    const redirectUrl = process.env.MOMO_REDIRECT_URL?.trim(); // frontend callback after payment
-    const ipnUrl = process.env.MOMO_IPN_URL?.trim(); // backend callback for payment status
+    const redirectUrl = process.env.MOMO_REDIRECT_URL?.trim(); // URL chuyển hướng Frontend sau khi thanh toán
+    const ipnUrl = process.env.MOMO_IPN_URL?.trim(); // URL Callback Backend nhận trạng thái thanh toán
 
     const orderId = `ORDER_${Date.now()}`;
     const requestId = `REQ_${Date.now()}`;
     const requestType = 'captureWallet';
     const extraData = '';
 
+    // 2. Tạo chuỗi rawSignature và tạo chữ ký bảo mật HMAC-SHA256 theo chuẩn MoMo
     const rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo || ''}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
     const signature = crypto.createHmac('sha256', secretKey).update(rawSignature).digest('hex');
 
+    // 3. Chuẩn bị payload gửi tới MoMo Gateway API
     const body = {
       partnerCode,
       accessKey,
       requestId,
       amount: String(amount),
       orderId,
-      orderInfo: orderInfo || 'Payment for booking',
+      orderInfo: orderInfo || 'Thanh toán vé phim Nova Cinema',
       redirectUrl,
       ipnUrl,
       extraData,
@@ -43,11 +51,11 @@ const createPayment = async (req, res) => {
     const r = await axios.post(momoEndpoint, body, { timeout: 10000, headers: { 'Content-Type': 'application/json' } });
 
     if (!r.data || Number(r.data.resultCode) !== 0) {
-      console.error('createPayment momo returned failure', r.data);
-      return res.status(502).json({ error: 'Momo gateway rejected payment request', detail: r.data });
+      console.error('Tạo thanh toán MoMo thất bại:', r.data);
+      return res.status(502).json({ error: 'Cổng MoMo từ chối yêu cầu thanh toán', detail: r.data });
     }
 
-    // Create Payment record (pending)
+    // 4. Lưu vết giao dịch thanh toán khởi tạo (trạng thái pending) vào DB
     await Payment.create({
       booking: bookingId,
       paymentMethod: 'momo',
@@ -58,11 +66,16 @@ const createPayment = async (req, res) => {
 
     return res.json({ payUrl: r.data.payUrl, raw: r.data });
   } catch (error) {
-    console.error('createPayment error', error?.response?.data || error.message);
-    return res.status(500).json({ error: 'Failed to create Momo payment' });
+    console.error('Lỗi khởi tạo thanh toán MoMo:', error?.response?.data || error.message);
+    return res.status(500).json({ error: 'Không thể khởi tạo thanh toán MoMo' });
   }
 };
 
+/**
+ * @desc    Xử lý thông báo kết quả thanh toán từ MoMo (MoMo IPN Callback)
+ * @route   POST /api/payment/momo/ipn (hoặc /callback)
+ * @access  Public (Cổng MoMo Server gọi)
+ */
 const momoCallback = async (req, res) => {
   try {
     const payload = req.body;
@@ -84,35 +97,37 @@ const momoCallback = async (req, res) => {
       signature: momoSignature,
     } = payload;
 
+    // 1. Kiểm tra và xác thực chữ ký HMAC-SHA256 gửi từ MoMo
     const raw = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData || ''}&message=${message || ''}&orderId=${orderId}&orderInfo=${orderInfo || ''}&orderType=${orderType || ''}&partnerCode=${partnerCode}&payType=${payload.payType || ''}&requestId=${requestId || ''}&responseTime=${responseTime || ''}&resultCode=${resultCode}`;
     const expected = crypto.createHmac('sha256', secretKey).update(raw).digest('hex');
 
     if (expected !== momoSignature) {
-      console.warn('Momo callback invalid signature', { expected, momoSignature });
-      return res.status(400).send('Invalid signature');
+      console.warn('Chữ ký Callback MoMo không hợp lệ', { expected, momoSignature });
+      return res.status(400).send('Chữ ký không hợp lệ');
     }
 
-    // Find payment by orderId (we stored orderId as transactionId)
+    // 2. Tìm bản ghi giao dịch tương ứng theo orderId
     const payment = await Payment.findOne({ transactionId: orderId }).populate('booking');
     if (!payment) {
-      console.warn('Momo callback: payment not found', orderId);
-      return res.status(404).json({ error: 'Payment not found' });
+      console.warn('Callback MoMo: Không tìm thấy bản ghi thanh toán với orderId', orderId);
+      return res.status(404).json({ error: 'Không tìm thấy thanh toán' });
     }
 
+    // 3. Đối chiếu số tiền giao dịch
     const numericAmount = Number(amount);
     if (payment.amount !== numericAmount) {
-      console.warn('Momo callback amount mismatch', { expected: payment.amount, got: numericAmount });
-      // continue but mark failed
+      console.warn('Số tiền MoMo gửi về không khớp', { expected: payment.amount, got: numericAmount });
       payment.status = 'failed';
       await payment.save();
       return res.json({ status: 'amount_mismatch' });
     }
 
+    // 4. Nếu resultCode === 0 (Thanh toán thành công)
     if (Number(resultCode) === 0) {
       payment.status = 'completed';
       await payment.save();
 
-      // Update booking payment status
+      // Cập nhật đơn hàng thành đã thanh toán ('paid')
       if (payment.booking) {
         const updatedBooking = await Booking.findByIdAndUpdate(
           payment.booking._id,
@@ -130,7 +145,7 @@ const momoCallback = async (req, res) => {
           })
           .populate('concessions.concession', 'name price');
 
-        // Gửi email xác nhận tự động sau khi MoMo thanh toán thành công
+        // 5. Gửi Email vé điện tử kèm mã QR Code tới khách hàng
         if (updatedBooking?.user?.email) {
           try {
             const showtime = updatedBooking.showtime;
@@ -157,7 +172,6 @@ const momoCallback = async (req, res) => {
               : (updatedBooking.seats || []).join(', ');
 
             const appUrl = process.env.APP_URL || 'http://localhost:5173';
-            const verifyUrl = `${appUrl}/ticket/${ticketCode}`;
             const qrBuffer = await QRCode.toBuffer(String(ticketCode), { width: 180, margin: 1 });
 
             const concessionRows = (updatedBooking.concessions || [])
@@ -228,7 +242,7 @@ const momoCallback = async (req, res) => {
               ],
             });
           } catch (emailErr) {
-            console.error('MoMo email send failed (non-fatal):', emailErr.message);
+            console.error('Gửi email vé MoMo thất bại:', emailErr.message);
           }
         }
       }
@@ -239,9 +253,10 @@ const momoCallback = async (req, res) => {
 
     return res.json({ status: 'ok' });
   } catch (error) {
-    console.error('momoCallback error', error.message);
-    return res.status(500).json({ error: 'Callback processing failed' });
+    console.error('Lỗi xử lý callback MoMo:', error.message);
+    return res.status(500).json({ error: 'Xử lý callback thất bại' });
   }
 };
 
 module.exports = { createPayment, momoCallback };
+

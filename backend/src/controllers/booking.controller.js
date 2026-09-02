@@ -15,27 +15,32 @@ const QRCode = require('qrcode');
 const { checkAndExpirePendingBookings } = require('../utils/bookingCleanup');
 const { confirmBookingClearHolds, getConflictingHeldSeats } = require('../sockets/seatSocket');
 
-// @desc    Create a new booking and process payment
-// @route   POST /api/bookings
-// @access  Private
+/**
+ * @desc    Tạo đơn đặt vé xem phim mới và khởi tạo thanh toán
+ * @route   POST /api/bookings
+ * @access  Private (Khách hàng đã đăng nhập)
+ */
 const createBooking = async (req, res, next) => {
   try {
+    // 0. Kiểm tra và giải phóng ghế quá hạn trước khi tiến hành tạo đặt vé
     await checkAndExpirePendingBookings();
     const { showtimeId, seats, concessions = [], paymentMethod = 'card', couponCode } = req.body;
     const userId = req.user._id;
 
+    // Kiểm tra đã chọn ít nhất 1 ghế chưa
     if (!seats || seats.length === 0) {
       res.status(400);
-      throw new Error('Please select at least one seat');
+      throw new Error('Vui lòng chọn ít nhất một ghế');
     }
 
+    // Giới hạn tối đa 8 ghế mỗi đơn hàng
     const MAX_SEATS_PER_BOOKING = 8;
     if (seats.length > MAX_SEATS_PER_BOOKING) {
       res.status(400);
       throw new Error(`Bạn chỉ được đặt tối đa ${MAX_SEATS_PER_BOOKING} ghế mỗi giao dịch. Bạn đang cố đặt ${seats.length} ghế.`);
     }
 
-    // 1. Verify showtime exists
+    // 1. Kiểm tra suất chiếu có tồn tại không
     const showtime = await Showtime.findById(showtimeId)
       .populate('movie')
       .populate('theater')
@@ -43,16 +48,17 @@ const createBooking = async (req, res, next) => {
 
     if (!showtime) {
       res.status(404);
-      throw new Error('Showtime not found');
+      throw new Error('Không tìm thấy suất chiếu');
     }
 
+    // Kiểm tra xem rạp chiếu có đang tạm dừng hoạt động hay không
     if (showtime.theater && showtime.theater.isActive === false) {
       res.status(400);
       throw new Error(`⚠️ Rạp chiếu "${showtime.theater.name}" hiện đang tạm ngưng hoạt động (Inactive). Không thể thực hiện đặt vé tại rạp này.`);
     }
 
-    // 1.5 KIỂM TRA ĐỘ TUỔI CỦA NGƯỜI DÙNG DỰA TRÊN PHÂN LOẠI PHIM
-    const movieRating = showtime.movie.rating; // Ví dụ: 'P', 'T13', 'T16', 'T18'
+    // 1.5 KIỂM TRA ĐỘ TUỔI CỦA NGƯỜI DÙNG DỰA TRÊN PHÂN LOẠI PHIM (P, T13, T16, T18)
+    const movieRating = showtime.movie.rating;
     const userAge = req.user.age;
     
     if (movieRating && movieRating !== 'P') {
@@ -66,6 +72,7 @@ const createBooking = async (req, res, next) => {
         throw new Error(`Bạn chưa đủ tuổi để xem phim này. Phim yêu cầu độ tuổi từ ${requiredAge} trở lên (bạn hiện ${userAge} tuổi).`);
       }
     }
+
 
     // 2. Check if showtime has already passed
     const currentTime = Date.now();
@@ -522,9 +529,11 @@ const createBooking = async (req, res, next) => {
   }
 };
 
-// @desc    Get current user's booking history
-// @route   GET /api/bookings/my
-// @access  Private
+/**
+ * @desc    Lấy danh sách lịch sử đặt vé của người dùng đang đăng nhập
+ * @route   GET /api/bookings/my
+ * @access  Private (Yêu cầu Token)
+ */
 const getMyBookings = async (req, res, next) => {
   try {
     await checkAndExpirePendingBookings();
@@ -543,7 +552,7 @@ const getMyBookings = async (req, res, next) => {
       .populate('coupon')
       .sort({ bookingDate: -1 });
 
-    // Auto-fill snapshot movieTitle và seatDetails cho các booking đã tạo trước đó
+    // Tự động bổ sung snapshot movieTitle và seatDetails cho các đơn vé cũ nếu thiếu
     for (const b of bookings) {
       let needsSave = false;
       if (!b.movieTitle && b.showtime?.movie?.title) {
@@ -600,9 +609,11 @@ const getMyBookings = async (req, res, next) => {
   }
 };
 
-// @desc    Get single booking details by ID
-// @route   GET /api/bookings/:id
-// @access  Private
+/**
+ * @desc    Lấy chi tiết một đơn đặt vé theo ID
+ * @route   GET /api/bookings/:id
+ * @access  Private (Chính chủ đơn vé hoặc Admin)
+ */
 const getBookingById = async (req, res, next) => {
   try {
     await checkAndExpirePendingBookings();
@@ -622,10 +633,10 @@ const getBookingById = async (req, res, next) => {
 
     if (!booking) {
       res.status(404);
-      throw new Error('Booking not found');
+      throw new Error('Không tìm thấy đơn đặt vé');
     }
 
-    // Auto-fill seatDetails nếu chưa có
+    // Tự động điền chi tiết ghế seatDetails nếu chưa có
     if (!booking.seatDetails || booking.seatDetails.length === 0) {
       const showtime = booking.showtime;
       const roomId = showtime?.room?._id || showtime?.room;
@@ -661,13 +672,13 @@ const getBookingById = async (req, res, next) => {
       await booking.save();
     }
 
-    // Check if the booking belongs to the current user (or user is admin)
+    // Kiểm tra quyền sở hữu đơn đặt vé
     if (booking.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       res.status(403);
-      throw new Error('Not authorized to access this booking record');
+      throw new Error('Bạn không có quyền truy cập vào thông tin đơn đặt vé này');
     }
 
-    // Get transaction details
+    // Lấy thông tin giao dịch thanh toán kèm theo
     const payment = await Payment.findOne({ booking: booking._id });
 
     res.json({
@@ -682,22 +693,24 @@ const getBookingById = async (req, res, next) => {
   }
 };
 
-// @desc    Get booking payment status
-// @route   GET /api/bookings/:id/status
-// @access  Private
+/**
+ * @desc    Lấy trạng thái thanh toán hiện tại của một đơn đặt vé
+ * @route   GET /api/bookings/:id/status
+ * @access  Private (Chính chủ hoặc Admin)
+ */
 const getBookingStatus = async (req, res, next) => {
   try {
     await checkAndExpirePendingBookings();
     const booking = await Booking.findById(req.params.id);
     if (!booking) {
       res.status(404);
-      throw new Error('Booking not found');
+      throw new Error('Không tìm thấy đơn đặt vé');
     }
     
-    // Check ownership
+    // Kiểm tra quyền sở hữu
     if (booking.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       res.status(403);
-      throw new Error('Not authorized to access this booking record');
+      throw new Error('Bạn không có quyền truy cập đơn đặt vé này');
     }
 
     res.json({
@@ -709,9 +722,11 @@ const getBookingStatus = async (req, res, next) => {
   }
 };
 
-// @desc    Simulate payment success (updates status to paid and sends email)
-// @route   POST /api/bookings/:id/simulate-pay
-// @access  Private
+/**
+ * @desc    Mô phỏng thanh toán thành công (Chuyển trạng thái sang paid & Gửi Email vé điện tử)
+ * @route   POST /api/bookings/:id/simulate-pay
+ * @access  Private (Chính chủ hoặc Admin)
+ */
 const simulatePayment = async (req, res, next) => {
   try {
     const booking = await Booking.findById(req.params.id)
@@ -722,42 +737,42 @@ const simulatePayment = async (req, res, next) => {
 
     if (!booking) {
       res.status(404);
-      throw new Error('Booking not found');
+      throw new Error('Không tìm thấy đơn đặt vé');
     }
 
-    // Check ownership
+    // Kiểm tra quyền truy cập
     if (booking.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       res.status(403);
-      throw new Error('Not authorized');
+      throw new Error('Bạn không có quyền thao tác trên đơn đặt vé này');
     }
 
     if (booking.paymentStatus === 'paid') {
       return res.json({
         success: true,
-        message: 'Booking is already paid',
+        message: 'Đơn đặt vé này đã được thanh toán trước đó',
         data: booking,
       });
     }
 
-    // 1. Update Booking payment status
+    // 1. Cập nhật trạng thái thanh toán của Booking thành 'paid'
     booking.paymentStatus = 'paid';
     await booking.save();
 
-    // 2. Update Payment Transaction
+    // 2. Cập nhật trạng thái giao dịch trong Payment model
     const payment = await Payment.findOne({ booking: booking._id });
     if (payment) {
       payment.status = 'completed';
       await payment.save();
     }
 
-    // 3. Re-fetch to get ticketCode
+    // 3. Lấy lại vé để trích xuất mã ticketCode
     const savedBooking = await Booking.findById(booking._id);
     const ticketCode = savedBooking.ticketCode;
     const appUrl = process.env.APP_URL || 'http://localhost:5173';
     const verifyUrl = `${appUrl}/ticket/${ticketCode}`;
     const qrBuffer = await QRCode.toBuffer(String(ticketCode), { width: 180, margin: 1 });
 
-    // 4. Build email data
+    // 4. Xây dựng nội dung Email xác nhận vé xem phim
     const timeFormatted = new Date(booking.showtime.startTime).toLocaleTimeString('vi-VN', {
       hour: '2-digit',
       minute: '2-digit',
@@ -844,12 +859,12 @@ const simulatePayment = async (req, res, next) => {
         ],
       });
     } catch (emailErr) {
-      console.error('Email sending failed:', emailErr);
+      console.error('Lỗi gửi email xác nhận:', emailErr);
     }
 
     res.json({
       success: true,
-      message: 'Payment simulated and booking confirmed',
+      message: 'Đã mô phỏng thanh toán thành công và xác nhận đặt vé',
       data: savedBooking || booking,
     });
   } catch (error) {
@@ -857,34 +872,36 @@ const simulatePayment = async (req, res, next) => {
   }
 };
 
-// @desc    Cancel a pending booking (releases seats and deletes booking record)
-// @route   DELETE /api/bookings/:id/cancel
-// @access  Private
+/**
+ * @desc    Hủy đơn đặt vé ở trạng thái chờ (pending), giải phóng các ghế đã chọn trong suất chiếu
+ * @route   DELETE /api/bookings/:id/cancel
+ * @access  Private (Chính chủ hoặc Admin)
+ */
 const cancelBooking = async (req, res, next) => {
   try {
     const booking = await Booking.findById(req.params.id);
     if (!booking) {
       res.status(404);
-      throw new Error('Booking not found');
+      throw new Error('Không tìm thấy đơn đặt vé');
     }
 
-    // Check ownership
+    // Kiểm tra quyền hủy
     if (booking.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       res.status(403);
-      throw new Error('Not authorized');
+      throw new Error('Bạn không có quyền thao tác trên đơn này');
     }
 
     if (booking.paymentStatus !== 'pending') {
       res.status(400);
-      throw new Error('Only pending bookings can be cancelled');
+      throw new Error('Chỉ có thể hủy đơn đặt vé đang ở trạng thái chờ thanh toán (pending)');
     }
 
-    // Release showtime booked seats
+    // 1. Trả lại danh sách ghế đã giữ trong suất chiếu
     await Showtime.findByIdAndUpdate(booking.showtime, {
       $pull: { bookedSeats: { $in: booking.seats } },
     });
 
-    // Update payment and booking to failed instead of deleting
+    // 2. Chuyển trạng thái đơn và giao dịch sang thất bại/hủy
     booking.paymentStatus = 'failed';
     await booking.save();
 
@@ -895,16 +912,18 @@ const cancelBooking = async (req, res, next) => {
 
     res.json({
       success: true,
-      message: 'Booking cancelled (marked failed) and seats released successfully',
+      message: 'Hủy đơn đặt vé thành công và đã giải phóng ghế',
     });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Verify ticket info by ticketCode (public — no auth required, for QR scan)
-// @route   GET /api/bookings/verify/:ticketCode
-// @access  Public
+/**
+ * @desc    Xác thực thông tin vé qua mã ticketCode (Công khai - Dùng cho tính năng quét mã QR check-in tại rạp)
+ * @route   GET /api/bookings/verify/:ticketCode
+ * @access  Public
+ */
 const verifyTicket = async (req, res, next) => {
   try {
     const rawCode = req.params.ticketCode;
@@ -927,7 +946,7 @@ const verifyTicket = async (req, res, next) => {
       orConditions.push({ _id: new mongoose.Types.ObjectId(rawCode.trim()) });
     }
 
-    // Tìm theo ticketCode hoặc ObjectId
+    // 1. Tìm đơn đặt vé theo mã ticketCode hoặc ObjectId
     let booking = await Booking.findOne({ $or: orConditions })
       .populate('user', 'username email phone')
       .populate({
@@ -940,6 +959,7 @@ const verifyTicket = async (req, res, next) => {
       })
       .populate('concessions.concession', 'name price');
 
+    // 2. Nếu chưa thấy, áp dụng thuật toán so khớp mềm (Flexible matching)
     if (!booking) {
       const allBookings = await Booking.find({})
         .populate('user', 'username email phone')
@@ -984,7 +1004,7 @@ const verifyTicket = async (req, res, next) => {
       });
     }
 
-    // Chỉ trả về thông tin cần thiết để hiển thị, không lộ data nhạy cảm
+    // 3. Chuẩn hóa dữ liệu hiển thị vé, che giấu bớt thông tin nhạy cảm của khách hàng
     const ticketInfo = {
       ticketCode: booking.ticketCode,
       ticketStatus: booking.ticketStatus,
@@ -997,7 +1017,7 @@ const verifyTicket = async (req, res, next) => {
       paymentMethod: booking.paymentMethod,
       customer: {
         username: booking.user?.username,
-        // Email ẩn 1 phần để bảo mật (abc@gmail.com → a**@gmail.com)
+        // Che mờ Email bảo mật (abc@gmail.com -> a**@gmail.com)
         email: booking.user?.email
           ? booking.user.email.replace(/(.{1}).+(@.+)/, '$1**$2')
           : null,
@@ -1036,3 +1056,4 @@ module.exports = {
   cancelBooking,
   verifyTicket,
 };
+

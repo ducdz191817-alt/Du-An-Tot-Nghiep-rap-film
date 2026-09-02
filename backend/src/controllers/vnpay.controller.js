@@ -5,7 +5,11 @@ const Showtime = require('../models/Showtime.model');
 const sendEmail = require('../utils/sendEmail');
 const QRCode = require('qrcode');
 
-// Helper to format Date for VNPay (yyyyMMddHHmmss)
+/**
+ * @helper   Định dạng thời gian theo chuẩn yyyyMMddHHmmss của VNPay
+ * @param    {Date} date - Đối tượng Date cần định dạng
+ * @returns  {string} Chuỗi thời gian yyyyMMddHHmmss
+ */
 const formatVnpayDate = (date) => {
   const pad = (n) => (n < 10 ? '0' + n : n);
   return date.getFullYear().toString() +
@@ -16,6 +20,10 @@ const formatVnpayDate = (date) => {
     pad(date.getSeconds());
 };
 
+/**
+ * @helper   Gửi Email xác nhận đặt vé thành công kèm mã QR Code cho khách hàng thanh toán qua VNPay
+ * @param    {Object} booking - Đối tượng Booking đã được populate dữ liệu đầy đủ
+ */
 const sendBookingConfirmationEmail = async (booking) => {
   try {
     const timeString = new Date(booking.showtime.startTime).toLocaleTimeString('vi-VN', {
@@ -121,19 +129,25 @@ const sendBookingConfirmationEmail = async (booking) => {
         },
       ],
     });
-    console.log(`Confirmation email sent successfully to ${booking.user.email}`);
+    console.log(`Đã gửi thành công email xác nhận vé tới ${booking.user.email}`);
   } catch (error) {
-    console.error('Error sending confirmation email:', error);
+    console.error('Lỗi gửi email xác nhận vé:', error);
   }
 };
 
+/**
+ * @desc    Tạo yêu cầu thanh toán chuyển hướng tới Cổng VNPay (Tạo chữ ký HMAC SHA512)
+ * @route   POST /api/payment/vnpay/create
+ * @access  Private
+ */
 const createPayment = async (req, res, next) => {
   try {
     const { bookingId, amount, orderInfo } = req.body;
     if (!bookingId || !amount) {
-      return res.status(400).json({ error: 'Missing bookingId or amount' });
+      return res.status(400).json({ error: 'Thiếu bookingId hoặc số tiền thanh toán' });
     }
 
+    // 1. Cấu hình cổng VNPay từ .env
     const tmnCode = process.env.VNP_TMN_CODE || '2QXUI2C7';
     const secretKey = process.env.VNP_HASH_SECRET || 'TS858W9CLXN6HO482G6CGB21H0B00C4D';
     let vnpUrl = process.env.VNP_URL || 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
@@ -141,8 +155,9 @@ const createPayment = async (req, res, next) => {
 
     const ipAddr = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
     const createDate = formatVnpayDate(new Date());
-    const txnRef = `${bookingId}_${Date.now()}`; // Unique reference per payment attempt
+    const txnRef = `${bookingId}_${Date.now()}`; // Mã giao dịch duy nhất cho mỗi lượt thử thanh toán
 
+    // 2. Thiết lập các tham số gửi sang VNPay
     let vnp_Params = {};
     vnp_Params['vnp_Version'] = '2.1.0';
     vnp_Params['vnp_Command'] = 'pay';
@@ -152,12 +167,12 @@ const createPayment = async (req, res, next) => {
     vnp_Params['vnp_TxnRef'] = txnRef;
     vnp_Params['vnp_OrderInfo'] = orderInfo || `Thanh toan ve xem phim booking ${bookingId}`;
     vnp_Params['vnp_OrderType'] = 'other';
-    vnp_Params['vnp_Amount'] = amount * 100;
+    vnp_Params['vnp_Amount'] = amount * 100; // VNPay tính theo đơn vị Đồng * 100
     vnp_Params['vnp_ReturnUrl'] = returnUrl;
     vnp_Params['vnp_IpAddr'] = ipAddr;
     vnp_Params['vnp_CreateDate'] = createDate;
 
-    // Sort parameters alphabetically
+    // 3. Sắp xếp thứ tự tham số theo Alphabet để tính chữ ký SHA512
     const sortedKeys = Object.keys(vnp_Params).sort();
     let signData = '';
     let urlParams = '';
@@ -173,12 +188,13 @@ const createPayment = async (req, res, next) => {
       urlParams += key + '=' + encodeURIComponent(value).replace(/%20/g, '+');
     }
 
+    // 4. Tạo chữ ký HMAC SHA512
     const hmac = crypto.createHmac('sha512', secretKey);
     const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
 
     vnpUrl += '?' + urlParams + '&vnp_SecureHash=' + signed;
 
-    // Create Payment record (pending)
+    // 5. Lưu bản ghi thanh toán ở trạng thái pending
     await Payment.create({
       booking: bookingId,
       paymentMethod: 'vnpay',
@@ -189,11 +205,16 @@ const createPayment = async (req, res, next) => {
 
     return res.json({ payUrl: vnpUrl });
   } catch (error) {
-    console.error('createPayment VNPay error', error.message);
+    console.error('Lỗi tạo thanh toán VNPay:', error.message);
     next(error);
   }
 };
 
+/**
+ * @desc    Xử lý kết quả trả về từ cổng thanh toán VNPay (VNPay Return/Callback)
+ * @route   GET /api/payment/vnpay/callback
+ * @access  Public
+ */
 const vnpayCallback = async (req, res, next) => {
   try {
     const vnp_Params = { ...req.query };
@@ -202,7 +223,7 @@ const vnpayCallback = async (req, res, next) => {
     delete vnp_Params['vnp_SecureHash'];
     delete vnp_Params['vnp_SecureHashType'];
 
-    // Verify signature
+    // 1. Kiểm tra và xác thực chữ ký bảo mật HMAC-SHA512
     const secretKey = process.env.VNP_HASH_SECRET || 'TS858W9CLXN6HO482G6CGB21H0B00C4D';
     const sortedKeys = Object.keys(vnp_Params).sort();
     let signData = '';
@@ -220,26 +241,29 @@ const vnpayCallback = async (req, res, next) => {
     const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
 
     if (signed !== secureHash) {
-      return res.status(400).json({ success: false, error: 'Invalid VNPay secure hash' });
+      return res.status(400).json({ success: false, error: 'Chữ ký VNPay Secure Hash không hợp lệ' });
     }
 
     const txnRef = vnp_Params['vnp_TxnRef'];
     const responseCode = vnp_Params['vnp_ResponseCode'];
     const amount = Number(vnp_Params['vnp_Amount']) / 100;
 
+    // 2. Tìm thông tin giao dịch trong database
     const payment = await Payment.findOne({ transactionId: txnRef }).populate('booking');
     if (!payment) {
-      return res.status(404).json({ success: false, error: 'Payment record not found' });
+      return res.status(404).json({ success: false, error: 'Không tìm thấy bản ghi thanh toán' });
     }
 
+    // 3. Nếu vnp_ResponseCode === '00' (Thanh toán thành công)
     if (responseCode === '00') {
       payment.status = 'completed';
       await payment.save();
 
       if (payment.booking) {
+        // Cập nhật đơn hàng sang trạng thái 'paid'
         await Booking.findByIdAndUpdate(payment.booking._id, { paymentStatus: 'paid' });
 
-        // Retrieve populated booking to send receipt email
+        // Lấy lại booking với đầy đủ thông tin chi tiết để gửi mail
         const populatedBooking = await Booking.findById(payment.booking._id)
           .populate('user')
           .populate({
@@ -253,39 +277,40 @@ const vnpayCallback = async (req, res, next) => {
           .populate('concessions.concession');
 
         if (populatedBooking) {
-          // Send Gmail ticket receipt confirmation
+          // Gửi Email xác nhận vé cho khách hàng
           await sendBookingConfirmationEmail(populatedBooking);
         }
       }
 
       return res.json({ success: true, bookingId: payment.booking ? payment.booking._id : null });
     } else {
+      // 4. Nếu thanh toán thất bại
       payment.status = 'failed';
       await payment.save();
       
-      // Xóa booking và giải phóng ghế khi thanh toán thất bại
+      // Tự động hủy đơn hàng và giải phóng ghế đã giữ khi thanh toán thất bại
       if (payment.booking) {
         const bookingId = payment.booking._id || payment.booking;
-        // Lấy thông tin booking để biết ghế nào cần giải phóng
         const failedBooking = await Booking.findById(bookingId);
         if (failedBooking) {
-          // Giải phóng ghế trong showtime
+          // Trả lại ghế giữ trong suất chiếu
           await Showtime.findByIdAndUpdate(failedBooking.showtime, {
             $pull: { bookedSeats: { $in: failedBooking.seats } },
           });
-          // Xóa booking khỏi database
+          // Xóa đơn giữ chỗ tạm thời khỏi DB
           await Booking.findByIdAndDelete(bookingId);
         }
-        // Xóa payment record
+        // Xóa bản ghi thanh toán hỏng
         await Payment.deleteMany({ booking: bookingId });
       }
 
       return res.json({ success: false, error: `VNPay trả về mã thất bại: ${responseCode}` });
     }
   } catch (error) {
-    console.error('vnpayCallback error', error.message);
+    console.error('Lỗi vnpayCallback:', error.message);
     next(error);
   }
 };
 
 module.exports = { createPayment, vnpayCallback };
+
