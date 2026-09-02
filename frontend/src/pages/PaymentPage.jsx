@@ -252,14 +252,14 @@ export const PaymentPage = () => {
     try {
       // Tải chi tiết booking đầy đủ để hiển thị trong Success Modal
       const detailRes = await bookingService.getBookingById(bookingId);
-      
+
       // Xóa Redux booking state
       clearBooking();
-      
+
       // Ẩn màn hình QR / Momo
       setShowQRScreen(false);
       setShowMomoScreen(false);
-      
+
       // Mở modal thành công
       setSuccessModal({ open: true, bookingResult: detailRes });
     } catch (err) {
@@ -284,7 +284,7 @@ export const PaymentPage = () => {
       setBookingId(null);
       setQrData(null);
       setMomoData(null);
-      
+
       // If time expires automatically, go to booking history.
       // If user cancels manually, stay on the payment selection page instead of going back to seat selection.
       if (!isManual) {
@@ -352,7 +352,7 @@ export const PaymentPage = () => {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
         <div className="bg-white dark:bg-[#151a28] border border-gray-200 dark:border-gray-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
-          
+
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-4 gap-4">
             <div>
@@ -364,7 +364,7 @@ export const PaymentPage = () => {
                 {description}
               </p>
             </div>
-            
+
             {/* Đồng hồ đếm ngược */}
             <div className="flex items-center gap-2 bg-gray-100 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-800 text-gray-800 dark:text-zinc-300 font-extrabold text-sm px-4 py-2 rounded-2xl shrink-0">
               <Clock size={16} className="text-amber-600 dark:text-amber-500" />
@@ -374,7 +374,7 @@ export const PaymentPage = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            
+
             {/* Cột trái: Mã QR Code */}
             <div className="flex flex-col items-center space-y-4">
               <div className="bg-white p-4 rounded-3xl flex justify-center items-center shadow-lg border border-zinc-200 w-64 h-64 relative group">
@@ -473,7 +473,7 @@ export const PaymentPage = () => {
                       <span className="text-gray-600 dark:text-zinc-500 font-semibold">Ngân hàng nhận</span>
                       <span className="text-gray-900 dark:text-zinc-200 font-bold">{qrData.bankId}</span>
                     </div>
-                    
+
                     <div className="flex justify-between items-center py-3">
                       <span className="text-gray-600 dark:text-zinc-500 font-semibold">Số tài khoản</span>
                       <div className="flex items-center gap-2">
@@ -540,7 +540,7 @@ export const PaymentPage = () => {
 
           {/* Dưới cùng: Nút thao tác */}
           <div className="flex flex-col sm:flex-row items-center justify-between border-t border-dark-border pt-6 gap-4">
-            
+
             <div className="flex items-center gap-2 w-full sm:w-auto">
               {isMomoScreen && momoData?.payUrl && (
                 <>

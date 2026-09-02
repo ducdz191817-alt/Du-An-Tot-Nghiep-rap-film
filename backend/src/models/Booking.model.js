@@ -1,17 +1,25 @@
+/**
+ * TẦNG DỮ LIỆU (MODEL): Booking.model.js
+ * Nhiệm vụ: Định nghĩa cấu trúc bản ghi "Vé xem phim" (Hóa đơn) lưu trong Database (MongoDB).
+ * Bản ghi này chứa mọi thông tin: Ai đặt, phim gì, ghế nào, tổng tiền, mã vé QR code.
+ */
 const mongoose = require('mongoose');
 
 const BookingSchema = new mongoose.Schema(
   {
+    // Liên kết (Tham chiếu) tới bảng User: Ai là người mua cái vé này?
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
+    // Liên kết tới bảng Suất Chiếu: Khách mua vé suất nào?
     showtime: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Showtime',
       required: true,
     },
+    // Mảng chứa các mã ghế đã mua (Ví dụ: ["A1", "A2", "A3"])
     seats: {
       type: [String], // Array of seat codes, e.g., ['A1', 'A2']
       required: true,
@@ -40,15 +48,18 @@ const BookingSchema = new mongoose.Schema(
         },
       },
     ],
+    // Tổng số tiền khách hàng phải trả (Đã cộng dồn ghế, bắp nước và trừ khuyến mãi)
     totalPrice: {
       type: Number,
       required: true,
     },
+    // Trạng thái hóa đơn (pending = đang chờ thanh toán, paid = thanh toán thành công)
     paymentStatus: {
       type: String,
       enum: ['pending', 'paid', 'failed', 'refunded'],
       default: 'pending',
     },
+    // Khách hàng chọn trả bằng cổng nào? (Ví dụ: vnpay, vietqr)
     paymentMethod: {
       type: String,
       enum: ['cash', 'card', 'vnpay', 'momo', 'vietqr'],
@@ -67,7 +78,9 @@ const BookingSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
-    // ── SNAPSHOT THÔNG TIN PHIM TẠI THỜI ĐIỂM ĐẶT VÉ ─────────────────────────
+    // ── BẢO TOÀN LỊCH SỬ DỮ LIỆU (SNAPSHOT) ─────────────────────────
+    // Dù sau này Admin có xóa bộ phim khỏi Rạp, thì trong lịch sử vé của khách 
+    // vẫn còn lưu giữ lại cái tên phim này (Bảo toàn dữ liệu vĩnh viễn).
     movieTitle: {
       type: String,
       default: '',
@@ -76,7 +89,7 @@ const BookingSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
-    // ── QUẢN LÝ TRẠNG THÁI VÉ & IN VÉ ──────────────────────────────────────
+    // ── QUẢN LÝ MÃ QR & TRẠNG THÁI CHECK-IN TẠI RẠP ──────────────────────
     ticketCode: {
       type: String,
       unique: true,
@@ -126,7 +139,9 @@ const BookingSchema = new mongoose.Schema(
   }
 );
 
-// Pre-save hook để tự động sinh ticketCode dạng TKT-YYMMDD-XXXX nếu chưa có
+// HOOK TỰ ĐỘNG (Pre-save hook): 
+// Mỗi khi chuẩn bị lưu cái vé này vào Database, hệ thống sẽ tự động gọi hàm này
+// để sinh ra một mã vé ngẫu nhiên (dùng để quét mã QR) ví dụ như: TKT-240902-8F9D.
 BookingSchema.pre('save', function (next) {
   if (!this.ticketCode) {
     const d = this.bookingDate || new Date();

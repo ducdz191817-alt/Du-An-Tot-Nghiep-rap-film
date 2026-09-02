@@ -40,6 +40,8 @@ const createBooking = async (req, res, next) => {
       throw new Error(`Bạn chỉ được đặt tối đa ${MAX_SEATS_PER_BOOKING} ghế mỗi giao dịch. Bạn đang cố đặt ${seats.length} ghế.`);
     }
 
+    // BƯỚC 1: KIỂM TRA SUẤT CHIẾU VÀ ĐIỀU KIỆN CƠ BẢN
+    // - Tìm suất chiếu trong Database, kết nối (populate) với bảng Phim, Rạp, Phòng
     // 1. Kiểm tra suất chiếu có tồn tại không
     const showtime = await Showtime.findById(showtimeId)
       .populate('movie')
@@ -74,6 +76,8 @@ const createBooking = async (req, res, next) => {
     }
 
 
+    // BƯỚC 2: KIỂM TRA THỜI GIAN CHIẾU
+    // - Ngăn chặn khách hàng dùng mánh lới (hack) để mua vé của suất chiếu ở quá khứ
     // 2. Check if showtime has already passed
     const currentTime = Date.now();
     const showtimeTimestamp = showtime.startTime instanceof Date
@@ -85,6 +89,9 @@ const createBooking = async (req, res, next) => {
       throw new Error('Cannot book tickets for a past showtime');
     }
 
+    // BƯỚC 3: KIỂM TRA GHẾ TRÙNG (CONFLICT SEATS)
+    // - Lấy danh sách các ghế ĐÃ BÁN THÀNH CÔNG (từ biến bookedSeats của suất chiếu)
+    // - Kiểm tra xem những ghế khách vừa chọn có bị trùng với ghế đã bán không
     // 3. KIỂM TRA: Xem ghế khách hàng chọn đã được đặt trước đó chưa
     const bookedSeatSet = new Set(
       (showtime.bookedSeats || []).map((seatCode) => String(seatCode).trim().toUpperCase())
@@ -102,6 +109,10 @@ const createBooking = async (req, res, next) => {
       );
     }
 
+    // BƯỚC 4: KIỂM TRA TRANH CHẤP QUA SOCKET.IO (RACE CONDITION)
+    // - Đây là chốt chặn cực kì quan trọng! 
+    // - Có thể ghế chưa ai MUA, nhưng đang có người khác NHẤN GIỮ (màu nâu trên màn hình).
+    // - Hàm getConflictingHeldSeats sẽ kiểm tra trên RAM xem ghế này có bị ai giữ không.
     // ==========================================
     // FIX BUG 1: KIỂM TRA RACE CONDITION (TRÁNH CƯỚP GHẾ)
     // ==========================================
@@ -116,6 +127,8 @@ const createBooking = async (req, res, next) => {
       );
     }
 
+    // BƯỚC 5: LẤY CẤU HÌNH GHẾ THỰC TẾ TỪ DATABASE
+    // - Truy vấn tất cả cấu hình ghế thực tế của phòng chiếu này để chuẩn bị kiểm tra ghế mồ côi và tính tiền vé.
     // 4. TÍNH TOÁN GIÁ VÉ & KIỂM TRA TRẠNG THÁI GHẾ (CÓ BỊ HỎNG/KHOÁ KHÔNG)
     // Truy vấn tất cả cấu hình ghế thực tế của phòng chiếu này từ database
     let seatPriceSum = 0;
@@ -196,6 +209,9 @@ const createBooking = async (req, res, next) => {
     }
 
 
+    // BƯỚC 6: TỰ ĐỘNG TÍNH LẠI TIỀN GHẾ (BẢO MẬT BACKEND)
+    // - Backend KHÔNG TIN TƯỞNG TỔNG TIỀN MÀ FRONTEND GỬI LÊN (để chống hacker dùng F12 đổi giá).
+    // - Tự động lặp qua từng ghế, lấy giá cơ bản + phụ thu ghế VIP/Đôi để tính lại từ đầu.
     const seatDetails = [];
     for (const seatCode of seats) {
       // Tách mã ghế ví dụ: "A12" thành hàng "A" và số "12"
@@ -244,6 +260,8 @@ const createBooking = async (req, res, next) => {
       });
     }
 
+    // BƯỚC 7: TÍNH TIỀN BẮP NƯỚC (CONCESSIONS)
+    // - Tương tự như tính tiền ghế, chọc xuống Database lấy giá gốc của bắp nước nhân với số lượng.
     // 5. Calculate Concession Prices
     let concessionPriceSum = 0;
     const concessionItems = [];
@@ -265,6 +283,8 @@ const createBooking = async (req, res, next) => {
 
     let totalPrice = seatPriceSum + concessionPriceSum;
 
+    // BƯỚC 8: ÁP DỤNG MÃ GIẢM GIÁ (COUPON) NẾU CÓ
+    // - Kiểm tra hạn sử dụng, điều kiện hóa đơn tối thiểu, tính ra số tiền được giảm.
     // 5.5 Process Coupon if provided
     let discountAmount = 0;
     let couponId = null;
@@ -314,6 +334,8 @@ const createBooking = async (req, res, next) => {
       await Coupon.findByIdAndUpdate(couponDoc._id, { $inc: { usageCount: 1 } });
     }
 
+    // BƯỚC 9: GHI DỮ LIỆU VÀO SUẤT CHIẾU (SHOWTIME)
+    // - Dùng lệnh update $addToSet của MongoDB để đảm bảo tính an toàn (Atomic), nhét mã ghế vào "Đã Bán".
     // 6. Register/Book the seats in the Showtime document atomically to avoid race conditions
     const updatedShowtime = await Showtime.findOneAndUpdate(
       {
@@ -336,6 +358,8 @@ const createBooking = async (req, res, next) => {
     // Release real-time holds and broadcast seat_booked to all clients
     confirmBookingClearHolds(showtimeId, normalizedSeats, userId);
 
+    // BƯỚC 10: TẠO HÓA ĐƠN (BOOKING) VÀ GIAO DỊCH THANH TOÁN (PAYMENT)
+    // - Sinh mã vé ngẫu nhiên (Ví dụ: TKT-2024-ABCD). Tạo 1 Document hóa đơn chờ thanh toán trong DB.
     // 7. Create the Booking
     const isVietQR = paymentMethod === 'vietqr';
     const isPendingPayment = ['vietqr', 'momo', 'vnpay'].includes(paymentMethod);
@@ -407,6 +431,7 @@ const createBooking = async (req, res, next) => {
       });
     }
 
+    // BƯỚC 11: LẤY MÃ VÉ VÀ GỬI EMAIL XÁC NHẬN CHO KHÁCH HÀNG
     // 9. Re-fetch booking để lấy ticketCode vừa được sinh ra bởi pre-save hook (cho các trường hợp thanh toán trực tiếp/cash)
     const savedBooking = await Booking.findById(booking._id);
 
