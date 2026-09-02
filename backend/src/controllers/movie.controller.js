@@ -1,31 +1,33 @@
 const Movie = require('../models/Movie.model');
 
-// @desc    Get all movies with filters
-// @route   GET /api/movies
-// @access  Public
+/**
+ * @desc    Lấy danh sách phim có hỗ trợ các bộ lọc (trạng thái, tìm kiếm, ngày chiếu, thể loại, độ tuổi)
+ * @route   GET /api/movies
+ * @access  Public
+ */
 const getMovies = async (req, res, next) => {
   try {
     const { status, search, genre, genres, rating, date } = req.query;
 
     const query = {};
 
-    // Filter by status ('now-showing', 'coming-soon', 'preview', 'pre-release', etc.)
+    // 1. Lọc theo trạng thái phim ('now-showing', 'coming-soon', v.v.)
     if (status) {
       if (status === 'admin_all') {
-        // Lấy toàn bộ các trạng thái phim cho quản trị viên
+        // Trạng thái dành cho quản trị viên: Lấy toàn bộ danh sách phim không loại trừ
         delete query.status;
       } else if (status === 'all') {
-        // Công khai: "Tất cả phim" chỉ bao gồm các phim đang/sắp chiếu (loại bỏ ended, hidden, stopped, suspended, cancelled)
+        // Dành cho khách hàng công khai: "Tất cả phim" chỉ gồm phim đang/sắp chiếu (loại bỏ ended, hidden, stopped, suspended, cancelled)
         query.status = { $nin: ['hidden', 'suspended', 'cancelled', 'stopped', 'ended'] };
       } else {
         query.status = status;
       }
     } else {
-      // Default: do not show inactive/ended statuses for public queries
+      // Mặc định cho người dùng: Không hiển thị các phim bị ẩn, tạm dừng hoặc đã kết thúc
       query.status = { $nin: ['hidden', 'suspended', 'cancelled', 'stopped', 'ended'] };
     }
 
-    // Filter by title / description search query
+    // 2. Tìm kiếm theo tên phim hoặc nội dung mô tả (không phân biệt hoa/thường)
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
@@ -33,7 +35,7 @@ const getMovies = async (req, res, next) => {
       ];
     }
 
-    // Filter by show date
+    // 3. Lọc phim theo ngày chiếu cụ thể
     if (date) {
       try {
         const Showtime = require('../models/Showtime.model');
@@ -42,6 +44,7 @@ const getMovies = async (req, res, next) => {
         const endOfDay = new Date(date);
         endOfDay.setHours(23, 59, 59, 999);
 
+        // Tìm các suất chiếu diễn ra trong ngày được chọn
         const showtimes = await Showtime.find({
           startTime: {
             $gte: startOfDay,
@@ -49,14 +52,15 @@ const getMovies = async (req, res, next) => {
           },
         }).select('movie');
 
+        // Lấy danh sách ID các phim có suất chiếu trong ngày đó
         const movieIds = showtimes.map((s) => s.movie);
         query._id = { $in: movieIds };
       } catch (err) {
-        console.error('Error filtering movies by date:', err);
+        console.error('Lỗi khi lọc phim theo ngày:', err);
       }
     }
 
-    // Filter by genre or multi-genre selection
+    // 4. Lọc phim theo một hoặc nhiều thể loại (genre / genres)
     const genreValues = genres || genre;
     if (genreValues) {
       const genreList = Array.isArray(genreValues)
@@ -71,11 +75,12 @@ const getMovies = async (req, res, next) => {
       }
     }
 
-    // Filter by rating
+    // 5. Lọc phim theo phân loại độ tuổi (phù hợp với rating P, K, T13, T16, T18...)
     if (rating) {
       query.rating = rating;
     }
 
+    // 6. Thực hiện Aggregate tính toán số lượt đánh giá và điểm đánh giá trung bình cho mỗi phim
     const movies = await Movie.aggregate([
       { $match: query },
       {
@@ -100,11 +105,11 @@ const getMovies = async (req, res, next) => {
       },
       {
         $project: {
-          movieReviews: 0,
+          movieReviews: 0, // Xóa mảng chi tiết reviews để tối ưu dung lượng kết quả trả về
         },
       },
       {
-        $sort: { createdAt: -1 },
+        $sort: { createdAt: -1 }, // Sắp xếp phim mới thêm lên đầu
       },
     ]);
 
@@ -118,16 +123,18 @@ const getMovies = async (req, res, next) => {
   }
 };
 
-// @desc    Get single movie by ID
-// @route   GET /api/movies/:id
-// @access  Public
+/**
+ * @desc    Lấy thông tin chi tiết một bộ phim theo ID
+ * @route   GET /api/movies/:id
+ * @access  Public
+ */
 const getMovieById = async (req, res, next) => {
   try {
     const movie = await Movie.findById(req.params.id);
 
     if (!movie) {
       res.status(404);
-      throw new Error('Movie not found');
+      throw new Error('Không tìm thấy phim');
     }
 
     res.json({
@@ -139,19 +146,21 @@ const getMovieById = async (req, res, next) => {
   }
 };
 
-// @desc    Get top best selling movies
-// @route   GET /api/movies/best-sellers
-// @access  Public
+/**
+ * @desc    Lấy danh sách phim bán chạy nhất (Top vé bán ra)
+ * @route   GET /api/movies/best-sellers
+ * @access  Public
+ */
 const getBestSellers = async (req, res, next) => {
   try {
     const limit = parseInt(req.query.limit) || 5;
     const Booking = require('../models/Booking.model');
 
-    // 1. Aggregate bookings to count tickets sold per movie
+    // 1. Thống kê dữ liệu đặt vé từ database để đếm số vé bán ra theo từng phim
     const bestSellersAgg = await Booking.aggregate([
-      // Only count paid bookings
+      // Chỉ lấy các đơn đặt vé đã thanh toán thành công
       { $match: { paymentStatus: 'paid' } },
-      // Lookup showtime info to link to Movie
+      // Liên kết với bảng showtimes để lấy ID phim
       {
         $lookup: {
           from: 'showtimes',
@@ -161,7 +170,7 @@ const getBestSellers = async (req, res, next) => {
         },
       },
       { $unwind: '$showtimeInfo' },
-      // Group by movie ID and sum the number of seats booked (tickets sold)
+      // Nhóm theo ID phim và tính tổng số ghế đã đặt (vé bán ra) cùng tổng doanh thu
       {
         $group: {
           _id: '$showtimeInfo.movie',
@@ -169,13 +178,13 @@ const getBestSellers = async (req, res, next) => {
           revenue: { $sum: '$totalPrice' },
         },
       },
-      // Sort by ticketsSold descending
+      // Sắp xếp theo số vé bán ra giảm dần
       { $sort: { ticketsSold: -1 } },
-      // Limit to get top N
+      // Giới hạn số lượng phim thuộc top
       { $limit: limit },
     ]);
 
-    // 2. Fetch full movie details for these top movies, including reviews count & average
+    // 2. Lấy thông tin chi tiết của các phim top đầu kèm số đánh giá và điểm trung bình
     const movieIds = bestSellersAgg.map((item) => item._id);
 
     let movies = [];
@@ -209,7 +218,7 @@ const getBestSellers = async (req, res, next) => {
         },
       ]);
 
-      // Map back ticketsSold and sort correctly based on the best sellers rank
+      // Ánh xạ lại ticketsSold và sắp xếp theo đúng thứ tự xếp hạng bán chạy
       const moviesMap = movies.reduce((acc, movie) => {
         acc[movie._id.toString()] = movie;
         return acc;
@@ -231,12 +240,12 @@ const getBestSellers = async (req, res, next) => {
         .filter(Boolean);
     }
 
-    // Fallback/Fill up if movies length is less than 4 to make the homepage look beautiful
+    // 3. Fallback: Nếu hệ thống mới khởi chạy chưa đủ dữ liệu vé bán, bổ sung các phim đang/sắp chiếu vào danh sách
     if (movies.length < 4) {
       const existingIds = movies.map(m => m._id.toString());
       const mongoose = require('mongoose');
 
-      // Convert existingIds string to ObjectIds
+      // Chuyển đổi chuỗi ID sang ObjectId
       const existingObjectIds = existingIds.map(id => {
         try {
           return new mongoose.Types.ObjectId(id);
@@ -280,7 +289,7 @@ const getBestSellers = async (req, res, next) => {
         { $limit: 8 - movies.length }
       ]);
 
-      // Assign a simulated ticketsSold for demo/fallback purposes
+      // Gán chỉ số số vé mẫu cho phim bổ sung (giúp hiển thị giao diện đẹp hơn)
       const seededFallbackMovies = fallbackMovies.map((m, idx) => ({
         ...m,
         ticketsSold: Math.max(10 - idx * 2, 2) + Math.floor(Math.random() * 5),
@@ -290,7 +299,7 @@ const getBestSellers = async (req, res, next) => {
       movies = [...movies, ...seededFallbackMovies];
     }
 
-    // Sort by ticketsSold descending
+    // Sắp xếp lại theo số lượng vé bán ra giảm dần
     movies.sort((a, b) => b.ticketsSold - a.ticketsSold);
 
     res.json({
@@ -308,3 +317,4 @@ module.exports = {
   getMovieById,
   getBestSellers,
 };
+

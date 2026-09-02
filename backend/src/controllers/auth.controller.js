@@ -3,31 +3,38 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User.model');
 const sendEmail = require('../utils/sendEmail');
 
-// Helper to generate JWT Token
+/**
+ * @helper   Tạo JSON Web Token (JWT) cho xác thực người dùng
+ * @param    {string} id - ID của người dùng trong MongoDB
+ * @returns  {string} Chuỗi token JWT có thời hạn 30 ngày
+ */
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || 'supersecretjwtkeyforbookingmovies12345', {
     expiresIn: '30d',
   });
 };
 
-// @desc    Register user
-// @route   POST /api/auth/register
-// @access  Public
+/**
+ * @desc    Đăng ký tài khoản người dùng mới
+ * @route   POST /api/auth/register
+ * @access  Public
+ */
 const registerUser = async (req, res, next) => {
   try {
     const { username, email, password, phone, age, gender, dob, region, favoriteTheater } = req.body;
 
+    // Chuẩn hóa dữ liệu đầu vào (viết thường và loại bỏ khoảng trắng thừa)
     const cleanEmail = (email || '').toLowerCase().trim();
     const cleanPhone = (phone || '').trim();
 
-    // Check if email exists
+    // 1. Kiểm tra Email đã tồn tại trong cơ sở dữ liệu chưa
     const userExists = await User.findOne({ email: cleanEmail });
     if (userExists) {
       res.status(400);
       throw new Error('Email này đã được sử dụng cho tài khoản khác!');
     }
 
-    // Check if phone exists
+    // 2. Kiểm tra Số điện thoại đã được đăng ký chưa (nếu có nhập SĐT)
     if (cleanPhone) {
       const phoneExists = await User.findOne({ phone: cleanPhone });
       if (phoneExists) {
@@ -36,7 +43,7 @@ const registerUser = async (req, res, next) => {
       }
     }
 
-    // Create user
+    // 3. Tạo tài khoản người dùng mới trong database (Mật khẩu được băm tự động ở Pre-save hook của Model)
     const user = await User.create({
       username: (username || '').trim(),
       email: cleanEmail,
@@ -49,6 +56,7 @@ const registerUser = async (req, res, next) => {
       favoriteTheater: favoriteTheater || '',
     });
 
+    // 4. Trả về thông tin tài khoản kèm Token xác thực sau khi đăng ký thành công
     if (user) {
       res.status(201).json({
         success: true,
@@ -75,27 +83,31 @@ const registerUser = async (req, res, next) => {
   }
 };
 
-// @desc    Login user
-// @route   POST /api/auth/login
-// @access  Public
+/**
+ * @desc    Đăng nhập hệ thống
+ * @route   POST /api/auth/login
+ * @access  Public
+ */
 const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const cleanEmail = (email || '').toLowerCase().trim();
 
-    // Check email and password
+    // 1. Tìm người dùng theo Email (lấy kèm trường password do mặc định trong Schema để select: false)
     const user = await User.findOne({ email: cleanEmail }).select('+password');
     if (!user) {
       res.status(401);
       throw new Error('Email hoặc mật khẩu không chính xác');
     }
 
+    // 2. Kiểm tra mật khẩu nhập vào với mật khẩu đã băm trong database
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
       res.status(401);
       throw new Error('Email hoặc mật khẩu không chính xác');
     }
 
+    // 3. Kiểm tra xem tài khoản có đang bị Quản trị viên khóa hay không
     if (user.status === 'locked') {
       return res.status(403).json({
         success: false,
@@ -103,6 +115,7 @@ const loginUser = async (req, res, next) => {
       });
     }
 
+    // 4. Trả về thông tin người dùng và JWT Token khi đăng nhập thành công
     res.json({
       success: true,
       data: {
@@ -124,11 +137,14 @@ const loginUser = async (req, res, next) => {
   }
 };
 
-// @desc    Get current user profile
-// @route   GET /api/auth/profile
-// @access  Private
+/**
+ * @desc    Lấy thông tin cá nhân của người dùng đang đăng nhập
+ * @route   GET /api/auth/profile
+ * @access  Private (Yêu cầu Token)
+ */
 const getUserProfile = async (req, res, next) => {
   try {
+    // Tìm người dùng trong DB theo ID lưu trong req.user (từ Middleware xác thực JWT)
     const user = await User.findById(req.user._id);
     if (user) {
       res.json({
@@ -155,14 +171,17 @@ const getUserProfile = async (req, res, next) => {
   }
 };
 
-// @desc    Update current user profile
-// @route   PUT /api/auth/profile
-// @access  Private
+/**
+ * @desc    Cập nhật thông tin hồ sơ cá nhân
+ * @route   PUT /api/auth/profile
+ * @access  Private (Yêu cầu Token)
+ */
 const updateUserProfile = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id);
 
     if (user) {
+      // 1. Nếu thay đổi số điện thoại, kiểm tra xem SĐT mới đã bị tài khoản khác sử dụng chưa
       if (req.body.phone !== undefined && req.body.phone.trim() !== '') {
         const cleanPhone = req.body.phone.trim();
         if (cleanPhone !== user.phone) {
@@ -175,6 +194,7 @@ const updateUserProfile = async (req, res, next) => {
         user.phone = cleanPhone;
       }
 
+      // 2. Cập nhật các trường thông tin nếu có gửi lên từ client
       user.username = req.body.username || user.username;
       user.age = req.body.age !== undefined ? req.body.age : user.age;
       user.gender = req.body.gender !== undefined ? req.body.gender : user.gender;
@@ -182,12 +202,15 @@ const updateUserProfile = async (req, res, next) => {
       user.region = req.body.region !== undefined ? req.body.region : user.region;
       user.favoriteTheater = req.body.favoriteTheater !== undefined ? req.body.favoriteTheater : user.favoriteTheater;
 
+      // 3. Nếu người dùng muốn đổi mật khẩu mới
       if (req.body.password) {
         user.password = req.body.password;
       }
 
+      // 4. Lưu lại thông tin đã thay đổi
       const updatedUser = await user.save();
 
+      // 5. Trả về dữ liệu mới đã được cập nhật kèm Token mới
       res.json({
         success: true,
         data: {
@@ -213,9 +236,11 @@ const updateUserProfile = async (req, res, next) => {
   }
 };
 
-// @desc    Forgot password - Send email with reset token
-// @route   POST /api/auth/forgot-password
-// @access  Public
+/**
+ * @desc    Quên mật khẩu - Gửi Email chứa liên kết khôi phục mật khẩu
+ * @route   POST /api/auth/forgot-password
+ * @access  Public
+ */
 const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
@@ -232,20 +257,22 @@ const forgotPassword = async (req, res, next) => {
       throw new Error('Không tìm thấy tài khoản nào khớp với địa chỉ Email này');
     }
 
-    // Generate token
+    // 1. Tạo chuỗi ngẫu nhiên (resetToken) và băm bằng thuật toán SHA256 để lưu an toàn vào DB
     const resetToken = crypto.randomBytes(32).toString('hex');
     const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
+    // 2. Thiết lập token khôi phục và thời gian hết hạn (15 phút)
     user.resetPasswordToken = hashedToken;
-    user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 minutes
+    user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 phút
 
     await user.save({ validateBeforeSave: false });
 
-    // Client url for password reset link
+    // 3. Xây dựng đường dẫn URL tới trang Đặt lại mật khẩu ở phía Frontend
     const origin = req.headers.origin || req.headers.referer ? new URL(req.headers.referer).origin : null;
     const clientUrl = process.env.APP_URL || process.env.CLIENT_URL || origin || 'http://localhost:5173';
     const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
 
+    // 4. Nội dung Email định dạng HTML mẫu đẹp mắt
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #eaee00; border-radius: 16px; background-color: #ffffff;">
         <div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #e50914;">
@@ -277,6 +304,7 @@ const forgotPassword = async (req, res, next) => {
     `;
 
     try {
+      // 5. Gửi Email thông qua tiện ích sendEmail
       const mailRes = await sendEmail({
         to: user.email,
         subject: '[NOVA CINEMA] Yêu cầu khôi phục mật khẩu tài khoản',
@@ -284,6 +312,7 @@ const forgotPassword = async (req, res, next) => {
         text: `Yêu cầu khôi phục mật khẩu Nova Cinema: ${resetUrl}`,
       });
 
+      // Nếu hệ thống chưa cấu hình gửi mail thật (trạng thái skipped)
       if (mailRes && mailRes.skipped) {
         return res.json({
           success: true,
@@ -310,22 +339,26 @@ const forgotPassword = async (req, res, next) => {
   }
 };
 
-// @desc    Reset password using token
-// @route   POST /api/auth/reset-password/:token
-// @access  Public
+/**
+ * @desc    Đặt lại mật khẩu mới bằng Token từ Email
+ * @route   POST /api/auth/reset-password/:token
+ * @access  Public
+ */
 const resetPassword = async (req, res, next) => {
   try {
     const { token } = req.params;
     const { password } = req.body;
 
+    // 1. Kiểm tra độ dài mật khẩu mới
     if (!password || password.length < 6) {
       res.status(400);
       throw new Error('Mật khẩu mới phải chứa ít nhất 6 ký tự');
     }
 
-    // Get hashed token
+    // 2. Băm token nhận được từ URL để so sánh với resetPasswordToken lưu trong DB
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
+    // 3. Tìm tài khoản trùng khớp token băm và kiểm tra thời hạn hết hạn
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
       resetPasswordExpire: { $gt: Date.now() },
@@ -336,7 +369,7 @@ const resetPassword = async (req, res, next) => {
       throw new Error('Liên kết khôi phục không hợp lệ hoặc đã hết hạn (15 phút). Vui lòng thực hiện lại yêu cầu Quên mật khẩu!');
     }
 
-    // Set new password (pre-save hook will hash it)
+    // 4. Cập nhật mật khẩu mới và xóa bỏ các thông tin token khôi phục
     user.password = password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
@@ -360,3 +393,4 @@ module.exports = {
   forgotPassword,
   resetPassword,
 };
+
